@@ -1047,6 +1047,13 @@ function isUpdateManySelectionKey(key: string): boolean {
   return key.startsWith("filter") || key === "ids" || key === "limit" || key === "offset";
 }
 
+/** Refuse a typed null that is neither a field clear nor a selection value, naming the key. */
+function refuseUpdateManyNull(key: string, required: string): never {
+  throw new PmCliError(`update-many "${key}" cannot be null. No changes were made.`, EXIT_CODE.USAGE, {
+    code: "invalid_argument_value", reason: "invalid_mutation_option_value", changed: false, field: key, required,
+  });
+}
+
 /** Per-item update fields of a flat payload before normalization, so typed nulls stay visible. */
 function flatUpdateManyFields(options: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(options).filter(([key]) => !UPDATE_MANY_FLAT_CONTROL_KEYS.has(key)));
@@ -1056,7 +1063,8 @@ function flatUpdateManyFields(options: Record<string, unknown>): Record<string, 
  * Keep typed nulls that string normalization would drop (pm-w7clh6). A typed
  * caller's `null` on an update field reaches the update judge under its
  * canonical option, which clears a clearable field and refuses any other by
- * name, exactly as a single update does. A flat `null` on a selection key is
+ * name, exactly as a single update does. A `null` on a selection key (flat or
+ * inside `list`) and a `null` on a key that is no declared update option are
  * refused here by name. Only a typed SDK dispatch opts in: an MCP client's
  * `null` commonly stands for an omitted argument, so it stays absent there.
  */
@@ -1067,15 +1075,18 @@ function carryUpdateManyNulls(
 ): void {
   if (!typedNulls) return;
   const updateSource = isRuntimeRecord(options.update) ? options.update : flatUpdateManyFields(options);
-  const selectionKey = Object.keys(options).find((key) => options[key] === null && isUpdateManySelectionKey(key));
+  const list = isRuntimeRecord(options.list) ? options.list : {};
+  const selectionKey = Object.keys(options).find((key) => options[key] === null && isUpdateManySelectionKey(key))
+    ?? Object.keys(list).filter((key) => list[key] === null).map((key) => `list.${key}`)[0];
   if (selectionKey !== undefined) {
-    throw new PmCliError(`update-many "${selectionKey}" selects rows and cannot be null. No changes were made.`, EXIT_CODE.USAGE, {
-      code: "invalid_argument_value", reason: "invalid_mutation_option_value", changed: false, field: selectionKey,
-      required: `Omit "${selectionKey}" to leave rows unfiltered by it, or pass a value. To clear an item field, pass null on the field itself.`,
-    });
+    refuseUpdateManyNull(selectionKey, `"${selectionKey}" selects rows: omit it to leave rows unfiltered by it, or pass a value. To clear an item field, pass null on the field itself.`);
   }
   for (const [key, value] of Object.entries(updateSource)) {
-    if (value === null) normalizedUpdate[UPDATE_OPTION_TARGET_BY_KEY.get(key) ?? key] = null;
+    if (value !== null) continue;
+    const target = UPDATE_OPTION_TARGET_BY_KEY.get(key);
+    // Only a declared update option has a clear-or-refuse rule; a schema or extension field would coerce null into a stored value.
+    if (target === undefined) refuseUpdateManyNull(key, `Pass unset: ["${key}"] to clear a field, or omit "${key}".`);
+    normalizedUpdate[target] = null;
   }
 }
 

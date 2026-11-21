@@ -1,0 +1,22 @@
+id: pm-zi34i1
+title: "A nested SDK dispatch for another tracker reuses the caller's active extension scope, so the second tracker's guards and extension fields never load"
+description: "Reported by the Codex review of PR 1764. The active extension scope is one process-local boolean (activeExtensionScope in src/sdk/runtime.ts). runAction, PmClient item-transaction helpers and runInActiveExtensionScope all skip activation when it is set, without comparing the tracker the scope was opened for. A host that opens runWithActiveExtensions for tracker A and then dispatches a mutation for tracker B inside the callback runs it under A's registrations: a beforeMutation guard installed only in B never judges the write, and B's extension fields are unknown. The same call made outside the scope activates B and is refused. The behaviour predates PR 1764; the new finalize step inherits it through the shared rule."
+type: Issue
+status: open
+priority: 3
+tags[4]: "area:sdk",extensions,guards,multi-tracker
+created_at: "2026-11-21T20:18:59.522Z"
+updated_at: "2026-11-21T20:18:59.522Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The active extension scope records the resolved tracker root it was opened for; A dispatch or runInActiveExtensionScope call for a different root activates that root's extensions or refuses with a typed error naming both roots, never reusing the other tracker's registrations; A spec installs a refusing guard in tracker B only and proves the nested write is judged; Same-root nesting keeps reusing the scope without a second activation"
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+expected_result: A write to tracker B is judged by tracker B's guards whether or not a scope for tracker A is open
+actual_result: "Inside a scope opened for tracker A, a write to tracker B runs under A's registrations and B's guards are skipped"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1656,discovered_from,"2026-11-21T20:18:59.522Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-21T20:18:59.522Z","harness:claude-code","Duplicate check: pm search for 'extension scope reused for another tracker nested dispatch' returned no item about per-tracker scope identity."
+body: ""

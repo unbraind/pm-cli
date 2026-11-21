@@ -120,19 +120,26 @@ describe("transaction-owned finalization step (GH-1656)", () => {
     });
   });
 
-  it("appends no event for a finalization that changes nothing, and re-applies it as the same no-op", async () => {
+  it("appends its event even when nothing changes, so recovery never re-evaluates a completed row", async () => {
     await withTempPmPath(async ({ pmPath }) => {
-      const { item } = await seed(pmPath, { tags: "b,a" });
-      const mutations: BulkItemMutation[] = [{ op: "finalize", id: item.id, set: { status: "open", tags: ["B", "a"] }, unset: ["closed_at"] }];
-      for (const transactionId of ["finalize-noop", "finalize-noop", "finalize-noop-again"]) {
-        await expect(commitItemMutations({ pmRoot: pmPath, author, transactionId, mutations })).resolves.toMatchObject({ status: "committed" });
-      }
-      expect(await historyOps(pmPath, item.id)).toEqual(["create:"]);
-      await expect(applyItemFinalization({ pmRoot: pmPath, id: item.id, author, message: "direct", set: { status: "open" } })).resolves.toMatchObject({ changedFields: [], item: { id: item.id } });
-      // An unset-only row is a complete finalization.
+      const { client, item } = await seed(pmPath, { tags: "b,a" });
+      // Row 1 changes nothing; row 2 closes. A crash after row 2 must not let recovery replay row 1 over it.
+      const mutations: BulkItemMutation[] = [
+        { op: "finalize", id: item.id, set: { status: "open", tags: ["B", "a"] }, unset: ["closed_at"] },
+        { op: "finalize", id: item.id, set: { status: "closed", close_reason: "Closed at the source", closed_at: lifecycle.closed_at } },
+      ];
+      let applied = 0;
+      await expect(commitItemMutations({ pmRoot: pmPath, author, transactionId: "finalize-ordered", mutations, onTransition: ({ transition }) => {
+        if (transition === "step_applied" && ++applied === 2) throw new WorkspaceTransactionInterruptedError("crash after the second finalization");
+      } })).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
+      await expect(commitItemMutations({ pmRoot: pmPath, author, transactionId: "finalize-ordered", mutations })).resolves.toMatchObject({ status: "committed", recovered: true });
+      expect((await client.get(item.id)).item).toMatchObject({ status: "closed", closed_at: lifecycle.closed_at });
+      expect(await historyOps(pmPath, item.id)).toEqual(["create:", "import:apply", "import:apply"]);
+      await expect(applyItemFinalization({ pmRoot: pmPath, id: item.id, author, message: "direct", set: { status: "closed" } })).resolves.toMatchObject({ changedFields: [], item: { id: item.id } });
+      // An unset-only row is a complete finalization, and a literal "undefined" is a value, not an absent field.
       await expect(commitItemMutations({ pmRoot: pmPath, author, transactionId: "finalize-unset-only", mutations: [{ op: "finalize", id: item.id, unset: ["tags"] }] })).resolves.toMatchObject({ status: "committed" });
-      expect(await historyOps(pmPath, item.id)).toEqual(["create:", "import:apply"]);
-      await expect(applyItemFinalization({ pmRoot: pmPath, id: item.id, author, message: "direct", set: { sprint: "s2" }, force: true })).resolves.toMatchObject({ changedFields: ["sprint"] });
+      await expect(applyItemFinalization({ pmRoot: pmPath, id: item.id, author, message: "direct", set: { sprint: "undefined" }, force: true })).resolves.toMatchObject({ changedFields: ["sprint"] });
+      await expect(applyItemFinalization({ pmRoot: pmPath, id: item.id, author, message: "direct", unset: ["sprint"] })).resolves.toMatchObject({ changedFields: ["sprint"] });
     });
   });
 
@@ -181,8 +188,10 @@ describe("transaction-owned finalization step (GH-1656)", () => {
 
   it.each([
     ["a value the reader refuses", { status: 5 }, "status must be a non-empty string"],
-    ["a value stored in another shape", { tags: "a" }, 'set "tags" is not stored as declared (a string value normalizes to a array)'],
-    ["a value normalized away", { assignee: "  " }, 'set "assignee" is not stored as declared (a string value normalizes to an absent field)'],
+    ["a value stored in another shape", { tags: "a" }, 'set "tags" is not stored as declared (string normalizes to array of 0)'],
+    ["array entries normalization would drop", { tags: [1, "kept"] }, 'set "tags" is not stored as declared (array of 2 normalizes to array of 1)'],
+    ["a value normalized away", { assignee: "  " }, 'set "assignee" is not stored as declared (string normalizes to an absent field)'],
+    ["an envelope key the reader would follow", { front_matter: { id: "pm-other", title: "Other", description: "", type: "Task", status: "closed", priority: 2, tags: [], created_at: "2020-01-01T00:00:00.000Z", updated_at: "2020-01-01T00:00:00.000Z" } }, "reads back as a different document"],
   ])("refuses %s before anything is written", async (_label, set, message) => {
     await withTempPmPath(async ({ pmPath }) => {
       const { item } = await seed(pmPath, { tags: "kept" });
@@ -210,8 +219,11 @@ describe("transaction-owned finalization step (GH-1656)", () => {
 
   it.each<[string, Record<string, unknown>, string]>([
     ["an empty patch", {}, "requires at least one field in set or unset"],
-    ["a non-object set", { set: ["closed_at"] }, "set must be an object of front-matter fields"],
-    ["a null set", { set: null }, "set must be an object of front-matter fields"],
+    ["a non-object set", { set: ["closed_at"] }, "set must be a plain object of front-matter fields"],
+    ["a null set", { set: null }, "set must be a plain object of front-matter fields"],
+    ["a class instance as set", { set: Object.assign(new Date(0), { sprint: "s1" }) }, "set must be a plain object of front-matter fields"],
+    ["a sparse array", { set: { sources: Object.assign(new Array<number>(3), { 0: 1, 2: 3 }) } }, 'set "sources" must be a non-null JSON value'],
+    ["a nested prototype key", { set: { source: JSON.parse('{"__proto__":{"polluted":true}}') as unknown } }, 'set "source" must be a non-null JSON value'],
     ["a non-array unset", { unset: "closed_at" }, "unset must be an array of front-matter field names"],
     ["a malformed field name", { set: { "Closed-At": "x" } }, 'names an invalid field "Closed-At"'],
     ["an inherited field name", { unset: ["constructor"] }, 'names an invalid field "constructor"'],

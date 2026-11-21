@@ -812,8 +812,9 @@ async function canonicalItemId(pmRoot: string, id: string): Promise<string> {
 /**
  * Build the workspace-transaction step for one finalization. It carries the
  * update step's contract: a captured restore target, an apply marker in the
- * event's message and context, and marker-based inspection. A finalization
- * that changes nothing appends no event, so recovery re-applies the same no-op.
+ * event's message and context, and marker-based inspection. The event is
+ * appended even when no field changes, so recovery adopts a completed row
+ * instead of re-evaluating it against state a later row produced.
  */
 function buildFinalizeStep(
   config: BulkMutationStepConfig,
@@ -835,14 +836,15 @@ function buildFinalizeStep(
     async apply(): Promise<WorkspaceTransactionJsonValue> {
       const id = await canonicalItemId(config.pmRoot, mutation.id);
       const { match } = mutation;
-      await runWithItemMutationPrecondition({
+      // The store write bypasses action dispatch, so it opens the extension scope an update row's dispatch would.
+      // Activation stays outside the step's attribution scope: only the finalization write carries the marker.
+      await runInActiveExtensionScope(config.pmRoot, () => runWithItemMutationPrecondition({
         pmRoot: config.pmRoot,
         id,
         // A finalization is one locked write, so the guard judges exactly the document it is about to change.
         validate: (document) => { if (match !== undefined) assertUpsertMatchCurrent(document, mutation.id, match); },
         historyContext: { item_transaction_step: marker },
-        // The store write bypasses action dispatch, so it opens the extension scope an update row's dispatch would.
-      }, () => runInActiveExtensionScope(config.pmRoot, () => applyItemFinalization({
+      }, () => applyItemFinalization({
         pmRoot: config.pmRoot, id, author: config.author, message: marker, force: mutation.force,
         ...(mutation.set === undefined ? {} : { set: mutation.set }),
         ...(mutation.unset === undefined ? {} : { unset: mutation.unset }),

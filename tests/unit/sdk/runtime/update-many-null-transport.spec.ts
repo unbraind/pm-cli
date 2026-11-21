@@ -45,11 +45,21 @@ describe("update-many typed null transport (pm-w7clh6)", () => {
     });
   });
 
-  it.each(["filterAssignee", "ids", "limit", "offset"])("refuses a flat null on the selection key %s instead of clearing a field", async (key) => {
+  it.each<[string, (id: string) => Fields]>([
+    ["filterAssignee", (id) => ({ ids: [id], description: "changed", filterAssignee: null })],
+    ["ids", () => ({ description: "changed", ids: null })],
+    ["limit", (id) => ({ ids: [id], description: "changed", limit: null })],
+    ["offset", (id) => ({ ids: [id], description: "changed", offset: null })],
+    // A nested list record is the same selection: a null there must not widen the update to every row.
+    ["list.assignee", (id) => ({ list: { ids: id, assignee: null }, update: { description: "changed" } })],
+    // A key that is no declared update option has no clear rule; a schema field would store the text "null".
+    ["customer_tier", (id) => ({ ids: [id], description: "changed", customer_tier: null })],
+    ["customer_tier", (id) => ({ ids: [id], update: { description: "changed", customer_tier: null } })],
+  ])("refuses a typed null on %s by name instead of dropping or storing it", async (key, build) => {
     await withTempPmPath(async ({ pmPath }) => {
       const { id, updateMany, read } = await seed(pmPath);
-      const failure = await updateMany({ ids: [id], description: "changed", [key]: null }).catch((error: unknown) => error);
-      expect(failure).toMatchObject({ message: `update-many "${key}" selects rows and cannot be null. No changes were made.`, context: { code: "invalid_argument_value", field: key, changed: false } });
+      const failure = await updateMany(build(id)).catch((error: unknown) => error);
+      expect(failure).toMatchObject({ message: `update-many "${key}" cannot be null. No changes were made.`, context: { code: "invalid_argument_value", field: key, changed: false } });
       expect(await read()).toMatchObject({ assignee: "alice", description: "" });
     });
   });
@@ -63,7 +73,9 @@ describe("update-many typed null transport (pm-w7clh6)", () => {
   });
 
   it("carries nulls under the canonical option only for a typed dispatch", () => {
-    expect(updateManyOptionsFromFlat({ ids: ["a"], assignee: null, bogus: null, priority: 2 }, true).update).toMatchObject({ assignee: null, bogus: null, priority: "2" });
+    expect(updateManyOptionsFromFlat({ ids: ["a"], assignee: null, blockedBy: null, priority: 2 }, true).update).toMatchObject({ assignee: null, blockedBy: null, priority: "2" });
+    expect(() => updateManyOptionsFromFlat({ ids: ["a"], bogus: null }, true)).toThrow('update-many "bogus" cannot be null.');
+    expect(updateManyOptionsFromFlat({ ids: ["a"], bogus: null, list: { assignee: null }, update: { title: "x" } }).update).toMatchObject({ title: "x" });
     expect(updateManyOptionsFromFlat({ ids: ["a"], update: { assignee: null } }, true).update).toMatchObject({ assignee: null });
     expect(updateManyOptionsFromFlat({ ids: ["a"], assignee: null, priority: 2 }).update.assignee).toBeUndefined();
     expect(updateManyOptionsFromFlat({ ids: ["a"], update: { assignee: null } }).update.assignee).toBeUndefined();

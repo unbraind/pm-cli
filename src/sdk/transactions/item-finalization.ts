@@ -48,18 +48,31 @@ function assertFinalizationField(field: unknown, label: string): asserts field i
   }
 }
 
-/** JSON kind of a value, used to prove a declared value was stored in its own shape. */
-function jsonKind(value: unknown): string {
-  return Array.isArray(value) ? "array" : typeof value;
+/**
+ * Shape of a value, used to prove a declared value was stored as given: its
+ * JSON kind, and for an array its entry count, because normalization drops
+ * entries it cannot read (`tags: [1]` would otherwise store no tags).
+ */
+function storedShape(value: unknown): string {
+  return Array.isArray(value) ? `array of ${value.length}` : typeof value;
+}
+
+/** Own keys history patches and JSON readers treat as prototype access; a journaled value cannot carry them. */
+const UNSAFE_VALUE_KEYS: readonly string[] = ["__proto__", "constructor", "prototype"];
+
+/** True for a plain data record: the only object shape the journal retains unchanged. */
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype;
 }
 
 /** True for a value the transaction journal can retain and replay unchanged. */
 function isJournalValue(value: unknown): boolean {
   if (value === null || typeof value === "string" || typeof value === "boolean") return true;
   if (typeof value === "number") return Number.isFinite(value);
-  if (Array.isArray(value)) return value.every(isJournalValue);
-  if (typeof value !== "object" || Object.getPrototypeOf(value) !== Object.prototype) return false;
-  return Object.values(value).every(isJournalValue);
+  // Array.from turns a sparse hole into undefined, which is not a journal value.
+  if (Array.isArray(value)) return Array.from(value).every(isJournalValue);
+  if (!isPlainRecord(value)) return false;
+  return Object.entries(value).every(([key, nested]) => !UNSAFE_VALUE_KEYS.includes(key) && isJournalValue(nested));
 }
 
 /**
@@ -69,8 +82,8 @@ function isJournalValue(value: unknown): boolean {
  */
 export function assertValidItemFinalization(patch: ItemFinalizationPatch, label: string): void {
   const { set, unset } = patch;
-  if (set !== undefined && (set === null || typeof set !== "object" || Array.isArray(set))) {
-    throw new TypeError(`${label} set must be an object of front-matter fields`);
+  if (set !== undefined && !isPlainRecord(set)) {
+    throw new TypeError(`${label} set must be a plain object of front-matter fields`);
   }
   if (unset !== undefined && !Array.isArray(unset)) {
     throw new TypeError(`${label} unset must be an array of front-matter field names`);
@@ -83,7 +96,7 @@ export function assertValidItemFinalization(patch: ItemFinalizationPatch, label:
   for (const field of setFields) {
     assertFinalizationField(field, label);
     if (set![field] === null || !isJournalValue(set![field])) {
-      throw new TypeError(`${label} set "${field}" must be a non-null JSON value (no undefined, non-finite number, or class instance); remove a field with unset`);
+      throw new TypeError(`${label} set "${field}" must be a non-null JSON value (no undefined, non-finite number, sparse array, class instance, or __proto__/constructor/prototype key); remove a field with unset`);
     }
   }
   for (const field of unsetFields) {
@@ -109,17 +122,19 @@ export interface ApplyItemFinalizationParams extends ItemFinalizationPatch {
 
 /** Outcome of one finalization write. */
 export interface ApplyItemFinalizationResult {
-  /** Item front matter after the write, or unchanged when the patch was a no-op. */
+  /** Item front matter after the write. */
   item: ItemMetadata;
-  /** Fields whose canonical value changed; empty when no event was appended. */
+  /** Fields whose canonical value changed; empty when the event records an unchanged document. */
   changedFields: string[];
 }
 
 /**
  * Apply a finalization under the item lock. The patched document must load
  * through the item reader under the workspace schema before it is written, so
- * a finalization can never store an item the tracker cannot read back. A patch
- * that changes nothing appends no history event.
+ * a finalization can never store an item the tracker cannot read back. Every
+ * finalization appends its event, even when no field changes: the event is the
+ * durable proof recovery reads, so a row is never re-evaluated against state a
+ * later row produced.
  */
 export async function applyItemFinalization(params: ApplyItemFinalizationParams): Promise<ApplyItemFinalizationResult> {
   assertValidItemFinalization(params, `Finalization of ${params.id}`);
@@ -133,7 +148,7 @@ export async function applyItemFinalization(params: ApplyItemFinalizationParams)
     author: params.author,
     message: params.message,
     force: params.force === true,
-    skipNoop: true,
+    extensionFieldNames: format.extensionFieldNames,
     mutate: (document) => {
       const before = structuredClone(document.metadata) as unknown as Record<string, unknown>;
       const metadata = document.metadata as unknown as Record<string, unknown>;
@@ -142,11 +157,13 @@ export async function applyItemFinalization(params: ApplyItemFinalizationParams)
       let after: Record<string, unknown>;
       try {
         const canonical = canonicalDocument(document, format);
-        parseItemDocument(serializeItemDocument(canonical, format), format);
+        const reread = canonicalDocument(parseItemDocument(serializeItemDocument(canonical, format), format), format);
+        // A field the format reserves (an envelope or body key) would make the reader return another document.
+        if (stableStringify(reread) !== stableStringify(canonical)) throw new TypeError("the stored item reads back as a different document; a set field collides with a name the item format reserves");
         after = canonical.metadata as unknown as Record<string, unknown>;
         // Canonicalization may tidy a value, but it must not drop it or store another shape in its place.
-        const lost = Object.entries(params.set ?? {}).find(([field, value]) => jsonKind(after[field]) !== jsonKind(value));
-        if (lost !== undefined) throw new TypeError(`set "${lost[0]}" is not stored as declared (a ${jsonKind(lost[1])} value normalizes to ${after[lost[0]] === undefined ? "an absent field" : `a ${jsonKind(after[lost[0]])}`})`);
+        const lost = Object.entries(params.set ?? {}).find(([field, value]) => storedShape(after[field]) !== storedShape(value));
+        if (lost !== undefined) throw new TypeError(`set "${lost[0]}" is not stored as declared (${storedShape(lost[1])} normalizes to ${after[lost[0]] === undefined ? "an absent field" : storedShape(after[lost[0]])})`);
       } catch (cause: unknown) {
         throw new PmCliError(
           `Finalization of ${params.id} would not store a readable item with the declared fields: ${(cause as Error).message}`,
@@ -161,7 +178,7 @@ export async function applyItemFinalization(params: ApplyItemFinalizationParams)
         );
       }
       const changedFields = [...new Set([...Object.keys(before), ...Object.keys(after)])]
-        .filter((field) => stableStringify(before[field]) !== stableStringify(after[field]))
+        .filter((field) => Object.hasOwn(before, field) !== Object.hasOwn(after, field) || stableStringify(before[field]) !== stableStringify(after[field]))
         .sort((left, right) => left.localeCompare(right));
       return { changedFields };
     },

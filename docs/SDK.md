@@ -1367,8 +1367,11 @@ in every typed spelling (pm-w7clh6): a direct SDK `runUpdateMany`, and
 `runAction("update-many")` with flat fields or a nested `update` record, clear a
 clearable field given `null` on every matched row and refuse any other `null`
 by name before a row changes, so `PmUpdateManyActionOptions` types the
-clearable fields as nullable. A flat `null` on a selection key (`ids`, `limit`,
-`offset`, any `filter*` key) is refused by name: it neither filters nor clears.
+clearable fields as nullable. A `null` on a selection key (`ids`, `limit`,
+`offset`, any `filter*` key, or any key of a nested `list` record) is refused
+by name: it neither filters nor clears. So is a `null` on a key that is no
+declared update option, such as a schema or extension field; clear those with
+`unset`.
 MCP tools keep `null` as an omitted argument; use `unset` there.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
@@ -1842,16 +1845,19 @@ await commitItemMutations({
 
 - `set` writes each front-matter field as given and `unset` removes fields. A
   row needs at least one of them. Values are retained in the journal, so they
-  must be JSON and must not be secrets.
+  must be plain JSON data (no class instances, sparse arrays, or `__proto__`,
+  `constructor` and `prototype` keys) and must not be secrets.
 - `id`, `updated_at`, `pm_format_version` and `type` are refused: the writer
   derives the first three, and `type` selects the storage location, so it
   changes through an `update` row. `null` is refused; remove a field with
   `unset`.
 - The patched document is read back through the item reader under the
   workspace schema before it is stored, and every `set` value must be stored
-  in its own JSON shape. A value the reader refuses, or one that normalization
-  would drop or replace (`tags: "a"`, a blank `assignee`), refuses the step
-  with `finalization_invalid_document` and writes nothing. Other
+  in its own JSON shape, an array with every entry. A value the reader
+  refuses, or one that normalization would drop, shorten or replace
+  (`tags: "a"`, `tags: [1]`, duplicate tags, a blank `assignee`), or a field name the
+  item format reserves (`front_matter`, `body`), refuses the step with
+  `finalization_invalid_document` and writes nothing. Other
   canonicalization (tag order, status aliases, trimmed strings) applies as it
   does for every write.
 - A finalization is a raw front-matter write. Workflow policies and
@@ -1870,8 +1876,10 @@ await commitItemMutations({
 - The event is recorded under the native `import` history operation, with the
   step marker as its message and in `context.item_transaction_step`. Mutation
   guards and workflow policies judge it as an `import` operation.
-- A finalization that changes nothing appends no event. Recovery finds no
-  marker, applies the row again, and gets the same no-op.
+- Every finalization appends its event, even when no field changes. The event
+  is what recovery reads, so a completed row is adopted and never re-evaluated
+  against state a later row produced. Leave a row out of the batch when the
+  plan already knows it changes nothing.
 
 `finalize` is an SDK row. Structured mutation documents (`pm item mutate`, MCP
 `pm_mutate`) accept `create`, `update`, `close` and `release` only.
