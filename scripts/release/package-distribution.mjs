@@ -398,8 +398,14 @@ export function findExcludedModuleReferences(packedPaths, isExcluded, readText) 
       const candidates = pathnames
         // Dot-only strings such as "../" are path checks; require("./sdk/") still names sdk/index.js.
         .filter((pathname) => !/^(?:\.{1,2}\/)+$/u.test(pathname))
-        .map((pathname) => path.posix.join(path.posix.dirname(file), pathname).replace(/\/+$/u, ""))
-        .flatMap((target) => [target, ...MODULE_EXTENSIONS.flatMap((extension) => [`${target}${extension}`, `${target}/index${extension}`])]);
+        .flatMap((pathname) => {
+          const target = path.posix.join(path.posix.dirname(file), pathname).replace(/\/+$/u, "");
+          const indexes = MODULE_EXTENSIONS.map((extension) => `${target}/index${extension}`);
+          // A trailing slash names only the directory, never a same-named sibling module.
+          return pathname.endsWith("/")
+            ? indexes
+            : [target, ...MODULE_EXTENSIONS.map((extension) => `${target}${extension}`), ...indexes];
+        });
       if (candidates.some(isExcluded)) references.push(`${file} -> ${specifier}`);
     }
   }

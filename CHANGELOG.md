@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- A history line that is valid JSON but not an object (null, a number, an array) crashes pm activity and pm context with unknown_error: A history line that was valid JSON but not an object crashed pm activity, pm context, pm history and pm get with unknown_error, and --salvage-tail refused a line holding a JSON null, boolean or number → Every reader refuses such a line with history_record_invalid naming item_id, reason and details.line; --salvage-tail removes JSON null, boolean and number lines wherever they sit, reports non_record_lines in its receipt, and still refuses strings, arrays and incomplete objects. Migrate: Branch on history_record_invalid instead of unknown_error and follow its next step, pm history-repair <id\> --salvage-tail --dry-run ([pm-jbplbq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jbplbq.toon))
+- GH-1715: pm history-repair rewrites recorded entries after a mid-chain break, so the only drift remedy breaks append-only consumers and later merges: The only repair for a broken history chain re-anchored every recorded entry after the break, and HistoryMergeStrategy had four members → --append-only (SDK and MCP appendOnly) appends one sealed history_repair record whose bridge names each break and leaves every earlier line byte-identical. verifyHistoryChainWithVersion accepts a break only when the next bridge names it and reports bridged_segments. A rewrite that dissolves a bridge marks the covered versions with the sealed replay_inexact field, and restore and get --at refuse them with history_version_unreconstructable. The history merge driver adds the equivalent_bridges strategy, and pm health names --append-only as the remedy for history_drift_chain_mismatch. Migrate: Add a case for equivalent_bridges to exhaustive switches over HistoryMergeStrategy; raw history readers should ignore the optional bridge and replay_inexact fields or verify through verifyHistoryChainWithVersion, and treat history_version_unreconstructable as a refused version ([pm-gh1715](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1715.toon))
+
 ## 2026.11.21 - 2026-11-21
 
 ### Changed (SDK contract)
