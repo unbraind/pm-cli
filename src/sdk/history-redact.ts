@@ -518,14 +518,16 @@ function rewriteHistoryEntries(
   // bridged segment's recorded states: it dissolves each bridge and marks the
   // segment's entries replay_inexact so history reads keep refusing them.
   const located = locateBridgedSegments(entries);
+  // Redaction rewrites the live item from replay, so only a segment the
+  // bridge's intact commitments prove may be dissolved, never a fallback range.
   if (located.unlocated.length > 0) {
     throw new PmCliError(
-      `history-redact refuses a stream whose bridge at record ${located.unlocated[0]! + 1} does not locate its segment; repair the history first.`,
+      `history-redact refuses a stream whose bridge at record ${located.unlocated[0]! + 1} does not prove its segment; repair the history first.`,
       EXIT_CODE.GENERIC_FAILURE,
       {
         code: "history_redact_bridge_unlocated",
         required:
-          "Every bridge must name its first break and match its segment digest, so redaction can keep that segment's versions refused.",
+          "Every bridge's segment digest must match the records it covers, so redaction can keep that segment's versions refused.",
         nextSteps: ["Run pm history-repair <id> --dry-run to see how the stream would be repaired."],
       },
     );

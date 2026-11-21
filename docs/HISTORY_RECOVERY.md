@@ -166,7 +166,9 @@ own `after_hash`. A forged, unsealed or partial bridge is drift
 `bridge_link_mismatch`, `bridge_segment_mismatch` or
 `bridge_after_hash_mismatch`).
 
-A later rewriting repair keeps a verified bridged segment byte-identical.
+A later rewriting repair keeps a verified bridged segment's records unchanged.
+Like every rewriting repair, it re-serializes the file, so it normalizes line
+endings and spacing; only `--append-only` keeps the existing bytes.
 Three rewrites must dissolve the bridge into an ordinary re-anchored record:
 
 - a rewrite that changes an entry before the segment
@@ -175,19 +177,23 @@ Three rewrites must dissolve the bridge into an ordinary re-anchored record:
 
 Each keeps the original bridge as rewrite evidence. It also marks every entry
 the segment covered with a sealed `replay_inexact`, because those states were
-re-anchored without the unrecorded change. Each rewrite locates a bridge's segment from the bridge's own commitments: its
-first named break and segment digest, or that break's recorded anchors. A
-rewrite that repairs a record before the segment therefore still marks it. When
-neither locates the segment, the rewrite marks every record since the previous
-bridge, which over-restricts but never serves a version as exact. `history-redact` refuses a stream whose
+re-anchored without the unrecorded change. Each rewrite locates a bridge's segment from the bridge's own commitments. The
+segment digest proves the segment from a start that the first break's record
+hash or recorded anchors name, so a rewrite that repairs a record before the
+segment still marks it. When no intact commitment proves the segment, the
+rewrite marks every record since the previous bridge, and the bridge record
+itself. That over-restricts but never serves a version as exact. `history-redact` refuses a stream whose
 bridge does not locate its segment (`history_redact_bridge_unlocated`) instead
 of dropping that bridge's evidence. The markers are written before anything can
 void the bridge:
 
 - Provenance normalization writes them before it reseals a covered record.
 - A merge union writes them on the records a bridge covers on either original
-  branch, before it interleaves the branches. Every merge, including identical
-  and fast-forward results, also keeps a marker either branch already carries.
+  branch, before it interleaves the branches. It also marks every event the
+  merged order places between such a segment's first record and its bridge.
+  Every merge, including identical and fast-forward results, keeps a marker
+  either branch already carries, except on records a retained live bridge
+  covers.
 - A compaction checkpoint taken at an inexact version keeps the marker. When two clones bridged the same
 break independently, the merge driver keeps ours byte-for-byte. It appends the
 other bridge as a neutral record with an empty patch (`equivalent_bridges`), so

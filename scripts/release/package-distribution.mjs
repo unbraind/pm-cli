@@ -362,6 +362,7 @@ export function exportedDeclarationClosure(manifest, packedPaths, readText) {
 }
 
 const MODULE_FILE = /\.[cm]?js$/u;
+const MODULE_EXTENSIONS = [".js", ".cjs", ".mjs"];
 const QUOTED_RELATIVE_PATH = /(["'`])(\.{1,2}\/[^"'`\r\n]*)\1/gu;
 
 /**
@@ -404,7 +405,10 @@ export function findExcludedModuleReferences(packedPaths, excludedPaths, readTex
     // Resolve every quoted relative string, so non-canonical spellings such as
     // "../sdk/x.js" from inside sdk/ name the same excluded module.
     for (const [, , specifier] of readText(file).matchAll(QUOTED_RELATIVE_PATH)) {
-      if (excluded.has(path.posix.join(path.posix.dirname(file), specifier))) {
+      const target = path.posix.join(path.posix.dirname(file), specifier.replace(/[?#].*$/u, ""));
+      // Every file Node could load for the specifier: exact, CommonJS extension, or directory index.
+      const candidates = [target, ...MODULE_EXTENSIONS.flatMap((extension) => [`${target}${extension}`, `${target}/index${extension}`])];
+      if (candidates.some((candidate) => excluded.has(candidate))) {
         references.push(`${file} -> ${specifier}`);
       }
     }

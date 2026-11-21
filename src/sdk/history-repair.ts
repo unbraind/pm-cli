@@ -1022,6 +1022,8 @@ async function buildHistoryRepairPlan(
   const changed = [
     reanchor.entriesRehashed > 0,
     reanchor.entriesPatchRepaired > 0,
+    // A dissolved stray bridge or a replay_inexact marker changes the stream too.
+    reanchor.entriesResealed > 0,
     reconcileNeeded,
     shouldAppendForcedHistoryAudit(options, reanchor.entries, effectiveAuditContext),
     provenanceNormalization.receipt.changed,

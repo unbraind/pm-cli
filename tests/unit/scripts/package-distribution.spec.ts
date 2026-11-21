@@ -336,16 +336,22 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
       "const lazy = await import(`./sdk/${name}.js`);",
       'const pattern = /import".\\/sdk\\/excluded.cjs"/;',
       'const text = "see ./sdk/hidden.js";',
+      "const legacy = require('./sdk/legacy');",
+      'const folder = await import("./sdk/folder");',
+      'const query = await import("./sdk/hidden.js?worker#main");',
     ].join("\n"),
     "dist/sdk/kept.mjs": 'export const k = await import("../sdk/excluded.cjs"); import "./../sdk/excluded.cjs";',
     "node_modules/dep/index.js": 'import "../../dist/sdk/hidden.js";',
     "docs/README.md": 'import "./dist/sdk/hidden.js"',
   };
   const read = (file: string): string => files[file]!;
-  const excluded = ["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js"];
+  const excluded = ["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js", "dist/sdk/legacy.cjs", "dist/sdk/folder/index.js"];
   expect(findExcludedModuleReferences(Object.keys(files), excluded, read)).toEqual([
     "dist/cli.js -> ./sdk/hidden.js",
     "dist/cli.js -> ./sdk/worker.js",
+    "dist/cli.js -> ./sdk/legacy",
+    "dist/cli.js -> ./sdk/folder",
+    "dist/cli.js -> ./sdk/hidden.js?worker#main",
     "dist/sdk/kept.mjs -> ../sdk/excluded.cjs",
     "dist/sdk/kept.mjs -> ./../sdk/excluded.cjs",
   ]);

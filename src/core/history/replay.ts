@@ -395,7 +395,11 @@ function isBridgeableRecord(entry: HistoryEntry): boolean {
     return false;
   }
   const digest = new RegExp(`^[a-f0-9]{${length}}$`, "u");
-  return digest.test(entry.before_hash) && digest.test(entry.after_hash);
+  if (!digest.test(entry.before_hash) || !digest.test(entry.after_hash)) return false;
+  // A record whose patch cannot change state must not claim a state change,
+  // even where replay cannot prove its before-state.
+  const effectless = normalizeReplayPatchOps(entry.patch).every((operation) => operation.op === "test");
+  return !effectless || entry.before_hash === entry.after_hash || Object.hasOwn(entry, "bridge");
 }
 
 /** Zero-based inclusive range of entries closed by one verified bridge. */
@@ -788,6 +792,8 @@ export interface ReanchorResult {
   convertedReplaceToAdd: number;
   /** Value that configures or reports skipped ops for this contract. */
   skippedOps: number;
+  /** Entries resealed for any reason, including a dissolved bridge or a replay_inexact marker. */
+  entriesResealed: number;
   /** Value that configures or reports details for this contract. */
   details: ReanchorEntryDetail[];
   /** Hash epoch retained while rebuilding the stream. */
@@ -802,6 +808,8 @@ export interface ReanchorHistoryOptions {
   continuousHashSurface?: boolean;
   /** Rebase an entry's patch onto its new replay position, retaining the original patch as immutable rewrite evidence. */
   projectPatch?: (entry: HistoryEntry, current: ReplayDocument) => HistoryPatchOp[];
+  /** The caller already marked every record a dissolved bridge covers (a merge union marks each original branch before it interleaves them), so re-anchoring adds no markers of its own. */
+  callerMarksBridgeCoverage?: boolean;
 }
 
 /**
@@ -885,22 +893,26 @@ function indexBridgedSegments(
         : [],
     ),
     // Located, not only verified: a rewrite that repairs a record before the
-    // bridge still dissolves it, and must keep its versions refused. A
-    // projected rewrite (a merge union) interleaves branches, so its caller
-    // marks covered records from each original branch before re-anchoring.
+    // bridge still dissolves it, and must keep its versions refused. A merge
+    // union interleaves branches, so it marks each original branch first.
     inexact: collectBridgedInteriorIndexes(
-      options.projectPatch === undefined ? locateBridgedSegments(entries).segments : [],
+      options.callerMarksBridgeCoverage === true ? [] : locateBridgedSegments(entries).segments,
     ),
   };
 }
 
-/** Indexes of the entries a bridged segment covers before its bridge. */
+/**
+ * Indexes of the entries a bridged segment covers before its bridge, plus the
+ * bridge record itself when no intact commitment proved the segment: its
+ * recorded state then rests on records that cannot be trusted either.
+ */
 export function collectBridgedInteriorIndexes(
-  segments: readonly HistoryBridgedSegment[],
+  segments: ReadonlyArray<HistoryBridgedSegment & { exact?: boolean }>,
 ): Set<number> {
   const interior = new Set<number>();
-  for (const { start, end } of segments) {
-    for (let index = start; index < end; index += 1) interior.add(index);
+  for (const { start, end, exact } of segments) {
+    const last = exact === false ? end : end - 1;
+    for (let index = start; index <= last; index += 1) interior.add(index);
   }
   return interior;
 }
@@ -1022,6 +1034,7 @@ export function reanchorHistoryEntries(
   let entriesPatchRepaired = 0;
   let convertedReplaceToAdd = 0;
   let skippedOps = 0;
+  let entriesResealed = 0;
   let semanticIndex: number | undefined;
   const explicitItemHashVersion =
     itemHashVersion !== 1 ||
@@ -1090,6 +1103,7 @@ export function reanchorHistoryEntries(
       },
     );
     unchangedPrefix &&= !finalized.changed;
+    entriesResealed += Number(finalized.changed);
     rewritten.push(finalized.entry);
     details.push({
       index: index + 1,
@@ -1108,6 +1122,7 @@ export function reanchorHistoryEntries(
     entriesPatchRepaired,
     convertedReplaceToAdd,
     skippedOps,
+    entriesResealed,
     details,
     itemHashVersion,
     explicitItemHashVersion,

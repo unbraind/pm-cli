@@ -120,19 +120,22 @@ export function findNextHistoryBridge(
 export interface LocatedBridgedSegments {
   /**
    * Zero-based inclusive ranges from a segment's first break to its bridge.
-   * An unlocated bridge contributes the conservative range from the record
-   * after the previous bridge, so its unknown segment is never served as exact.
+   * `exact` is false when no intact commitment proved the start: the range
+   * then reaches back to the record after the previous bridge and covers the
+   * bridge record too, so an unproven segment is never served as exact.
    */
-  segments: Array<{ start: number; end: number }>;
-  /** Indexes of bridge records whose segment no break and digest locate, or whose envelope is malformed. */
+  segments: Array<{ start: number; end: number; exact: boolean }>;
+  /** Indexes of bridge records whose segment no intact commitment locates, or whose envelope is malformed. */
   unlocated: number[];
 }
 
 /**
- * First index after `floor` where a bridge's segment starts: its first named
- * break and segment digest both match, or failing that the break's recorded
- * anchors alone, which survive the resealing a rewrite applies to covered
- * records when it marks them.
+ * Index where a bridge's segment provably starts, or -1. The segment digest
+ * proves it from a start the first break's record hash or recorded anchors
+ * name, even when the record before the break was damaged since. Failing
+ * that, a start whose break anchors match is accepted only when every record
+ * after it already carries replay_inexact: a rewrite located that segment
+ * exactly and marked it, which voided the digest it would otherwise match.
  */
 function findBridgedSegmentStart(
   entries: readonly HistoryEntry[],
@@ -141,28 +144,27 @@ function findBridgedSegmentStart(
   end: number,
 ): number {
   const first = bridge.breaks[0]!;
-  let anchored = -1;
+  let materialized = -1;
   for (let start = Math.max(1, floor); start < end; start += 1) {
-    const previous = entries[start - 1]!;
     const entry = entries[start]!;
-    if (previous.after_hash !== first.gap_from || entry.before_hash !== first.gap_to) continue;
-    if (
-      matchesHistoryBreak(first, previous, entry) &&
-      digestBridgedSegment(entries.slice(start, end), entries[end]!) === bridge.segment_digest
-    ) {
-      return start;
+    const anchored =
+      entries[start - 1]!.after_hash === first.gap_from && entry.before_hash === first.gap_to;
+    const named = first.record_hash !== null && entry.record_hash === first.record_hash;
+    if (!anchored && !named) continue;
+    const covered = entries.slice(start, end);
+    if (digestBridgedSegment(covered, entries[end]!) === bridge.segment_digest) return start;
+    if (materialized < 0 && anchored && covered.every((record) => record.replay_inexact === true)) {
+      materialized = start;
     }
-    if (anchored < 0) anchored = start;
   }
-  return anchored;
+  return materialized;
 }
 
 /**
- * Locate every bridge's segment from the records it commits to (its first
- * named break and its segment digest, or that break's anchors), without
- * requiring the stream before it to verify. Rewrites use this to mark the versions a bridge proves
- * unreconstructable even when an earlier record is what they repair; markers
- * only ever restrict reads, so a forged bridge cannot widen what verifies.
+ * Locate every bridge's segment from the records it commits to, without
+ * requiring the stream before it to verify. Rewrites use this to mark the
+ * versions a bridge proves unreconstructable even when an earlier record is
+ * what they repair; markers only ever restrict reads.
  */
 export function locateBridgedSegments(entries: readonly HistoryEntry[]): LocatedBridgedSegments {
   const located: LocatedBridgedSegments = { segments: [], unlocated: [] };
@@ -173,7 +175,7 @@ export function locateBridgedSegments(entries: readonly HistoryEntry[]): Located
     const start =
       typeof bridge === "object" ? findBridgedSegmentStart(entries, bridge, floor, index) : -1;
     if (start < 0) located.unlocated.push(index);
-    located.segments.push({ start: start < 0 ? floor : start, end: index });
+    located.segments.push({ start: start < 0 ? floor : start, end: index, exact: start >= 0 });
     floor = index + 1;
   });
   return located;

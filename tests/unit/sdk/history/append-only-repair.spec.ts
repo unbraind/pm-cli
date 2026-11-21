@@ -201,6 +201,13 @@ describe("append-only repair hash surfaces", () => {
       await expect(
         _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, async () => ({ ino: sameInode, dev: -1 })),
       ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
+      // A stream removed after the check stays absent: the append never creates the path.
+      const missing = path.join(directory, "removed.jsonl");
+      await expect(_testOnly.appendRepairRecord("pm-epoch", missing, "", record)).rejects.toMatchObject({
+        context: { reason: "stream_changed" },
+      });
+      await expect(fsPromises.stat(missing)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(_testOnly.appendRepairRecord("pm-epoch", directory, "", record)).rejects.toThrow();
       await writeFile(file, Buffer.from([0x7b, 0xff, 0x7d]));
       await expect(_testOnly.appendRepairRecord("pm-epoch", file, "{}", record)).rejects.toMatchObject({
         context: { reason: "stream_not_utf8" },

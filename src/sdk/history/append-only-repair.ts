@@ -8,7 +8,9 @@
  * consumers, other clones and later merges keep the bytes they already hold.
  */
 import { isUtf8 } from "node:buffer";
+import { constants } from "node:fs";
 import { open, readFile, stat } from "node:fs/promises";
+import { isFileAbsentError } from "../../core/fs/fs-utils.js";
 import jsonPatch from "fast-json-patch";
 import {
   describeHistoryBreak,
@@ -150,7 +152,16 @@ function resolveAppendedRecordSurface(
   finalReplay: ReplayDocument,
   itemReplay: ReplayDocument | null,
 ): AppendedRecordSurface {
-  const algorithm = resolveHistoryHashAlgorithm(entries.at(-1)!.hash_algorithm);
+  let algorithm: HistoryHashAlgorithm;
+  try {
+    algorithm = resolveHistoryHashAlgorithm(entries.at(-1)!.hash_algorithm);
+  } catch {
+    refuseAppendOnly(
+      id,
+      "chain_failure_not_a_break",
+      `History for ${id} ends with record ${entries.length}, whose digest algorithm this build cannot anchor on.`,
+    );
+  }
   const declared = [...entries].reverse().find((entry) =>
     (SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly unknown[]).includes(entry.item_hash_version),
   )?.item_hash_version as HistoryItemHashVersion | undefined;
@@ -321,7 +332,16 @@ async function appendRepairRecord(
   // Append through O_APPEND on the very handle whose bytes were checked: the
   // write can never replace bytes another writer added, and nothing rolls the
   // stream back from a stale snapshot.
-  const handle = await open(historyPath, "a+");
+  // Never create the path: an empty stream reserves an identity, so a stream
+  // removed meanwhile must stay absent.
+  const handle = await open(historyPath, constants.O_RDWR | constants.O_APPEND).catch(
+    (error: unknown) => {
+      if (isFileAbsentError(error)) {
+        refuseAppendOnly(id, "stream_changed", `History for ${id} was removed after the repair verified it; retry.`);
+      }
+      throw error;
+    },
+  );
   try {
     const bytes = await handle.readFile();
     if (!isUtf8(bytes)) {

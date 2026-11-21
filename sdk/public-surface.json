@@ -3518,6 +3518,14 @@
       ],
       "package_version": "2026.11.20",
       "reason": "GH-1715 review round 1: additive optional HistoryEntry.replay_inexact marks entries re-anchored across an unrecorded change when a bridge is dissolved; HistoryBridge gains segment_digest. No existing field changes meaning."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ReanchorHistoryOptions",
+        "signature ./sdk:ReanchorResult"
+      ],
+      "package_version": "2026.11.20",
+      "reason": "GH-1715 review round 4: additive optional ReanchorHistoryOptions.callerMarksBridgeCoverage and a new ReanchorResult.entriesResealed count; existing fields unchanged."
     }
   ],
   "entrypoints": {
@@ -17964,13 +17972,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ReanchorHistoryOptions",
-          "signature": "export interface ReanchorHistoryOptions { continuousHashSurface?: boolean; projectPatch?: (entry: HistoryEntry, current: ReplayDocument) => HistoryPatchOp[]; }"
+          "signature": "export interface ReanchorHistoryOptions { continuousHashSurface?: boolean; projectPatch?: (entry: HistoryEntry, current: ReplayDocument) => HistoryPatchOp[]; callerMarksBridgeCoverage?: boolean; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ReanchorResult",
-          "signature": "export interface ReanchorResult { entries: HistoryEntry[]; finalDocument: ReplayDocument; entriesRehashed: number; entriesPatchRepaired: number; convertedReplaceToAdd: number; skippedOps: number; details: ReanchorEntryDetail[]; itemHashVersion: HistoryItemHashVersion; explicitItemHashVersion: boolean; }"
+          "signature": "export interface ReanchorResult { entries: HistoryEntry[]; finalDocument: ReplayDocument; entriesRehashed: number; entriesPatchRepaired: number; convertedReplaceToAdd: number; skippedOps: number; entriesResealed: number; details: ReanchorEntryDetail[]; itemHashVersion: HistoryItemHashVersion; explicitItemHashVersion: boolean; }"
         },
         {
           "classification": "supported",

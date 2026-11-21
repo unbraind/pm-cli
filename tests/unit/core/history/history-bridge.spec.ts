@@ -76,24 +76,34 @@ describe("history bridge envelope", () => {
     const bridge = entry({
       bridge: { version: 1, breaks: [descriptor], segment_digest: digestBridgedSegment(covered, {}) },
     });
-    const stream = [first, ...covered, bridge];
-    expect(locateBridgedSegments(stream)).toEqual({ segments: [{ start: 1, end: 3 }], unlocated: [] });
-    // A digest that no longer matches still locates by the break's anchors; a malformed envelope,
-    // a break whose anchors are gone and a bridge with nothing before it stay unlocated and
-    // contribute the conservative range since the previous bridge.
+    expect(locateBridgedSegments([first, ...covered, bridge])).toEqual({
+      segments: [{ start: 1, end: 3, exact: true }],
+      unlocated: [],
+    });
+    // The break record's hash names the start even when the record before it lost its anchor.
+    const named = entry({ before_hash: descriptor.gap_to, record_hash: "3".repeat(64) });
+    const namedBridge = entry({
+      bridge: { version: 1, breaks: [{ ...descriptor, record_hash: "3".repeat(64) }], segment_digest: digestBridgedSegment([named], {}) },
+    });
+    expect(locateBridgedSegments([entry({ after_hash: "f".repeat(64) }), named, namedBridge]).segments).toEqual([
+      { start: 1, end: 2, exact: true },
+    ]);
+    // Records a rewrite already marked keep their location after the marking voided the digest.
     const wrongDigest = entry({ bridge: { version: 1, breaks: [descriptor], segment_digest } });
+    const marked = covered.map((record) => ({ ...record, replay_inexact: true as const }));
+    expect(locateBridgedSegments([first, ...marked, wrongDigest]).segments).toEqual([{ start: 1, end: 3, exact: true }]);
+    // Otherwise an unproven bridge contributes the conservative range since the previous bridge.
     const malformed = entry({ bridge: { version: 1 } });
     expect(locateBridgedSegments([first, ...covered, wrongDigest, malformed])).toEqual({
-      segments: [{ start: 1, end: 3 }, { start: 4, end: 4 }],
-      unlocated: [4],
+      segments: [{ start: 1, end: 3, exact: false }, { start: 4, end: 4, exact: false }],
+      unlocated: [3, 4],
     });
     const lostAnchors = entry({ bridge: { version: 1, breaks: [{ ...descriptor, gap_from: "0".repeat(64) }], segment_digest } });
-    expect(locateBridgedSegments([first, ...covered, lostAnchors])).toEqual({ segments: [{ start: 1, end: 3 }], unlocated: [3] });
-    expect(locateBridgedSegments([first, entry({ before_hash: descriptor.gap_to }), ...covered, bridge]).segments).toEqual([{ start: 1, end: 4 }]);
-    expect(locateBridgedSegments([bridge])).toEqual({ segments: [{ start: 1, end: 0 }], unlocated: [0] });
-    // Several anchor matches without a matching digest: the first one locates the segment.
-    const repeated = [first, broken, first, broken, wrongDigest];
-    expect(locateBridgedSegments(repeated).segments).toEqual([{ start: 1, end: 4 }]);
+    expect(locateBridgedSegments([first, ...covered, lostAnchors])).toEqual({
+      segments: [{ start: 1, end: 3, exact: false }],
+      unlocated: [3],
+    });
+    expect(locateBridgedSegments([bridge])).toEqual({ segments: [{ start: 1, end: 0, exact: false }], unlocated: [0] });
   });
 
   it("never lets replay mutate the recorded patch it applies", () => {
