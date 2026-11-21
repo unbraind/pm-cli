@@ -133,10 +133,18 @@ bridge names each break by the `after_hash` before it (`gap_from`), the
 `segment_digest` commits to every record from the first break up to the bridge,
 so no record it covers can change under it, sealed or not. Its patch
 reconciles replay with the on-disk item. Its anchors keep the hash epoch the
-stream already uses: the newest declared epoch, or else the epoch the verified
-records prove. They also keep the epoch-2 variant that replay or the on-disk
-item proves (`hash_surface_ambiguous` when neither does). The record is
-appended with `O_APPEND` to the exact bytes the repair verified. Every earlier line stays
+stream already uses:
+
+- If any record declares an epoch, the newest declared epoch.
+- For an implicit stream, the epoch the verified records prove, unless the
+  last record's own anchor proves another epoch. Then the newest epoch it
+  proves wins.
+- The epoch-2 variant that replay or the on-disk item proves.
+
+The repair refuses with `hash_surface_ambiguous` when nothing proves the epoch
+or the variant. The record is appended with `O_APPEND` to the exact bytes the
+repair verified. If another writer that ignores pm's lock appends in the same
+moment, its bytes are kept and the repair reports `stream_changed`. Every earlier line stays
 byte-identical, so the stream before the repair remains a prefix of the
 repaired stream. Other clones, worktrees and append-only consumers keep the
 bytes they already hold. `--all --append-only` bridges every drifted stream, and
@@ -148,8 +156,10 @@ bridged segment it checks the recorded links, and each further break must be
 the next one the bridge names. Wherever replay proves an entry's recorded
 before-state, for example after a later change overwrote the edited field, that
 entry's recorded effect must match too. Every record from the break to the
-bridge must be complete (`record_incomplete`), and a declared epoch inside the
-segment governs the records after it. The bridge must name no break that did
+bridge must be complete, with item anchors that are well-formed digests of its
+algorithm (`record_incomplete`). A declared epoch inside the segment governs the
+records after it, and the bridge must keep the epoch the stream declared
+(`bridge_epoch_mismatch`). The bridge must name no break that did
 not occur, must match its `segment_digest`, and must re-anchor replay on its
 own `after_hash`. A forged, unsealed or partial bridge is drift
 (`bridge_invalid`, `bridge_unnamed_break`, `bridge_names_absent_break`,
@@ -165,16 +175,19 @@ Three rewrites must dissolve the bridge into an ordinary re-anchored record:
 
 Each keeps the original bridge as rewrite evidence. It also marks every entry
 the segment covered with a sealed `replay_inexact`, because those states were
-re-anchored without the unrecorded change. Each rewrite locates a bridge's segment from the bridge's own commitments, its
-first named break and its segment digest, so a rewrite that repairs a record
-before the segment still marks it. `history-redact` refuses a stream whose
+re-anchored without the unrecorded change. Each rewrite locates a bridge's segment from the bridge's own commitments: its
+first named break and segment digest, or that break's recorded anchors. A
+rewrite that repairs a record before the segment therefore still marks it. When
+neither locates the segment, the rewrite marks every record since the previous
+bridge, which over-restricts but never serves a version as exact. `history-redact` refuses a stream whose
 bridge does not locate its segment (`history_redact_bridge_unlocated`) instead
 of dropping that bridge's evidence. The markers are written before anything can
 void the bridge:
 
 - Provenance normalization writes them before it reseals a covered record.
 - A merge union writes them on the records a bridge covers on either original
-  branch, before it interleaves the branches.
+  branch, before it interleaves the branches. Every merge, including identical
+  and fast-forward results, also keeps a marker either branch already carries.
 - A compaction checkpoint taken at an inexact version keeps the marker. When two clones bridged the same
 break independently, the merge driver keeps ours byte-for-byte. It appends the
 other bridge as a neutral record with an empty patch (`equivalent_bridges`), so

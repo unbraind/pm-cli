@@ -6,6 +6,7 @@ import {
   lstatSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
@@ -14,7 +15,7 @@ import {
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { withBuildLease } from "../build-lease.mjs";
@@ -360,72 +361,55 @@ export function exportedDeclarationClosure(manifest, packedPaths, readText) {
   return reachable;
 }
 
-/** Load a package from the first base that resolves it, so copied controls fall back to the checkout. */
-function requireFirstResolvable(name, bases) {
-  for (const base of bases) {
-    try {
-      return createRequire(base)(name);
-    } catch (error) {
-      if (error?.code !== "MODULE_NOT_FOUND") throw error;
-    }
-  }
-  throw new Error(`Packing needs ${name} to prove import closure; install the checkout's dependencies.`);
-}
+const MODULE_FILE = /\.[cm]?js$/u;
+const QUOTED_RELATIVE_PATH = /(["'`])(\.{1,2}\/[^"'`\r\n]*)\1/gu;
 
 /**
- * Build a lexer that collects one JavaScript module's import specifiers from a
- * real syntax tree: import and export declarations plus literal import() and
- * require() calls. Comments, strings, template text and regular-expression
- * literals are never edges. TypeScript resolves from the checkout being
- * packed first, so release controls copied without node_modules still find
- * it, and then from this script's own installation.
+ * Every JavaScript module the checkout holds under a directory the package
+ * ships modules from, but that the files list leaves out (pm-998juj).
  */
-export function createModuleImportLexer(
-  root,
-  resolutionBases = [path.join(root, "package.json"), fileURLToPath(import.meta.url)],
-) {
-  const ts = requireFirstResolvable("typescript", resolutionBases);
-  return (text) => {
-    const source = ts.createSourceFile("module.js", text, ts.ScriptTarget.Latest, false, ts.ScriptKind.JS);
-    const specifiers = [];
-    const visit = (node) => {
-      if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier !== undefined) {
-        specifiers.push(node.moduleSpecifier.text);
-      } else if (
-        ts.isCallExpression(node) &&
-        (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-          (ts.isIdentifier(node.expression) && node.expression.text === "require")) &&
-        node.arguments.length > 0 &&
-        ts.isStringLiteralLike(node.arguments[0])
-      ) {
-        specifiers.push(node.arguments[0].text);
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(source);
-    return specifiers;
+export function listExcludedModules(root, packedPaths) {
+  const packed = new Set(packedPaths);
+  const directories = new Set(
+    packedPaths
+      .filter((file) => MODULE_FILE.test(file) && !file.startsWith("node_modules/"))
+      .map((file) => file.split("/")[0])
+      .filter((top) => top !== undefined && !MODULE_FILE.test(top)),
+  );
+  const excluded = [];
+  const walk = (relative) => {
+    for (const entry of readdirSync(path.join(root, relative), { withFileTypes: true })) {
+      const child = `${relative}/${entry.name}`;
+      if (entry.isDirectory() && entry.name !== "node_modules") walk(child);
+      else if (entry.isFile() && MODULE_FILE.test(child) && !packed.has(child)) excluded.push(child);
+    }
   };
+  for (const directory of [...directories].sort()) walk(directory);
+  return excluded;
 }
 
 /**
- * Prove the staged module graph is closed (pm-998juj). The files list leaves
- * out tsc emit that no bin, export or shipped script reaches; every relative
- * static, re-export, side-effect, require or literal dynamic import in a
- * staged JavaScript module must therefore name another staged file, or the
- * pack refuses. Bundled runtime packages own their own graphs.
+ * Prove no staged module refers to a module the package excludes. Every
+ * quoted relative reference from a staged JavaScript module to an excluded
+ * module refuses the pack, whether it is a static, dynamic or require import
+ * or a worker path built from a string. The check fails closed: a comment or
+ * string that spells an excluded module's path refuses too. It needs no
+ * parser, so release controls copied without node_modules still run it.
  */
-export function findUnresolvedModuleImports(paths, readText, lex) {
-  const packed = new Set(paths);
-  const unresolved = [];
-  for (const file of paths) {
-    if (!/\.[cm]?js$/u.test(file) || file.startsWith("node_modules/")) continue;
-    for (const specifier of lex(readText(file))) {
-      if (!/^\.{1,2}\//u.test(specifier)) continue;
-      const target = path.posix.join(path.posix.dirname(file), specifier);
-      if (!packed.has(target)) unresolved.push(`${file} -> ${specifier}`);
+export function findExcludedModuleReferences(packedPaths, excludedPaths, readText) {
+  const excluded = new Set(excludedPaths);
+  const references = [];
+  for (const file of packedPaths) {
+    if (!MODULE_FILE.test(file) || file.startsWith("node_modules/")) continue;
+    // Resolve every quoted relative string, so non-canonical spellings such as
+    // "../sdk/x.js" from inside sdk/ name the same excluded module.
+    for (const [, , specifier] of readText(file).matchAll(QUOTED_RELATIVE_PATH)) {
+      if (excluded.has(path.posix.join(path.posix.dirname(file), specifier))) {
+        references.push(`${file} -> ${specifier}`);
+      }
     }
   }
-  return unresolved;
+  return [...new Set(references)];
 }
 
 /** Stage first-party files with compact JSON and markdown tables, retaining values and readable checkout bytes. */
@@ -539,14 +523,15 @@ function packLeasedDistribution(root, options) {
       ),
     );
     stageSourceFiles(root, stage, manifest, sourceReport.files);
-    const unresolvedImports = findUnresolvedModuleImports(
-      sourceReport.files.map((file) => file.path),
+    const packedPaths = sourceReport.files.map((file) => file.path);
+    const excludedReferences = findExcludedModuleReferences(
+      packedPaths,
+      listExcludedModules(root, packedPaths),
       (file) => readFileSync(path.join(stage, file), "utf8"),
-      createModuleImportLexer(root),
     );
-    if (unresolvedImports.length > 0)
+    if (excludedReferences.length > 0)
       throw new Error(
-        `Packed modules import files the package excludes:\n${unresolvedImports.join("\n")}`,
+        `Packed modules import files the package excludes:\n${excludedReferences.join("\n")}`,
       );
     stageRuntime(root, stage, manifest, ledger);
     const published = structuredClone(manifest);

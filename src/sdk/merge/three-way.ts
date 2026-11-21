@@ -309,27 +309,43 @@ function historyBridgeRepairIdentity(entry: HistoryEntry): string | null {
 }
 
 /**
- * A union interleaves both branches before re-anchoring, so a bridge from
- * either side no longer names a break of the merged stream and dissolves.
- * Mark every record a verified bridge covers on either original branch
- * replay_inexact first, matched by the same identity the union deduplicates
- * on, so the merged stream keeps refusing those versions (GH-1715).
+ * Identities of the records either branch can no longer present as historical
+ * states: those a bridge covers (located from its own commitments) and those a
+ * dissolved bridge already marked replay_inexact. Every merge result carries
+ * the marker on its copy, whichever side's copy it keeps (GH-1715).
  */
-function markBridgedUnionEntries(
-  merged: HistoryEntry[],
+function collectInexactUnionIdentities(
   ours: HistoryEntry[],
   theirs: HistoryEntry[],
-): HistoryEntry[] {
+  bridgesDissolve: boolean,
+): Set<string> {
   const covered = new Set<string>();
   for (const side of [ours, theirs]) {
-    const interior = collectBridgedInteriorIndexes(locateBridgedSegments(side).segments);
-    for (const index of interior) covered.add(historyEntryIdentity(side[index]!));
+    // A path that keeps live bridges must not mark their segments, or it would void their digests.
+    const interior = bridgesDissolve
+      ? collectBridgedInteriorIndexes(locateBridgedSegments(side).segments)
+      : new Set<number>();
+    side.forEach((entry, index) => {
+      if (interior.has(index) || entry.replay_inexact === true) {
+        covered.add(historyEntryIdentity(entry));
+      }
+    });
   }
-  return merged.map((entry) =>
-    covered.has(historyEntryIdentity(entry)) && entry.replay_inexact !== true
-      ? resealHistoryRewrite(entry, { ...entry, replay_inexact: true }, { retainPriorRecord: true })
-      : entry,
-  );
+  return covered;
+}
+
+/** Mark the retained copy of every inexact record; reports whether anything changed. */
+function markInexactUnionEntries(
+  entries: HistoryEntry[],
+  covered: ReadonlySet<string>,
+): { entries: HistoryEntry[]; changed: boolean } {
+  let changed = false;
+  const marked = entries.map((entry) => {
+    if (entry.replay_inexact === true || !covered.has(historyEntryIdentity(entry))) return entry;
+    changed = true;
+    return resealHistoryRewrite(entry, { ...entry, replay_inexact: true }, { retainPriorRecord: true });
+  });
+  return { entries: marked, changed };
 }
 
 /**
@@ -403,10 +419,13 @@ export function mergeHistoryStreams(
     );
   }
   const shared = commonHistoryPrefixLength(ours, theirs);
+  const covered = collectInexactUnionIdentities(ours, theirs, false);
+  /** Keep a side's exact bytes unless the other side proves one of its records inexact. */
+  const keepSide = (entries: HistoryEntry[]) => historyEntriesToRaw(markInexactUnionEntries(entries, covered).entries);
 
   if (shared === ours.length && shared === theirs.length) {
     return {
-      merged: historyEntriesToRaw(ours),
+      merged: keepSide(ours),
       strategy: "identical",
       common_entries: shared,
       entries_from_ours: 0,
@@ -417,7 +436,7 @@ export function mergeHistoryStreams(
   }
   if (shared === theirs.length) {
     return {
-      merged: historyEntriesToRaw(ours),
+      merged: keepSide(ours),
       strategy: "fast_forward_ours",
       common_entries: shared,
       entries_from_ours: ours.length - shared,
@@ -428,7 +447,7 @@ export function mergeHistoryStreams(
   }
   if (shared === ours.length) {
     return {
-      merged: historyEntriesToRaw(theirs),
+      merged: keepSide(theirs),
       strategy: "fast_forward_theirs",
       common_entries: shared,
       entries_from_ours: 0,
@@ -442,8 +461,11 @@ export function mergeHistoryStreams(
   const neutralBridge = mergeEquivalentBridges(ours, theirs, shared);
   if (neutralBridge !== null) {
     const separator = oursRaw.endsWith("\n") ? "" : "\n";
+    const oursMarked = markInexactUnionEntries(ours, covered);
     return {
-      merged: `${oursRaw}${separator}${JSON.stringify(neutralBridge)}\n`,
+      merged: oursMarked.changed
+        ? historyEntriesToRaw([...oursMarked.entries, neutralBridge])
+        : `${oursRaw}${separator}${JSON.stringify(neutralBridge)}\n`,
       strategy: "equivalent_bridges",
       common_entries: shared,
       entries_from_ours: 1,
@@ -458,7 +480,10 @@ export function mergeHistoryStreams(
     .filter((entry) => !seenIdentities.has(historyEntryIdentity(entry)));
   const mergedSuffix = orderHistoryUnionSuffix(oursSuffix, theirs.slice(shared), theirsSuffix, seenIdentities);
   const reanchored = reanchorHistoryEntries(
-    markBridgedUnionEntries([...ours.slice(0, shared), ...mergedSuffix], ours, theirs),
+    markInexactUnionEntries(
+      [...ours.slice(0, shared), ...mergedSuffix],
+      collectInexactUnionIdentities(ours, theirs, true),
+    ).entries,
     undefined,
     { continuousHashSurface: true, projectPatch: historyUnionPatchProjection(ours, theirs, shared) },
   );

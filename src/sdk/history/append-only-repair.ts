@@ -136,29 +136,51 @@ interface AppendedRecordSurface {
 }
 
 /**
- * Anchor on the hash surface the stream already uses: the newest epoch a
- * record declares, otherwise the epoch the verified part proves (the whole
- * stream, or the prefix before the first break). A bridge therefore never
- * downgrades a declared epoch-3 tail or an implicit epoch-2 stream to epoch 1.
+ * Anchor on the hash surface the stream already uses. A declared epoch wins:
+ * the newest one a record declares. An implicit stream keeps the epoch its
+ * verified part proves (the whole stream, or the prefix before the first
+ * break) when the tail's own anchor agrees. When the tail proves only other
+ * epochs it takes the newest of them, and when nothing proves the tail's
+ * epoch the surface is ambiguous and the repair refuses instead of guessing.
  */
 function resolveAppendedRecordSurface(
+  id: string,
   entries: HistoryEntry[],
   firstBreak: number | null,
+  finalReplay: ReplayDocument,
+  itemReplay: ReplayDocument | null,
 ): AppendedRecordSurface {
+  const algorithm = resolveHistoryHashAlgorithm(entries.at(-1)!.hash_algorithm);
   const declared = [...entries].reverse().find((entry) =>
     (SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly unknown[]).includes(entry.item_hash_version),
   )?.item_hash_version as HistoryItemHashVersion | undefined;
+  if (declared !== undefined) {
+    return { itemHashVersion: declared, explicitVersion: true, algorithm };
+  }
   const verified = firstBreak === null ? entries : entries.slice(0, firstBreak);
   // A verified nonempty chain always proves its epoch; every other verdict was refused earlier.
-  const itemHashVersion =
-    declared ?? verifyHistoryChainWithVersion(verified).item_hash_version!;
-  return {
-    itemHashVersion,
-    explicitVersion:
-      itemHashVersion !== 1 ||
-      entries.some((entry) => entry.item_hash_version !== undefined),
-    algorithm: resolveHistoryHashAlgorithm(entries.at(-1)!.hash_algorithm),
-  };
+  const prefixVersion = verifyHistoryChainWithVersion(verified).item_hash_version!;
+  const tail = entries.at(-1)!.after_hash;
+  const proven = SUPPORTED_HISTORY_ITEM_HASH_VERSIONS.filter((version) =>
+    [finalReplay, itemReplay].some(
+      (document) =>
+        document !== null &&
+        replayHashVerificationCandidates(document, version, algorithm).includes(tail),
+    ),
+  );
+  let itemHashVersion: HistoryItemHashVersion = prefixVersion;
+  if (!proven.includes(prefixVersion)) {
+    if (proven.length === 0) {
+      refuseAppendOnly(
+        id,
+        "hash_surface_ambiguous",
+        `History for ${id} declares no hash epoch, and neither replay nor the on-disk item proves its last record's epoch.`,
+      );
+    }
+    // Epochs that hash this tail identically: keep the newest, which covers the most fields.
+    itemHashVersion = proven.at(-1)!;
+  }
+  return { itemHashVersion, explicitVersion: itemHashVersion !== 1, algorithm };
 }
 
 /**
@@ -318,7 +340,8 @@ async function appendRepairRecord(
       );
     }
     const separator = raw === "" || raw.endsWith("\n") ? "" : "\n";
-    await handle.appendFile(`${separator}${JSON.stringify(record)}\n`);
+    const appended = `${separator}${JSON.stringify(record)}\n`;
+    await handle.appendFile(appended);
     await handle.sync();
     const [written, current] = [await handle.stat(), await statPath(historyPath).catch(() => null)];
     if (current === null || current.ino !== written.ino || current.dev !== written.dev) {
@@ -326,6 +349,20 @@ async function appendRepairRecord(
         id,
         "stream_changed",
         `History for ${id} was replaced while the repair appended; the bridge was not recorded, retry.`,
+      );
+    }
+    // A writer that ignores pm's lock can still append between the check and
+    // this write; O_APPEND keeps its bytes, so report the stale bridge instead
+    // of rolling anything back. Writers that share the lock cannot race here.
+    const { bytesRead, buffer } = await handle.read({
+      buffer: Buffer.alloc(bytes.length + Buffer.byteLength(appended) + 1),
+      position: 0,
+    });
+    if (buffer.subarray(0, bytesRead).toString("utf8") !== `${raw}${appended}`) {
+      refuseAppendOnly(
+        id,
+        "stream_changed",
+        `History for ${id} received another write while the repair appended; run pm health to re-verify the stream.`,
       );
     }
   } finally {
@@ -382,7 +419,7 @@ export function buildAppendOnlyRepairPlan(
       : helpers.analyzeDiscard(entries, finalReplay, itemReplay);
   const reconcile = reconciliation !== undefined;
   const changed = breaks.length > 0 || reconcile;
-  const surface = resolveAppendedRecordSurface(entries, firstBreak);
+  const surface = resolveAppendedRecordSurface(id, entries, firstBreak, finalReplay, itemReplay);
   const appended = changed
     ? buildAppendedRepairRecord({
         id,

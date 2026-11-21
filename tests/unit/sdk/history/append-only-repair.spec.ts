@@ -121,6 +121,23 @@ describe("append-only repair hash surfaces", () => {
     );
   });
 
+  it("takes the epoch an implicit tail proves over its prefix's, and refuses when nothing proves it", () => {
+    const created = document("Created", ordered);
+    const edited = document("Edited outside pm", ordered);
+    const renamed = { ...edited, metadata: { ...edited.metadata, priority: 0 } } as ItemDocument;
+    // An epoch-1 prefix, then an unversioned record a transitional epoch-2 writer anchored.
+    const legacy = entry(null, created);
+    legacy.after_hash = hashDocumentForVersion(created, 1);
+    const entries = [legacy, entry(edited, renamed)];
+    expect(verifyHistoryChainWithVersion(entries.slice(0, 1))).toMatchObject({ ok: true, item_hash_version: 1 });
+    const plan = buildAppendOnlyRepairPlan(subject, {}, snapshot(entries, renamed), helpers);
+    expect(plan.rewrittenEntries.at(-1)).toMatchObject({ item_hash_version: 3, after_hash: hashDocumentForVersion(renamed, 3) });
+    const drifted = { ...renamed, metadata: { ...renamed.metadata, title: "Changed again" } } as ItemDocument;
+    expect(() => buildAppendOnlyRepairPlan(subject, {}, snapshot(entries, drifted), helpers)).toThrow(
+      /neither replay nor the on-disk item proves its last record's epoch/,
+    );
+  });
+
   it("keeps the epoch an implicit stream's verified prefix proves when bridging it", () => {
     const created = document("Created", ordered);
     const edited = document("Edited outside pm", ordered);
@@ -171,6 +188,15 @@ describe("append-only repair hash surfaces", () => {
       await expect(
         _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, removed),
       ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
+      // A writer that ignores pm's lock appends between the check and the write.
+      const peer = async (target: string) => {
+        await fsPromises.appendFile(target, '{"peer":true}\n');
+        return fsPromises.stat(target);
+      };
+      await expect(
+        _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, peer),
+      ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
+      expect(await readFile(file, "utf8")).toContain('{"peer":true}');
       const sameInode = (await fsPromises.stat(file)).ino;
       await expect(
         _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, async () => ({ ino: sameInode, dev: -1 })),

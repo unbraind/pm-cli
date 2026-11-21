@@ -10,7 +10,8 @@ import {
   matchesHistoryBreak,
   readHistoryBridge,
 } from "../../../../src/core/history/bridge.js";
-import type { HistoryEntry } from "../../../../src/types/index.js";
+import { tryApplyReplayPatch } from "../../../../src/core/history/replay.js";
+import type { HistoryEntry, HistoryPatchOp } from "../../../../src/types/index.js";
 
 const descriptor = { gap_from: "a".repeat(64), gap_to: "b".repeat(64), record_hash: null };
 const segment_digest = "9".repeat(64);
@@ -77,10 +78,31 @@ describe("history bridge envelope", () => {
     });
     const stream = [first, ...covered, bridge];
     expect(locateBridgedSegments(stream)).toEqual({ segments: [{ start: 1, end: 3 }], unlocated: [] });
-    // A digest that does not match, a malformed envelope, and a bridge with nothing before it stay unlocated.
+    // A digest that no longer matches still locates by the break's anchors; a malformed envelope,
+    // a break whose anchors are gone and a bridge with nothing before it stay unlocated and
+    // contribute the conservative range since the previous bridge.
     const wrongDigest = entry({ bridge: { version: 1, breaks: [descriptor], segment_digest } });
     const malformed = entry({ bridge: { version: 1 } });
-    expect(locateBridgedSegments([first, ...covered, wrongDigest, malformed])).toEqual({ segments: [], unlocated: [3, 4] });
-    expect(locateBridgedSegments([bridge])).toEqual({ segments: [], unlocated: [0] });
+    expect(locateBridgedSegments([first, ...covered, wrongDigest, malformed])).toEqual({
+      segments: [{ start: 1, end: 3 }, { start: 4, end: 4 }],
+      unlocated: [4],
+    });
+    const lostAnchors = entry({ bridge: { version: 1, breaks: [{ ...descriptor, gap_from: "0".repeat(64) }], segment_digest } });
+    expect(locateBridgedSegments([first, ...covered, lostAnchors])).toEqual({ segments: [{ start: 1, end: 3 }], unlocated: [3] });
+    expect(locateBridgedSegments([first, entry({ before_hash: descriptor.gap_to }), ...covered, bridge]).segments).toEqual([{ start: 1, end: 4 }]);
+    expect(locateBridgedSegments([bridge])).toEqual({ segments: [{ start: 1, end: 0 }], unlocated: [0] });
+    // Several anchor matches without a matching digest: the first one locates the segment.
+    const repeated = [first, broken, first, broken, wrongDigest];
+    expect(locateBridgedSegments(repeated).segments).toEqual([{ start: 1, end: 4 }]);
+  });
+
+  it("never lets replay mutate the recorded patch it applies", () => {
+    const patch: HistoryPatchOp[] = [
+      { op: "add", path: "/metadata/nested", value: { a: 1 } },
+      { op: "replace", path: "/metadata/nested/a", value: 2 },
+    ];
+    const applied = tryApplyReplayPatch({ metadata: {}, body: "" }, patch);
+    expect(applied.ok && applied.document.metadata.nested).toEqual({ a: 2 });
+    expect(patch[0]!.value).toEqual({ a: 1 });
   });
 });

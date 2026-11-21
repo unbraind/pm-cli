@@ -146,6 +146,11 @@ describe("append-only history repair (GH-1715)", () => {
         [[...entries.slice(0, 4), stripSeal(entries[4]!, { message: "rewritten without a seal" }), ...entries.slice(5)], "bridge_segment_mismatch"],
         // Inside a bridge only recorded links are checked, so every covered record must be complete.
         [[...entries.slice(0, 4), stripSeal(entries[4]!, { patch: undefined as never }), ...entries.slice(5)], "record_incomplete"],
+        // A covered record's anchors must be well-formed digests of its algorithm.
+        [[...entries.slice(0, 4), stripSeal(entries[4]!, { after_hash: "zz" }), ...entries.slice(5)], "record_incomplete"],
+        [[...entries.slice(0, 4), stripSeal(entries[4]!, { hash_algorithm: "md5" }), ...entries.slice(5)], "record_incomplete"],
+        // The closing record keeps the epoch the stream declared.
+        [withBridge({ item_hash_version: 1 }), "bridge_epoch_mismatch"],
         // The bridge record itself must be complete too.
         [withBridge({ patch: undefined as never }), "record_incomplete"],
         // An incomplete break entry never opens a bridged segment.
@@ -354,6 +359,17 @@ describe("append-only history repair (GH-1715)", () => {
       expect(mergedEntries.at(-1)).toMatchObject({ patch: [], message: "second clone" });
       expect(mergedEntries.at(-1)?.reanchor_evidence?.at(-1)?.record?.bridge).toBeDefined();
 
+      // A marker the other clone already carries on a shared record survives the equivalent-bridge merge.
+      const theirsEntries = theirs.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      const theirsMarked = historyEntriesToRaw(
+        theirsEntries.map((entry, index) => (index === 1 ? reseal(entry, { replay_inexact: true }) : entry)),
+      );
+      const markedMerge = mergeHistoryStreams(base, ours, theirsMarked);
+      expect(markedMerge.strategy).toBe("equivalent_bridges");
+      const markedEntries = markedMerge.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      expect(markedEntries[1]).toMatchObject({ replay_inexact: true });
+      expect(verifyHistoryChainWithVersion(markedEntries).ok).toBe(true);
+
       // The merge appends to ours' exact bytes, even with CRLF line endings.
       const oursCrlf = ours.replace(/\n/gu, "\r\n");
       expect(mergeHistoryStreams(base, oursCrlf, theirs).merged.startsWith(oursCrlf)).toBe(true);
@@ -393,7 +409,8 @@ describe("append-only history repair (GH-1715)", () => {
         { projectPatch: (entry) => entry.patch },
       );
       expect(projected.entries.some((entry) => Object.hasOwn(entry, "bridge"))).toBe(false);
-      expect(projected.entries.map((entry) => entry.replay_inexact === true)).toEqual([false, false, true, true, false]);
+      // A projected rewrite leaves marking to its caller: the merge driver marks each branch's covered records first.
+      expect(projected.entries.some((entry) => entry.replay_inexact === true)).toBe(false);
       expect(projected.entries.at(-1)?.reanchor_evidence?.at(-1)?.record?.bridge).toBeDefined();
       expect(verifyHistoryChainWithVersion(projected.entries).ok).toBe(true);
 
@@ -476,6 +493,23 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
     });
   });
 
+  it("marks everything since the previous bridge when a rewrite meets a bridge it cannot locate", async () => {
+    await withTempPmPath(async (context) => {
+      await breakChain(context);
+      await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
+      const file = paths(context).history;
+      const entries = await readHistoryEntries(file, ID);
+      const bridge = entries.at(-1)!;
+      const forged = reseal(bridge, { bridge: { ...bridge.bridge!, breaks: [{ ...bridge.bridge!.breaks[0]!, gap_from: "0".repeat(64) }] } });
+      await writeFile(file, historyEntriesToRaw([...entries.slice(0, -1), forged]));
+      await runHistoryRepair(ID, {}, { path: context.pmPath });
+      const repaired = await readHistoryEntries(file, ID);
+      expect(verifyHistoryChainWithVersion(repaired).ok).toBe(true);
+      expect(repaired.map((entry) => entry.replay_inexact === true).slice(0, 5)).toEqual([false, true, true, true, false]);
+      await expect(runRestore(ID, "1", { dryRun: true } as never, { path: context.pmPath })).resolves.toBeDefined();
+    });
+  });
+
   it("refuses to redact a stream whose bridge does not locate its segment", async () => {
     await withTempPmPath(async (context) => {
       await breakChain(context);
@@ -511,6 +545,15 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
         strategy = "refused";
       }
       expect(strategy).not.toBe("identical");
+      // A record one branch already marked inexact keeps the marker, even when the merge keeps the other copy.
+      const baseEntries = base.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      const markedTheirs = historyEntriesToRaw(
+        baseEntries.map((entry, index) => (index === 2 ? reseal(entry, { replay_inexact: true }) : entry)),
+      );
+      const identical = mergeHistoryStreams(base, base, markedTheirs);
+      expect(identical.strategy).toBe("identical");
+      const identicalEntries = identical.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      expect(identicalEntries[2]).toMatchObject({ replay_inexact: true });
       // A second drifted stream switches health to bulk remedies; the chain mismatch stays append-only.
       await writeFile(paths(context).history, base);
       createTaskFixture(context, "pm-bridge-two", "Second stream");

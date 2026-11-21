@@ -218,8 +218,14 @@ export function normalizeReplayPatchOps(
   if (!Array.isArray(patch)) {
     return [];
   }
+  // Values are copied: applying an operation inserts its value into the
+  // replay document, and a later operation of the same patch would otherwise
+  // mutate the recorded entry itself before its digest or seal is checked.
   return patch.filter(isHistoryPatchOp).map((operation) => ({
     ...operation,
+    ...(Object.hasOwn(operation, "value")
+      ? { value: structuredClone(operation.value) }
+      : {}),
     path: normalizeReplayPatchPath(operation.path),
     from:
       typeof operation.from === "string"
@@ -374,6 +380,24 @@ function matchReplayEpochCandidates(
   return matches;
 }
 
+/**
+ * Whether a record can be covered by a bridge: complete, with item anchors
+ * that are well-formed digests of its algorithm. A bridged segment checks
+ * recorded links instead of replayed states, so a malformed anchor would
+ * otherwise be certified.
+ */
+function isBridgeableRecord(entry: HistoryEntry): boolean {
+  if (!isCompleteHistoryRecord(entry)) return false;
+  let length: number;
+  try {
+    length = resolveHistoryHashAlgorithm(entry.hash_algorithm) === "sha512" ? 128 : 64;
+  } catch {
+    return false;
+  }
+  const digest = new RegExp(`^[a-f0-9]{${length}}$`, "u");
+  return digest.test(entry.before_hash) && digest.test(entry.after_hash);
+}
+
 /** Zero-based inclusive range of entries closed by one verified bridge. */
 export interface HistoryBridgedSegment {
   /** First entry after the first named break. */
@@ -398,7 +422,7 @@ function openBridgedSegment(
   entries: HistoryEntry[],
   index: number,
 ): OpenBridgedSegment | undefined {
-  if (index === 0 || !isCompleteHistoryRecord(entries[index])) return undefined;
+  if (index === 0 || !isBridgeableRecord(entries[index])) return undefined;
   const closer = findNextHistoryBridge(entries, index);
   if (closer < 0) return undefined;
   const bridge = readHistoryBridge(entries[closer]);
@@ -431,7 +455,7 @@ function verifyBridgedInteriorEntry(
 ): BridgedEntryVerdict {
   const entry = entries[index];
   const previous = entries[index - 1];
-  if (!isCompleteHistoryRecord(entry)) return { ok: false, error: "record_incomplete" };
+  if (!isBridgeableRecord(entry)) return { ok: false, error: "record_incomplete" };
   const input = verifyHistoryEntryInput(entry, replay);
   if (!input.ok) return input;
   const matches = candidates.map((version) =>
@@ -464,7 +488,7 @@ function verifyBridgeCloser(
   candidates: HistoryItemHashVersion[],
 ): BridgedEntryVerdict {
   const entry = entries[index];
-  if (!isCompleteHistoryRecord(entry)) return { ok: false, error: "record_incomplete" };
+  if (!isBridgeableRecord(entry)) return { ok: false, error: "record_incomplete" };
   const input = verifyHistoryEntryInput(entry, replay);
   if (!input.ok) return input;
   if (segment.next !== segment.bridge.breaks.length) {
@@ -524,6 +548,15 @@ function stepBridgedSegment(
 ): string | undefined {
   const segment = walk.segment!;
   const entry = entries[index];
+  // The closing repair record keeps the epoch the stream declared; it may not
+  // re-anchor on a weaker surface than the records it covers.
+  if (
+    index === segment.closer &&
+    walk.authoritativeExplicitVersion !== undefined &&
+    entry.item_hash_version !== walk.authoritativeExplicitVersion
+  ) {
+    return "bridge_epoch_mismatch";
+  }
   const verify =
     index < segment.closer ? verifyBridgedInteriorEntry : verifyBridgeCloser;
   const bridged = verify(
@@ -852,8 +885,12 @@ function indexBridgedSegments(
         : [],
     ),
     // Located, not only verified: a rewrite that repairs a record before the
-    // bridge still dissolves it, and must keep its versions refused.
-    inexact: collectBridgedInteriorIndexes(locateBridgedSegments(entries).segments),
+    // bridge still dissolves it, and must keep its versions refused. A
+    // projected rewrite (a merge union) interleaves branches, so its caller
+    // marks covered records from each original branch before re-anchoring.
+    inexact: collectBridgedInteriorIndexes(
+      options.projectPatch === undefined ? locateBridgedSegments(entries).segments : [],
+    ),
   };
 }
 

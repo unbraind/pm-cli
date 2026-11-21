@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { compactMarkdownTables, createModuleImportLexer, exportedDeclarationClosure, findUnresolvedModuleImports, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, exportedDeclarationClosure, findExcludedModuleReferences, listExcludedModules, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -327,39 +327,45 @@ it("publishes only the dist declarations an exported types entry reaches, leavin
   expect(unmapped).toEqual(expect.arrayContaining(["dist/index.d.ts", "dist/value.d.ts", "dist/internal.d.ts", "types/ambient.d.ts"]));
 }, 60_000);
 
-it("proves the staged module graph is closed with a comment- and string-aware lexer (pm-998juj)", () => {
+it("refuses any quoted relative reference from a packed module to an excluded module (pm-998juj)", () => {
   const files: Record<string, string> = {
     "dist/cli.js": [
-      'import{a}from"./sdk/kept.mjs";export*from "./sdk/kept.mjs";import"./sdk/kept.mjs";',
+      'import{a}from"./sdk/kept.mjs";',
       'import b from /* comment */ "./sdk/hidden.js";',
-      '// import "./sdk/commented.js"',
-      'const template = `import c from "./index.ts"`;',
-      'const lazy = await import(`./sdk/${name}.js`);',
-      'const json = require("./data.json");',
-      'import node from "node:fs";',
-      'const pattern = /import".\\/x"/;',
-      'export { k } from "./sdk/kept.mjs"; export { local };',
+      "const worker = new URL('./sdk/worker.js', import.meta.url);",
+      "const lazy = await import(`./sdk/${name}.js`);",
+      'const pattern = /import".\\/sdk\\/excluded.cjs"/;',
+      'const text = "see ./sdk/hidden.js";',
     ].join("\n"),
-    "dist/sdk/kept.mjs": 'export const k = await import("../sdk/excluded.cjs");',
-    "node_modules/dep/index.js": 'import "./missing.js";',
-    "docs/README.md": 'import "./not-code.js"',
+    "dist/sdk/kept.mjs": 'export const k = await import("../sdk/excluded.cjs"); import "./../sdk/excluded.cjs";',
+    "node_modules/dep/index.js": 'import "../../dist/sdk/hidden.js";',
+    "docs/README.md": 'import "./dist/sdk/hidden.js"',
   };
   const read = (file: string): string => files[file]!;
-  const lex = createModuleImportLexer(process.cwd());
-  expect(findUnresolvedModuleImports(Object.keys(files), read, lex)).toEqual([
+  const excluded = ["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js"];
+  expect(findExcludedModuleReferences(Object.keys(files), excluded, read)).toEqual([
     "dist/cli.js -> ./sdk/hidden.js",
-    "dist/cli.js -> ./data.json",
+    "dist/cli.js -> ./sdk/worker.js",
     "dist/sdk/kept.mjs -> ../sdk/excluded.cjs",
+    "dist/sdk/kept.mjs -> ./../sdk/excluded.cjs",
   ]);
-  expect(
-    findUnresolvedModuleImports([...Object.keys(files), "dist/sdk/hidden.js", "dist/data.json", "dist/sdk/excluded.cjs"], (file) => files[file] ?? "", lex),
-  ).toEqual([]);
-  // TypeScript resolves from the packed checkout first, then from the script's own installation.
-  expect(createModuleImportLexer(path.join(tmpdir(), "pm-no-typescript-root"))('import "./x.js"')).toEqual(["./x.js"]);
-  expect(() => createModuleImportLexer("/", [path.join(tmpdir(), "pm-no-typescript-root", "package.json")])).toThrow(
-    "Packing needs typescript to prove import closure",
-  );
-  expect(() => createModuleImportLexer("/", ["\0invalid"])).toThrow();
+  expect(findExcludedModuleReferences(Object.keys(files), ["dist/sdk/unreferenced.js"], read)).toEqual([]);
+});
+
+it("lists the modules a checkout holds under shipped module directories but the package leaves out (pm-998juj)", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "pm-excluded-modules-"));
+  try {
+    for (const file of ["dist/cli.js", "dist/sdk/index.js", "dist/sdk/kept.mjs", "dist/sdk/readme.md", "dist/node_modules/dep/index.js", "scripts/build.mjs", "scripts/private.mjs", "src/index.js", "top.js"]) {
+      await mkdir(path.dirname(path.join(root, file)), { recursive: true });
+      await writeFile(path.join(root, file), "");
+    }
+    expect(listExcludedModules(root, ["dist/cli.js", "dist/sdk/kept.mjs", "scripts/build.mjs", "top.js", "node_modules/dep/index.js", "README.md"]).sort()).toEqual([
+      "dist/sdk/index.js",
+      "scripts/private.mjs",
+    ]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 it("refuses to pack a module that imports a file the files list excludes (pm-998juj)", async () => {
