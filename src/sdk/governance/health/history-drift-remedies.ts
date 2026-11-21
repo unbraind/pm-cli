@@ -27,13 +27,20 @@ export interface UnbridgeableChainMismatch {
 const CHAIN_MISMATCH = "history_drift_chain_mismatch";
 const CHAIN_UNBRIDGEABLE = "history_drift_chain_unbridgeable";
 const CHAIN_UNREPAIRABLE = "history_drift_chain_unrepairable";
-const VERSION_SKEW = "history_drift_version_skew";
-/** Streams a bulk repair cannot repair, so its row would fail. */
-const BULK_BLOCKING_CODES = ["history_drift_unreadable_stream", CHAIN_UNREPAIRABLE, VERSION_SKEW];
+const HASH_MISMATCH = "history_drift_hash_mismatch";
+/**
+ * Streams a bulk repair must not run on: it would fail the row of an
+ * unreadable, unrepairable or version-skewed stream, and it would reconcile a
+ * receipt-attributed stream without the merge audit its receipt requires.
+ */
+const BULK_BLOCKING_CODES = [
+  "history_drift_unreadable_stream",
+  CHAIN_UNREPAIRABLE,
+  "history_drift_version_skew",
+  "history_drift_merge_receipt",
+];
 /** Codes `pm history-repair --all --append-only` repairs on every stream it names. */
 const APPEND_ONLY_BULK_CODES = new Set([CHAIN_MISMATCH, "history_drift_missing_stream"]);
-/** Codes whose remedy is not a history repair. */
-const NON_REPAIR_CODES = new Set(["history_drift_merge_receipt"]);
 
 /** Read a string array detail written by the history-drift check. */
 function stringList(value: unknown): string[] {
@@ -89,32 +96,49 @@ export async function findUnbridgeableChainMismatches(
   return unbridgeable;
 }
 
+/** Rewrite one chain- or hash-mismatch warning; other warnings pass through. */
+function reviseDriftWarning(
+  warning: string,
+  chainCodeById: ReadonlyMap<string, string | null>,
+  withoutRepairAdvice: ReadonlySet<string>,
+): string[] {
+  if (warning.startsWith(`${CHAIN_MISMATCH}:`)) {
+    const id = warning.slice(CHAIN_MISMATCH.length + 1);
+    const code = chainCodeById.get(id);
+    if (code === null) return [];
+    return [code === undefined ? warning : `${code}:${id}`];
+  }
+  if (warning.startsWith(`${HASH_MISMATCH}:`)) {
+    return withoutRepairAdvice.has(warning.slice(HASH_MISMATCH.length + 1)) ? [] : [warning];
+  }
+  return [warning];
+}
+
 /**
  * Report each unbridgeable chain mismatch under its own code so health
- * advises the repair that works. A version-skewed stream keeps only its
- * version-skew warning: its chain verdict is this runtime's misreading, and
- * neither repair applies until pm is upgraded.
+ * advises the repair that works. A stream no repair can keep, and a stream a
+ * newer pm wrote, keep only that verdict: their chain- and hash-mismatch
+ * warnings would advise a repair that refuses, so they are dropped from the
+ * advice while `details` keeps the scan's evidence.
  */
 export function applyUnbridgeableChainMismatches(
   historyDriftCheck: { check: HealthCheck; warnings: string[] },
   unbridgeable: UnbridgeableChainMismatch[],
 ): void {
-  const skewed = new Set(stringList(historyDriftCheck.check.details.version_skews));
-  const codeById = new Map<string, string | null>([
-    ...[...skewed].map((id): [string, null] => [id, null]),
+  const skewed = stringList(historyDriftCheck.check.details.version_skews);
+  const chainCodeById = new Map<string, string | null>([
+    ...skewed.map((id): [string, null] => [id, null]),
     ...unbridgeable.map((row): [string, string] => [
       row.id,
       row.rewrite_refusal === undefined ? CHAIN_UNBRIDGEABLE : CHAIN_UNREPAIRABLE,
     ]),
   ]);
+  const withoutRepairAdvice = new Set([
+    ...skewed,
+    ...unbridgeable.filter((row) => row.rewrite_refusal !== undefined).map((row) => row.id),
+  ]);
   historyDriftCheck.warnings = historyDriftCheck.warnings
-    .flatMap((warning) => {
-      if (!warning.startsWith(`${CHAIN_MISMATCH}:`)) return [warning];
-      const id = warning.slice(CHAIN_MISMATCH.length + 1);
-      const code = codeById.get(id);
-      if (code === null) return [];
-      return [code === undefined ? warning : `${code}:${id}`];
-    })
+    .flatMap((warning) => reviseDriftWarning(warning, chainCodeById, withoutRepairAdvice))
     .sort((left, right) => left.localeCompare(right));
   if (unbridgeable.length === 0) return;
   historyDriftCheck.check.details = {
@@ -125,21 +149,18 @@ export function applyUnbridgeableChainMismatches(
 
 /**
  * Bulk history-drift remedies when more than one stream drifted. Both bulk
- * forms run on every drifted stream, and a stream that the decoder refuses,
- * that no repair can keep, or that a newer hash epoch wrote fails its row, so
- * while one is present every remedy stays per item. `--all --append-only` is the bulk remedy only when every drifted
- * stream is a bridgeable chain mismatch or a missing stream. Otherwise a
- * bridgeable chain mismatch keeps its per-item append-only remedy, the
- * non-repair remedies stay as they are, and the rest share
+ * forms run on every drifted stream, so while one of them is a stream the
+ * bulk run must not touch (BULK_BLOCKING_CODES) every remedy stays per item.
+ * `--all --append-only` is the bulk remedy only when every drifted stream is
+ * a bridgeable chain mismatch or a missing stream. Otherwise a bridgeable
+ * chain mismatch keeps its per-item append-only remedy and the rest share
  * `pm history-repair --all`.
  */
 export function rewriteBulkHistoryDriftRemediation(
   remediationMap: Record<string, string>,
 ): void {
   if (BULK_BLOCKING_CODES.some((code) => Object.hasOwn(remediationMap, code))) return;
-  const codes = Object.keys(remediationMap).filter(
-    (code) => !NON_REPAIR_CODES.has(code),
-  );
+  const codes = Object.keys(remediationMap);
   const appendOnlyBulk = codes.every((code) => APPEND_ONLY_BULK_CODES.has(code));
   for (const code of codes) {
     if (appendOnlyBulk) {

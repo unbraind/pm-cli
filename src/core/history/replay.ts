@@ -746,6 +746,10 @@ function tryApplySingleOp(
       true,
       false,
     ).newDocument as unknown;
+    // A root replacement that leaves no object cannot be an item state; skip it like any unappliable op.
+    if (typeof applied !== "object" || applied === null || Array.isArray(applied)) {
+      return { ok: false };
+    }
     return { ok: true, document: applied };
   } catch {
     return { ok: false };

@@ -17,6 +17,7 @@ import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
+  SUPPORTED_HISTORY_RECORD_HASH_VERSIONS,
   hashDocumentVerificationCandidates,
   type HistoryItemHashVersion,
 } from "./history.js";
@@ -250,7 +251,10 @@ async function scanWorkspaceHistory(
 function hasUnsupportedHistoryCapability(entry: HistoryEntry): boolean {
   return !READABLE_HISTORY_HASH_ALGORITHMS.has(entry.hash_algorithm) ||
     (entry.item_hash_version !== undefined &&
-      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(entry.item_hash_version));
+      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(entry.item_hash_version)) ||
+    // A newer record seal format is unreadable here, not a mismatch (pm-3os5p6).
+    (entry.record_hash_version !== undefined &&
+      !(SUPPORTED_HISTORY_RECORD_HASH_VERSIONS as readonly unknown[]).includes(entry.record_hash_version));
 }
 
 /** Read and fully verify one history stream's hash chain. Returns null for an empty/missing stream (caller records it as a missing stream). */

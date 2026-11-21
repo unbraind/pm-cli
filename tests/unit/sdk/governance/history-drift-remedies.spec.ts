@@ -67,15 +67,24 @@ describe("history drift remedies", () => {
       "history_drift_chain_mismatch:pm-skew",
       "history_drift_version_skew:pm-skew",
     ]);
+    check.warnings.push(
+      "history_drift_hash_mismatch:pm-a",
+      "history_drift_hash_mismatch:pm-b",
+      "history_drift_hash_mismatch:pm-skew",
+      "history_drift_workspace_state_mismatch:a:b.json",
+    );
     applyUnbridgeableChainMismatches(check, [
       { id: "pm-a", reason: "patch_does_not_replay" },
       { id: "pm-b", reason: "chain_failure_not_a_break", rewrite_refusal: "record_hash_mismatch" },
     ]);
+    // An unrepairable or skewed stream keeps only its verdict; a rewritable one keeps its hash advice.
     expect(check.warnings).toEqual([
       "history_drift_chain_mismatch:pm-c",
       "history_drift_chain_unbridgeable:pm-a",
       "history_drift_chain_unrepairable:pm-b",
+      "history_drift_hash_mismatch:pm-a",
       "history_drift_version_skew:pm-skew",
+      "history_drift_workspace_state_mismatch:a:b.json",
     ]);
     expect(check.check.details.chain_unbridgeable).toHaveLength(2);
     // With nothing refused, the details stay as the scan wrote them.
@@ -94,11 +103,9 @@ describe("history drift remedies", () => {
     expect(bulk({
       history_drift_chain_mismatch: "pm history-repair <id> --append-only",
       history_drift_missing_stream: "pm history-repair <id>",
-      history_drift_merge_receipt: "pm merge reconcile",
     })).toEqual({
       history_drift_chain_mismatch: "pm history-repair --all --append-only",
       history_drift_missing_stream: "pm history-repair --all --append-only",
-      history_drift_merge_receipt: "pm merge reconcile",
     });
     expect(bulk({
       history_drift_chain_mismatch: "pm history-repair <id> --append-only",
@@ -113,6 +120,7 @@ describe("history drift remedies", () => {
       "history_drift_unreadable_stream",
       "history_drift_chain_unrepairable",
       "history_drift_version_skew",
+      "history_drift_merge_receipt",
     ]) {
       const codes = { history_drift_hash_mismatch: "pm history-repair <id>", [blocking]: "per item" };
       expect(bulk(codes)).toEqual(codes);

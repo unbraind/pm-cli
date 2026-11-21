@@ -9,10 +9,10 @@
  * lost: the receipt says so, and version 1 is the item as of the repair.
  */
 import { createHistoryEntry, CURRENT_HISTORY_ITEM_HASH_VERSION } from "../../core/history/history.js";
-import { writeHistoryRawWithRollback } from "../../core/history/history-rewrite.js";
+import { appendRecordToVerifiedStream } from "./append-only-repair.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../../core/shared/constants.js";
 import { nowIso } from "../../core/shared/time.js";
-import type { HistoryEntry, ItemDocument } from "../../types/index.js";
+import type { ItemDocument } from "../../types/index.js";
 import type { HistorySubject } from "./subject.js";
 import type {
   HistoryMaintenancePlan,
@@ -31,17 +31,12 @@ export interface HistoryRepairReseedReceipt {
   prior_versions: "unrecorded";
 }
 
-/** Keep every existing byte and add the record as the stream's first line. */
-function appendFirstRecord(raw: string | null, record: HistoryEntry): string {
-  const kept = raw ?? "";
-  const separator = kept === "" || kept.endsWith("\n") ? "" : "\n";
-  return `${kept}${separator}${JSON.stringify(record)}\n`;
-}
-
 /**
  * Plan the baseline record for a live item's absent or record-less stream.
  * Both repair modes use it: the stream holds no recorded line to rewrite, so
- * appending the baseline keeps every existing byte.
+ * the baseline is appended through O_APPEND after any whitespace the stream
+ * held (or the stream is created exclusively), and bytes another writer
+ * added are never replaced.
  */
 export function buildHistoryReseedPlan(
   subject: HistorySubject,
@@ -71,13 +66,9 @@ export function buildHistoryReseedPlan(
   return {
     changed: true,
     rewrittenEntries: [record],
-    /** Write the baseline after the bytes the shared under-lock check verified. */
+    /** Append the baseline to the bytes the shared under-lock check verified. */
     applyRewrite: async (verified) =>
-      writeHistoryRawWithRollback({
-        historyPath: subject.historyPath,
-        historyRawUnderLock: verified.historyRawUnderLock,
-        nextHistoryRaw: appendFirstRecord(verified.historyRawUnderLock, record),
-      }),
+      appendRecordToVerifiedStream(subject.id, subject.historyPath, verified.historyRawUnderLock, record),
     report: ({ verification, warnings }) => ({
       id: subject.id,
       dry_run: dryRun,
@@ -104,7 +95,8 @@ export function buildHistoryReseedPlan(
         matched_chain_before: false,
       },
       provenance_normalization: {
-        requested: false,
+        // A record-less stream has no provenance to normalize; the request is still reported.
+        requested: options.normalizeProvenance === true,
         changed: false,
         events_changed: 0,
         observations_removed: 0,

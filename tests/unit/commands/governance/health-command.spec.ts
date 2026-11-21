@@ -1507,11 +1507,12 @@ describe("runHealth", () => {
         expect.arrayContaining([
           `history_drift_missing_stream:${missingId}`,
           `history_drift_unreadable_stream:${unreadableId}`,
-          `history_drift_hash_mismatch:${mismatchId}`,
           // Neither repair can keep a sealed record edited without a reseal (pm-3os5p6).
           `history_drift_chain_unrepairable:${mismatchId}`,
         ]),
       );
+      // Its hash mismatch stays evidence in details but no longer advises a repair that refuses.
+      expect(health.warnings).not.toContain(`history_drift_hash_mismatch:${mismatchId}`);
 
       const historyDriftCheck = health.checks.find(
         (check) => check.name === "history_drift",

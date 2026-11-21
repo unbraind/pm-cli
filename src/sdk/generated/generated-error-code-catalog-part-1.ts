@@ -804,6 +804,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/history/read.ts"],
   },
   {
+    code: "history_record_version_unsupported",
+    exit_code: 4,
+    sources: ["sdk/history/reanchor-refusal.ts"],
+  },
+  {
     code: "history_redact_bridge_unlocated",
     exit_code: 1,
     sources: ["sdk/history-redact.ts"],
@@ -1399,11 +1404,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   },
   {
     code: "merge_driver_configuration_drift",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
-    code: "merge_driver_configuration_missing",
     exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],
   },

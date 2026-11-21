@@ -21,6 +21,17 @@ describe("reanchorOrRefuse", () => {
     }
   });
 
+  it("reports a newer record seal format as an upgrade, not a corruption", () => {
+    expect(() =>
+      reanchorOrRefuse("pm-a", () => {
+        throw new TypeError("unsupported_record_hash_version:entry_2");
+      }),
+    ).toThrow(expect.objectContaining({
+      code: "history_record_version_unsupported",
+      context: expect.objectContaining({ details: { entry: 2 }, nextSteps: [expect.stringContaining("npm install -g @unbrained/pm-cli@latest")] }),
+    }));
+  });
+
   it("rethrows failures that are not record integrity refusals", () => {
     const skew = new TypeError("unsupported_item_hash_version:99:entry_1");
     expect(() => reanchorOrRefuse("pm-a", () => { throw skew; })).toThrow(skew);

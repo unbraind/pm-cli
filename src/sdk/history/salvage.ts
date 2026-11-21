@@ -250,6 +250,23 @@ function judgeRetainedChain(scan: SalvageScan): {
   };
 }
 
+/** The digest the salvage record anchors with; a digest this pm cannot compute refuses typed. */
+function salvageHashAlgorithm(last: HistoryEntry): ReturnType<typeof resolveHistoryHashAlgorithm> {
+  try {
+    return resolveHistoryHashAlgorithm(last.hash_algorithm);
+  } catch {
+    throw new PmCliError(
+      "History salvage cannot anchor its record: the last kept record uses a digest algorithm this pm version cannot compute.",
+      EXIT_CODE.CONFLICT,
+      {
+        code: "history_salvage_refused",
+        required: "Upgrade pm to a version that reads the stream's digest algorithm; no bytes were changed.",
+        nextSteps: ["Run npm install -g @unbrained/pm-cli@latest, then preview the salvage again."],
+      },
+    );
+  }
+}
+
 /**
  * The kept bytes plus a `history_salvage` record anchored on the last kept
  * record. A stream left without a record has nothing to anchor on, so it is
@@ -265,7 +282,7 @@ function salvagedStream(
   if (last === undefined) return selected.prefix;
   // createHistoryEntry stamps the current epoch; the record keeps the stream's own, or none.
   const { item_hash_version: _stamped, ...entry } = createHistoryEntry({
-    hashAlgorithm: resolveHistoryHashAlgorithm(last.hash_algorithm),
+    hashAlgorithm: salvageHashAlgorithm(last),
     nowIso: nowIso(),
     author,
     op: "history_salvage",
@@ -283,14 +300,30 @@ function salvagedStream(
   return `${selected.prefix}${JSON.stringify(audit)}\n`;
 }
 
-/** Replay the retained records; a chain that does not verify replays leniently. */
-function replayRetainedRecords(selected: ReturnType<typeof inspectHistoryTail>): ReplayDocument {
-  if (selected.verification.ok && selected.entries.length > 0) {
-    return replayHistoryToTarget(selected.entries, selected.entries.length - 1);
+/** Refuse a stream whose replay names another item at any state, before a later delete could erase it. */
+function assertSalvageIdentity(id: string, replay: ReplayDocument): void {
+  if (typeof replay.metadata.id === "string" && replay.metadata.id !== id) {
+    throw new PmCliError(
+      "History belongs to another item; salvage refused.",
+      EXIT_CODE.CONFLICT,
+      { code: "history_salvage_refused" },
+    );
   }
+}
+
+/**
+ * Replay the retained records and check the item identity at every state.
+ * A chain that verifies uses strict replay for the final document; one that
+ * does not replays leniently.
+ */
+function replayRetainedRecords(id: string, selected: ReturnType<typeof inspectHistoryTail>): ReplayDocument {
   let replay = cloneEmptyReplayDocument();
   for (const entry of selected.entries) {
     replay = lenientApplyReplayPatch(replay, entry.patch).document;
+    assertSalvageIdentity(id, replay);
+  }
+  if (selected.verification.ok && selected.entries.length > 0) {
+    return replayHistoryToTarget(selected.entries, selected.entries.length - 1);
   }
   return replay;
 }
@@ -407,18 +440,9 @@ export async function salvageHistoryTail(params: {
     );
   await runActiveOnReadHooks({ path: subject.historyPath, scope: "project" });
   const selected = inspectHistoryTail(raw);
-  const replay = replayRetainedRecords(selected);
-  const document = replayToItemDocument(replay);
-  if (
-    typeof replay.metadata.id === "string" &&
-    replay.metadata.id !== subject.id
-  ) {
-    throw new PmCliError(
-      "History belongs to another item; salvage refused.",
-      EXIT_CODE.CONFLICT,
-      { code: "history_salvage_refused" },
-    );
-  }
+  const document = replayToItemDocument(replayRetainedRecords(subject.id, selected));
+  // Plan the salvaged stream now, so a preview refuses exactly where the write would.
+  const nextHistoryRaw = salvagedStream(selected, document, author, options.message);
   const ownership = await readSalvageOwnership(subject.located, settings, document);
   const warnings = checkHistoryRewriteOwnership({
     itemDocument: ownership.document,
@@ -464,7 +488,7 @@ export async function salvageHistoryTail(params: {
       await writeHistoryRawWithRollback({
         historyPath: subject.historyPath,
         historyRawUnderLock: raw,
-        nextHistoryRaw: salvagedStream(selected, document, author, options.message),
+        nextHistoryRaw,
       });
       // The item document is unchanged; advancing records this scope's committed write.
       advanceItemMutationPreconditions(params.pmRoot, live, subject.id);
@@ -487,9 +511,10 @@ function salvageFollowUp(subject: HistorySubject, selected: ReturnType<typeof in
   if (selected.entries.length === 0) {
     return subject.located === null ? [] : [`history_stream_empty:${subject.id}:run pm history-repair ${subject.id}`];
   }
+  // Health previews both repairs to choose; the append-only refusal itself names the rewriting preview.
   return selected.verification.ok
     ? []
-    : [`history_chain_unverified:${subject.id}:run pm history-repair ${subject.id} --append-only --dry-run`];
+    : [`history_chain_unverified:${subject.id}:run pm history-repair ${subject.id} --append-only --dry-run, or pm history-repair ${subject.id} --dry-run when a bridge refuses`];
 }
 
 /** Render the public repair result for a salvage preview or application. */

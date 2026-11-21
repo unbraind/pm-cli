@@ -86,12 +86,19 @@ chain whose damage it cannot see. It also removes lines whose JSON value is a
 null, a boolean or a number wherever they sit, because such a value cannot hold
 a record. Removing only such lines conceals nothing, so it does not require the
 chain to verify: a stream with both a scalar line and a chain break is salvaged
-first, the result reports `verify_ok: false` with the `verify_errors`, its
-`history_chain_unverified` warning names the append-only repair preview, and
-`pm history-repair <id> --append-only` then bridges the break. A record-less
-stream (only scalar lines) still refuses, and with nothing to discard salvage
-names the repair the chain needs. A broken stream that declares no hash epoch
-keeps its salvage record implicit too. A string,
+first, the result reports `verify_ok: false` with the `verify_errors`, and its
+`history_chain_unverified` warning names the append-only repair preview, with
+the rewriting preview for a break a bridge cannot repair. `pm history-repair
+<id> --append-only` then bridges the break. A stream of only scalar lines is
+salvaged to an empty stream without a salvage record, because no record is
+left to anchor one on. For a live item, the result's `history_stream_empty`
+warning names `pm history-repair <id>`, which rebuilds the stream (see below).
+With nothing to discard, salvage refuses and names the repair the chain needs.
+Salvage checks the item identity at every replayed state, so a stream that
+names another item anywhere refuses, even when a later delete cleared the id.
+The salvage record is planned before the lock, so a preview refuses wherever
+the write would, for example on a digest algorithm this pm cannot compute. A
+broken stream that declares no hash epoch keeps its salvage record implicit. A string,
 an array or a complete malformed object might encode one, so salvage refuses
 those. A truncated object at the tail, such as `{"ts":`, is part of the invalid
 suffix after the verified prefix and is discarded with it.
@@ -167,7 +174,12 @@ that applies only on top of the unrecorded change, is reported as
 `history_drift_chain_unbridgeable`. A stream neither repair can keep, such as
 one whose sealed record no longer matches its seal, is reported as
 `history_drift_chain_unrepairable`. Restore that one from version control:
-the rewriting repair refuses it with `history_record_integrity_invalid`.
+the rewriting repair refuses it with `history_record_integrity_invalid`. Such a
+stream, and one a newer pm wrote (`history_drift_version_skew`, including a
+record seal format this pm cannot read, which refuses with
+`history_record_version_unsupported`), keeps only that verdict: its chain- and
+hash-mismatch warnings would advise a repair that refuses, so health drops
+them from the advice while `details` keeps the evidence.
 Repair a bridgeable break append-only:
 
 ```bash
@@ -196,11 +208,14 @@ repair verified. If another writer that ignores pm's lock appends in the same
 moment, its bytes are kept and the repair reports `stream_changed`. Every earlier line stays
 byte-identical, so the stream before the repair remains a prefix of the
 repaired stream. Other clones, worktrees and append-only consumers keep the
-bytes they already hold. `--all --append-only` attempts every drifted stream,
-and a stream a bridge cannot repair, such as a missing one, refuses with a
-typed reason. When several streams drift and every one has a chain mismatch,
-`pm health` names it as the bulk remedy for `history_drift_chain_mismatch`;
-with other drift present it keeps the per-item `--append-only` remedy.
+bytes they already hold. `--all --append-only` attempts every drifted stream:
+it bridges each bridgeable break, rebuilds each missing stream, and refuses a
+stream a bridge cannot repair with a typed reason. When several streams drift
+and every one is a bridgeable chain mismatch or a missing stream, `pm health`
+names it as the bulk remedy. With other drift present a bridgeable mismatch
+keeps its per-item `--append-only` remedy, and while any stream is unreadable,
+unrepairable, written by a newer pm or attributed to a pending merge receipt,
+every remedy stays per item.
 
 Verification accepts a break exactly when the next bridge names it. Inside the
 bridged segment it checks the recorded links, and each further break must be

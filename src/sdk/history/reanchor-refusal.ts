@@ -10,7 +10,25 @@ import { PmCliError } from "../../core/shared/errors.js";
 
 /** Integrity failures re-anchoring refuses: a record whose seal or rewrite evidence no longer matches its content. */
 const RECORD_INTEGRITY_FAILURE =
-  /^(incomplete_record_hash_envelope|record_hash_mismatch|unsupported_record_hash_version|rewrite_evidence_[a-z_]+):entry_(\d+)$/u;
+  /^(incomplete_record_hash_envelope|record_hash_mismatch|rewrite_evidence_[a-z_]+):entry_(\d+)$/u;
+/** A record sealed in a format newer than this runtime reads. */
+const RECORD_VERSION_UNSUPPORTED = /^unsupported_record_hash_version:entry_(\d+)$/u;
+
+/** A newer pm wrote a seal this runtime cannot read; the fix is the upgrade, not a restore. */
+function recordVersionRefusal(id: string, entry: string): PmCliError {
+  return new PmCliError(
+    `History entry ${entry} of ${id} is sealed in a record format this pm version cannot read, so it cannot repair the stream.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "history_record_version_unsupported",
+      item_id: id,
+      reason: "unsupported_record_hash_version",
+      details: { entry: Number(entry) },
+      required: "Upgrade pm to a version that reads the stream's record format; no bytes were changed.",
+      nextSteps: ["Run npm install -g @unbrained/pm-cli@latest, then run pm health again."],
+    },
+  );
+}
 
 /**
  * Re-anchoring cannot tell whether a record's content or its seal is the
@@ -21,7 +39,10 @@ export function reanchorOrRefuse<T>(id: string, reanchor: () => T): T {
   try {
     return reanchor();
   } catch (error: unknown) {
-    const failure = error instanceof TypeError ? RECORD_INTEGRITY_FAILURE.exec(error.message) : null;
+    if (!(error instanceof TypeError)) throw error;
+    const unsupported = RECORD_VERSION_UNSUPPORTED.exec(error.message);
+    if (unsupported !== null) throw recordVersionRefusal(id, unsupported[1]!);
+    const failure = RECORD_INTEGRITY_FAILURE.exec(error.message);
     if (failure === null) throw error;
     throw new PmCliError(
       `History entry ${failure[2]} of ${id} no longer matches its seal (${failure[1]}), so a repair cannot tell which part of the record to keep.`,

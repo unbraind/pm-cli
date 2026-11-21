@@ -282,6 +282,67 @@ describe("history-drift remedies converge (pm-3os5p6)", () => {
   });
 });
 
+describe("review hardening of the advised remedies", () => {
+  it("reports a newer record seal format as version skew with the upgrade remedy only", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-seal-skew";
+      createTaskFixture(context, id, "Seal skew");
+      run(context, ["comments", id, "--add", "second"]);
+      const file = historyFile(context, id);
+      const lines = (await readFile(file, "utf8")).trimEnd().split("\n");
+      lines[1] = JSON.stringify({ ...(JSON.parse(lines[1]!) as HistoryEntry), record_hash_version: 2 });
+      await writeFile(file, `${lines.join("\n")}\n`);
+      const drift = await driftCheck(context);
+      expect(drift.warnings).toEqual([`history_drift_version_skew:${id}`]);
+      expect(drift.remedies).toEqual({ history_drift_version_skew: "npm install -g @unbrained/pm-cli@latest" });
+      await expect(runHistoryRepair(id, { dryRun: true }, { path: context.pmPath })).rejects.toMatchObject({
+        code: "history_record_version_unsupported",
+      });
+    });
+  });
+
+  it("refuses to salvage a stream that names another item before a delete cleared the id", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-other", "Other item");
+      const otherItem = itemFile(context, "pm-other");
+      await writeFile(otherItem, (await readFile(otherItem, "utf8")).replace(/^title: .*$/mu, "title: Edited outside pm"));
+      run(context, ["delete", "pm-other", "--force"]);
+      const foreign = await readFile(historyFile(context, "pm-other"), "utf8");
+      createTaskFixture(context, "pm-subject", "Subject");
+      await writeFile(historyFile(context, "pm-subject"), `${foreign}null\n`);
+      await expect(runHistoryRepair("pm-subject", { salvageTail: true, dryRun: true }, { path: context.pmPath })).rejects.toThrow(
+        /belongs to another item/u,
+      );
+    });
+  });
+
+  it("refuses a salvage preview whose record could not be anchored, as the write would", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-digest";
+      createTaskFixture(context, id, "Unknown digest");
+      const file = historyFile(context, id);
+      const [line] = (await readFile(file, "utf8")).trimEnd().split("\n");
+      await writeFile(file, `${JSON.stringify({ ...(JSON.parse(line!) as HistoryEntry), hash_algorithm: "blake9" })}\nnull\n`);
+      await expect(runHistoryRepair(id, { salvageTail: true, dryRun: true }, { path: context.pmPath })).rejects.toMatchObject({
+        code: "history_salvage_refused",
+        context: { nextSteps: [expect.stringContaining("npm install -g @unbrained/pm-cli@latest")] },
+      });
+    });
+  });
+
+  it("reports an explicit provenance normalization request on a rebuilt stream", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-reseed-normalize";
+      createTaskFixture(context, id, "Normalize request");
+      await writeFile(historyFile(context, id), "");
+      await expect(runHistoryRepair(id, { normalizeProvenance: true }, { path: context.pmPath })).resolves.toMatchObject({
+        reseed: { reason: "empty_stream" },
+        provenance_normalization: { requested: true, changed: false, events_changed: 0 },
+      });
+    });
+  });
+});
+
 describe("salvage of a stream that also has a chain break (pm-rpucvb)", () => {
   it("removes a scalar line without a verified chain, then the append-only repair bridges the break", async () => {
     await withTempPmPath(async (context) => {
@@ -295,7 +356,7 @@ describe("salvage of a stream that also has a chain break (pm-rpucvb)", () => {
         changed: true,
         salvage: { non_record_lines: 1, retained_entries: 2 },
         history: { verify_ok: false, verify_errors: [expect.stringContaining("before_hash_mismatch")] },
-        warnings: [expect.stringContaining(`pm history-repair ${id} --append-only`)],
+        warnings: [expect.stringContaining(`pm history-repair ${id} --append-only --dry-run, or pm history-repair ${id} --dry-run`)],
       });
       const salvaged = await readFile(file, "utf8");
       expect(salvaged.startsWith(broken)).toBe(true);

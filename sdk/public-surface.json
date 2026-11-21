@@ -41092,6 +41092,7 @@
     "history_merge_conflict_markers_detected",
     "history_record_integrity_invalid",
     "history_record_invalid",
+    "history_record_version_unsupported",
     "history_redact_bridge_unlocated",
     "history_replay_invalid",
     "history_salvage_refused",

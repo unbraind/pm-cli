@@ -51,6 +51,18 @@ function buildEntry(before: ReplayDocument, after: ReplayDocument, op = "update"
 }
 
 describe("history replay helpers", () => {
+  it("skips a lenient root replacement that would leave no item object", () => {
+    // A root replace with a non-object cannot be an item state (pm-rpucvb review).
+    for (const value of [null, 7, ["a"]]) {
+      expect(
+        lenientApplyReplayPatch({ metadata: { id: "pm-a" }, body: "b" }, [
+          { op: "replace", path: "", value } as never,
+          { op: "add", path: "/metadata/title", value: "kept" },
+        ]),
+      ).toEqual({ document: { metadata: { id: "pm-a", title: "kept" }, body: "b" }, convertedReplaceToAdd: 0, skippedOps: 1 });
+    }
+  });
+
   it("clones the empty replay document without aliasing the shared constant", () => {
     const clone = cloneEmptyReplayDocument();
     expect(clone).toEqual({ metadata: {}, body: "" });

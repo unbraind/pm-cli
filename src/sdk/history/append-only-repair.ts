@@ -9,7 +9,9 @@
  */
 import { isUtf8 } from "node:buffer";
 import { constants } from "node:fs";
-import { open, readFile, stat, type FileHandle } from "node:fs/promises";
+import { mkdir, open, readFile, stat, type FileHandle } from "node:fs/promises";
+import path from "node:path";
+import { invalidateHistoryDriftCacheForPath } from "../../core/history/drift-cache.js";
 import { isFileAbsentError } from "../../core/fs/fs-utils.js";
 import jsonPatch from "fast-json-patch";
 import {
@@ -410,6 +412,40 @@ async function appendRepairRecord(
   } finally {
     await handle.close();
   }
+}
+
+/** Create an absent stream exclusively, so a stream another writer created meanwhile is never replaced. */
+async function createStreamExclusively(id: string, historyPath: string, record: HistoryEntry): Promise<void> {
+  await mkdir(path.dirname(historyPath), { recursive: true });
+  const handle = await open(historyPath, "wx").catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+      refuseAppendOnly(id, "stream_changed", `History for ${id} was created after the repair verified it; retry.`);
+    }
+    throw error;
+  });
+  try {
+    await handle.writeFile(`${JSON.stringify(record)}\n`);
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+}
+
+/**
+ * Append one record to the exact bytes the shared under-lock check verified,
+ * through O_APPEND so bytes another writer added are never replaced; an
+ * absent stream is created exclusively (pm-3os5p6).
+ */
+export async function appendRecordToVerifiedStream(
+  id: string,
+  historyPath: string,
+  verifiedRaw: string | null,
+  record: HistoryEntry,
+): Promise<void> {
+  await (verifiedRaw === null
+    ? createStreamExclusively(id, historyPath, record)
+    : appendRepairRecord(id, historyPath, verifiedRaw, record));
+  await invalidateHistoryDriftCacheForPath(historyPath);
 }
 
 /** Refuse a stream whose bytes are not UTF-8 before planning, so a preview never offers a repair the write must refuse. */
