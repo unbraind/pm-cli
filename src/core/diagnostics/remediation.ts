@@ -315,7 +315,7 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     code: "history_drift_chain_mismatch",
     command: "pm history-repair <id> --append-only",
     summary:
-      "The item's history chain is broken; bridge each break with one appended record that keeps every recorded line byte-identical (pm history-repair <id> re-anchors the recorded entries instead, and --all repairs every drifted stream in one pass).",
+      "The item's history chain is broken; append one record that bridges every break in the stream and keeps every recorded line byte-identical (pm history-repair <id> re-anchors the recorded entries instead). With --all --append-only every drifted stream is attempted, and a stream a bridge cannot repair, such as a missing one, refuses with a typed reason.",
   },
   {
     code: "history_drift_version_skew",

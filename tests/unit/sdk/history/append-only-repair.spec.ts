@@ -188,7 +188,9 @@ describe("append-only repair hash surfaces", () => {
       await expect(
         _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, removed),
       ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
-      // A writer that ignores pm's lock appends between the check and the write.
+      // A writer that ignores pm's lock appends after the record's append and sync, before the readback.
+      // A write between the byte comparison and the append lands the same way under O_APPEND and is
+      // caught by the same readback; a change before the comparison refuses before anything is written.
       const peer = async (target: string) => {
         await fsPromises.appendFile(target, '{"peer":true}\n');
         return fsPromises.stat(target);

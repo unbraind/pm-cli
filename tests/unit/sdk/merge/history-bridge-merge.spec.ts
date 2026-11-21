@@ -56,6 +56,12 @@ describe("union marking by occurrence", () => {
     expect(_testOnly.repairRecursAfterRuns([repair], [later, repair])).toBe(true);
     expect(_testOnly.repairRecursAfterRuns([repair], [later, neutral])).toBe(true);
     expect(_testOnly.repairRecursAfterRuns([neutral], [later, repair])).toBe(true);
+    // A later marker reseal adds digest-only evidence; the copy still aliases its original.
+    const marked = { ...neutral, reanchor_evidence: [{ record: repair }, { prior_record_hash: "8".repeat(64) }] } as unknown as HistoryEntry;
+    expect(_testOnly.repairRecursAfterRuns([repair], [later, marked])).toBe(true);
+    // A plain no-op repair without evidence is its own identity.
+    const plain = record({ op: "history_repair", patch: [], ts: "2026-11-21T00:00:02.000Z" });
+    expect(_testOnly.repairRecursAfterRuns([repair], [plain])).toBe(false);
     expect(_testOnly.repairRecursAfterRuns([], [later, repair])).toBe(false);
     // A recurring repair keeps the recorded runs before any side is verified.
     expect(_testOnly.normalizationApplies([repair], [later, neutral], [])).toBe(false);

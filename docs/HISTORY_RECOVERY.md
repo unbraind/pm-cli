@@ -147,9 +147,11 @@ repair verified. If another writer that ignores pm's lock appends in the same
 moment, its bytes are kept and the repair reports `stream_changed`. Every earlier line stays
 byte-identical, so the stream before the repair remains a prefix of the
 repaired stream. Other clones, worktrees and append-only consumers keep the
-bytes they already hold. `--all --append-only` bridges every drifted stream, and
-when several streams drift `pm health` names it as the bulk remedy for
-`history_drift_chain_mismatch`.
+bytes they already hold. `--all --append-only` attempts every drifted stream,
+and a stream a bridge cannot repair, such as a missing one, refuses with a
+typed reason. When several streams drift and every one has a chain mismatch,
+`pm health` names it as the bulk remedy for `history_drift_chain_mismatch`;
+with other drift present it keeps the per-item `--append-only` remedy.
 
 Verification accepts a break exactly when the next bridge names it. Inside the
 bridged segment it checks the recorded links, and each further break must be

@@ -1,0 +1,20 @@
+id: pm-3os5p6
+title: "pm health advises pm history-repair for history_drift_missing_stream, but history-repair refuses a stream with no entries"
+description: "When an item's history stream is missing, pm health reports history_drift_missing_stream with the remedy pm history-repair <id>, rewritten to pm history-repair --all when several streams drift. history-repair cannot rebuild a missing stream: the --all row fails with 'No history entries exist for <id>; nothing to repair.' and the command exits 1. Found on PR #1762 while running the advised remedies on a mixed-drift fixture (one chain mismatch, one missing stream) in tests/integration/lifecycle/history-bridge.integration.spec.ts. The remedy registry entry lives in src/core/diagnostics/remediation.ts, and the bulk rewrite lives in rewriteBulkHealthRemediation in src/sdk/governance/health.ts. The fix names a command that actually rebuilds or records the missing stream, for example a baseline-reseed step, or a restore when an item can be rebuilt from history; it must also keep the bulk rewrite from advising --all for a code that --all cannot repair."
+type: Issue
+status: open
+priority: 2
+tags[4]: health,history,remediation,ux
+created_at: "2026-11-21T07:24:50.200Z"
+updated_at: "2026-11-21T07:24:50.200Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "An integration spec runs the remedy pm health names for a missing stream, per item and in bulk, and the history_drift check is ok afterwards"
+parent: pm-o2kc
+risk: low
+confidence: 85
+expected_result: "Every remedy pm health names for history_drift_missing_stream, per item and in bulk, runs to a clean history_drift check"
+actual_result: pm history-repair <id> and pm history-repair --all refuse the missing stream with 'No history entries exist; nothing to repair.' and exit 1
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1715,discovered_from,"2026-11-21T07:24:50.200Z","harness:claude-code","cli:create:dep",detected
+body: ""

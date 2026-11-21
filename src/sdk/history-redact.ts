@@ -518,11 +518,13 @@ function rewriteHistoryEntries(
   // bridged segment's recorded states: it dissolves each bridge and marks the
   // segment's entries replay_inexact so history reads keep refusing them.
   const located = locateBridgedSegments(entries);
-  // Redaction rewrites the live item from replay, so only a segment the
-  // bridge's intact commitments prove may be dissolved, never a fallback range.
-  if (located.unlocated.length > 0) {
+  // Redaction rewrites the live item from replay and removes each bridge, so
+  // only a segment whose digest still matches may be dissolved: never a
+  // fallback range, and never one located only through existing markers.
+  const unproven = [...located.unlocated, ...located.undigested];
+  if (unproven.length > 0) {
     throw new PmCliError(
-      `history-redact refuses a stream whose bridge at record ${located.unlocated[0]! + 1} does not prove its segment; repair the history first.`,
+      `history-redact refuses a stream whose bridge at record ${Math.min(...unproven) + 1} does not prove its segment; repair the history first.`,
       EXIT_CODE.GENERIC_FAILURE,
       {
         code: "history_redact_bridge_unlocated",

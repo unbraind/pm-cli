@@ -402,6 +402,18 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   expect(referencesIn("dist/cli.mjs", "import('./local#prod.js')", layoutsOf(["dist/local.js"], ["dist/local#prod.js"]))).toEqual([
     "dist/cli.mjs -> ./local#prod.js",
   ]);
+  // Escapes are decoded: the string value names the module, not its source spelling.
+  const escaped = layoutsOf(["dist/sdk/index.js"], []);
+  expect(referencesIn("dist/cli.js", 'import "./sdk/\\u0069ndex.js";', escaped)).toEqual(["dist/cli.js -> ./sdk/\\u0069ndex.js"]);
+  expect(referencesIn("dist/cli.js", 'import "./sdk/\\u{69}nde\\x78\\.js";', escaped)).toEqual(["dist/cli.js -> ./sdk/\\u{69}nde\\x78\\.js"]);
+  expect(referencesIn("dist/cli.js", 'import "./sdk/index.js";', escaped)).toEqual(["dist/cli.js -> ./sdk/index.js"]);
+  expect(referencesIn("dist/cli.js", 'import "./sdk/\\u{110000}index.js";', escaped)).toEqual([]);
+  // A string an expression transforms before loading is judged in both spellings.
+  const transformed = layoutsOf(["dist/sdk/graph.js"], []);
+  expect(referencesIn("dist/cli.js", "require('./sdk/graph.js?worker'.split('?')[0])", transformed)).toEqual([
+    "dist/cli.js -> ./sdk/graph.js?worker",
+  ]);
+  expect(referencesIn("dist/cli.js", "require('./sdk/graph.js?worker' /* literal */ )", transformed)).toEqual([]);
   // Node loads a packed sibling file before it consults a same-named directory.
   const precedence = layoutsOf(["dist/helper/package.json", "dist/helper/private.js"], ["dist/helper.js"], {
     "dist/helper/package.json": "private.js",
@@ -431,9 +443,18 @@ it("resolves a directory's package.json main as Node does and refuses one the pa
   // An empty main is ignored in favor of the directory index.
   const empty = layoutsOf(["dist/local/index.js"], ["dist/local.js", "dist/local/package.json"], { "dist/local/package.json": "" });
   expect(referencesIn("dist/cli.cjs", "require('./local/')", empty)).toEqual(["dist/cli.cjs -> ./local/"]);
-  // A main that leaves the package root or enters node_modules is runtime staging's concern, not this check's.
+  // A main that leaves the packed first-party tree refuses: the package cannot prove it loads.
   const external = layoutsOf(["node_modules/dep/index.js"], ["dist/local/package.json"], { "dist/local/package.json": "../../node_modules/dep/index.js" });
-  expect(referencesIn("dist/cli.cjs", "require('./local')", external)).toEqual([]);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", external)).toEqual(["dist/cli.cjs -> ./local"]);
+  // Node drops a trailing slash on the main before probing extensions.
+  const slashed = layoutsOf(["dist/local/entry/index.js"], ["dist/local.js", "dist/local/package.json", "dist/local/entry.js"], {
+    "dist/local/package.json": "./entry/",
+  });
+  expect(referencesIn("dist/cli.cjs", "require('./local/.')", slashed)).toEqual([]);
+  // A JSON or native module CommonJS selects is judged for require(), never for a plain string.
+  const json = layoutsOf(["dist/local.json", "dist/local/index.js"], []);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", json)).toEqual(["dist/cli.cjs -> ./local"]);
+  expect(referencesIn("dist/cli.cjs", "readFileSync('./local.json')", json)).toEqual([]);
   // A reference the checkout resolves to no module, or only to a non-module file, is not judged.
   expect(referencesIn("dist/cli.cjs", "require('./absent'); read('./notes.md')", layoutsOf(["dist/notes.md"], []))).toEqual([]);
 });

@@ -9,7 +9,7 @@
  */
 import { isUtf8 } from "node:buffer";
 import { constants } from "node:fs";
-import { open, readFile, stat } from "node:fs/promises";
+import { open, readFile, stat, type FileHandle } from "node:fs/promises";
 import { isFileAbsentError } from "../../core/fs/fs-utils.js";
 import jsonPatch from "fast-json-patch";
 import {
@@ -322,6 +322,18 @@ export interface AppendOnlyRepairHelpers {
 }
 
 /** Append the planned record to the exact bytes the shared under-lock check verified. */
+/** Read from position zero until EOF or `limit` bytes; a short read never ends it early. */
+async function readStreamPrefix(handle: FileHandle, limit: number): Promise<Buffer> {
+  const buffer = Buffer.alloc(limit);
+  let filled = 0;
+  while (filled < limit) {
+    const { bytesRead } = await handle.read({ buffer, offset: filled, length: limit - filled, position: filled });
+    if (bytesRead === 0) break;
+    filled += bytesRead;
+  }
+  return buffer.subarray(0, filled);
+}
+
 async function appendRepairRecord(
   id: string,
   historyPath: string,
@@ -374,11 +386,8 @@ async function appendRepairRecord(
     // A writer that ignores pm's lock can still append between the check and
     // this write; O_APPEND keeps its bytes, so report the stale bridge instead
     // of rolling anything back. Writers that share the lock cannot race here.
-    const { bytesRead, buffer } = await handle.read({
-      buffer: Buffer.alloc(bytes.length + Buffer.byteLength(appended) + 1),
-      position: 0,
-    });
-    if (buffer.subarray(0, bytesRead).toString("utf8") !== `${raw}${appended}`) {
+    const expected = Buffer.concat([bytes, Buffer.from(appended)]);
+    if (!(await readStreamPrefix(handle, expected.length + 1)).equals(expected)) {
       refuseAppendOnly(
         id,
         "stream_changed",

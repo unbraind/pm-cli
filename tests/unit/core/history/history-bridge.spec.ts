@@ -79,6 +79,7 @@ describe("history bridge envelope", () => {
     expect(locateBridgedSegments([first, ...covered, bridge])).toEqual({
       segments: [{ start: 1, end: 3, exact: true }],
       unlocated: [],
+      undigested: [],
     });
     // The break record's hash names the start even when the record before it lost its anchor.
     const named = entry({ before_hash: descriptor.gap_to, record_hash: "3".repeat(64) });
@@ -91,13 +92,14 @@ describe("history bridge envelope", () => {
     // Records a rewrite already marked keep their location after the marking voided the digest.
     const wrongDigest = entry({ bridge: { version: 1, breaks: [descriptor], segment_digest } });
     const marked = covered.map((record) => ({ ...record, replay_inexact: true as const }));
-    expect(locateBridgedSegments([first, ...marked, wrongDigest]).segments).toEqual([{ start: 1, end: 3, exact: true }]);
+    expect(locateBridgedSegments([first, ...marked, wrongDigest])).toMatchObject({ segments: [{ start: 1, end: 3, exact: true }], undigested: [3] });
     // Otherwise an unproven bridge contributes the conservative range since the last proven bridge;
     // an unproven bridge never moves that boundary, so it cannot hide an earlier segment start.
     const malformed = entry({ bridge: { version: 1 } });
     expect(locateBridgedSegments([first, ...covered, wrongDigest, malformed])).toEqual({
       segments: [{ start: 1, end: 3, exact: false }, { start: 1, end: 4, exact: false }],
       unlocated: [3, 4],
+      undigested: [],
     });
     expect(locateBridgedSegments([first, ...covered, bridge, malformed]).segments).toEqual([
       { start: 1, end: 3, exact: true },
@@ -107,11 +109,20 @@ describe("history bridge envelope", () => {
     expect(locateBridgedSegments([first, ...covered, lostAnchors])).toEqual({
       segments: [{ start: 1, end: 3, exact: false }],
       unlocated: [3],
+      undigested: [],
     });
-    expect(locateBridgedSegments([bridge])).toEqual({ segments: [{ start: 1, end: 0, exact: false }], unlocated: [0] });
+    expect(locateBridgedSegments([bridge])).toEqual({ segments: [{ start: 1, end: 0, exact: false }], unlocated: [0], undigested: [] });
     // A digest algorithm this build cannot compute leaves the bridge unlocated instead of throwing.
     const unknownAlgorithm = { ...bridge, hash_algorithm: "sha999" } as HistoryEntry;
     expect(locateBridgedSegments([first, ...covered, unknownAlgorithm]).unlocated).toEqual([3]);
+  });
+
+  it("digests every own key, including one named __proto__, independent of key order", () => {
+    const withContext = (json: string) => entry({ context: JSON.parse(json) as Record<string, unknown> });
+    const original = digestBridgedSegment([withContext('{"__proto__":{"a":1},"b":2}')], {});
+    expect(digestBridgedSegment([withContext('{"__proto__":{"a":2},"b":2}')], {})).not.toBe(original);
+    expect(digestBridgedSegment([withContext('{"b":2,"__proto__":{"a":1}}')], {})).toBe(original);
+    expect(digestBridgedSegment([entry({ message: undefined, patch: [null as never] })], {})).toBe(digestBridgedSegment([entry({ patch: [null as never] })], {}));
   });
 
   it("never lets replay mutate the recorded patch it applies", () => {

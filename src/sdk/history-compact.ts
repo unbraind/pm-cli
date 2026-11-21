@@ -308,6 +308,27 @@ function assertPrunedRecordsJudgeable(entries: readonly HistoryEntry[], compactC
  * unrecorded change and the bridge that names it (GH-1715), whose replayed
  * state lacks that change.
  */
+/**
+ * Timestamp guidance around a bridged segment. A cutoff compacts the leading
+ * records older than it, so a later cutoff must pass every timestamp through
+ * the bridge, however they are ordered. Only a timestamp cutoff reaches this,
+ * and its scan already parsed the leading records, so the latest is finite.
+ */
+function timestampBoundaryGuidance(
+  entries: HistoryEntry[],
+  segment: { start: number; end: number },
+): [string, string, string] {
+  const earliest = entries[segment.start]!.ts;
+  const latest = new Date(
+    Math.max(...entries.slice(0, segment.end + 1).map((entry) => Date.parse(entry.ts)).filter(Number.isFinite)),
+  ).toISOString();
+  return [
+    "that boundary",
+    `Choose a --before timestamp at or before "${earliest}", or after "${latest}".`,
+    `Run pm history-compact <id> --before "${earliest}", or with a timestamp after "${latest}".`,
+  ];
+}
+
 function assertReconstructableCompactBoundary(entries: HistoryEntry[], compactCount: number): void {
   const checkpoint = compactCount - 1;
   const segment = (verifyHistoryChainWithVersion(entries).bridged_segments ?? []).find(
@@ -319,11 +340,7 @@ function assertReconstructableCompactBoundary(entries: HistoryEntry[], compactCo
   const offset = historyVersionOffset(entries, true);
   const [checkpointName, required, nextStep] =
     offset === null
-      ? [
-          "that boundary",
-          `Choose a --before timestamp at or before "${entries[segment.start]!.ts}", or after "${entries[segment.end]!.ts}".`,
-          `Run pm history-compact <id> --before "${entries[segment.start]!.ts}", or with a timestamp after "${entries[segment.end]!.ts}".`,
-        ]
+      ? timestampBoundaryGuidance(entries, segment)
       : [
           `version ${offset + compactCount}`,
           `Choose --before ${offset + segment.start + 1} or lower, or --before ${offset + segment.end + 2} or higher.`,

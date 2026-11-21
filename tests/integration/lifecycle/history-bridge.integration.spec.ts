@@ -6,6 +6,7 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { readHistoryEntries } from "../../../src/core/history/read.js";
+import { locateBridgedSegments } from "../../../src/core/history/bridge.js";
 import { sealHistoryRecord } from "../../../src/core/history/history.js";
 import {
   historyEntriesToRaw,
@@ -569,6 +570,14 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       await expect(runHistoryRedact(ID, { literal: "first" }, { path: context.pmPath })).rejects.toMatchObject({
         context: { code: "history_redact_bridge_unlocated" },
       });
+      // Covered records already marked locate the segment for reads, but redaction still needs the digest.
+      const premarked = [...entries.slice(0, 2), ...entries.slice(2, 4).map((entry) => reseal(entry, { replay_inexact: true })), entries.at(-1)!];
+      expect(locateBridgedSegments(premarked)).toMatchObject({ unlocated: [], undigested: [4] });
+      await writeFile(file, historyEntriesToRaw(premarked));
+      await expect(runHistoryRedact(ID, { literal: "first" }, { path: context.pmPath })).rejects.toMatchObject({
+        context: { code: "history_redact_bridge_unlocated" },
+      });
+      await writeFile(file, historyEntriesToRaw(edited));
       await runHistoryRepair(ID, {}, { path: context.pmPath });
       const repaired = await readHistoryEntries(file, ID);
       expect(verifyHistoryChainWithVersion(repaired).ok).toBe(true);
@@ -716,15 +725,40 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       // A second drifted stream switches health to bulk remedies; the chain mismatch stays append-only.
       await writeFile(paths(context).history, base);
       createTaskFixture(context, "pm-bridge-two", "Second stream");
-      await rm(path.join(context.pmPath, "history", "pm-bridge-two.jsonl"));
+      const second = path.join(context.pmPath, "tasks", "pm-bridge-two.toon");
+      await writeFile(second, (await readFile(second, "utf8")).replace(/^title: .*$/mu, "title: Edited outside pm only"));
       const health = await runHealth({ path: context.pmPath });
       const drift = health.checks.find((check) => check.name === "history_drift")?.details as
         | { remediation_map?: Record<string, string> }
         | undefined;
-      expect(drift?.remediation_map).toMatchObject({
-        history_drift_chain_mismatch: "pm history-repair --all --append-only",
-        history_drift_missing_stream: "pm history-repair --all",
-      });
+      // With other drift present, --all --append-only would also run on streams a bridge does not repair, so the per-item remedy stays.
+      expect(drift?.remediation_map).toMatchObject({ history_drift_chain_mismatch: "pm history-repair <id> --append-only" });
+      expect(Object.entries(drift?.remediation_map ?? {}).filter(([code]) => code !== "history_drift_chain_mismatch").map(([, remedy]) => remedy)).toEqual([
+        "pm history-repair --all",
+      ]);
+      // Running the advised remedies leaves health clean and the bridged stream's earlier bytes intact.
+      await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
+      const bulk = context.runCli(["history-repair", "--all", "--json"], { expectJson: true });
+      expect(bulk.code, `${bulk.stderr}${bulk.stdout}`).toBe(0);
+      expect(await readFile(paths(context).history, "utf8")).toContain(base);
+      const healed = await runHealth({ path: context.pmPath });
+      expect(healed.checks.find((check) => check.name === "history_drift")?.status).toBe("ok");
+      // When every drifted stream has a chain mismatch, the bulk remedy is append-only and repairs them all.
+      for (const id of [ID, "pm-bridge-two"]) {
+        const item = path.join(context.pmPath, "tasks", `${id}.toon`);
+        await writeFile(item, (await readFile(item, "utf8")).replace(/^title: .*$/mu, "title: Edited outside pm again"));
+        const recorded = context.runCli(["comments", id, "--add", "after the edit", "--json"], { expectJson: true });
+        expect(recorded.code, recorded.stderr).toBe(0);
+      }
+      const chainOnly = await runHealth({ path: context.pmPath });
+      const chainDrift = chainOnly.checks.find((check) => check.name === "history_drift")?.details as
+        | { remediation_map?: Record<string, string> }
+        | undefined;
+      expect(chainDrift?.remediation_map).toEqual({ history_drift_chain_mismatch: "pm history-repair --all --append-only" });
+      const bridged = context.runCli(["history-repair", "--all", "--append-only", "--json"], { expectJson: true });
+      expect(bridged.code, bridged.stderr).toBe(0);
+      const clean = await runHealth({ path: context.pmPath });
+      expect(clean.checks.find((check) => check.name === "history_drift")?.status).toBe("ok");
     });
   });
 
@@ -795,6 +829,14 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const reverseNext = await readFile(history, "utf8");
       const third = mergeHistoryStreams(base, oursNext, reverseNext);
       const thirdEntries = third.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      // Both independent repairs survive the reciprocal merge, each once.
+      const repairTimes = [ours, theirs]
+        .map((stream) => JSON.parse(stream.trimEnd().split("\n").at(-1)!) as HistoryEntry)
+        .map((repair) => `${repair.ts}|${repair.author}`);
+      expect(new Set(repairTimes).size).toBe(2);
+      expect(thirdEntries.filter((entry) => entry.op === "history_repair").map((entry) => `${entry.ts}|${entry.author}`).sort()).toEqual(
+        [...repairTimes].sort(),
+      );
       // Receipts keep the original coordinates: four shared records, the rest from each side.
       expect(third).toMatchObject({ common_entries: 4, entries_total: thirdEntries.length });
       expect(third.common_entries + third.entries_from_ours + third.entries_from_theirs).toBe(thirdEntries.length);
@@ -820,6 +862,8 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       expect(verifyHistoryChainWithVersion(markedEntries).ok).toBe(true);
       expect(verifyHistoryChainWithVersion(thirdEntries).ok).toBe(true);
       expect(thirdEntries.filter((entry) => Object.hasOwn(entry, "bridge"))).toHaveLength(0);
+      // Only the records the break left unrecorded are refused; the repair that restored the state is not.
+      expect(thirdEntries.map((entry) => entry.replay_inexact === true).slice(0, 6)).toEqual([false, false, true, true, false, false]);
       expect(third.merged).toContain('"text":"ours next"');
       expect(third.merged).toContain('"text":"reverse next"');
       // A side that does not verify is never normalized; the union refuses its broken record.

@@ -406,23 +406,47 @@ function resolveModule(layout, target, directoryOnly) {
   if (file !== undefined) return file;
   const main = layout.main(path.posix.join(target, "package.json"));
   // Node ignores an empty main and falls back to the directory index.
-  const entry = main === undefined || main.length === 0 ? undefined : path.posix.join(target, main);
+  // Node resolves the main as a path, so a trailing slash on it is dropped too.
+  const entry =
+    main === undefined || main.length === 0 ? undefined : path.posix.join(target, main).replace(/(.)\/+$/u, "$1");
   return (
     (entry === undefined ? undefined : (resolveModuleFile(layout, entry) ?? resolveModuleIndex(layout, entry))) ??
     resolveModuleIndex(layout, target)
   );
 }
 
+const SKIPPED_TRIVIA = String.raw`(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*`;
+const LOADER_BEFORE = new RegExp(String.raw`(?:\b(require)\s*\(|\b(import)\s*\(|\bfrom|\bimport)${SKIPPED_TRIVIA}$`, "u");
+const ARGUMENT_END = new RegExp(String.raw`^${SKIPPED_TRIVIA}[),]`, "u");
+
 /**
- * The loader whose argument the quoted string at `index` is: "require" for a
- * require() call, "import" for an import clause or import() call, or null.
- * Comments between the call and the string are skipped.
+ * The loader whose whole specifier the quoted string spanning `start` to
+ * `end` is: "require" for a require() argument, "import" for an import
+ * clause or an import() argument, or null. A call argument the string only
+ * begins (an expression transforms it before loading) is null, so both
+ * spellings are judged. Comments around the string are skipped.
  */
-function loaderKind(text, index) {
-  const before = text.slice(Math.max(0, index - 400), index).replace(/\/\*[\s\S]*?\*\//gu, " ");
-  const loader = /(?:\b(require)\s*\(|\bimport\s*\(|\bfrom|\bimport)(?:\s|\/\/[^\n]*\n)*$/u.exec(before);
+function loaderKind(text, start, end) {
+  const loader = LOADER_BEFORE.exec(text.slice(Math.max(0, start - 400), start));
   if (loader === null) return null;
+  const call = loader[1] ?? loader[2];
+  if (call !== undefined && !ARGUMENT_END.test(text.slice(end, end + 400))) return null;
   return loader[1] === undefined ? "import" : "require";
+}
+
+/**
+ * The value of a quoted specifier with its JavaScript escapes decoded, so
+ * "./\u0069ndex.js" names "./index.js". An escape outside Unicode stays as written.
+ */
+function decodeSpecifier(raw) {
+  return raw.replace(
+    /\\(?:u\{([0-9a-fA-F]+)\}|u([0-9a-fA-F]{4})|x([0-9a-fA-F]{2})|([\s\S]))/gu,
+    (escape, braced, unicode, hex, other) => {
+      if (other !== undefined) return other;
+      const point = Number.parseInt(braced ?? unicode ?? hex, 16);
+      return point <= 0x10ffff ? String.fromCodePoint(point) : escape;
+    },
+  );
 }
 
 /**
@@ -462,8 +486,8 @@ export function findExcludedModuleReferences(packedPaths, layouts, readText) {
     const text = readText(file);
     for (const match of text.matchAll(QUOTED_RELATIVE_PATH)) {
       const specifier = match[2];
-      const loader = loaderKind(text, match.index);
-      const dangling = specifierSpellings(specifier, loader)
+      const loader = loaderKind(text, match.index, match.index + match[0].length);
+      const dangling = specifierSpellings(decodeSpecifier(specifier), loader)
         .filter((pathname) => loader !== null || !/^(?:\.{1,2}\/)+$/u.test(pathname))
         .some((pathname) => {
           const target = path.posix.join(path.posix.dirname(file), pathname).replace(/(.)\/+$/u, "$1");
@@ -471,10 +495,10 @@ export function findExcludedModuleReferences(packedPaths, layouts, readText) {
           // A trailing "/", "/." or "/.." names a directory, never a same-named sibling file.
           const directoryOnly = /\/(?:\.{1,2})?$/u.test(pathname);
           const loaded = resolveModule(layouts.checkout, target, directoryOnly);
+          // A directory main that leaves the packed first-party tree refuses: the package cannot prove it loads.
           return (
             loaded !== undefined &&
-            MODULE_FILE.test(loaded) &&
-            isFirstPartyTarget(loaded) &&
+            (MODULE_FILE.test(loaded) || (loader === "require" && /\.(?:json|node)$/u.test(loaded))) &&
             resolveModule(layouts.package, target, directoryOnly) !== loaded
           );
         });

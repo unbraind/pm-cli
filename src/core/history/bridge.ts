@@ -9,7 +9,6 @@
  * re-anchors replay on the bridge's own after_hash.
  */
 import { historyDigest, resolveHistoryHashAlgorithm } from "./digest.js";
-import { stableStringify } from "../shared/serialization.js";
 import type {
   HistoryBridge,
   HistoryBridgeBreak,
@@ -100,9 +99,24 @@ export function digestBridgedSegment(
   bridge: Pick<HistoryEntry, "hash_algorithm">,
 ): string {
   return historyDigest(
-    stableStringify(segment),
+    canonicalBridgeJson(segment),
     resolveHistoryHashAlgorithm(bridge.hash_algorithm),
   );
+}
+
+/**
+ * Canonical JSON with sorted keys that keeps every own key, including one
+ * named `__proto__`, which copying into a plain object by assignment drops.
+ */
+function canonicalBridgeJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map((item) => canonicalBridgeJson(item ?? null)).join(",")}]`;
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  const record = value as Record<string, unknown>;
+  const members = Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalBridgeJson(record[key])}`);
+  return `{${members.join(",")}}`;
 }
 
 /** Index of the first bridge record after `index`, or -1. */
@@ -127,6 +141,13 @@ export interface LocatedBridgedSegments {
   segments: Array<{ start: number; end: number; exact: boolean }>;
   /** Indexes of bridge records whose segment no intact commitment locates, or whose envelope is malformed. */
   unlocated: number[];
+  /**
+   * Indexes of bridge records located only because every record they cover
+   * is already marked replay_inexact, without a matching segment digest.
+   * Reads may rely on that location; a rewrite that removes the bridge, and
+   * with it the evidence of the mismatch, must not.
+   */
+  undigested: number[];
 }
 
 /** The segment digest, or null when the bridge names an algorithm this build cannot compute. */
@@ -151,7 +172,7 @@ function findBridgedSegmentStart(
   bridge: HistoryBridge,
   floor: number,
   end: number,
-): number {
+): { start: number; digest: boolean } {
   const first = bridge.breaks[0]!;
   let materialized = -1;
   for (let start = Math.max(1, floor); start < end; start += 1) {
@@ -161,12 +182,12 @@ function findBridgedSegmentStart(
     const named = first.record_hash !== null && entry.record_hash === first.record_hash;
     if (!anchored && !named) continue;
     const covered = entries.slice(start, end);
-    if (safeSegmentDigest(covered, entries[end]!) === bridge.segment_digest) return start;
+    if (safeSegmentDigest(covered, entries[end]!) === bridge.segment_digest) return { start, digest: true };
     if (materialized < 0 && anchored && covered.every((record) => record.replay_inexact === true)) {
       materialized = start;
     }
   }
-  return materialized;
+  return { start: materialized, digest: false };
 }
 
 /**
@@ -176,14 +197,16 @@ function findBridgedSegmentStart(
  * what they repair; markers only ever restrict reads.
  */
 export function locateBridgedSegments(entries: readonly HistoryEntry[]): LocatedBridgedSegments {
-  const located: LocatedBridgedSegments = { segments: [], unlocated: [] };
+  const located: LocatedBridgedSegments = { segments: [], unlocated: [], undigested: [] };
   let floor = 1;
   entries.forEach((entry, index) => {
     if (!Object.hasOwn(entry, "bridge")) return;
     const bridge = readHistoryBridge(entry);
-    const start =
-      typeof bridge === "object" ? findBridgedSegmentStart(entries, bridge, floor, index) : -1;
+    const found =
+      typeof bridge === "object" ? findBridgedSegmentStart(entries, bridge, floor, index) : { start: -1, digest: false };
+    const start = found.start;
     if (start < 0) located.unlocated.push(index);
+    else if (!found.digest) located.undigested.push(index);
     located.segments.push({ start: start < 0 ? floor : start, end: index, exact: start >= 0 });
     // Only a proven bridge closes what came before it: an unproven one must
     // not hide the start of a later bridge's segment.
