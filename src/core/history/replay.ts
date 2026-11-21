@@ -735,9 +735,15 @@ export interface LenientApplyResult {
   skippedOps: number;
 }
 
+/** Whether a value can be read as an item document root. */
+function isObjectRoot(value: unknown): value is { metadata?: unknown; body?: unknown } {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function tryApplySingleOp(
   document: unknown,
   op: HistoryPatchOp,
+  requireObjectRoot: boolean,
 ): { ok: true; document: unknown } | { ok: false } {
   try {
     const applied = jsonPatch.applyPatch(
@@ -746,29 +752,31 @@ function tryApplySingleOp(
       true,
       false,
     ).newDocument as unknown;
+    if (requireObjectRoot && !isObjectRoot(applied)) return { ok: false };
     return { ok: true, document: applied };
   } catch {
     return { ok: false };
   }
 }
 
-/** Apply a legacy patch op-by-op, recovering from drift that strict replay rejects: a `replace` whose path no longer exists is retried as `add`, and any op that still cannot apply against the current replay state is skipped. The resulting document is what the repaired entry's recomputed patch should target. */
-export function lenientApplyReplayPatch(
+/** One lenient pass over a patch; `requireObjectRoot` skips any op that leaves no item root. */
+function applyPatchLeniently(
   current: ReplayDocument,
   patch: HistoryPatchOp[],
-): LenientApplyResult {
+  requireObjectRoot: boolean,
+): { working: unknown; convertedReplaceToAdd: number; skippedOps: number } {
   let working: unknown = structuredClone(current);
   let convertedReplaceToAdd = 0;
   let skippedOps = 0;
 
   for (const op of normalizeReplayPatchOps(patch)) {
-    const direct = tryApplySingleOp(working, op);
+    const direct = tryApplySingleOp(working, op, requireObjectRoot);
     if (direct.ok) {
       working = direct.document;
       continue;
     }
     if (op.op === "replace") {
-      const asAdd = tryApplySingleOp(working, { ...op, op: "add" });
+      const asAdd = tryApplySingleOp(working, { ...op, op: "add" }, requireObjectRoot);
       if (asAdd.ok) {
         working = asAdd.document;
         convertedReplaceToAdd += 1;
@@ -777,12 +785,20 @@ export function lenientApplyReplayPatch(
     }
     skippedOps += 1;
   }
+  return { working, convertedReplaceToAdd, skippedOps };
+}
 
-  // A patch may pass through a non-object root; only its final state must be read as an item.
-  const candidate = (typeof working === "object" && working !== null ? working : {}) as {
-    metadata?: unknown;
-    body?: unknown;
-  };
+/** Apply a legacy patch op-by-op, recovering from drift that strict replay rejects: a `replace` whose path no longer exists is retried as `add`, and any op that still cannot apply against the current replay state is skipped. A patch may pass through a non-object root and restore the item; one that ends without an item root is replayed again without its root transitions, so the ops that did apply are kept and no empty state is invented. The resulting document is what the repaired entry's recomputed patch should target. */
+export function lenientApplyReplayPatch(
+  current: ReplayDocument,
+  patch: HistoryPatchOp[],
+): LenientApplyResult {
+  const first = applyPatchLeniently(current, patch, false);
+  const { working, convertedReplaceToAdd, skippedOps } = isObjectRoot(first.working)
+    ? first
+    : applyPatchLeniently(current, patch, true);
+  // The retry keeps an object root at every step, so `working` is an object here.
+  const candidate = working as { metadata?: unknown; body?: unknown };
   const document: ReplayDocument = {
     metadata:
       typeof candidate.metadata === "object" && candidate.metadata !== null

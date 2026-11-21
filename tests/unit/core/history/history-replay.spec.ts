@@ -51,15 +51,16 @@ function buildEntry(before: ReplayDocument, after: ReplayDocument, op = "update"
 }
 
 describe("history replay helpers", () => {
-  it("reads a lenient patch's final non-object root as an empty item without throwing", () => {
-    // A root replace with a non-object leaves no item state to read (pm-rpucvb review).
+  it("replays a patch that ends without an item root again without its root transitions", () => {
+    // The ops that did apply are kept, and no empty state is invented (pm-rpucvb review).
     for (const value of [null, 7, ["a"]]) {
       expect(
         lenientApplyReplayPatch({ metadata: { id: "pm-a" }, body: "b" }, [
+          { op: "add", path: "/body", value: "updated" },
           { op: "replace", path: "", value } as never,
           { op: "add", path: "/metadata/title", value: "kept" },
         ]),
-      ).toEqual({ document: { metadata: {}, body: "b" }, convertedReplaceToAdd: 0, skippedOps: 1 });
+      ).toEqual({ document: { metadata: { id: "pm-a", title: "kept" }, body: "updated" }, convertedReplaceToAdd: 0, skippedOps: 1 });
     }
     // A patch may pass through a non-object root and restore the item before it ends.
     const item = { metadata: { id: "pm-a", title: "t" }, body: "b" };

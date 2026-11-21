@@ -10,6 +10,7 @@ import {
 } from "./history/salvage.js";
 import {
   assertAppendOnlyStreamEncoding,
+  assertRegularStreamEntry,
   buildAppendOnlyRepairPlan,
   type HistoryRepairBridgeReceipt,
 } from "./history/append-only-repair.js";
@@ -882,6 +883,13 @@ export async function runHistoryRepair(
         buildHistoryReseedPlan(subject, options, snapshot, stream),
     });
   }
+  // The reseed appends in both modes, so a linked stream refuses at planning as the write would.
+  const reseed = isEvidenceBoundRepair(options)
+    ? undefined
+    : async (snapshot: HistoryMaintenanceSnapshot, stream: { absent: boolean }) => {
+        await assertRegularStreamEntry(subject.id, subject.historyPath);
+        return buildHistoryReseedPlan(subject, options, snapshot, stream);
+      };
   return runHistoryMaintenance({
     pmRoot,
     subject,
@@ -892,10 +900,7 @@ export async function runHistoryRepair(
     /** Plan repairs against the same bytes later checked under the write lock. */
     transform: (snapshot) =>
       buildHistoryRepairPlan({ pmRoot, subject, options }, snapshot),
-    reseed: isEvidenceBoundRepair(options)
-      ? undefined
-      : (snapshot, stream) =>
-          buildHistoryReseedPlan(subject, options, snapshot, stream),
+    reseed,
   });
 }
 

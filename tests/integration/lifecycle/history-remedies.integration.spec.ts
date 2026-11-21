@@ -3,7 +3,7 @@
  * (pm-3os5p6), and a stream with both a non-record line and a chain break
  * recovers through salvage followed by an append-only repair (pm-rpucvb).
  */
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { readHistoryEntries } from "../../../src/core/history/read.js";
@@ -337,6 +337,22 @@ describe("review hardening of the advised remedies", () => {
       await expect(runHistoryRepair("pm-seal-string", { dryRun: true }, { path: context.pmPath })).rejects.toMatchObject({
         code: "history_record_integrity_invalid",
       });
+    });
+  });
+
+  it.skipIf(process.platform === "win32")("refuses a linked stream at planning, so a preview never offers an append the write refuses", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-link-target", "Link target");
+      createTaskFixture(context, "pm-linked", "Linked stream");
+      await writeFile(historyFile(context, "pm-link-target"), "");
+      await rm(historyFile(context, "pm-linked"));
+      await symlink(historyFile(context, "pm-link-target"), historyFile(context, "pm-linked"));
+      for (const options of [{ dryRun: true }, { dryRun: true, appendOnly: true }]) {
+        await expect(runHistoryRepair("pm-linked", options, { path: context.pmPath })).rejects.toMatchObject({
+          context: expect.objectContaining({ reason: "stream_not_regular_file" }),
+        });
+      }
+      expect(await readFile(historyFile(context, "pm-link-target"), "utf8")).toBe("");
     });
   });
 

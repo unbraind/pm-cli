@@ -9,7 +9,7 @@
  */
 import { isUtf8 } from "node:buffer";
 import { constants } from "node:fs";
-import { open, readFile, stat, type FileHandle } from "node:fs/promises";
+import { lstat, open, readFile, stat, type FileHandle } from "node:fs/promises";
 import { createFileAtomic } from "../../core/fs/atomic-create.js";
 import { invalidateHistoryDriftCacheForPath } from "../../core/history/drift-cache.js";
 import { isFileAbsentError } from "../../core/fs/fs-utils.js";
@@ -372,9 +372,7 @@ async function appendRepairRecord(
       if (isFileAbsentError(error)) {
         refuseAppendOnly(id, "stream_changed", `History for ${id} was removed after the repair verified it; retry.`);
       }
-      if ((error as NodeJS.ErrnoException).code === "ELOOP") {
-        refuseAppendOnly(id, "stream_not_regular_file", `History for ${id} is a symbolic link, so a repair could write another stream; replace it with the stream file.`);
-      }
+      if ((error as NodeJS.ErrnoException).code === "ELOOP") refuseLinkedStream(id);
       throw error;
     },
   );
@@ -425,8 +423,39 @@ async function appendRepairRecord(
  * stream (or link) another writer created meanwhile wins untouched.
  */
 async function createStreamExclusively(id: string, historyPath: string, record: HistoryEntry): Promise<void> {
-  if (!(await createFileAtomic(historyPath, `${JSON.stringify(record)}\n`))) {
+  const contents = `${JSON.stringify(record)}\n`;
+  let published: boolean;
+  try {
+    published = await createFileAtomic(historyPath, contents, { sync: true });
+  } catch (error: unknown) {
+    if (!HARD_LINK_UNSUPPORTED.has((error as NodeJS.ErrnoException).code ?? "")) throw error;
+    published = await createWithExclusiveOpen(historyPath, contents);
+  }
+  if (!published) {
     refuseAppendOnly(id, "stream_changed", `History for ${id} was created after the repair verified it; retry.`);
+  }
+}
+
+/** Link failures that mean the filesystem cannot hard-link, not that the path exists. */
+const HARD_LINK_UNSUPPORTED = new Set(["EPERM", "ENOTSUP", "EOPNOTSUPP", "ENOSYS"]);
+
+/**
+ * Where hard links are unavailable (exFAT and some network shares), create the
+ * stream the way `pm create` reserves a genesis stream: exclusive open, one
+ * write, then a flush. Only a writer that ignores the lock can interleave.
+ */
+async function createWithExclusiveOpen(historyPath: string, contents: string): Promise<boolean> {
+  const handle = await open(historyPath, "wx").catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") return null;
+    throw error;
+  });
+  if (handle === null) return false;
+  try {
+    await handle.writeFile(contents);
+    await handle.sync();
+    return true;
+  } finally {
+    await handle.close();
   }
 }
 
@@ -447,11 +476,35 @@ export async function appendRecordToVerifiedStream(
   await invalidateHistoryDriftCacheForPath(historyPath);
 }
 
+/** A stream entry that is a link could carry an appended record into another stream. */
+function refuseLinkedStream(id: string): never {
+  throw new PmCliError(
+    `History for ${id} is a symbolic link, so an appended record could land in another stream.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "history_append_only_repair_unavailable",
+      item_id: id,
+      reason: "stream_not_regular_file",
+      required: "A history stream must be a regular file at its own path; no bytes were changed.",
+      nextSteps: [
+        `Replace the link at ${id}'s history path with a regular copy of the stream it points to, then run pm health again.`,
+      ],
+    },
+  );
+}
+
+/** Refuse a linked stream entry before planning, so a preview never offers an append the write must refuse. */
+export async function assertRegularStreamEntry(id: string, historyPath: string): Promise<void> {
+  const entry = await lstat(historyPath).catch(() => null);
+  if (entry?.isSymbolicLink() === true) refuseLinkedStream(id);
+}
+
 /** Refuse a stream whose bytes are not UTF-8 before planning, so a preview never offers a repair the write must refuse. */
 export async function assertAppendOnlyStreamEncoding(
   id: string,
   historyPath: string,
 ): Promise<void> {
+  await assertRegularStreamEntry(id, historyPath);
   const bytes = await readFile(historyPath).catch(() => null);
   if (bytes !== null && !isUtf8(bytes)) {
     refuseAppendOnly(
