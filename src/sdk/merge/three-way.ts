@@ -17,6 +17,7 @@ import {
   tryApplyReplayPatch,
   verifyHistoryChainWithVersion,
   collectBridgedInteriorIndexes,
+  markHistoryEntryInexact,
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import jsonPatch from "fast-json-patch";
@@ -343,7 +344,7 @@ function markInexactUnionEntries(
   const marked = entries.map((entry) => {
     if (entry.replay_inexact === true || !covered.has(historyEntryIdentity(entry))) return entry;
     changed = true;
-    return resealHistoryRewrite(entry, { ...entry, replay_inexact: true }, { retainPriorRecord: true });
+    return markHistoryEntryInexact(entry);
   });
   return { entries: marked, changed };
 }

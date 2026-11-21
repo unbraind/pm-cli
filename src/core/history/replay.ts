@@ -906,6 +906,19 @@ export function collectBridgedInteriorIndexes(
 }
 
 /**
+ * Reseal one record with replay_inexact. The evidence keeps only digests of
+ * the prior record, never its values: a following provenance normalization
+ * or redaction must not find the removed values preserved in this evidence.
+ */
+export function markHistoryEntryInexact(entry: HistoryEntry): HistoryEntry {
+  return resealHistoryRewrite(
+    entry,
+    { ...entry, replay_inexact: true },
+    { retainPriorRecord: true, retainPriorRecordHash: false },
+  );
+}
+
+/**
  * Write the unreconstructable knowledge a verified bridge carries onto the
  * records it covers, before any rewrite that may dissolve the bridge: each
  * covered entry is resealed with replay_inexact (its prior record kept as
@@ -917,7 +930,7 @@ export function materializeBridgedSegments(entries: HistoryEntry[]): HistoryEntr
   const interior = collectBridgedInteriorIndexes(locateBridgedSegments(entries).segments);
   return entries.map((entry, index) =>
     interior.has(index) && entry.replay_inexact !== true
-      ? resealHistoryRewrite(entry, { ...entry, replay_inexact: true }, { retainPriorRecord: true })
+      ? markHistoryEntryInexact(entry)
       : entry,
   );
 }

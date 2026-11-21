@@ -586,6 +586,8 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const rewritten = await readHistoryEntries(file, ID);
       expect(verifyHistoryChainWithVersion(rewritten).ok).toBe(true);
       expect(rewritten.map((entry) => entry.replay_inexact === true).slice(0, 5)).toEqual([false, false, true, true, false]);
+      // The removed observation survives nowhere, not even in the marker's rewrite evidence.
+      expect(await readFile(file, "utf8")).not.toContain('{"value":"true","source":"argv"}');
       for (const version of ["3", "4"]) {
         await expect(runRestore(ID, version, {}, { path: context.pmPath })).rejects.toMatchObject({
           context: { code: "history_version_unreconstructable" },
