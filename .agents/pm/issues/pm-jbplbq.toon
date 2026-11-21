@@ -2,11 +2,13 @@ id: pm-jbplbq
 title: "A history line that is valid JSON but not an object (null, a number, an array) crashes pm activity and pm context with unknown_error"
 description: "Found while addressing a CodeRabbit finding on PR #1761. The shared history decoder (decodeHistorySnapshot in src/core/history/read.ts) pushes any JSON value per line as a HistoryEntry, so a line such as null reaches readers that dereference entry.ts. Reproduced against the released 2026.11.20 build: append the line null to one history stream, then pm activity --limit 3 --json and pm context --for orient --json both exit 1 with code unknown_error and detail \"Cannot read properties of null (reading 'ts')\". It is the same class as pm-sew1dj, a released crash on a malformed history value. The recovery is not obvious either: pm history-repair --salvage-tail refuses non-object lines with history_salvage_refused (\"would conceal interior corruption or a malformed record\"), so the error must name a recovery that actually works (pm restore, or an explicit repair) and the advised command must be executed in a spec. Before tightening the shared decoder, census every reader of it (history, restore, verify, compaction, redaction, provenance, activity, context, stats) and the readers with their own parsers (drift-scan, health, history-storage-stats), since some may tolerate or diagnose such lines today. PR #1761 only stops the derived stream summary from adding a crash of its own (non-object entries count as irregular)."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[3]: crash,history,robustness
 created_at: "2026-11-20T17:17:27.931Z"
-updated_at: "2026-11-20T18:30:07.752Z"
+updated_at: "2026-11-21T01:42:24.354Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#7a4af4b641f1e7f9180f8b98"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Every command reading a history stream with a non-object JSON line refuses with a typed, documented error naming the item and the line, never unknown_error; The refusal's recovery step is executed in a spec and leaves a readable stream; A census of history readers is recorded, and readers that diagnose such lines today (health, verify) keep that behaviour"
@@ -18,4 +20,23 @@ actual_result: "unknown_error: Cannot read properties of null (reading 'ts') fro
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1664,discovered_from,"2026-11-20T17:17:38.914Z","harness:claude-code","cli:update:dep",detected
   pm-sew1dj,related,"2026-11-20T17:17:38.914Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-20T22:09:48.389Z","harness:claude-code","Sentry PM-CLI-40 and PM-CLI-41 (TypeError: Cannot read properties of null (reading 'ts'); release 2026.11.20, environment automation, 4 events each between 17:15 and 17:18Z on 2026-11-20) came from the deliberate reproduction behind this item: the released build and a development build, each run against a tracker with a null history line. Both were annotated and resolved so the reproduction cannot block the release Sentry gate. They are the stack evidence for this defect, and a real user hitting it will regress them. Future reproductions must set PM_TELEMETRY_DISABLED=1 and PM_SENTRY_DISABLED=1."
+notes[1]{created_at,author,text}:
+  "2026-11-21T01:25:23.396Z","harness:claude-code","Reader census (AC3), 2026-11-21. The shared decoder decodeHistorySnapshot (src/core/history/read.ts) feeds readHistorySnapshot, readIdentifiedHistorySnapshot and readHistoryEntries, which about 20 modules call: workspace-history, item-transaction, query/history, query/activity, query/get (claim state), ownership-source, history-read, governance/stale-work, governance/closure-timestamps, event-index, workspace-transaction, merge/receipts, lifecycle/restore, lifecycle/item-revision, lifecycle/checkpoint-rollback, history/maintenance (repair, redact, compact), governance/assurance and assurance-runtime, tombstone and runtime-primitives. All of them now get the typed refusal history_record_invalid (item_id, reason such as \"a JSON null\", details.line) instead of a reader dereferencing null.ts.\n\nReaders with their own line parser keep their behaviour. drift-scan (pm health / validate --check-history-drift) still counts the stream under unreadable_streams. storage-integrity still reports the line as unparseable. merge/three-way still refuses non-objects. history-storage-stats, provenance-health, health (tombstone classification, merge receipt references, telemetry state), author-attribution and merge/reconcile all skip or catch non-object values already. Salvage has its own decoder and now shares the decoder's predicate.\n\nScope decision: the decoder refuses only non-object values (null, boolean, number, string, array). A first draft also required string ts, author, op, before_hash, after_hash and an array patch on every object. It failed 26 specs because legacy streams and fixtures legitimately carry objects without author or without a patch array (one spec renders compact history for legacy entries with missing patch arrays). Objects keep each reader's existing tolerance.\n\nRecovery (AC2): history-repair --salvage-tail now removes a line whose JSON value is a null, a boolean or a number wherever it sits, since such a value cannot hold a record, and keeps every record byte-identical. The receipt gains non_record_lines. A string, array or incomplete object might encode a record, so salvage still refuses those. Executed in tests/integration/history-bridge.integration.spec.ts: a null line followed by a later pm write is salvaged, after which activity and health --strict-exit pass. Known limit: salvage still needs the retained records to verify, so a stream with both a scalar line and a chain break has no pm-native recovery (the decoder blocks the repair). Recovering that case means restoring the stream from version control."
+files[4]{path,scope}:
+  src/core/history/read.ts,project
+  src/sdk/history/salvage.ts,project
+  tests/integration/history-durability.integration.spec.ts,project
+  tests/integration/lifecycle/history-bridge.integration.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle/history-bridge.integration.spec.ts tests/integration/history-durability.integration.spec.ts,project,"harness:claude-code","2026-11-21T01:38:15.741Z",local_mutation,fix/append-only-history-recovery
+docs[2]{path,scope}:
+  docs/HISTORY_RECOVERY.md,project
+  docs/SDK_CONTEXT_COORDINATION.md,project
+contract_change:
+  api: History stream readers and pm history-repair --salvage-tail
+  before: "A history line that was valid JSON but not an object crashed pm activity, pm context, pm history and pm get with unknown_error, and --salvage-tail refused a line holding a JSON null, boolean or number"
+  after: "Every reader refuses such a line with history_record_invalid naming item_id, reason and details.line; --salvage-tail removes JSON null, boolean and number lines wherever they sit, reports non_record_lines in its receipt, and still refuses strings, arrays and incomplete objects"
+  migrate: "Branch on history_record_invalid instead of unknown_error and follow its next step, pm history-repair <id> --salvage-tail --dry-run"
 body: ""

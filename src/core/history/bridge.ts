@@ -1,0 +1,99 @@
+/**
+ * @module core/history/bridge
+ *
+ * Append-only chain bridges (GH-1715, pm-gh1715). A bridge is one sealed
+ * `history_repair` record that names every place where the recorded chain
+ * breaks because a change landed outside pm. It leaves every earlier line
+ * byte-identical: verification accepts a break exactly when the next bridge
+ * names it, checks the recorded links inside the bridged segment, and
+ * re-anchors replay on the bridge's own after_hash.
+ */
+import type {
+  HistoryBridge,
+  HistoryBridgeBreak,
+  HistoryEntry,
+} from "../../types/index.js";
+
+/** Version of the bridge envelope written by this build. */
+export const HISTORY_BRIDGE_VERSION = 1 as const;
+
+/** Return whether one value is a well-formed break descriptor. */
+function isHistoryBridgeBreak(value: unknown): value is HistoryBridgeBreak {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    Object.keys(candidate).length === 3 &&
+    typeof candidate.gap_from === "string" &&
+    typeof candidate.gap_to === "string" &&
+    candidate.gap_from !== candidate.gap_to &&
+    (candidate.record_hash === null || typeof candidate.record_hash === "string")
+  );
+}
+
+/**
+ * Read an entry's bridge: undefined when it carries none, "invalid" when the
+ * field is present but malformed or unsealed, so a forged or truncated bridge
+ * is drift instead of being ignored.
+ */
+export function readHistoryBridge(
+  entry: HistoryEntry,
+): HistoryBridge | "invalid" | undefined {
+  if (!Object.hasOwn(entry, "bridge")) return undefined;
+  const bridge = entry.bridge as unknown;
+  if (
+    entry.op !== "history_repair" ||
+    typeof entry.record_hash !== "string" ||
+    typeof bridge !== "object" ||
+    bridge === null ||
+    Array.isArray(bridge)
+  ) {
+    return "invalid";
+  }
+  const candidate = bridge as Record<string, unknown>;
+  return candidate.version === HISTORY_BRIDGE_VERSION &&
+    Object.keys(candidate).length === 2 &&
+    Array.isArray(candidate.breaks) &&
+    candidate.breaks.length > 0 &&
+    candidate.breaks.every(isHistoryBridgeBreak)
+    ? (candidate as unknown as HistoryBridge)
+    : "invalid";
+}
+
+/** Describe the break between two adjacent recorded entries. */
+export function describeHistoryBreak(
+  previous: HistoryEntry,
+  entry: HistoryEntry,
+): HistoryBridgeBreak {
+  return {
+    gap_from: previous.after_hash,
+    gap_to: entry.before_hash,
+    record_hash: entry.record_hash ?? null,
+  };
+}
+
+/** Whether a descriptor names exactly the break between these two entries. */
+export function matchesHistoryBreak(
+  descriptor: HistoryBridgeBreak | undefined,
+  previous: HistoryEntry,
+  entry: HistoryEntry,
+): boolean {
+  return (
+    descriptor !== undefined &&
+    descriptor.gap_from === previous.after_hash &&
+    descriptor.gap_to === entry.before_hash &&
+    descriptor.record_hash === (entry.record_hash ?? null)
+  );
+}
+
+/** Index of the first bridge record after `index`, or -1. */
+export function findNextHistoryBridge(
+  entries: readonly HistoryEntry[],
+  index: number,
+): number {
+  for (let candidate = index + 1; candidate < entries.length; candidate += 1) {
+    if (Object.hasOwn(entries[candidate], "bridge")) return candidate;
+  }
+  return -1;
+}

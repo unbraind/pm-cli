@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 477
+- Catalog error codes: 479
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 458
-- Coverage fraction: 0.039832
+- Uncovered error codes: 460
+- Coverage fraction: 0.039666
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -132,6 +132,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `hierarchy_cardinality_created` | `hierarchy_cardinality_created` | uncovered | none | 0 |
 | `hierarchy_cycle_created` | `hierarchy_cycle_created` | uncovered | none | 0 |
 | `hierarchy_parent_divergence_created` | `hierarchy_parent_divergence_created` | uncovered | none | 0 |
+| `history_append_only_repair_unavailable` | `history_append_only_repair_unavailable` | uncovered | none | 0 |
 | `history_author_acknowledge_plan_conflict` | `history_author_acknowledge_plan_conflict` | uncovered | none | 0 |
 | `history_author_acknowledge_plan_fingerprint_required` | `history_author_acknowledge_plan_fingerprint_required` | uncovered | none | 0 |
 | `history_author_acknowledge_preview_limit_invalid` | `history_author_acknowledge_preview_limit_invalid` | uncovered | none | 0 |
@@ -149,6 +150,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `history_drift_version_skew` | `history_drift_version_skew` | uncovered | none | 0 |
 | `history_json_invalid` | `history_json_invalid` | uncovered | none | 0 |
 | `history_merge_conflict_markers_detected` | `merge_conflict_markers_detected` | uncovered | none | 0 |
+| `history_record_invalid` | `history_record_invalid` | uncovered | none | 0 |
 | `history_replay_invalid` | `history_replay_invalid` | uncovered | none | 0 |
 | `history_salvage_refused` | `history_salvage_refused` | uncovered | none | 0 |
 | `history_stream_over_compact_threshold` | `history_stream_over_compact_threshold` | uncovered | none | 0 |

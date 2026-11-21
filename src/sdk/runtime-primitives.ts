@@ -162,6 +162,7 @@ export {
   toReplayDocument,
   verifyHistoryChain,
   verifyHistoryChainWithVersion,
+  type HistoryBridgedSegment,
 } from "../core/history/replay.js";
 export { resolveBodyFileContent } from "../core/io/body-file.js";
 export {

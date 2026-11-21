@@ -33,15 +33,18 @@ async function run(
   configuredBudget: unknown = budget,
   profileArguments: string[] = [],
   injection?: InjectionFixture,
+  packedModules: Record<string, string> = {},
 ) {
   const execFileSync = vi.fn((command: string) =>
     command === "/bin/sentry-cli" ? "" : JSON.stringify(report),
   );
-  const readFileSync = vi.fn(() =>
-    typeof configuredBudget === "string"
+  const readFileSync = vi.fn((file: string) => {
+    const packed = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (Object.hasOwn(packedModules, packed)) return packedModules[packed];
+    return typeof configuredBudget === "string"
       ? configuredBudget
-      : JSON.stringify(configuredBudget),
-  );
+      : JSON.stringify(configuredBudget);
+  });
   const scratch = path.join("/scratch", "pm-artifact-injection-x");
   const cpSync = vi.fn();
   const mkdtempSync = vi.fn(() => scratch);
@@ -578,6 +581,60 @@ describe("package artifact gate", () => {
     expect(String(result.failure)).toContain(
       "required_path_missing:package.json",
     );
+  });
+
+  const closureFiles = [
+    { path: "dist/cli.js" },
+    { path: "dist/sdk/kept.mjs" },
+    { path: "package.json" },
+  ];
+  const closureModules = {
+    "dist/cli.js":
+      'import{a}from"./sdk/kept.mjs";export*from "./sdk/kept.mjs";import"./sdk/kept.mjs";',
+    "dist/sdk/kept.mjs":
+      'const t=await import(`./${name}.js`);const s="./index.ts";await import("../sdk/excluded.js");export{t,s};',
+  };
+
+  it("refuses a packed module that imports a file the artifact excludes", async () => {
+    const refused = await run(
+      [{ unpackedSize: 3, files: closureFiles }],
+      { ...budget, max_file_count: 10 },
+      [],
+      undefined,
+      closureModules,
+    );
+    expect(String(refused.failure)).toContain(
+      "unresolved_import:dist/sdk/kept.mjs->../sdk/excluded.js",
+    );
+    expect(String(refused.failure)).not.toContain("index.ts");
+    expect(String(refused.failure)).not.toContain("dist/cli.js->");
+  });
+
+  it("accepts a closed module graph and leaves bundled runtime modules to their own packages", async () => {
+    const closed = await run(
+      [
+        {
+          unpackedSize: 3,
+          files: [
+            ...closureFiles,
+            { path: "dist/sdk/excluded.js" },
+            { path: "node_modules/dep/index.js", size: 1 },
+          ],
+        },
+      ],
+      {
+        ...budget,
+        max_file_count: 10,
+        runtime_bundle: { max_unpacked_bytes: 10, max_file_count: 10 },
+      },
+      [],
+      undefined,
+      { ...closureModules, "node_modules/dep/index.js": 'import"./missing.js";' },
+    );
+    expect(closed.failure).toBeNull();
+    expect(JSON.parse(String(closed.log.mock.calls[0]?.[0]))).toMatchObject({
+      import_closure: { checked_files: 3 },
+    });
   });
 
   it("invokes the platform native Node executable on Windows", async () => {

@@ -18,6 +18,8 @@ import {
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import jsonPatch from "fast-json-patch";
+import { readHistoryBridge } from "../../core/history/bridge.js";
+import { resealHistoryRewrite } from "../../core/history/history.js";
 import { rebaseHistoryScalarPatch } from "./history-scalar-rebase.js";
 import {
   canonicalDocument,
@@ -95,6 +97,7 @@ export type HistoryMergeStrategy =
   | "identical"
   | "fast_forward_ours"
   | "fast_forward_theirs"
+  | "equivalent_bridges"
   | "union_reanchor";
 
 /** Documents the history stream merge result payload exchanged by command, SDK, and package integrations. */
@@ -286,6 +289,50 @@ function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[
   };
 }
 
+/** Bridge fields that must agree for two independent repairs to be the same repair. */
+function historyBridgeRepairIdentity(entry: HistoryEntry): string | null {
+  const bridge = readHistoryBridge(entry);
+  return typeof bridge === "object"
+    ? stableStringify({
+        bridge,
+        patch: entry.patch,
+        before_hash: entry.before_hash,
+        after_hash: entry.after_hash,
+        item_hash_version: entry.item_hash_version ?? null,
+        hash_algorithm: entry.hash_algorithm ?? null,
+      })
+    : null;
+}
+
+/**
+ * Two clones that bridged the same break independently append the same repair
+ * under different provenance (GH-1715). Keep ours byte-for-byte and append
+ * theirs as a neutral record: its effect is already applied, and its original
+ * sealed bridge stays as rewrite evidence instead of being dropped.
+ */
+function mergeEquivalentBridges(
+  ours: HistoryEntry[],
+  oursSuffix: HistoryEntry[],
+  theirsSuffix: HistoryEntry[],
+): HistoryEntry[] | null {
+  if (oursSuffix.length !== 1 || theirsSuffix.length !== 1) return null;
+  const identity = historyBridgeRepairIdentity(oursSuffix[0]!);
+  if (identity === null || historyBridgeRepairIdentity(theirsSuffix[0]!) !== identity) {
+    return null;
+  }
+  const theirs = theirsSuffix[0]!;
+  const anchor = oursSuffix[0]!.after_hash;
+  const { bridge: _bridge, ...neutral } = theirs;
+  return [
+    ...ours,
+    resealHistoryRewrite(
+      theirs,
+      { ...neutral, patch: [], before_hash: anchor, after_hash: anchor },
+      { retainOriginalPatch: true, retainPriorRecord: true },
+    ),
+  ];
+}
+
 /**
  * Deterministically merge two diverged versions of one append-only history
  * JSONL stream. Identical streams and one-sided fast-forwards keep the winning
@@ -358,6 +405,18 @@ export function mergeHistoryStreams(
   }
 
   const oursSuffix = ours.slice(shared);
+  const bridged = mergeEquivalentBridges(ours, oursSuffix, theirs.slice(shared));
+  if (bridged !== null) {
+    return {
+      merged: historyEntriesToRaw(bridged),
+      strategy: "equivalent_bridges",
+      common_entries: shared,
+      entries_from_ours: 1,
+      entries_from_theirs: 1,
+      entries_total: bridged.length,
+      reanchored: false,
+    };
+  }
   const seenIdentities = new Set(oursSuffix.map(historyEntryIdentity));
   const theirsSuffix = theirs
     .slice(shared)

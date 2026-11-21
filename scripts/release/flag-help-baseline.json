@@ -183,9 +183,9 @@
     },
     {
       "command": "history-repair",
-      "help_bytes": 929,
-      "estimated_tokens": 233,
-      "maximum_tokens": 233
+      "help_bytes": 992,
+      "estimated_tokens": 248,
+      "maximum_tokens": 248
     },
     {
       "command": "history-compact",

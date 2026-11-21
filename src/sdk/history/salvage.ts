@@ -25,6 +25,10 @@ import {
   verifyHistoryChainWithVersion,
 } from "../../core/history/replay.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
+import {
+  describeHistoryRecordDefect,
+  isNonRecordScalar,
+} from "../../core/history/read.js";
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE } from "../../core/shared/constants.js";
 import {
   advanceItemMutationPreconditions,
@@ -54,20 +58,28 @@ import type {
   HistoryRepairResult,
 } from "../history-repair.js";
 
-/** Evidence describing only the discarded suffix, without retaining its contents. */
+/** Evidence describing only the discarded bytes, without retaining their contents. */
 export interface HistorySalvageReceipt {
-  /** One-based physical line where invalid trailing bytes begin. */
+  /** One-based physical line of the first discarded line: a non-record line or the start of the invalid suffix. */
   first_invalid_line: number;
-  /** UTF-8 bytes removed from the suffix. */
+  /** UTF-8 bytes removed, counting non-record lines and the invalid suffix. */
   discarded_bytes: number;
-  /** SHA-256 of the removed bytes for local backup comparison. */
+  /** SHA-256 of the removed bytes, concatenated in file order, for local backup comparison. */
   discarded_sha256: string;
   /** Number of complete verified records retained. */
   retained_entries: number;
+  /** Lines removed before the invalid suffix because their JSON value (null, a boolean or a number) cannot hold a record; absent when none. */
+  non_record_lines?: number;
 }
 
-/** Decode a whole record or identify an invalid suffix without hiding a valid record. */
-function decodeSalvageLine(line: string): HistoryEntry | null {
+/** One salvage decision for a physical line. */
+type SalvageLine =
+  | { kind: "record"; entry: HistoryEntry }
+  | { kind: "invalid" }
+  | { kind: "non_record" };
+
+/** Decode a whole record or identify a disposable line without hiding a valid record. */
+function decodeSalvageLine(line: string): SalvageLine {
   let parsed: unknown;
   try {
     parsed = JSON.parse(line);
@@ -81,13 +93,20 @@ function decodeSalvageLine(line: string): HistoryEntry | null {
         { code: "history_salvage_refused" },
       );
     }
-    return null;
+    return { kind: "invalid" };
   }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+  // A JSON null, boolean or number cannot encode a record, so removing it
+  // conceals nothing; a string, array or partial object might, so it refuses.
+  if (isNonRecordScalar(parsed)) return { kind: "non_record" };
+  if (describeHistoryRecordDefect(parsed) !== null) {
     throw new PmCliError(
       "History salvage would conceal interior corruption or a malformed record.",
       EXIT_CODE.CONFLICT,
-      { code: "history_salvage_refused" },
+      {
+        code: "history_salvage_refused",
+        required:
+          "Recover the damaged record from version control or a backup; no bytes were changed.",
+      },
     );
   }
   const entry = parsed as Partial<HistoryEntry>;
@@ -107,7 +126,7 @@ function decodeSalvageLine(line: string): HistoryEntry | null {
       { code: "history_salvage_refused" },
     );
   }
-  return entry as HistoryEntry;
+  return { kind: "record", entry: entry as HistoryEntry };
 }
 
 /**
@@ -131,18 +150,21 @@ export function inspectHistoryTail(raw: string): {
   let offset = 0;
   let invalidOffset: number | undefined;
   let invalidLine = 0;
+  const nonRecord: Array<{ start: number; end: number; line: number }> = [];
   for (const [index, line] of raw.split("\n").entries()) {
-    if (!line.trim()) {
-      offset += line.length + 1;
+    const start = offset;
+    offset += line.length + 1;
+    if (!line.trim()) continue;
+    const decoded = decodeSalvageLine(line);
+    if (decoded.kind === "non_record" && invalidOffset === undefined) {
+      nonRecord.push({ start, end: Math.min(offset, raw.length), line: index + 1 });
       continue;
     }
-    const parsed = decodeSalvageLine(line);
-    if (parsed === null) {
+    if (decoded.kind !== "record") {
       if (invalidOffset === undefined) {
-        invalidOffset = offset;
+        invalidOffset = start;
         invalidLine = index + 1;
       }
-      offset += line.length + 1;
       continue;
     }
     if (invalidOffset !== undefined) {
@@ -156,8 +178,7 @@ export function inspectHistoryTail(raw: string): {
         },
       );
     }
-    entries.push(parsed);
-    offset += line.length + 1;
+    entries.push(decoded.entry);
   }
   const verification = verifyHistoryChainWithVersion(entries);
   if (!verification.ok || verification.item_hash_version === undefined) {
@@ -175,16 +196,42 @@ export function inspectHistoryTail(raw: string): {
   return {
     entries,
     itemHashVersion: verification.item_hash_version,
-    prefix: invalidOffset === undefined ? raw : raw.slice(0, invalidOffset),
-    receipt:
-      invalidOffset === undefined
-        ? null
-        : {
-            first_invalid_line: invalidLine,
-            discarded_bytes: Buffer.byteLength(raw.slice(invalidOffset)),
-            discarded_sha256: sha256Hex(raw.slice(invalidOffset)),
-            retained_entries: entries.length,
-          },
+    ...selectSalvagedBytes(raw, nonRecord, invalidOffset, invalidLine, entries.length),
+  };
+}
+
+/** Bytes kept and the receipt for those removed: non-record lines plus the invalid suffix. */
+function selectSalvagedBytes(
+  raw: string,
+  nonRecord: ReadonlyArray<{ start: number; end: number; line: number }>,
+  invalidOffset: number | undefined,
+  invalidLine: number,
+  retainedEntries: number,
+): { prefix: string; receipt: HistorySalvageReceipt | null } {
+  const retainedEnd = invalidOffset ?? raw.length;
+  const discarded = [
+    ...nonRecord.map(({ start, end }) => raw.slice(start, end)),
+    raw.slice(retainedEnd),
+  ].join("");
+  let prefix = "";
+  let cursor = 0;
+  for (const { start, end } of nonRecord) {
+    prefix += raw.slice(cursor, start);
+    cursor = end;
+  }
+  prefix += raw.slice(cursor, retainedEnd);
+  // A removed final line can leave the last kept record without its newline.
+  if (prefix !== "" && !prefix.endsWith("\n")) prefix += "\n";
+  if (discarded === "") return { prefix, receipt: null };
+  return {
+    prefix,
+    receipt: {
+      first_invalid_line: nonRecord[0]?.line ?? invalidLine,
+      discarded_bytes: Buffer.byteLength(discarded),
+      discarded_sha256: sha256Hex(discarded),
+      retained_entries: retainedEntries,
+      ...(nonRecord.length > 0 ? { non_record_lines: nonRecord.length } : {}),
+    },
   };
 }
 

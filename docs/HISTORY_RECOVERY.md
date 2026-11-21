@@ -4,8 +4,10 @@ Tracked by [pm-96fsma](../.agents/pm/issues/pm-96fsma.toon),
 [pm-m0yjtg](../.agents/pm/issues/pm-m0yjtg.toon),
 [pm-qw1uw6](../.agents/pm/issues/pm-qw1uw6.toon),
 [pm-e3gn0z](../.agents/pm/issues/pm-e3gn0z.toon),
-[pm-wlqxg3](../.agents/pm/tasks/pm-wlqxg3.toon), and
-[pm-nb4zwz](../.agents/pm/issues/pm-nb4zwz.toon).
+[pm-wlqxg3](../.agents/pm/tasks/pm-wlqxg3.toon),
+[pm-nb4zwz](../.agents/pm/issues/pm-nb4zwz.toon),
+[pm-jbplbq](../.agents/pm/issues/pm-jbplbq.toon), and
+[pm-gh1715](../.agents/pm/issues/pm-gh1715.toon).
 
 Project management depends on trustworthy context. History is not just an
 activity feed: it is the reconstructable source for prior item states, including
@@ -76,9 +78,13 @@ pm history-repair <id> --salvage-tail --json
 pm history <id> --verify --strict-exit
 ```
 
-Salvage requires a nonempty, hash-verified prefix and retains its bytes unchanged.
-The receipt records the first invalid physical line, discarded UTF-8 byte count,
-discarded-suffix SHA-256, and retained record count. An appended `history_salvage`
+Salvage requires a nonempty, hash-verified prefix and retains every record byte
+unchanged. It also removes lines whose JSON value is a null, a boolean or a
+number wherever they sit, because such a value cannot hold a record. A string,
+an array or an incomplete object might encode one, so salvage refuses those.
+The receipt records the first discarded physical line, discarded UTF-8 byte
+count, SHA-256 of the discarded bytes in file order, retained record count, and
+`non_record_lines` when scalar lines were removed. An appended `history_salvage`
 event records that receipt without copying potentially private damaged contents.
 Salvage does not rehash prior entries, reconcile item state, or normalize
 provenance. It refuses bulk selection, conflicting repair modes, merge conflict
@@ -86,6 +92,12 @@ markers, parseable records after corruption, and potentially complete records
 with attached corruption. Recover those cases from version control or a backup.
 Non-UTF-8 streams are also refused, so receipt hashes and rollback snapshots
 always describe the original bytes rather than a lossy decoded approximation.
+
+Every reader refuses a history line that is valid JSON but not an object with
+`history_record_invalid`. The error names the item (`item_id`), the value kind
+(`reason`, for example `a JSON null`) and the physical line (`details.line`), and
+its next step is the salvage preview above. Readers never report such a line as
+`unknown_error`. `pm health` keeps reporting the stream under `unreadable_streams`.
 
 The public SDK uses the same operation:
 
@@ -102,6 +114,59 @@ console.log(preview.salvage);
 
 The CLI and MCP expose this SDK-owned contract; package authors do not need a
 separate recovery implementation.
+
+## Bridge a broken chain without rewriting it
+
+A change made outside pm, such as a hand edit or a merge resolution that
+bypassed the driver, breaks the item's history chain. `pm health` reports
+`history_drift_chain_mismatch`. Repair it append-only:
+
+```bash
+pm history-repair <id> --append-only --dry-run --json
+pm history-repair <id> --append-only --json
+pm health --strict-exit
+```
+
+The repair appends one sealed `history_repair` record carrying a `bridge`. The
+bridge names each break by the `after_hash` before it (`gap_from`), the
+`before_hash` after it (`gap_to`) and that entry's `record_hash`. Its patch
+reconciles replay with the on-disk item. Every earlier line stays
+byte-identical, so the stream before the repair remains a prefix of the
+repaired stream. Other clones, worktrees and append-only consumers keep the
+bytes they already hold. `--all --append-only` bridges every drifted stream.
+
+Verification accepts a break exactly when the next bridge names it. Inside the
+bridged segment it checks the recorded links, and each further break must be
+the next one the bridge names. The bridge must name no break that did not occur
+and must re-anchor replay on its own `after_hash`. A forged, unsealed or
+partial bridge is drift (`bridge_invalid`, `bridge_unnamed_break`,
+`bridge_names_absent_break`, `bridge_link_mismatch` or
+`bridge_after_hash_mismatch`). A later rewriting repair keeps a verified bridged
+segment byte-identical. A rewrite that must change an entry before the segment,
+or a merge union that rebases every patch, dissolves the bridge into an ordinary
+re-anchored record and retains the original bridge as rewrite evidence. When two
+clones bridged the same break independently, the merge driver keeps one bridge.
+It appends the other as a neutral record with an empty patch, so both repairs'
+provenance survives (`equivalent_bridges`).
+
+Versions between a break and its bridge cannot be reconstructed exactly,
+because the unrecorded change is missing from replay. `pm restore` and
+`pm get --at` refuse them with `history_replay_invalid`. Versions before the
+break and from the bridge onward remain addressable.
+
+The repair refuses with `history_append_only_repair_unavailable` and names the
+rewriting repair as the fallback when a bridge cannot carry the drift:
+
+| `reason` | Meaning |
+| --- | --- |
+| `chain_failure_not_a_break` | The stream fails for another reason, such as a broken record envelope. |
+| `patch_does_not_replay` | A recorded patch only applies on top of the unrecorded change. |
+| `item_missing` | No on-disk item exists to anchor the bridge. |
+| `stream_not_utf8` | The stream bytes cannot be kept exactly. |
+| `bridge_does_not_verify` | The extended stream would not verify. |
+
+`pm history-repair <id>` without `--append-only` still re-anchors every recorded
+entry after the break, for single-writer trackers that want a continuous chain.
 
 ## Permanent item identities
 

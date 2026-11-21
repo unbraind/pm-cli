@@ -5557,6 +5557,10 @@
           "value_type": "boolean"
         },
         {
+          "flag": "--append-only",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -5783,6 +5787,10 @@
         },
         {
           "flag": "--salvage-tail",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--append-only",
           "value_type": "boolean"
         },
         {
@@ -23387,6 +23395,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "history_append_only_repair_unavailable",
+      "class": "conflict",
+      "code": "history_append_only_repair_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History append only repair unavailable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/history/append-only-repair.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "history_author_acknowledge_plan_conflict",
       "class": "conflict",
       "code": "history_author_acknowledge_plan_conflict",
@@ -23683,6 +23708,23 @@
         "core/history/read.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_record_invalid",
+      "class": "generic_failure",
+      "code": "history_record_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History record invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/history/read.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -56101,6 +56143,58 @@
               "allOf": [
                 {
                   "properties": {
+                    "appendOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "appendOnly"
+                  ]
+                },
+                {
+                  "properties": {
+                    "salvageTail": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "salvageTail"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "appendOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "appendOnly"
+                  ]
+                },
+                {
+                  "properties": {
+                    "normalizeProvenance": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "normalizeProvenance"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
                     "salvageTail": {
                       "const": true
                     }
@@ -56193,6 +56287,10 @@
             "description": "For history-repair action: scan every stream for drift and repair each drifted stream in one audited pass (mutually exclusive with id).",
             "type": "boolean"
           },
+          "appendOnly": {
+            "description": "For history-repair: bridge each chain break with one appended, sealed record instead of re-anchoring recorded entries, so every earlier line stays byte-identical.",
+            "type": "boolean"
+          },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
@@ -56271,7 +56369,7 @@
             "type": "boolean"
           },
           "salvageTail": {
-            "description": "For history-repair with one explicit id: remove an invalid trailing suffix after a verified prefix; refuses interior corruption.",
+            "description": "For history-repair with one explicit id: remove lines that cannot hold a record (a JSON null, boolean or number) and an invalid trailing suffix after a verified prefix; refuses interior corruption.",
             "type": "boolean"
           },
           "timeoutMs": {

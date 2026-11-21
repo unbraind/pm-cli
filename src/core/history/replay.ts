@@ -6,6 +6,11 @@
 import jsonPatch from "fast-json-patch";
 import { historyDigest, resolveHistoryHashAlgorithm, type HistoryHashAlgorithm } from "./digest.js";
 import { findHistoryIdentityDiscontinuities } from "./identity.js";
+import {
+  findNextHistoryBridge,
+  matchesHistoryBreak,
+  readHistoryBridge,
+} from "./bridge.js";
 import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
@@ -23,6 +28,7 @@ import {
   type HistoryItemHashVersion,
 } from "./history.js";
 import type {
+  HistoryBridge,
   HistoryEntry,
   HistoryPatchOp,
   ItemDocument,
@@ -365,23 +371,222 @@ function matchReplayEpochCandidates(
   return matches;
 }
 
+/** Zero-based inclusive range of entries closed by one verified bridge. */
+export interface HistoryBridgedSegment {
+  /** First entry after the first named break. */
+  start: number;
+  /** The bridge record that closes the segment. */
+  end: number;
+}
+
+/** Bridged segment still open during a chain walk. */
+interface OpenBridgedSegment {
+  start: number;
+  closer: number;
+  bridge: HistoryBridge;
+  next: number;
+}
+
+/**
+ * Open a segment when the next bridge names this anchored break, so a stream
+ * repaired append-only verifies without rewriting the entries it holds.
+ */
+function openBridgedSegment(
+  entries: HistoryEntry[],
+  index: number,
+): OpenBridgedSegment | undefined {
+  if (index === 0) return undefined;
+  const closer = findNextHistoryBridge(entries, index);
+  if (closer < 0) return undefined;
+  const bridge = readHistoryBridge(entries[closer]);
+  if (
+    typeof bridge !== "object" ||
+    !matchesHistoryBreak(bridge.breaks[0], entries[index - 1], entries[index])
+  ) {
+    return undefined;
+  }
+  return { start: index, closer, bridge, next: 1 };
+}
+
+/**
+ * Verify one entry inside an open bridged segment. Replay cannot reproduce the
+ * recorded hashes there (the unrecorded change is missing), so the walk checks
+ * each recorded link instead: an unlinked entry must be the next named break,
+ * and the closing bridge must name no break that did not occur and re-anchor
+ * replay on its own after_hash.
+ */
+function verifyBridgedSegmentEntry(
+  entries: HistoryEntry[],
+  index: number,
+  segment: OpenBridgedSegment,
+  replay: ReplayDocument,
+  candidates: HistoryItemHashVersion[],
+):
+  | { ok: true; document: ReplayDocument; version?: HistoryItemHashVersion }
+  | { ok: false; error: string } {
+  const entry = entries[index];
+  const previous = entries[index - 1];
+  const input = verifyHistoryEntryInput(entry, replay);
+  if (!input.ok) return input;
+  if (index < segment.closer) {
+    if (entry.before_hash === previous.after_hash) return input;
+    if (!matchesHistoryBreak(segment.bridge.breaks[segment.next], previous, entry)) {
+      return { ok: false, error: "bridge_unnamed_break" };
+    }
+    segment.next += 1;
+    return input;
+  }
+  if (segment.next !== segment.bridge.breaks.length) {
+    return { ok: false, error: "bridge_names_absent_break" };
+  }
+  if (entry.before_hash !== previous.after_hash) {
+    return { ok: false, error: "bridge_link_mismatch" };
+  }
+  const algorithm = resolveHistoryHashAlgorithm(entry.hash_algorithm);
+  const version = candidates.find((candidate) =>
+    replayHashVerificationCandidates(input.document, candidate, algorithm).includes(
+      entry.after_hash,
+    ),
+  );
+  return version === undefined
+    ? { ok: false, error: "bridge_after_hash_mismatch" }
+    : { ok: true, document: input.document, version };
+}
+
+/** Mutable state of one chain walk, shared by the anchored and bridged steps. */
+interface HistoryChainWalk {
+  replay: ReplayDocument;
+  beforeHashMemo: ReplayHashMemo["before"];
+  detectedVersion?: HistoryItemHashVersion;
+  authoritativeExplicitVersion?: HistoryItemHashVersion;
+  segment?: OpenBridgedSegment;
+  bridgedSegments: HistoryBridgedSegment[];
+}
+
+/** Advance replay onto an entry whose hashes proved one epoch. */
+function acceptHistoryEpoch(
+  walk: HistoryChainWalk,
+  entry: HistoryEntry,
+  version: HistoryItemHashVersion,
+  document: ReplayDocument,
+  memo: ReplayHashMemo["before"],
+): void {
+  walk.replay = document;
+  walk.beforeHashMemo = memo;
+  walk.detectedVersion = version;
+  walk.authoritativeExplicitVersion =
+    (entry.item_hash_version as HistoryItemHashVersion | undefined) ??
+    walk.authoritativeExplicitVersion;
+}
+
+/** Verify one entry inside an open bridged segment; returns the failure or undefined. */
+function stepBridgedSegment(
+  entries: HistoryEntry[],
+  index: number,
+  walk: HistoryChainWalk,
+): string | undefined {
+  const segment = walk.segment!;
+  const entry = entries[index];
+  const bridged = verifyBridgedSegmentEntry(
+    entries,
+    index,
+    segment,
+    walk.replay,
+    historyEntryHashCandidates(entry.item_hash_version, walk.authoritativeExplicitVersion),
+  );
+  if (!bridged.ok) return bridged.error;
+  if (bridged.version === undefined) {
+    walk.replay = bridged.document;
+    walk.beforeHashMemo = new Map();
+    return undefined;
+  }
+  walk.bridgedSegments.push({ start: segment.start, end: index });
+  walk.segment = undefined;
+  acceptHistoryEpoch(walk, entry, bridged.version, bridged.document, new Map());
+  return undefined;
+}
+
+/** Verify one anchored entry, opening a bridged segment at a named break. */
+function stepAnchoredEntry(
+  entries: HistoryEntry[],
+  index: number,
+  walk: HistoryChainWalk,
+  unsupportedVersion: boolean,
+): string | undefined {
+  const entry = entries[index];
+  if (Object.hasOwn(entry, "bridge")) return "bridge_without_break";
+  const input = verifyHistoryEntryInput(entry, walk.replay);
+  if (!input.ok) return input.error;
+  if (unsupportedVersion) {
+    walk.replay = input.document;
+    walk.beforeHashMemo = new Map();
+    walk.detectedVersion = undefined;
+    walk.authoritativeExplicitVersion = undefined;
+    return undefined;
+  }
+  // Prefer legacy epoch 1 when an unversioned entry is valid under both
+  // algorithms, but retain compatibility with transitional epoch-2 writers
+  // that shipped before item_hash_version became explicit. Candidates are
+  // evaluated in preference order and stop at the first matching epoch; a
+  // mismatch still evaluates every candidate for its diagnostic.
+  const memo: ReplayHashMemo = { before: walk.beforeHashMemo, after: new Map() };
+  const candidateMatches = matchReplayEpochCandidates(
+    walk.replay,
+    input.document,
+    historyEntryHashCandidates(entry.item_hash_version, walk.authoritativeExplicitVersion),
+    entry,
+    memo,
+  );
+  const matching = candidateMatches.find(({ match }) => match.pairIndex >= 0);
+  if (matching !== undefined) {
+    acceptHistoryEpoch(walk, entry, matching.version, input.document, memo.after);
+    return undefined;
+  }
+  const beforeMatches = candidateMatches.some(({ match }) => match.beforeIndex >= 0);
+  walk.segment = beforeMatches ? undefined : openBridgedSegment(entries, index);
+  if (walk.segment === undefined) {
+    return `${beforeMatches ? "after" : "before"}_hash_mismatch`;
+  }
+  walk.replay = input.document;
+  walk.beforeHashMemo = new Map();
+  return undefined;
+}
+
 /** Verify a chain and report the explicit or auto-detected item hash epoch. */
 export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   ok: boolean;
   errors: string[];
   item_hash_version?: HistoryItemHashVersion;
+  /** Segments closed by an append-only bridge, in stream order; absent when none. */
+  bridged_segments?: HistoryBridgedSegment[];
 } {
-  let replay = cloneEmptyReplayDocument();
-  let beforeHashMemo: ReplayHashMemo["before"] = new Map();
-  let detectedVersion: HistoryItemHashVersion | undefined;
-  let authoritativeExplicitVersion: HistoryItemHashVersion | undefined;
+  const walk: HistoryChainWalk = {
+    replay: cloneEmptyReplayDocument(),
+    beforeHashMemo: new Map(),
+    bridgedSegments: [],
+  };
   const errors = findHistoryIdentityDiscontinuities(entries).map(
     (finding) =>
       `verify_failed:duplicate_create:entry_${finding.repeated_create_index}:prior_${finding.prior_genesis_index}`,
   );
+  const finish = (ok: boolean, details: { item_hash_version?: HistoryItemHashVersion }) => ({
+    ok,
+    errors: ok ? [] : errors,
+    ...details,
+    ...(walk.bridgedSegments.length === 0 ? {} : { bridged_segments: walk.bridgedSegments }),
+  });
+  const failure = (error: string, index: number) => {
+    errors.push(`verify_failed:${error}:entry_${index + 1}`);
+    return finish(false, {});
+  };
+  // A malformed or unsealed bridge is drift wherever it sits, even when an
+  // earlier failure would otherwise end the walk before reaching it.
+  const invalidBridge = entries.findIndex(
+    (entry) => readHistoryBridge(entry) === "invalid",
+  );
+  if (invalidBridge >= 0) return failure("bridge_invalid", invalidBridge);
   for (let index = 0; index < entries.length; index += 1) {
-    const entry = entries[index];
-    const explicitVersion = entry.item_hash_version;
+    const explicitVersion = entries[index].item_hash_version;
     const unsupportedVersion =
       isUnsupportedExplicitHistoryItemHashVersion(explicitVersion);
     if (unsupportedVersion) {
@@ -389,76 +594,18 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
         `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
       );
     }
-    const input = verifyHistoryEntryInput(entry, replay);
-    if (!input.ok) {
-      return {
-        ok: false,
-        errors: [...errors, `verify_failed:${input.error}:entry_${index + 1}`],
-      };
-    }
-    if (unsupportedVersion) {
-      replay = input.document;
-      beforeHashMemo = new Map();
-      detectedVersion = undefined;
-      authoritativeExplicitVersion = undefined;
-      continue;
-    }
-    // Prefer legacy epoch 1 when an unversioned entry is valid under both
-    // algorithms, but retain compatibility with transitional epoch-2 writers
-    // that shipped before item_hash_version became explicit. Candidates are
-    // evaluated in preference order and stop at the first matching epoch; a
-    // mismatch still evaluates every candidate for its diagnostic.
-    const candidates = historyEntryHashCandidates(
-      explicitVersion,
-      authoritativeExplicitVersion,
-    );
-    const memo: ReplayHashMemo = { before: beforeHashMemo, after: new Map() };
-    const candidateMatches = matchReplayEpochCandidates(
-      replay,
-      input.document,
-      candidates,
-      entry,
-      memo,
-    );
-    const matchingVersion = candidateMatches.find(
-      ({ match }) => match.pairIndex >= 0,
-    );
-    if (matchingVersion === undefined) {
-      const beforeMatches = candidateMatches.some(
-        ({ match }) => match.beforeIndex >= 0,
-      );
-      return {
-        ok: false,
-        errors: [
-          ...errors,
-          `verify_failed:${beforeMatches ? "after" : "before"}_hash_mismatch:entry_${index + 1}`,
-        ],
-      };
-    }
-    const version = matchingVersion.version;
-    replay = input.document;
-    beforeHashMemo = memo.after;
-    detectedVersion = version;
-    authoritativeExplicitVersion =
-      (explicitVersion as HistoryItemHashVersion | undefined) ??
-      authoritativeExplicitVersion;
+    const error =
+      walk.segment === undefined
+        ? stepAnchoredEntry(entries, index, walk, unsupportedVersion)
+        : stepBridgedSegment(entries, index, walk);
+    if (error !== undefined) return failure(error, index);
   }
-  if (errors.length > 0) {
-    return {
-      ok: false,
-      errors,
-      ...(detectedVersion === undefined
-        ? {}
-        : { item_hash_version: detectedVersion }),
-    };
-  }
-  return {
-    ok: true,
-    errors: [],
-    ...(detectedVersion === undefined
+  return finish(
+    errors.length === 0,
+    walk.detectedVersion === undefined
       ? {}
-      : { item_hash_version: detectedVersion }),
-  };
+      : { item_hash_version: walk.detectedVersion },
+  );
 }
 
 /** Deterministically verify a history chain while preserving the legacy result shape. */
@@ -640,6 +787,83 @@ function applyProjectedReanchorPatch(replay: ReplayDocument, entry: HistoryEntry
   return applyReanchorPatch(replay, entry, options.projectPatch?.(entry, replay));
 }
 
+/**
+ * Map each verified bridged segment's start to its end. A verified bridge keeps
+ * its segment byte-identical while nothing before it changed; projected
+ * rewrites (merge unions) rebase every patch, so they dissolve bridges into
+ * ordinary re-anchored records instead.
+ */
+function findPreservableBridgedSegments(
+  entries: HistoryEntry[],
+  options: ReanchorHistoryOptions,
+): Map<number, number> {
+  if (options.projectPatch !== undefined) return new Map();
+  const segments = verifyHistoryChainWithVersion(entries).bridged_segments ?? [];
+  return new Map(segments.map((segment) => [segment.start, segment.end]));
+}
+
+/** Keep one verified bridged segment byte-identical while advancing replay through it. */
+function keepBridgedSegment(
+  entries: HistoryEntry[],
+  start: number,
+  end: number,
+  replay: ReplayDocument,
+  rewritten: HistoryEntry[],
+  details: ReanchorEntryDetail[],
+): ReplayDocument {
+  let current = replay;
+  for (let index = start; index <= end; index += 1) {
+    const kept = entries[index];
+    const applied = tryApplyReplayPatch(current, kept.patch);
+    /* c8 ignore next -- the verifier already applied this exact patch */
+    if (!applied.ok) throw new TypeError(`patch_apply_failed:entry_${index + 1}`);
+    current = applied.document;
+    rewritten.push(kept);
+    details.push({
+      index: index + 1,
+      rehashed: false,
+      patch_repaired: false,
+      converted_replace_to_add: 0,
+      skipped_ops: 0,
+    });
+  }
+  return current;
+}
+
+/**
+ * Apply the stream epoch to one re-anchored entry and reseal it when anything
+ * changed. A bridge outside a preserved segment names breaks that
+ * re-anchoring removes, so it is dissolved and kept only as rewrite evidence.
+ */
+function finalizeReanchoredEntry(
+  entry: HistoryEntry,
+  rewrittenEntry: HistoryEntry,
+  flags: {
+    itemHashVersion: HistoryItemHashVersion | undefined;
+    rehashed: boolean;
+    patchRepaired: boolean;
+  },
+): { entry: HistoryEntry; changed: boolean } {
+  if (flags.itemHashVersion === undefined) delete rewrittenEntry.item_hash_version;
+  else rewrittenEntry.item_hash_version = flags.itemHashVersion;
+  const bridgeDissolved = Object.hasOwn(entry, "bridge");
+  delete rewrittenEntry.bridge;
+  const changed =
+    flags.rehashed ||
+    flags.patchRepaired ||
+    bridgeDissolved ||
+    rewrittenEntry.item_hash_version !== entry.item_hash_version;
+  return {
+    changed,
+    entry: changed
+      ? resealHistoryRewrite(entry, rewrittenEntry, {
+          retainOriginalPatch: flags.patchRepaired,
+          retainPriorRecord: bridgeDissolved,
+        })
+      : rewrittenEntry,
+  };
+}
+
 /** Re-anchor a drifted history chain: replay every entry from empty, recompute the before/after hashes, and only rewrite a patch when the original op set no longer strictly applies (legacy drift). Clean entries keep their patch verbatim so the on-disk diff stays minimal. The returned chain verifies via verifyHistoryChain. */
 export function reanchorHistoryEntries(
   entries: HistoryEntry[],
@@ -665,10 +889,20 @@ export function reanchorHistoryEntries(
   const explicitItemHashVersion =
     itemHashVersion !== 1 ||
     entries.some((entry) => entry.item_hash_version !== undefined);
+  const preservedSegments = findPreservableBridgedSegments(entries, options);
+  let unchangedPrefix = true;
 
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     assertHistoryEntryIntegrity(entry, index);
+    const preservedEnd = unchangedPrefix
+      ? preservedSegments.get(index)
+      : undefined;
+    if (preservedEnd !== undefined) {
+      replay = keepBridgedSegment(entries, index, preservedEnd, replay, rewritten, details);
+      index = preservedEnd;
+      continue;
+    }
     const patchApplication = applyProjectedReanchorPatch(replay, entry, options);
     const {
       next,
@@ -708,25 +942,17 @@ export function reanchorHistoryEntries(
       entriesRehashed += 1;
     }
 
-    let rewrittenEntry: HistoryEntry = {
-      ...entry,
-      patch: outPatch,
-      before_hash: beforeHash,
-      after_hash: afterHash,
-    };
-    if (explicitItemHashVersion) {
-      rewrittenEntry.item_hash_version = itemHashVersion;
-    } else {
-      delete rewrittenEntry.item_hash_version;
-    }
-    const versionChanged =
-      rewrittenEntry.item_hash_version !== entry.item_hash_version;
-    if (rehashed || patchRepaired || versionChanged) {
-      rewrittenEntry = resealHistoryRewrite(entry, rewrittenEntry, {
-        retainOriginalPatch: patchRepaired,
-      });
-    }
-    rewritten.push(rewrittenEntry);
+    const finalized = finalizeReanchoredEntry(
+      entry,
+      { ...entry, patch: outPatch, before_hash: beforeHash, after_hash: afterHash },
+      {
+        itemHashVersion: explicitItemHashVersion ? itemHashVersion : undefined,
+        rehashed,
+        patchRepaired,
+      },
+    );
+    unchangedPrefix &&= !finalized.changed;
+    rewritten.push(finalized.entry);
     details.push({
       index: index + 1,
       rehashed,

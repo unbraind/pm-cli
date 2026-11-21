@@ -806,10 +806,19 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "dryRun",
         "normalizeProvenance",
         "salvageTail",
+        "appendOnly",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       oneOfRequired: [["id"], ["all"]],
       mutuallyExclusiveWhen: [
+        [
+          { property: "appendOnly", schema: { const: true } },
+          { property: "salvageTail", schema: { const: true } },
+        ],
+        [
+          { property: "appendOnly", schema: { const: true } },
+          { property: "normalizeProvenance", schema: { const: true } },
+        ],
         [
           { property: "salvageTail", schema: { const: true } },
           { property: "all", schema: { const: true } },

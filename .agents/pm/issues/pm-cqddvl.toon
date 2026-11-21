@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: gc,runtime,safety,symlink
 created_at: "2026-11-20T13:55:29.388Z"
-updated_at: "2026-11-20T20:54:58.185Z"
+updated_at: "2026-11-20T21:33:44.513Z"
 closed_at: "2026-11-20T16:12:40.631Z"
 completed_at: "2026-11-20T16:12:40.631Z"
 author: "harness:claude-code"
@@ -21,9 +21,10 @@ expected_result: Garbage collection never deletes outside the tracker
 actual_result: "A symlinked runtime directory keeps its link target's test-runs, history-drift-cache.json and history-stream-summary.json, and gc warns; real runtime directories are cleaned as before (gc spec 21/21)"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1664,discovered_from,"2026-11-20T13:55:29.388Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-20T18:22:21.083Z","harness:claude-code","Codex review round 17 (PR #1761, head e27e5636b): gc checked runtime/ only once, but each target's extension read hook runs before that target is removed, so a hook or a concurrent migration could redirect runtime/ in between. removeCacheFile now re-checks runtime/ after the read hook, immediately before removing each runtime target, and gc checks again before the snapshot temp sweep, since the last target's write hooks run after its own check. Specs redirect runtime/ from the first target's read hook and from the last target's write hook. In both, nothing in the other tracker is removed and gc warns redirected_runtime_directory:runtime."
   "2026-11-20T20:54:58.185Z","harness:claude-code","Codex review round 23 (PR #1761, head bebbdbe35): gc inspected every cache target with fs.stat, which follows links, so a circular or dangling link at a target path (for example runtime/history-stream-summary.json) made pm gc abort with ELOOP before its later scopes, even in dry-run mode. removeCacheFile now inspects targets with lstat, so a target that is a link is retained with not_a_file or not_a_directory, and the remaining scopes still run. A spec places a circular link at the summary path and runs gc with scope runtime,locks, dry-run and real: the link survives, the warning is reported and the locks summary is present. docs/COMMANDS.md states the no-follow rule for the runtime scope."
+  "2026-11-20T21:33:44.513Z","harness:claude-code","Codex review round 26 (PR #1761, head 7e33713f5) noted that a concurrent migration could replace runtime/ with a link between gc's per-target check and its lstat or unlink, which resolve the parent again. Declined as the documented limit that the stream summary and the context-usage ledger share: portable Node APIs have no openat or unlinkat to pin a validated directory, so the checks reject existing redirections and require a stable workspace directory. gc now checks after every hook and immediately before each removal, which narrows the window to the syscalls themselves. The same window existed before this PR for runtime/test-runs and runtime/history-drift-cache.json."
 files[2]{path,scope,note}:
   src/sdk/governance/gc.ts,project,runtime-scope targets and the snapshot temp sweep are retained when runtime/ is not a real directory
   tests/unit/commands/governance/gc-command.spec.ts,project,symlinked runtime directory and lstat failure

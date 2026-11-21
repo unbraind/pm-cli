@@ -260,7 +260,8 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   "history-attest": 23,
   "history-redact": 27,
   // One explicit destructive-recovery mode; never overload ordinary reanchoring.
-  "history-repair": 27,
+  // pm-gh1715: one explicit append-only bridge mode; no spare allowance.
+  "history-repair": 28,
   "history-compact": 30,
   "history-author-acknowledge": 28,
   // 24 -> 27 on 2026-09-04: --message, --force, and --include-reconciled were

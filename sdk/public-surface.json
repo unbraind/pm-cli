@@ -3489,6 +3489,24 @@
       ],
       "package_version": "2026.11.20",
       "reason": "GH-1664: ActivityResult gains an optional history_read receipt and ContextResult an optional activity_history_read receipt, present only when a read on a tracker with 500 or more history streams could not be bounded; readRecentActivity and its result types are new query exports; writeFileAtomic gains an optional mode option. Existing fields, values and calls are unchanged"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryEntry",
+        "signature ./sdk:HistoryMergeStrategy",
+        "signature ./sdk:HistoryRepairCommandOptions",
+        "signature ./sdk:HistoryRepairResult",
+        "signature ./sdk:verifyHistoryChainWithVersion",
+        "signature ./sdk/core:HistoryEntry",
+        "signature ./sdk/governance:HistoryEntry",
+        "signature ./sdk/merge:HistoryMergeStrategy",
+        "signature ./sdk/query:HistoryEntry",
+        "signature ./sdk/runtime:HistoryEntry",
+        "signature ./sdk/runtime:HistoryRepairCommandOptions",
+        "signature ./sdk/runtime:HistoryRepairResult"
+      ],
+      "package_version": "2026.11.20",
+      "reason": "GH-1715/pm-jbplbq: additive optional fields only (HistoryEntry.bridge, HistoryRepairCommandOptions.appendOnly, HistoryRepairResult.bridge, verifyHistoryChainWithVersion bridged_segments) plus one new HistoryMergeStrategy member equivalent_bridges; exhaustive switches over HistoryMergeStrategy must add a case for it."
     }
   ],
   "entrypoints": {
@@ -10840,6 +10858,12 @@
           "signature": "export interface HistoryAuthorAttributionScan { checked_streams: number; checked_events: number; unknown_event_count: number; legacy_unknown_event_count: number; actionable_unknown_event_count: number; acknowledged_actionable_event_count: number; affected_item_ids: string[]; samples: UnknownAuthorHistoryEvent[]; samples_truncated: boolean; actionable_events?: UnknownAuthorHistoryEvent[]; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HistoryBridgedSegment",
+          "signature": "export interface HistoryBridgedSegment { start: number; end: number; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryCommandOptions",
@@ -10915,7 +10939,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryEntry",
-          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; message?: string; context?: Record<string, unknown>; }"
+          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; bridge?: HistoryBridge; message?: string; context?: Record<string, unknown>; }"
         },
         {
           "classification": "advanced_export",
@@ -11017,7 +11041,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "HistoryMergeStrategy",
-          "signature": "export type HistoryMergeStrategy = \"identical\" | \"fast_forward_ours\" | \"fast_forward_theirs\" | \"union_reanchor\";"
+          "signature": "export type HistoryMergeStrategy = \"identical\" | \"fast_forward_ours\" | \"fast_forward_theirs\" | \"equivalent_bridges\" | \"union_reanchor\";"
         },
         {
           "classification": "advanced_export",
@@ -11095,7 +11119,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairCommandOptions",
-          "signature": "export interface HistoryRepairCommandOptions { salvageTail?: boolean; dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; mergeReceiptProof?: { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }; mergeReceiptProofById?: Record<string, { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }>; mergeAbandonmentProof?: { gitWorkspaceRoot: string; receipt: MergeDecisionReceipt; }; }"
+          "signature": "export interface HistoryRepairCommandOptions { salvageTail?: boolean; appendOnly?: boolean; dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; mergeReceiptProof?: { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }; mergeReceiptProofById?: Record<string, { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }>; mergeAbandonmentProof?: { gitWorkspaceRoot: string; receipt: MergeDecisionReceipt; }; }"
         },
         {
           "classification": "advanced_export",
@@ -11113,7 +11137,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairResult",
-          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; bridge?: HistoryRepairBridgeReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -23821,7 +23845,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "verifyHistoryChainWithVersion",
-          "signature": "(entries: HistoryEntry[]) => { ok: boolean; errors: string[]; item_hash_version?: HistoryItemHashVersion; } | calls: (entries: HistoryEntry[]) => { ok: boolean; errors: string[]; item_hash_version?: HistoryItemHashVersion; }"
+          "signature": "(entries: HistoryEntry[]) => { ok: boolean; errors: string[]; item_hash_version?: HistoryItemHashVersion; bridged_segments?: HistoryBridgedSegment[]; } | calls: (entries: HistoryEntry[]) => { ok: boolean; errors: string[]; item_hash_version?: HistoryItemHashVersion; bridged_segments?: HistoryBridgedSegment[]; }"
         },
         {
           "classification": "advanced_export",
@@ -29329,7 +29353,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryEntry",
-          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; message?: string; context?: Record<string, unknown>; }"
+          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; bridge?: HistoryBridge; message?: string; context?: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -31297,7 +31321,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryEntry",
-          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; message?: string; context?: Record<string, unknown>; }"
+          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; bridge?: HistoryBridge; message?: string; context?: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -34057,7 +34081,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "HistoryMergeStrategy",
-          "signature": "export type HistoryMergeStrategy = \"identical\" | \"fast_forward_ours\" | \"fast_forward_theirs\" | \"union_reanchor\";"
+          "signature": "export type HistoryMergeStrategy = \"identical\" | \"fast_forward_ours\" | \"fast_forward_theirs\" | \"equivalent_bridges\" | \"union_reanchor\";"
         },
         {
           "classification": "supported",
@@ -35359,7 +35383,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryEntry",
-          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; message?: string; context?: Record<string, unknown>; }"
+          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; bridge?: HistoryBridge; message?: string; context?: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -37513,7 +37537,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryEntry",
-          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; message?: string; context?: Record<string, unknown>; }"
+          "signature": "export interface HistoryEntry { hash_algorithm?: string; ts: string; author: string; author_source?: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; agent_harness?: string; agent_model?: string; agent_model_source?: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; agent_instance?: string; agent_provenance?: Readonly<Record<string, { value: string; source: \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\"; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; } | null>>; agent_episode?: { id: string; label?: string; parent_id?: string; }; op: string; event_class?: \"substantive\" | \"maintenance\"; patch: HistoryPatchOp[]; before_hash: string; after_hash: string; item_hash_version?: number; record_hash_version?: number; record_hash?: string; reanchor_evidence?: HistoryReanchorEvidence[]; bridge?: HistoryBridge; message?: string; context?: Record<string, unknown>; }"
         },
         {
           "classification": "advanced_export",
@@ -37567,13 +37591,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairCommandOptions",
-          "signature": "export interface HistoryRepairCommandOptions { salvageTail?: boolean; dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; mergeReceiptProof?: { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }; mergeReceiptProofById?: Record<string, { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }>; mergeAbandonmentProof?: { gitWorkspaceRoot: string; receipt: MergeDecisionReceipt; }; }"
+          "signature": "export interface HistoryRepairCommandOptions { salvageTail?: boolean; appendOnly?: boolean; dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; mergeReceiptProof?: { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }; mergeReceiptProofById?: Record<string, { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }>; mergeAbandonmentProof?: { gitWorkspaceRoot: string; receipt: MergeDecisionReceipt; }; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairResult",
-          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; bridge?: HistoryRepairBridgeReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -40998,6 +41022,7 @@
     "hierarchy_cardinality_created",
     "hierarchy_cycle_created",
     "hierarchy_parent_divergence_created",
+    "history_append_only_repair_unavailable",
     "history_author_acknowledge_plan_conflict",
     "history_author_acknowledge_plan_fingerprint_required",
     "history_author_acknowledge_preview_limit_invalid",
@@ -41015,6 +41040,7 @@
     "history_drift_version_skew",
     "history_json_invalid",
     "history_merge_conflict_markers_detected",
+    "history_record_invalid",
     "history_replay_invalid",
     "history_salvage_refused",
     "history_stream_over_compact_threshold",
@@ -41372,7 +41398,7 @@
       "checked_functions": 1352,
       "checked_values": 401,
       "exempt_test_seams": 15,
-      "referenced_types": 1059
+      "referenced_types": 1060
     },
     "./sdk/authoring": {
       "checked_functions": 54,

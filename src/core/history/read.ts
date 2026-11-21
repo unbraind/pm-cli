@@ -105,8 +105,9 @@ async function decodeHistorySnapshot(
     if (!line) {
       continue;
     }
+    let parsed: unknown;
     try {
-      entries.push(JSON.parse(line) as HistoryEntry);
+      parsed = JSON.parse(line);
     } catch {
       throw new PmCliError(
         `History for ${itemId} contains invalid JSON at line ${index + 1}. Repair or restore the history stream and retry.`,
@@ -117,8 +118,48 @@ async function decodeHistorySnapshot(
         },
       );
     }
+    const defect = describeHistoryRecordDefect(parsed);
+    if (defect !== null) {
+      throw new PmCliError(
+        `History for ${itemId} holds ${defect} at line ${index + 1}, which is not a history record. Remove or restore the line and retry.`,
+        EXIT_CODE.GENERIC_FAILURE,
+        {
+          code: "history_record_invalid",
+          item_id: itemId,
+          reason: defect,
+          details: { line: index + 1 },
+          required: "Every history line must be one JSON object record.",
+          nextSteps: [
+            `Run pm history-repair ${itemId} --salvage-tail --dry-run: it removes a line that cannot hold a record (a JSON null, boolean or number) and keeps every record.`,
+            "Otherwise recover the line from version control or a backup.",
+          ],
+        },
+      );
+    }
+    entries.push(parsed as HistoryEntry);
   }
   return { raw, raw_bytes: rawBytes, entries };
+}
+
+/**
+ * Describe why one decoded JSONL value cannot be a history record, or return
+ * null for an object. Readers dereference every line as an object, so a JSON
+ * null, boolean, number, string or array refuses here with a typed error
+ * instead of crashing a reader; objects keep each reader's legacy tolerance.
+ */
+export function describeHistoryRecordDefect(value: unknown): string | null {
+  if (value === null) return "a JSON null";
+  if (Array.isArray(value)) return "a JSON array";
+  return typeof value === "object" ? null : `a JSON ${typeof value}`;
+}
+
+/** Whether one decoded JSON value is a scalar that cannot encode or hide a record. */
+export function isNonRecordScalar(value: unknown): boolean {
+  return (
+    value === null ||
+    typeof value === "boolean" ||
+    typeof value === "number"
+  );
 }
 
 /** Read and validate one item's JSONL history stream without mutating it. */

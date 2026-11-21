@@ -676,6 +676,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/graph/hierarchy-integrity.ts"],
   },
   {
+    code: "history_append_only_repair_unavailable",
+    exit_code: 4,
+    sources: ["sdk/history/append-only-repair.ts"],
+  },
+  {
     code: "history_author_acknowledge_plan_conflict",
     exit_code: 4,
     sources: ["sdk/author-attribution.ts"],
@@ -772,6 +777,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     stable: true,
     sources: ["core/history/read.ts"],
     canonical_code: "merge_conflict_markers_detected",
+  },
+  {
+    code: "history_record_invalid",
+    exit_code: 1,
+    sources: ["core/history/read.ts"],
   },
   {
     code: "history_replay_invalid",
@@ -1382,10 +1392,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 5,
     stable: true,
     sources: ["sdk/merge/install.ts"],
-  },
-  {
-    code: "merge_receipt_evidence_invalid",
-    exit_code: 4,
-    sources: ["core/diagnostics/remediation.ts", "sdk/merge/reconcile.ts"],
   },
 ];

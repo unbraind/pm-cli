@@ -283,6 +283,10 @@ export function registerHistoryMaintenanceCommands(
       "Recover invalid tail; requires verified prefix",
     )
     .option(
+      "--append-only",
+      "Bridge breaks; never rewrite entries",
+    )
+    .option(
       "--all",
       "Scan every stream for drift and repair each drifted stream in one audited pass",
     )
@@ -320,6 +324,7 @@ export function registerHistoryMaintenanceCommands(
           force: Boolean(options.force),
           normalizeProvenance: options.normalizeProvenance === true,
           salvageTail: options.salvageTail === true,
+          appendOnly: options.appendOnly === true,
         };
         // history-repair only re-anchors the audit stream; item content is untouched,
         // so search caches do not need invalidation.
