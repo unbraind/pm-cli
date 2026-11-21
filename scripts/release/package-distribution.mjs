@@ -429,7 +429,12 @@ const LOADER_BEFORE = new RegExp(
   "u",
 );
 const ARGUMENT_END = new RegExp(String.raw`^${SKIPPED_TRIVIA}[),]`, "u");
-const CONCATENATED_LITERAL = new RegExp(String.raw`^${SKIPPED_TRIVIA}\+${SKIPPED_TRIVIA}(["'])([^"'\x60\r\n]*)\1`, "u");
+// Only a complete operand folds: a literal an expression goes on to transform
+// (".js".slice(3)) ends the fold, so the literal before it is judged as written.
+const CONCATENATED_LITERAL = new RegExp(
+  String.raw`^${SKIPPED_TRIVIA}\+${SKIPPED_TRIVIA}(["'])([^"'\x60\r\n]*)\1(?=${SKIPPED_TRIVIA}(?:[+),;\]}]|$))`,
+  "u",
+);
 
 /** Fold string literals concatenated onto the quoted string ending at `end`: './' + 'a.js' is './a.js'. */
 function foldConcatenation(text, specifier, end) {
@@ -512,6 +517,8 @@ function specifierTargets(file, specifier, loader) {
   return [literalTarget(file, specifier), urlTarget(file, specifier)];
 }
 
+const DOT_ONLY = /^(?:\.{1,2}\/)+$/u;
+
 /** A target outside the package root or inside node_modules is not first-party. */
 const isFirstPartyTarget = (target) => target !== ".." && !target.startsWith("../") && !target.split("/").includes("node_modules");
 
@@ -551,8 +558,9 @@ export function findExcludedModuleReferences(packedPaths, layouts, readText) {
       const folded = foldConcatenation(text, match[2], match.index + match[0].length);
       const { kind: loader, whole } = loaderContext(text, match.index, folded.end);
       const specifier = decodeSpecifier(folded.specifier);
-      // A dot-only string is a path check, or the unknown prefix of an expression, unless it is a loader's whole argument.
-      if (!(whole && loader !== null) && /^(?:\.{1,2}\/)+$/u.test(specifier)) continue;
+      // A dot-only string, with or without a query or fragment, is a path check or
+      // the unknown prefix of an expression unless it is a loader's whole argument.
+      if (!(whole && loader !== null) && DOT_ONLY.test(specifier.replace(/[?#][\s\S]*$/u, ""))) continue;
       const targets = specifierTargets(file, specifier, whole ? loader : null);
       if (targets.some((target) => isDanglingTarget(layouts, target, loader))) references.push(`${file} -> ${folded.specifier}`);
     }

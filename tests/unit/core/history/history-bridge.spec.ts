@@ -12,7 +12,7 @@ import {
   matchesHistoryBreak,
   readHistoryBridge,
 } from "../../../../src/core/history/bridge.js";
-import { tryApplyReplayPatch } from "../../../../src/core/history/replay.js";
+import { _testOnly as replayInternals, tryApplyReplayPatch } from "../../../../src/core/history/replay.js";
 import type { HistoryEntry, HistoryPatchOp } from "../../../../src/types/index.js";
 
 const descriptor = { gap_from: "a".repeat(64), gap_to: "b".repeat(64), record_hash: null };
@@ -128,6 +128,18 @@ describe("history bridge envelope", () => {
     // Without such a key the digest is the one stableStringify gives, array-index keys first and numerically.
     const indexed = [entry({ context: { b: 1, 10: "ten", a: 2, 2: "two", 4294967295: "big" } as Record<string, unknown> })];
     expect(digestBridgedSegment(indexed, {})).toBe(createHash("sha256").update(stableStringify(indexed), "utf8").digest("hex"));
+  });
+
+  it("counts only operations that can never change state as effect-free", () => {
+    const free = (operation: Record<string, unknown>) => replayInternals.isEffectFreeOperation(operation as unknown as HistoryPatchOp);
+    expect(free({ op: "test", path: "/body", value: "" })).toBe(true);
+    expect(free({ op: "move", from: "/body", path: "/body" })).toBe(true);
+    expect(free({ op: "copy", from: "/body", path: "/body" })).toBe(true);
+    // Copying onto an array index (or the append token) inserts a second element.
+    expect(free({ op: "copy", from: "/metadata/comments/0", path: "/metadata/comments/0" })).toBe(false);
+    expect(free({ op: "copy", from: "/metadata/comments/-", path: "/metadata/comments/-" })).toBe(false);
+    expect(free({ op: "copy", from: "/metadata/title", path: "/body" })).toBe(false);
+    expect(free({ op: "replace", path: "/body", value: "" })).toBe(false);
   });
 
   it("copies only inserted values, so an unused value never has to be cloneable", () => {

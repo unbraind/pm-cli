@@ -315,6 +315,14 @@ describe("append-only history repair (GH-1715)", () => {
       expect(verifyHistoryChainWithVersion(entries).ok).toBe(true);
       // The rewriting repair keeps the unversioned bridged segment as it is.
       expect(await runHistoryRepair(ID, {}, { path: context.pmPath })).toMatchObject({ changed: false });
+      // Once a labelled record follows, a rewrite that labels every record cannot keep an unlabelled closer.
+      comment(context, "after the bridge");
+      const labelled = await readHistoryEntries(file, ID);
+      expect(labelled.at(-1)).toHaveProperty("item_hash_version");
+      for (const epoch of [1, 2, 3] as const) {
+        const rewrite = reanchorHistoryEntries(labelled, epoch);
+        expect(verifyHistoryChainWithVersion(rewrite.entries).ok, `epoch ${epoch}`).toBe(true);
+      }
     });
   });
 

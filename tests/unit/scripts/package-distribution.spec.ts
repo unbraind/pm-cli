@@ -420,6 +420,13 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   expect(referencesIn("dist/sdk/a.cjs", 'require("./" + "index.js")', indexes)).toEqual(["dist/sdk/a.cjs -> ./index.js"]);
   expect(referencesIn("dist/sdk/a.cjs", "require('./' /* part */ + 'history-compact.js')", layoutsOf(["dist/sdk/index.js"], ["dist/sdk/history-compact.js"]))).toEqual([]);
   expect(referencesIn("dist/sdk/a.cjs", 'require("./" + name)', indexes)).toEqual([]);
+  // Only complete operands fold: a literal an expression transforms ends the fold.
+  const sdk = layoutsOf(["dist/sdk/index.js"], ["dist/sdk/init.js", "dist/sdk/index.js.js"]);
+  expect(referencesIn("dist/cli/public.js", 'import("../sdk/index.js" + ".js".slice(3))', sdk)).toEqual(["dist/cli/public.js -> ../sdk/index.js"]);
+  expect(referencesIn("dist/cli/public.js", 'import("../sdk/i" + "ndex.js".replace("ndex", "nit"))', sdk)).toEqual([]);
+  expect(referencesIn("dist/cli/public.js", 'import("../sdk/" + "index.js")', sdk)).toEqual(["dist/cli/public.js -> ../sdk/index.js"]);
+  // A dot-only directory URL with a query outside a loader is a directory read, not a module reference.
+  expect(referencesIn("dist/sdk/history-compact.js", 'readdirSync(new URL("./?view=modules", import.meta.url))', sdk)).toEqual([]);
   // An import resolves as a URL: escaped whitespace is dropped, a query and fragment stripped, percent escapes decoded.
   const graph = layoutsOf(["dist/sdk/graph.js"], []);
   expect(referencesIn("dist/cli.mjs", "import('./sdk/graph.js?worker\\n')", graph)).toEqual(["dist/cli.mjs -> ./sdk/graph.js?worker\\n"]);

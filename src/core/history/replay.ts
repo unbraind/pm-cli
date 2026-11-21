@@ -398,12 +398,19 @@ function isBridgeableRecord(entry: HistoryEntry): boolean {
   if (!digest.test(entry.before_hash) || !digest.test(entry.after_hash)) return false;
   // A record whose patch cannot change state must not claim a state change,
   // even where replay cannot prove its before-state.
-  const effectless = normalizeReplayPatchOps(entry.patch).every(
-    (operation) =>
-      operation.op === "test" ||
-      ((operation.op === "copy" || operation.op === "move") && operation.from === operation.path),
-  );
+  const effectless = normalizeReplayPatchOps(entry.patch).every(isEffectFreeOperation);
   return !effectless || entry.before_hash === entry.after_hash || Object.hasOwn(entry, "bridge");
+}
+
+/**
+ * Whether one operation can never change state: a test, a move onto its own
+ * path, or a copy onto its own path unless that path may be an array element
+ * (copying onto an index inserts a second element there).
+ */
+function isEffectFreeOperation(operation: HistoryPatchOp): boolean {
+  if (operation.op === "test") return true;
+  if (operation.from !== operation.path) return false;
+  return operation.op === "move" || (operation.op === "copy" && !/\/(?:\d+|-)$/u.test(operation.path));
 }
 
 /** Zero-based inclusive range of entries closed by one verified bridge. */
@@ -894,6 +901,7 @@ function indexBridgedSegments(
   entries: HistoryEntry[],
   options: ReanchorHistoryOptions,
   itemHashVersion: HistoryItemHashVersion,
+  explicitItemHashVersion: boolean,
 ): { preservable: Map<number, number>; inexact: Set<number>; inputVerifies: boolean } {
   const verification = verifyHistoryChainWithVersion(entries);
   // A projected or continuous-surface rewrite re-anchors every record, and a
@@ -906,6 +914,8 @@ function indexBridgedSegments(
     ? (verification.bridged_segments ?? []).filter(
         (segment) =>
           BRIDGED_SEGMENT_EPOCHS.get(segment) === itemHashVersion &&
+          // A rewrite that labels every record declares its epoch, and a closer must carry the declared epoch.
+          (!explicitItemHashVersion || entries[segment.end]!.item_hash_version === itemHashVersion) &&
           entries
             .slice(segment.start, segment.end + 1)
             .every((entry) => entry.item_hash_version === undefined || entry.item_hash_version === itemHashVersion),
@@ -1068,7 +1078,7 @@ export function reanchorHistoryEntries(
   const explicitItemHashVersion =
     itemHashVersion !== 1 ||
     entries.some((entry) => entry.item_hash_version !== undefined);
-  const bridged = indexBridgedSegments(entries, options, itemHashVersion);
+  const bridged = indexBridgedSegments(entries, options, itemHashVersion, explicitItemHashVersion);
   let unchangedPrefix = true;
 
   for (let index = 0; index < entries.length; index += 1) {
@@ -1166,3 +1176,6 @@ export function historyEntriesToRaw(entries: HistoryEntry[]): string {
   }
   return `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`;
 }
+
+/** Internal helpers exposed for focused specs only. */
+export const _testOnly = { isEffectFreeOperation };
