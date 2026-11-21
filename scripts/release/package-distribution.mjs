@@ -396,9 +396,9 @@ export function findExcludedModuleReferences(packedPaths, isExcluded, readText) 
       // require() reads "#" and "?" literally while an ESM URL drops them: judge both spellings.
       const pathnames = [...new Set([specifier, specifier.replace(/[?#].*$/u, "")])];
       const candidates = pathnames
-        // A trailing slash names a directory, as path checks such as "../" do; no loader resolves it.
-        .filter((pathname) => !pathname.endsWith("/"))
-        .map((pathname) => path.posix.join(path.posix.dirname(file), pathname))
+        // Dot-only strings such as "../" are path checks; require("./sdk/") still names sdk/index.js.
+        .filter((pathname) => !/^(?:\.{1,2}\/)+$/u.test(pathname))
+        .map((pathname) => path.posix.join(path.posix.dirname(file), pathname).replace(/\/+$/u, ""))
         .flatMap((target) => [target, ...MODULE_EXTENSIONS.flatMap((extension) => [`${target}${extension}`, `${target}/index${extension}`])]);
       if (candidates.some(isExcluded)) references.push(`${file} -> ${specifier}`);
     }

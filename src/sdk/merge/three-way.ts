@@ -157,7 +157,13 @@ function parseHistoryJsonl(raw: string, label: string): HistoryEntry[] {
 
 /** The original bridge a neutral equivalent-bridge record was made from, if it is one. */
 function neutralizedBridgeOriginal(entry: HistoryEntry): HistoryEntry | undefined {
-  if (entry.op !== "history_repair" || Object.hasOwn(entry, "bridge") || entry.patch.length > 0) {
+  // Legacy records may lack a patch array; only an explicit empty patch can be a neutral copy.
+  if (
+    entry.op !== "history_repair" ||
+    Object.hasOwn(entry, "bridge") ||
+    !Array.isArray(entry.patch) ||
+    entry.patch.length > 0
+  ) {
     return undefined;
   }
   return [entry.reanchor_evidence?.at(-1)?.record].find(

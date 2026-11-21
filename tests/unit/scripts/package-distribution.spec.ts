@@ -361,8 +361,11 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   expect(findExcludedModuleReferences(["dist/index.cjs"], (candidate) => candidate === "dist/helper#legacy.cjs", () => "require('./helper#legacy.cjs')")).toEqual([
     "dist/index.cjs -> ./helper#legacy.cjs",
   ]);
-  // A trailing slash names a directory, as path checks such as "../" do.
-  expect(findExcludedModuleReferences(["dist/a.js"], () => true, () => 'x.startsWith("../")')).toEqual([]);
+  // Dot-only strings such as "../" are path checks; a named directory still resolves to its index.
+  expect(findExcludedModuleReferences(["dist/a.js"], () => true, () => 'x.startsWith("../") || x === "./../"')).toEqual([]);
+  expect(findExcludedModuleReferences(["dist/a.cjs"], (candidate) => candidate === "dist/sdk/index.js", () => "require('./sdk/')")).toEqual([
+    "dist/a.cjs -> ./sdk/",
+  ]);
 });
 
 it("treats a checkout module as excluded only when it exists inside the checkout and is not packed (pm-998juj)", async () => {

@@ -45,4 +45,9 @@ describe("union marking by occurrence", () => {
     const merged = [first, broken, repeated, interleaved, repeated, bridge];
     expect([..._testOnly.collectUnionInexactIndexes(merged, [side], true)].sort()).toEqual([1, 2, 3, 4]);
   });
+
+  it("keeps a legacy repair record without a patch array on the ordinary identity path", () => {
+    const legacy = { ...record({ op: "history_repair" }), patch: undefined } as unknown as HistoryEntry;
+    expect([..._testOnly.collectUnionInexactIndexes([legacy], [[legacy]], false)]).toEqual([]);
+  });
 });
