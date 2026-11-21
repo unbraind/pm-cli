@@ -2,21 +2,22 @@ id: pm-rpucvb
 title: "A history stream with both a non-record line and a chain break has no pm recovery: salvage needs a verified chain and repair reads through the refusing decoder"
 description: "Found while fixing pm-jbplbq on 2026-11-21. The shared decoder now refuses a line that is valid JSON but not an object with history_record_invalid, and names pm history-repair <id> --salvage-tail as the recovery. Salvage removes a JSON null, boolean or number line wherever it sits, but it still requires the retained records to verify (inspectHistoryTail refuses with 'History salvage requires a nonempty verified prefix'). pm history-repair, with or without --append-only, reads through the decoder, so it refuses before it can repair the chain. A stream with both faults, for example an out-of-band edit followed by a tool that appended null, therefore has no pm-native recovery, and the only way out is restoring the stream from version control. Fix: let salvage remove scalar lines without requiring a verified chain when no invalid suffix is discarded (removal cannot conceal a record), report the chain verdict honestly instead of the hard-coded verify_ok true, and leave chain repair to the next history-repair. Duplicate check: searched salvage, chain break, scalar and history repair; pm-jbplbq owns the refusal and the single-fault salvage, pm-gh1715 the append-only chain repair."
 type: Issue
-status: in_progress
+status: closed
 priority: 3
 tags[4]: history,recovery,robustness,salvage
 created_at: "2026-11-21T01:43:06.212Z"
-updated_at: "2026-11-21T13:58:37.013Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#27675b3cf25f0c8ca46c5936"
+updated_at: "2026-11-21T15:03:47.275Z"
+closed_at: "2026-11-21T15:00:14.205Z"
+completed_at: "2026-11-21T15:00:14.205Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A stream with a JSON null line and a chain break recovers with pm history-repair <id> --salvage-tail followed by pm history-repair <id> --append-only, executed in a spec; Salvage that only removes scalar lines never requires a verified chain and reports the real verify_ok and verify_errors; Salvage that discards an invalid suffix keeps its verified-prefix requirement"
 parent: pm-o2kc
 risk: low
 confidence: 80
+resolution: "Salvage removes lines that cannot hold a record without requiring a verified chain, reports the real chain verdict and names the repair previews; discarding an invalid suffix keeps the verified-prefix rule; a scalar-only stream salvages to an empty stream that pm history-repair rebuilds; identity is checked at every replayed state and ownership uses the last state that held the item; lenient replay keeps applied ops and records deletions. Delivered on PR #1763."
 expected_result: Every combination of a non-record line and a chain break has a pm-native recovery sequence
-actual_result: "Salvage refuses because the chain does not verify, and history-repair refuses because the decoder refuses the line"
+actual_result: "A null line plus a bridgeable break salvages with verify_ok false, then pm history-repair <id> --append-only bridges it to a clean history_drift check and history --verify --strict-exit; the suffix refusal, nothing-to-discard next step, scalar-only rebuild, foreign-stream refusal and strict ownership cases pass"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1715,related,"2026-11-21T01:43:06.212Z","harness:claude-code","cli:create:dep",detected
   pm-jbplbq,discovered_from,"2026-11-21T01:43:06.212Z","harness:claude-code","cli:create:dep",detected
@@ -32,4 +33,18 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/integration/lifecycle/history-remedies.integration.spec.ts tests/integration/history-durability.integration.spec.ts,project,900,"harness:claude-code","2026-11-21T11:43:30.370Z",local_mutation,fix/history-remedies-converge
 docs[1]{path,scope,note}:
   docs/HISTORY_RECOVERY.md,project,"Recover an invalid history tail: double faults"
+close_reason: A stream with a non-record line and a chain break recovers with salvage followed by the advised repair
+contract_change:
+  api: pm history-repair <id> --salvage-tail result and behavior
+  before: "Salvage refused any stream whose chain did not verify, even when it only removed lines that cannot hold a record, and reported verify_ok true, verify_errors [] and chain_drift_before false unconditionally"
+  after: "Removing only non-record lines no longer requires a verified chain; the result reports the real chain verdict and a history_chain_unverified warning names the repair previews. A scalar-only stream salvages to an empty stream with a history_stream_empty warning, and no salvage record. Discarding an invalid suffix still requires a verified prefix"
+  migrate: "Read history.verify_ok and the warnings after a salvage instead of assuming a verified chain, and run the named repair when the chain is unverified"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-rpucvb
+  gate_id: history-salvage-double-fault
+  negative_control: "tests/integration/lifecycle/history-remedies.integration.spec.ts appends a JSON null to a stream with a bridgeable chain break, salvages it, and requires verify_ok false with the real verify_errors, a byte-prefix-preserving result, the bridgeable chain_mismatch remedy, and a clean history_drift check and history --verify --strict-exit after pm history-repair <id> --append-only. It also asserts that discarding an invalid suffix after a broken chain still refuses, that nothing to discard names the repair, that a scalar-only stream salvages to an empty stream which pm history-repair <id> rebuilds, that a stream naming another item refuses, and that a deleted item keeps its last assignee for strict ownership. tests/unit/core/history/history-replay.spec.ts fixes the lenient replay of root transitions and deletions."
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/lifecycle/history-remedies.integration.spec.ts tests/integration/history-durability.integration.spec.ts tests/unit/core/history/history-replay.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

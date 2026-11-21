@@ -2,21 +2,22 @@ id: pm-3os5p6
 title: "pm health advises pm history-repair for history_drift_missing_stream, but history-repair refuses a stream with no entries"
 description: "When an item's history stream is missing, pm health reports history_drift_missing_stream with the remedy pm history-repair <id>, rewritten to pm history-repair --all when several streams drift. history-repair cannot rebuild a missing stream: the --all row fails with 'No history entries exist for <id>; nothing to repair.' and the command exits 1. Found on PR #1762 while running the advised remedies on a mixed-drift fixture (one chain mismatch, one missing stream) in tests/integration/lifecycle/history-bridge.integration.spec.ts. The remedy registry entry lives in src/core/diagnostics/remediation.ts, and the bulk rewrite lives in rewriteBulkHealthRemediation in src/sdk/governance/health.ts. The fix names a command that actually rebuilds or records the missing stream, for example a baseline-reseed step, or a restore when an item can be rebuilt from history; it must also keep the bulk rewrite from advising --all for a code that --all cannot repair."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[4]: health,history,remediation,ux
 created_at: "2026-11-21T07:24:50.200Z"
-updated_at: "2026-11-21T14:47:36.070Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#27675b3cf25f0c8ca46c5936"
+updated_at: "2026-11-21T15:03:46.292Z"
+closed_at: "2026-11-21T15:00:04.137Z"
+completed_at: "2026-11-21T15:00:04.137Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "An integration spec runs the remedy pm health names for a missing stream, per item and in bulk, and the history_drift check is ok afterwards"
 parent: pm-o2kc
 risk: low
 confidence: 85
-expected_result: "Every remedy pm health names for history_drift_missing_stream, per item and in bulk, runs to a clean history_drift check"
-actual_result: pm history-repair <id> and pm history-repair --all refuse the missing stream with 'No history entries exist; nothing to repair.' and exit 1
+resolution: "history-repair rebuilds a live item's absent or record-less stream with one sealed history_repair baseline, appending to verified bytes or publishing an absent stream complete; health previews both repairs and reports history_drift_chain_unbridgeable or history_drift_unrepairable_stream with details.repair_refusals; unreadable streams get the salvage preview; bulk remedies apply only where they repair every stream (unreadable, unrepairable, version-skewed and receipt-attributed streams keep remedies per item); damaged and newer-format seals refuse typed; linked stream entries refuse at planning and are never advised a rebuild. Delivered on PR #1763 after seven Codex rounds plus Greptile and CodeRabbit; exotic-filesystem residuals filed as pm-ue6pqv."
+expected_result: "Every remedy pm health names for history drift, per item and in bulk, runs to a clean history_drift check, and a stream no repair can keep is never advised a repair"
+actual_result: "tests/integration/lifecycle/history-remedies.integration.spec.ts runs each advised remedy for missing, empty, absent, linked, bridgeable, unbridgeable, unrepairable, unreadable, scalar-only and receipt-attributed drift and reaches a clean history_drift check; the related suites (1630 tests) and every changed hunk's coverage pass locally"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1715,discovered_from,"2026-11-21T07:24:50.200Z","harness:claude-code","cli:create:dep",detected
   pm-r5yhxn,related,"2026-11-21T12:39:48.671Z","harness:claude-code","cli:update:dep",detected
@@ -27,7 +28,7 @@ comments[6]{created_at,author,text}:
   "2026-11-21T13:58:36.331Z","harness:claude-code","Review rounds 2 to 4 on PR #1763 (Codex gpt-6.2-sol xhigh on each new range, plus Greptile), 2026-11-21. Fixed: (a) An absent stream is published complete through createFileAtomic with sync: it stages and flushes the record beside the stream, then hard-links it into the absent path. A stream or link another writer created wins (stream_changed). A filesystem that cannot hard-link refuses typed (reason stream_publish_unsupported, AtomicLinkUnsupportedError) and writes nothing. A short-lived exclusive-open fallback was removed again, because it could interleave with writers that ignore the lock and could leave a partial baseline. Staging cleanup is best effort, so a published stream is never reported as failed. (b) A history path that is a symbolic link refuses at planning (assertRegularStreamEntry) and at apply (O_NOFOLLOW), in both modes and for the bridge. The advice is to restore the item's own stream, or to move the link aside and preview the rebuild. (c) hasNewerRecordSealFormat is one classifier shared by the drift scan and the rewriting repair. Only a complete seal in a newer numeric format is version skew with upgrade advice; a string version or an incomplete envelope is damage with restore advice. (d) A pending merge-receipt stream keeps the unrelated drift per item."
   "2026-11-21T14:31:51.416Z","harness:claude-code","Review round 5 on PR #1763 (Codex, CodeRabbit), 2026-11-21. Changed design: the hard-link publication added in round 2 kept generating filesystem edge cases (no hard links, sync ordering, leftover staging files), so it was replaced by the bridge's own verified append path. An absent stream is created with an exclusive O_CREAT|O_EXCL|O_APPEND|O_NOFOLLOW open, and the record is appended, flushed, read back and identity-checked exactly like the bridge. A stream this repair created but could not finish writing is unlinked again when it holds only this repair's bytes. createFileAtomic is unchanged from main. Fixed: the drift cache version is 13, because version_skew semantics changed for unchanged bytes. A missing stream whose history path is a link is reported as unrepairable. The no-repair code is renamed, before any release, from history_drift_chain_unrepairable to history_drift_unrepairable_stream, its remedy is the refusing preview pm history-repair <id> --dry-run, which names the recovery, and details.chain_unbridgeable is now details.repair_refusals. Salvage of a deleted item takes ownership from the last replayed state that still held the item, so strict ownership still applies."
   "2026-11-21T14:47:36.070Z","harness:claude-code","Review round 6 on PR #1763 (Codex), 2026-11-21: design settled. The round-5 exclusive create plus unlink-on-failure was reverted, because unlink could delete a concurrent writer's bytes (P1) and an exclusive create exposes an empty stream before the baseline (P2). The absent-stream reseed is back to the round-4 publication. createFileAtomic with sync stages and flushes the record, then hard-links it into the absent path, so nothing partial or empty is ever visible. AtomicLinkUnsupportedError becomes a typed refusal (stream_publish_unsupported) that publishes nothing. Staging cleanup is best effort, so it can no longer turn a successful publication into a failure; per Codex this also fixes a false failure for mutation checkpoints on main. A test now proves the flush comes before the link. The unrepairable remedy is pm history <id> --verify --full again, because the rewriting preview's refusal is not typed for every cause (for example duplicate creates). Accepted limitation, documented in HISTORY_RECOVERY.md: on a filesystem without hard links, the preview of an absent-stream rebuild succeeds and the write refuses typed with a recovery. Probing link support during a dry run would write files."
-files[19]{path,scope,note}:
+files[18]{path,scope,note}:
   src/core/diagnostics/remediation.ts,project,"chain_unbridgeable, chain_unrepairable, salvage remedy for unreadable streams"
   src/core/fs/atomic-create.ts,project,"createFileAtomic sync option, AtomicLinkUnsupportedError, cleanup never overrides a publication"
   src/core/history/drift-scan.ts,project,a complete newer record seal counts as version skew
@@ -46,10 +47,23 @@ files[19]{path,scope,note}:
   tests/unit/sdk/history/reanchor-refusal.spec.ts,project,integrity and newer-seal refusals
   tests/unit/sdk/history/reseed-append.spec.ts,project,"O_APPEND reseed append, exclusive create, symlink refusal"
   tests/unit/sdk/history/reseed-link-fallback.spec.ts,project,a filesystem without hard links refuses the absent-stream reseed typed
-  tests/unit/sdk/history/reseed-partial-write.spec.ts,project,a stream the reseed created and only partly wrote is removed again
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/lifecycle/history-remedies.integration.spec.ts tests/integration/lifecycle/history-bridge.integration.spec.ts tests/unit/commands/history/history-repair-command.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,900,"harness:claude-code","2026-11-21T11:43:18.953Z",local_mutation,fix/history-remedies-converge
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,Self-Repair Remediation and history-repair reseed
   docs/HISTORY_RECOVERY.md,project,Rebuild a missing history stream; chain mismatch classification
+close_reason: "Every history-drift remedy pm health advises repairs the streams it names, per item and in bulk"
+contract_change:
+  api: pm health history_drift warnings and remediation_map; pm history-repair on a record-less stream
+  before: "A missing stream was advised pm history-repair <id>, which refused with nothing to repair. Every chain break was history_drift_chain_mismatch with the append-only remedy, even when the bridge or both repairs refuse. The unreadable-stream remedy was the rewriting repair. A sealed record edited without a reseal crashed the rewriting repair with unknown_error"
+  after: "history-repair rebuilds a live item record-less stream with one sealed baseline (result.reseed). Health previews the repairs and reports history_drift_chain_unbridgeable (pm history-repair <id>) or history_drift_unrepairable_stream (pm history <id> --verify --full), with details.repair_refusals. The unreadable-stream remedy is the salvage preview. Bulk remedies apply only where they repair every stream. The rewriting repair refuses a damaged seal with history_record_integrity_invalid and a newer seal format with history_record_version_unsupported"
+  migrate: "Callers that matched history_drift_chain_mismatch for every chain break also match history_drift_chain_unbridgeable and history_drift_unrepairable_stream, and read details.repair_refusals for the reason; counts.chain_mismatches still counts every chain break"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-3os5p6
+  gate_id: history-remedy-convergence
+  negative_control: "tests/integration/lifecycle/history-remedies.integration.spec.ts runs every remedy pm health advises, per item and in bulk, for missing, empty, absent and linked streams, bridgeable and unbridgeable breaks, damaged and newer-format seals, unreadable and scalar-only streams, and receipt-attributed drift. It requires a clean history_drift check after each advised repair, and asserts that a stream no repair can keep is never given a repair remedy. tests/unit/sdk/governance/history-drift-remedies.spec.ts fixes the classification and the bulk-blocking rules, and the reseed specs prove that an absent stream is published complete or refused typed."
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/lifecycle/history-remedies.integration.spec.ts tests/unit/sdk/governance/history-drift-remedies.spec.ts tests/unit/sdk/history tests/unit/core/fs tests/unit/commands/governance/health-command.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
