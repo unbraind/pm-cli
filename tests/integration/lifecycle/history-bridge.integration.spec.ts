@@ -59,7 +59,7 @@ async function breakChain(context: TempPmContext, edits = 1): Promise<string> {
   return readFile(paths(context).history, "utf8");
 }
 
-/** Turn one entry into an unsealed legacy record with a change, as an attacker without a key could. */
+/** Turn one entry into an unsealed legacy record with a change, as a writer outside pm could. */
 function stripSeal(entry: HistoryEntry, change: Partial<HistoryEntry>): HistoryEntry {
   const { record_hash: _hash, record_hash_version: _version, ...rest } = { ...entry, ...change };
   return rest as HistoryEntry;
@@ -120,7 +120,7 @@ describe("append-only history repair (GH-1715)", () => {
     });
   });
 
-  it("names every break in the segment and refuses forged or partial bridges", async () => {
+  it("names every break in the segment and refuses altered or partial bridges", async () => {
     await withTempPmPath(async (context) => {
       await breakChain(context, 2);
       const result = await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
@@ -160,7 +160,7 @@ describe("append-only history repair (GH-1715)", () => {
         [withBridge({ op: "update" }), "bridge_invalid"],
         [[...entries.slice(0, -1), { ...bridge, record_hash: undefined, record_hash_version: undefined } as HistoryEntry], "bridge_invalid"],
         [[...entries, reseal(bridge, { ts: "2099-01-01T00:00:00.000Z" })], "bridge_without_break"],
-        [[...entries.slice(0, 3), { ...entries[3]!, message: "tampered inside the segment" }, ...entries.slice(4)], "record_hash_mismatch"],
+        [[...entries.slice(0, 3), { ...entries[3]!, message: "altered inside the segment" }, ...entries.slice(4)], "record_hash_mismatch"],
       ];
       for (const [stream, error] of cases) {
         const verdict = verifyHistoryChainWithVersion(stream);
@@ -181,8 +181,8 @@ describe("append-only history repair (GH-1715)", () => {
       comment(context, "last");
       const file = paths(context).history;
       const entries = await readHistoryEntries(file, ID);
-      const tampered = [...entries.slice(0, -1), reseal(entries.at(-1)!, { patch: [{ op: "replace", path: "/metadata/priority", value: 0 }] })];
-      await writeFile(file, historyEntriesToRaw(tampered));
+      const altered = [...entries.slice(0, -1), reseal(entries.at(-1)!, { patch: [{ op: "replace", path: "/metadata/priority", value: 0 }] })];
+      await writeFile(file, historyEntriesToRaw(altered));
       await expect(runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath })).rejects.toMatchObject({
         context: { code: "history_append_only_repair_unavailable", reason: "bridge_does_not_verify" },
       });
@@ -190,8 +190,8 @@ describe("append-only history repair (GH-1715)", () => {
       await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
       const bridged = await readHistoryEntries(file, ID);
       expect(verifyHistoryChainWithVersion(bridged).ok).toBe(true);
-      const forged = [...bridged.slice(0, -2), reseal(bridged.at(-2)!, { patch: [{ op: "replace", path: "/metadata/priority", value: 0 }] }), bridged.at(-1)!];
-      expect(verifyHistoryChainWithVersion(forged).errors.join(",")).toContain("verify_failed:after_hash_mismatch:");
+      const edited = [...bridged.slice(0, -2), reseal(bridged.at(-2)!, { patch: [{ op: "replace", path: "/metadata/priority", value: 0 }] }), bridged.at(-1)!];
+      expect(verifyHistoryChainWithVersion(edited).errors.join(",")).toContain("verify_failed:after_hash_mismatch:");
     });
   });
 
@@ -206,9 +206,9 @@ describe("append-only history repair (GH-1715)", () => {
         });
 
       // A broken record envelope is not a chain break.
-      const tampered = [...entries];
-      tampered[1] = { ...tampered[1]!, message: "tampered" };
-      await writeFile(file, historyEntriesToRaw(tampered));
+      const altered = [...entries];
+      altered[1] = { ...altered[1]!, message: "altered" };
+      await writeFile(file, historyEntriesToRaw(altered));
       await refuse({}, "chain_failure_not_a_break");
 
       // A later patch that needs the unrecorded change cannot replay without it.
@@ -376,15 +376,15 @@ describe("append-only history repair (GH-1715)", () => {
       expect(mergeHistoryStreams(base, ours.trimEnd(), theirs).merged.startsWith(`${ours.trimEnd()}\n{`)).toBe(true);
       // An invalid side is never reported as an equivalent-bridge merge.
       const oursLines = ours.trimEnd().split("\n");
-      const tamperedBridge = { ...(JSON.parse(oursLines.at(-1)!) as HistoryEntry), message: "tampered" };
-      const tamperedOurs = `${[...oursLines.slice(0, -1), JSON.stringify(tamperedBridge)].join("\n")}\n`;
-      let tamperedStrategy: string | undefined;
+      const alteredBridge = { ...(JSON.parse(oursLines.at(-1)!) as HistoryEntry), message: "altered" };
+      const alteredOurs2 = `${[...oursLines.slice(0, -1), JSON.stringify(alteredBridge)].join("\n")}\n`;
+      let alteredStrategy: string | undefined;
       try {
-        tamperedStrategy = mergeHistoryStreams(base, tamperedOurs, theirs).strategy;
+        alteredStrategy = mergeHistoryStreams(base, alteredOurs2, theirs).strategy;
       } catch {
-        tamperedStrategy = "refused";
+        alteredStrategy = "refused";
       }
-      expect(tamperedStrategy).not.toBe("equivalent_bridges");
+      expect(alteredStrategy).not.toBe("equivalent_bridges");
 
       // Bridges with different reconciliations are different repairs and take the union path.
       await writeFile(paths(context).history, base);
@@ -480,9 +480,9 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const file = paths(context).history;
       const entries = await readHistoryEntries(file, ID);
       // A bad anchor on the first record stops verification before it reaches the bridge.
-      const tampered = [reseal(entries[0]!, { before_hash: "7".repeat(64) }), ...entries.slice(1)];
-      await writeFile(file, historyEntriesToRaw(tampered));
-      expect(verifyHistoryChainWithVersion(tampered).bridged_segments).toBeUndefined();
+      const altered = [reseal(entries[0]!, { before_hash: "7".repeat(64) }), ...entries.slice(1)];
+      await writeFile(file, historyEntriesToRaw(altered));
+      expect(verifyHistoryChainWithVersion(altered).bridged_segments).toBeUndefined();
       await runHistoryRepair(ID, {}, { path: context.pmPath });
       const repaired = await readHistoryEntries(file, ID);
       expect(verifyHistoryChainWithVersion(repaired).ok).toBe(true);
@@ -500,8 +500,8 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const file = paths(context).history;
       const entries = await readHistoryEntries(file, ID);
       const bridge = entries.at(-1)!;
-      const forged = reseal(bridge, { bridge: { ...bridge.bridge!, breaks: [{ ...bridge.bridge!.breaks[0]!, gap_from: "0".repeat(64) }] } });
-      await writeFile(file, historyEntriesToRaw([...entries.slice(0, -1), forged]));
+      const altered = reseal(bridge, { bridge: { ...bridge.bridge!, breaks: [{ ...bridge.bridge!.breaks[0]!, gap_from: "0".repeat(64) }] } });
+      await writeFile(file, historyEntriesToRaw([...entries.slice(0, -1), altered]));
       await runHistoryRepair(ID, {}, { path: context.pmPath });
       const repaired = await readHistoryEntries(file, ID);
       expect(verifyHistoryChainWithVersion(repaired).ok).toBe(true);
@@ -517,11 +517,11 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const file = paths(context).history;
       const entries = await readHistoryEntries(file, ID);
       const bridge = entries.at(-1)!;
-      for (const forged of [
+      for (const altered of [
         reseal(bridge, { bridge: { ...bridge.bridge!, breaks: [{ ...bridge.bridge!.breaks[0]!, gap_from: "0".repeat(64) }] } }),
         reseal(bridge, { bridge: { ...bridge.bridge!, version: 999 } as never }),
       ]) {
-        await writeFile(file, historyEntriesToRaw([...entries.slice(0, -1), forged]));
+        await writeFile(file, historyEntriesToRaw([...entries.slice(0, -1), altered]));
         await expect(runHistoryRedact(ID, { literal: "first" }, { path: context.pmPath })).rejects.toMatchObject({
           context: { code: "history_redact_bridge_unlocated" },
         });
@@ -536,11 +536,11 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const ours = await readFile(paths(context).history, "utf8");
       const lines = ours.trimEnd().split("\n");
       const valid = JSON.parse(lines.at(-1)!) as HistoryEntry;
-      const forged = reseal(valid, { bridge: { ...valid.bridge!, version: 999 } as never });
-      const forgedOurs = `${[...lines.slice(0, -1), JSON.stringify(forged)].join("\n")}\n`;
+      const altered = reseal(valid, { bridge: { ...valid.bridge!, version: 999 } as never });
+      const alteredOurs = `${[...lines.slice(0, -1), JSON.stringify(altered)].join("\n")}\n`;
       let strategy: string | undefined;
       try {
-        strategy = mergeHistoryStreams(base, forgedOurs, ours).strategy;
+        strategy = mergeHistoryStreams(base, alteredOurs, ours).strategy;
       } catch {
         strategy = "refused";
       }
