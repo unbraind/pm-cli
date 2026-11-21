@@ -357,6 +357,10 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
     "dist/sdk/kept.mjs -> ./../sdk/excluded.cjs",
   ]);
   expect(findExcludedModuleReferences(Object.keys(files), () => false, read)).toEqual([]);
+  // require() reads "#" literally, so a file named with one is judged by its literal path too.
+  expect(findExcludedModuleReferences(["dist/index.cjs"], (candidate) => candidate === "dist/helper#legacy.cjs", () => "require('./helper#legacy.cjs')")).toEqual([
+    "dist/index.cjs -> ./helper#legacy.cjs",
+  ]);
   // A trailing slash names a directory, as path checks such as "../" do.
   expect(findExcludedModuleReferences(["dist/a.js"], () => true, () => 'x.startsWith("../")')).toEqual([]);
 });

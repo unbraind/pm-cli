@@ -792,7 +792,7 @@ export interface ReanchorResult {
   convertedReplaceToAdd: number;
   /** Value that configures or reports skipped ops for this contract. */
   skippedOps: number;
-  /** Entries resealed for any reason, including a dissolved bridge or a replay_inexact marker. */
+  /** Entries resealed to dissolve a bridge or to add a replay_inexact marker; an epoch label alone does not count. */
   entriesResealed: number;
   /** Value that configures or reports details for this contract. */
   details: ReanchorEntryDetail[];
@@ -990,20 +990,21 @@ function finalizeReanchoredEntry(
     patchRepaired: boolean;
     inexact: boolean;
   },
-): { entry: HistoryEntry; changed: boolean } {
+): { entry: HistoryEntry; changed: boolean; unbridged: boolean } {
   if (flags.itemHashVersion === undefined) delete rewrittenEntry.item_hash_version;
   else rewrittenEntry.item_hash_version = flags.itemHashVersion;
   if (flags.inexact) rewrittenEntry.replay_inexact = true;
   const bridgeDissolved = Object.hasOwn(entry, "bridge");
   delete rewrittenEntry.bridge;
+  const unbridged = bridgeDissolved || rewrittenEntry.replay_inexact !== entry.replay_inexact;
   const changed =
     flags.rehashed ||
     flags.patchRepaired ||
-    bridgeDissolved ||
-    rewrittenEntry.replay_inexact !== entry.replay_inexact ||
+    unbridged ||
     rewrittenEntry.item_hash_version !== entry.item_hash_version;
   return {
     changed,
+    unbridged,
     entry: changed
       ? resealHistoryRewrite(entry, rewrittenEntry, {
           retainOriginalPatch: flags.patchRepaired,
@@ -1103,7 +1104,7 @@ export function reanchorHistoryEntries(
       },
     );
     unchangedPrefix &&= !finalized.changed;
-    entriesResealed += Number(finalized.changed);
+    entriesResealed += Number(finalized.unbridged);
     rewritten.push(finalized.entry);
     details.push({
       index: index + 1,

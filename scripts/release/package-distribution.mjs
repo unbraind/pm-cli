@@ -393,11 +393,13 @@ export function findExcludedModuleReferences(packedPaths, isExcluded, readText) 
   for (const file of packedPaths) {
     if (!MODULE_FILE.test(file) || file.startsWith("node_modules/")) continue;
     for (const [, , specifier] of readText(file).matchAll(QUOTED_RELATIVE_PATH)) {
-      const pathname = specifier.replace(/[?#].*$/u, "");
-      // A trailing slash names a directory, as path checks such as "../" do; no loader resolves it.
-      if (pathname.endsWith("/")) continue;
-      const target = path.posix.join(path.posix.dirname(file), pathname);
-      const candidates = [target, ...MODULE_EXTENSIONS.flatMap((extension) => [`${target}${extension}`, `${target}/index${extension}`])];
+      // require() reads "#" and "?" literally while an ESM URL drops them: judge both spellings.
+      const pathnames = [...new Set([specifier, specifier.replace(/[?#].*$/u, "")])];
+      const candidates = pathnames
+        // A trailing slash names a directory, as path checks such as "../" do; no loader resolves it.
+        .filter((pathname) => !pathname.endsWith("/"))
+        .map((pathname) => path.posix.join(path.posix.dirname(file), pathname))
+        .flatMap((target) => [target, ...MODULE_EXTENSIONS.flatMap((extension) => [`${target}${extension}`, `${target}/index${extension}`])]);
       if (candidates.some(isExcluded)) references.push(`${file} -> ${specifier}`);
     }
   }

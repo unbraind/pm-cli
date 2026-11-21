@@ -309,6 +309,21 @@ describe("append-only history repair (GH-1715)", () => {
     });
   });
 
+  it("leaves a clean mixed-era stream alone in the rewriting repair", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, ID, "Mixed era");
+      comment(context, "later");
+      const file = paths(context).history;
+      const entries = await readHistoryEntries(file, ID);
+      const mixed = [reseal(entries[0]!, { item_hash_version: undefined }), ...entries.slice(1)];
+      await writeFile(file, historyEntriesToRaw(mixed));
+      expect(verifyHistoryChainWithVersion(mixed).ok).toBe(true);
+      const before = await readFile(file, "utf8");
+      expect(await runHistoryRepair(ID, {}, { path: context.pmPath })).toMatchObject({ changed: false });
+      expect(await readFile(file, "utf8")).toBe(before);
+    });
+  });
+
   it("reports a missing stream instead of guessing its encoding", async () => {
     await withTempPmPath(async (context) => {
       createTaskFixture(context, ID, "Missing stream");
@@ -368,6 +383,11 @@ describe("append-only history repair (GH-1715)", () => {
 
       const merged = mergeHistoryStreams(base, ours, theirs);
       expect(merged).toMatchObject({ strategy: "equivalent_bridges", reanchored: false, entries_total: 6 });
+      // Merging both directions and then the two results needs no ordering between the copies.
+      const reverse = mergeHistoryStreams(base, theirs, ours);
+      const combined = mergeHistoryStreams(base, merged.merged, reverse.merged);
+      expect(combined).toMatchObject({ strategy: "equivalent_bridges", entries_total: 6 });
+      expect(combined.merged).toBe(merged.merged);
       expect(merged.merged.startsWith(ours)).toBe(true);
       const mergedEntries = merged.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
       expect(verifyHistoryChainWithVersion(mergedEntries).ok).toBe(true);

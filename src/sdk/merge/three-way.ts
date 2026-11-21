@@ -339,25 +339,46 @@ function collectUnionInexactIndexes(
   sides: HistoryEntry[][],
   bridgesDissolve: boolean,
 ): Set<number> {
-  const position = new Map(merged.map((entry, index) => [historyEntryIdentity(entry), index]));
+  const position = occurrencePositions(merged);
   const marked = new Set<number>();
   for (const side of sides) {
-    for (const entry of side) {
-      if (entry.replay_inexact === true) addUnionPosition(marked, position, entry);
-    }
-    if (bridgesDissolve) markBranchBridgeCoverage(marked, position, side);
+    const located = occurrencePositions(side);
+    const place = (index: number) => mergedPosition(position, side, located, index);
+    side.forEach((entry, index) => {
+      if (entry.replay_inexact === true) addUnionPosition(marked, place(index));
+    });
+    if (bridgesDissolve) markBranchBridgeCoverage(marked, side, place);
   }
   if (!bridgesDissolve) releaseRetainedBridgeSegments(marked, merged);
   return marked;
 }
 
-/** Record the merged position of one branch record, when the merge kept a copy of it. */
-function addUnionPosition(
-  marked: Set<number>,
-  position: ReadonlyMap<string, number>,
-  entry: HistoryEntry,
-): void {
-  const index = position.get(historyEntryIdentity(entry));
+/** Positions of each identity in stream order, so repeated identical events stay distinct. */
+function occurrencePositions(entries: HistoryEntry[]): Map<string, number[]> {
+  const positions = new Map<string, number[]>();
+  entries.forEach((entry, index) => {
+    const identity = historyEntryIdentity(entry);
+    positions.set(identity, [...(positions.get(identity) ?? []), index]);
+  });
+  return positions;
+}
+
+/** The merged index of a branch record: the same occurrence of its identity in the merged stream. */
+function mergedPosition(
+  merged: ReadonlyMap<string, number[]>,
+  side: HistoryEntry[],
+  sidePositions: ReadonlyMap<string, number[]>,
+  index: number,
+): number | undefined {
+  const identity = historyEntryIdentity(side[index]!);
+  const occurrence = sidePositions.get(identity)!.indexOf(index);
+  /* c8 ignore start -- every branch record keeps a copy in the merged stream, shared or from its own suffix. */
+  return merged.get(identity)?.[occurrence];
+  /* c8 ignore stop */
+}
+
+/** Record one merged position, when the merge kept a copy of the record. */
+function addUnionPosition(marked: Set<number>, index: number | undefined): void {
   /* c8 ignore start -- every branch record keeps a copy in the merged stream, shared or from its own suffix. */
   if (index === undefined) return;
   /* c8 ignore stop */
@@ -367,15 +388,13 @@ function addUnionPosition(
 /** Mark what one branch's bridges cover, and every merged event placed inside such a segment. */
 function markBranchBridgeCoverage(
   marked: Set<number>,
-  position: ReadonlyMap<string, number>,
   side: HistoryEntry[],
+  place: (index: number) => number | undefined,
 ): void {
   for (const segment of locateBridgedSegments(side).segments) {
-    for (const index of collectBridgedInteriorIndexes([segment])) {
-      addUnionPosition(marked, position, side[index]!);
-    }
-    const from = position.get(historyEntryIdentity(side[segment.start]!));
-    const to = position.get(historyEntryIdentity(side[segment.end]!));
+    for (const index of collectBridgedInteriorIndexes([segment])) addUnionPosition(marked, place(index));
+    const from = place(segment.start);
+    const to = place(segment.end);
     /* c8 ignore start -- both ends of a branch segment keep a copy in the merged stream. */
     if (from === undefined || to === undefined) continue;
     /* c8 ignore stop */
@@ -417,27 +436,35 @@ function mergeEquivalentBridges(
   ours: HistoryEntry[],
   theirs: HistoryEntry[],
   shared: number,
-): HistoryEntry | null {
+): HistoryEntry[] | null {
   const oursSuffix = ours.slice(shared);
   const theirsSuffix = theirs.slice(shared);
-  if (oursSuffix.length !== 1 || theirsSuffix.length !== 1) return null;
-  const identity = historyBridgeRepairIdentity(oursSuffix[0]!);
-  if (identity === null || historyBridgeRepairIdentity(theirsSuffix[0]!) !== identity) {
+  // Every diverging record, live or already neutral, must be the same repair.
+  const classes = new Set(
+    [...oursSuffix, ...theirsSuffix].map((entry) =>
+      historyBridgeRepairIdentity(neutralizedBridgeOriginal(entry) ?? entry),
+    ),
+  );
+  if (oursSuffix.length === 0 || theirsSuffix.length === 0 || classes.size !== 1 || classes.has(null)) {
     return null;
   }
   if (![ours, theirs].every((side) => verifyHistoryChainWithVersion(side).ok)) {
     return null;
   }
-  const original = theirsSuffix[0]!;
-  const anchor = oursSuffix[0]!.after_hash;
-  const { bridge: _bridge, ...neutral } = original;
-  const appended = resealHistoryRewrite(
-    original,
-    { ...neutral, patch: [], before_hash: anchor, after_hash: anchor },
-    { retainOriginalPatch: true, retainPriorRecord: true },
-  );
-  // Both sides verified and the bridges agree, so the appended neutral record verifies too.
-  return appended;
+  // Keep ours; carry over theirs' repairs ours does not represent yet, as neutral records.
+  const present = new Set(oursSuffix.map(historyEntryIdentity));
+  const anchor = ours.at(-1)!.after_hash;
+  return theirsSuffix
+    .filter((entry) => !present.has(historyEntryIdentity(entry)))
+    .map((entry) => {
+      const original = neutralizedBridgeOriginal(entry) ?? entry;
+      const { bridge: _bridge, ...neutral } = original;
+      return resealHistoryRewrite(
+        original,
+        { ...neutral, patch: [], before_hash: anchor, after_hash: anchor },
+        { retainOriginalPatch: true, retainPriorRecord: true },
+      );
+    });
 }
 
 /**
@@ -517,22 +544,22 @@ export function mergeHistoryStreams(
   }
 
   const oursSuffix = ours.slice(shared);
-  const neutralBridge = mergeEquivalentBridges(ours, theirs, shared);
-  if (neutralBridge !== null) {
-    const separator = oursRaw.endsWith("\n") ? "" : "\n";
+  const neutralBridges = mergeEquivalentBridges(ours, theirs, shared);
+  if (neutralBridges !== null) {
+    const separator = oursRaw.endsWith("\n") || neutralBridges.length === 0 ? "" : "\n";
     const oursMarked = markInexactUnionEntries(
       ours,
       collectUnionInexactIndexes(ours, [ours, theirs], false),
     );
     return {
       merged: oursMarked.changed
-        ? historyEntriesToRaw([...oursMarked.entries, neutralBridge])
-        : `${oursRaw}${separator}${JSON.stringify(neutralBridge)}\n`,
+        ? historyEntriesToRaw([...oursMarked.entries, ...neutralBridges])
+        : `${oursRaw}${separator}${neutralBridges.map((entry) => `${JSON.stringify(entry)}\n`).join("")}`,
       strategy: "equivalent_bridges",
       common_entries: shared,
-      entries_from_ours: 1,
-      entries_from_theirs: 1,
-      entries_total: ours.length + 1,
+      entries_from_ours: ours.length - shared,
+      entries_from_theirs: theirs.length - shared,
+      entries_total: ours.length + neutralBridges.length,
       reanchored: false,
     };
   }
@@ -1604,3 +1631,6 @@ export function mergeJsonDocuments(
     preferred,
   };
 }
+
+/** Internal helpers exported only for focused tests. */
+export const _testOnly = { collectUnionInexactIndexes };
