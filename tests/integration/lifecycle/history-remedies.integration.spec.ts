@@ -428,7 +428,7 @@ describe("review hardening of the advised remedies", () => {
       await writeFile(file, `${[JSON.stringify({ ...legacy, patch, after_hash: "0".repeat(64) }), ...rest].join("\n")}\nnull\n`);
       await expect(runHistoryRepair(id, { salvageTail: true, dryRun: true }, { path: context.pmPath })).rejects.toMatchObject({
         code: "history_salvage_refused",
-        context: expect.objectContaining({ reason: "owner_malformed" }),
+        context: expect.objectContaining({ reason: "owner_malformed", details: { reason: "owner_malformed" } }),
       });
       await expect(runHistoryRepair(id, { salvageTail: true, dryRun: true, force: true }, { path: context.pmPath })).resolves.toMatchObject({
         changed: true,

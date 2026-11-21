@@ -17,7 +17,7 @@ describe("reanchorOrRefuse", () => {
       ).toThrow(expect.objectContaining({
         code: "history_record_integrity_invalid",
         exitCode: 4,
-        context: expect.objectContaining({ item_id: "pm-a", reason, details: { entry: 3 } }),
+        context: expect.objectContaining({ item_id: "pm-a", reason, details: { entry: 3, reason } }),
       }));
     }
   });
@@ -29,7 +29,7 @@ describe("reanchorOrRefuse", () => {
       });
     expect(refuse({ record_hash_version: 2 as never, record_hash: "f".repeat(64) })).toThrow(expect.objectContaining({
       code: "history_record_version_unsupported",
-      context: expect.objectContaining({ details: { entry: 2 }, nextSteps: [expect.stringContaining("npm install -g @unbrained/pm-cli@latest")] }),
+      context: expect.objectContaining({ details: { entry: 2, reason: "unsupported_record_hash_version" }, nextSteps: [expect.stringContaining("npm install -g @unbrained/pm-cli@latest")] }),
     }));
     for (const damaged of [
       { record_hash_version: "1" as never, record_hash: "f".repeat(64) },

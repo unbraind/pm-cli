@@ -23,7 +23,7 @@ function recordVersionRefusal(id: string, entry: string): PmCliError {
       code: "history_record_version_unsupported",
       item_id: id,
       reason: "unsupported_record_hash_version",
-      details: { entry: Number(entry) },
+      details: { entry: Number(entry), reason: "unsupported_record_hash_version" },
       required: "Upgrade pm to a version that reads the stream's record format; no bytes were changed.",
       nextSteps: ["Run npm install -g @unbrained/pm-cli@latest, then run pm health again."],
     },
@@ -57,7 +57,7 @@ export function reanchorOrRefuse<T>(
         code: "history_record_integrity_invalid",
         item_id: id,
         reason: failure[1],
-        details: { entry: Number(failure[2]) },
+        details: { entry: Number(failure[2]), reason: failure[1] },
         required:
           "Restore the item's history stream from version control or a backup; no bytes were changed.",
         nextSteps: [

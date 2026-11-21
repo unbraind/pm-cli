@@ -400,9 +400,10 @@ function assertJudgeableSalvageOwner(id: string, document: ItemDocument, force: 
       code: "history_salvage_refused",
       item_id: id,
       reason: "owner_malformed",
+      details: { reason: "owner_malformed" },
       required: "Recover the damaged record from version control or a backup, or override ownership deliberately; no bytes were changed.",
       nextSteps: [
-        `Run pm history ${id} --verify --full to locate the record, then restore the stream, or rerun the salvage with --force to override ownership.`,
+        `Inspect ${id}'s raw history stream file or restore it from version control or a backup, or rerun the salvage with --force to override ownership.`,
       ],
     },
   );
