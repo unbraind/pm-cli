@@ -24,6 +24,7 @@ import {
   replayHashVerificationCandidates,
   replayToItemDocument,
   toReplayDocument,
+  verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../core/history/replay.js";
 import { applyHistoryPatch } from "../core/history/projection.js";
@@ -302,6 +303,28 @@ function assertPrunedRecordsJudgeable(entries: readonly HistoryEntry[], compactC
 }
 
 /** Replace the pruned prefix with a durable-addressed checkpoint while retaining original records and hash semantics. */
+/**
+ * A checkpoint must be a reconstructable state: never a version between an
+ * unrecorded change and the bridge that names it (GH-1715), whose replayed
+ * state lacks that change.
+ */
+function assertReconstructableCompactBoundary(entries: HistoryEntry[], compactCount: number): void {
+  const checkpoint = compactCount - 1;
+  const segment = (verifyHistoryChainWithVersion(entries).bridged_segments ?? []).find(
+    ({ start, end }) => start <= checkpoint && checkpoint < end,
+  );
+  if (segment === undefined) return;
+  throw new PmCliError(
+    `history-compact cannot checkpoint version ${compactCount}: it lies inside a bridged segment whose states cannot be reconstructed.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "history_compact_boundary_bridged",
+      required: `Choose a boundary that compacts at most ${segment.start} versions, or at least ${segment.end + 1}.`,
+      nextSteps: [`Run pm history-compact <id> --before ${segment.start + 1} or --before ${segment.end + 2}.`],
+    },
+  );
+}
+
 function buildHistoryCompactEntries(params: {
   historyEntries: HistoryEntry[];
   boundary: HistoryCompactBoundary;
@@ -321,6 +344,7 @@ function buildHistoryCompactEntries(params: {
       auditEntryAdded: false,
     };
   }
+  assertReconstructableCompactBoundary(params.historyEntries, params.boundary.compactCount);
   const { checkpoint, finalReplay } = replayHistoryAndResolveCheckpoint(
     params.historyEntries,
     params.boundary.compactCount,

@@ -41051,6 +41051,7 @@
     "history_author_acknowledge_target_not_actionable",
     "history_author_acknowledge_target_unreadable",
     "history_baseline_unavailable",
+    "history_compact_boundary_bridged",
     "history_drift_chain_mismatch",
     "history_drift_hash_mismatch",
     "history_drift_merge_receipt",

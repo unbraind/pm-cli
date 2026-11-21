@@ -306,6 +306,8 @@ describe("append-only history repair (GH-1715)", () => {
       expect(entries.at(-1)).toMatchObject({ message: "legacy bridge" });
       expect(entries.at(-1)).not.toHaveProperty("item_hash_version");
       expect(verifyHistoryChainWithVersion(entries).ok).toBe(true);
+      // The rewriting repair keeps the unversioned bridged segment as it is.
+      expect(await runHistoryRepair(ID, {}, { path: context.pmPath })).toMatchObject({ changed: false });
     });
   });
 
@@ -589,6 +591,31 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
     });
   });
 
+  it("refuses a compaction checkpoint inside a live bridged segment and names the nearest boundaries", async () => {
+    await withTempPmPath(async (context) => {
+      await breakChain(context);
+      await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
+      await expect(runHistoryCompact(ID, { before: "4" }, { path: context.pmPath })).rejects.toMatchObject({
+        context: { code: "history_compact_boundary_bridged" },
+      });
+      await expect(runHistoryCompact(ID, { before: "3" }, { path: context.pmPath })).resolves.toMatchObject({ changed: true });
+      expect(verifyHistoryChainWithVersion(await readHistoryEntries(paths(context).history, ID)).ok).toBe(true);
+    });
+  });
+
+  it("dissolves a bridge in a continuous-surface or other-epoch rewrite instead of keeping it verbatim", async () => {
+    await withTempPmPath(async (context) => {
+      await breakChain(context);
+      await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
+      const entries = await readHistoryEntries(paths(context).history, ID);
+      for (const rewrite of [reanchorHistoryEntries(entries, undefined, { continuousHashSurface: true }), reanchorHistoryEntries(entries, 2)]) {
+        expect(rewrite.entries.some((entry) => Object.hasOwn(entry, "bridge"))).toBe(false);
+        expect(rewrite.entries.map((entry) => entry.replay_inexact === true).slice(0, 5)).toEqual([false, false, true, true, false]);
+        expect(verifyHistoryChainWithVersion(rewrite.entries).ok).toBe(true);
+      }
+    });
+  });
+
   it("persists a repair that only dissolves a stray bridge", async () => {
     await withTempPmPath(async (context) => {
       await breakChain(context);
@@ -728,6 +755,24 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const theirsBridge = JSON.parse(theirs.trimEnd().split("\n").at(-1)!) as HistoryEntry;
       expect(entries.filter((entry) => entry.ts === theirsBridge.ts && entry.author === theirsBridge.author && entry.op === "history_repair")).toHaveLength(1);
       expect(verifyHistoryChainWithVersion(entries).ok).toBe(true);
+
+      // Reciprocal equivalent merges that each recorded later work merge again without contradictory orders.
+      const reverse = mergeHistoryStreams(base, theirs, ours);
+      await writeFile(history, reverse.merged);
+      await writeFile(item, onDisk);
+      comment(context, "reverse next");
+      const reverseNext = await readFile(history, "utf8");
+      const third = mergeHistoryStreams(base, oursNext, reverseNext);
+      const thirdEntries = third.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      expect(verifyHistoryChainWithVersion(thirdEntries).ok).toBe(true);
+      expect(thirdEntries.filter((entry) => Object.hasOwn(entry, "bridge"))).toHaveLength(0);
+      expect(third.merged).toContain('"text":"ours next"');
+      expect(third.merged).toContain('"text":"reverse next"');
+      // A side that does not verify is never normalized; the union refuses its broken record.
+      const brokenLines = reverseNext.trimEnd().split("\n");
+      const brokenLast = { ...(JSON.parse(brokenLines.at(-1)!) as HistoryEntry), message: "edited without a seal" };
+      const broken = `${[...brokenLines.slice(0, -1), JSON.stringify(brokenLast)].join("\n")}\n`;
+      expect(() => mergeHistoryStreams(base, oursNext, broken)).toThrow();
 
       // A shorter side that marked a record the longer side keeps under a live bridge leaves that bridge intact.
       const oursEntries = ours.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);

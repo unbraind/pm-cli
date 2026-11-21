@@ -109,6 +109,9 @@ describe("history bridge envelope", () => {
       unlocated: [3],
     });
     expect(locateBridgedSegments([bridge])).toEqual({ segments: [{ start: 1, end: 0, exact: false }], unlocated: [0] });
+    // A digest algorithm this build cannot compute leaves the bridge unlocated instead of throwing.
+    const unknownAlgorithm = { ...bridge, hash_algorithm: "sha999" } as HistoryEntry;
+    expect(locateBridgedSegments([first, ...covered, unknownAlgorithm]).unlocated).toEqual([3]);
   });
 
   it("never lets replay mutate the recorded patch it applies", () => {

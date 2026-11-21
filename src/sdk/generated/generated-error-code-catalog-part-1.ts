@@ -727,6 +727,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/history/projection.ts"],
   },
   {
+    code: "history_compact_boundary_bridged",
+    exit_code: 2,
+    sources: ["sdk/history-compact.ts"],
+  },
+  {
     code: "history_drift_chain_mismatch",
     exit_code: 1,
     stable: true,
@@ -1389,11 +1394,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   },
   {
     code: "merge_fence_drift",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
-    code: "merge_fence_missing",
     exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],
   },

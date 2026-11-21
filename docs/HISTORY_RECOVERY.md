@@ -204,7 +204,16 @@ Versions between a break and its bridge cannot be reconstructed exactly,
 because the unrecorded change is missing from replay. `pm restore` and
 `pm get --at` refuse them with `history_version_unreconstructable`, both before
 and after a dissolution. Versions before the break and from the bridge onward
-remain addressable.
+remain addressable. `pm history-compact` cannot checkpoint such a version
+either. It refuses with `history_compact_boundary_bridged` and names the
+nearest boundaries before the break and from the bridge onward.
+
+Clones that repaired the same break independently and then kept working
+diverge in a run of the same repair, live or neutral and in either order,
+followed by ordinary records. The merge driver first turns both runs into one
+shared run: ours, plus neutral copies of theirs' repairs ours lacks. It then
+orders only the later records, so reciprocal merges merge again without
+contradictory orders.
 
 The repair refuses with `history_append_only_repair_unavailable` and names the
 rewriting repair as the fallback when a bridge cannot carry the drift:

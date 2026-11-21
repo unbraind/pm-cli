@@ -370,43 +370,65 @@ const QUOTED_RELATIVE_PATH = /(["'`])(\.{1,2}\/[^"'`\r\n]*)\1/gu;
  */
 export function createExcludedModulePredicate(root, packedPaths) {
   const packed = new Set(packedPaths);
-  return (candidate) =>
+  const isExcluded = (candidate) =>
     MODULE_FILE.test(candidate) &&
     !candidate.startsWith("../") &&
     !candidate.split("/").includes("node_modules") &&
     !packed.has(candidate) &&
     existsSync(path.join(root, candidate));
+  /** The `main` a directory's package.json declares, which CommonJS loads before the index. */
+  isExcluded.directoryMain = (directory) => {
+    try {
+      const main = JSON.parse(readFileSync(path.join(root, directory, "package.json"), "utf8")).main;
+      return typeof main === "string" ? path.posix.join(directory, main) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  return isExcluded;
+}
+
+/** Whether the quoted string at `index` is the argument of a loader call or an import clause. */
+function isLoaderArgument(text, index) {
+  return /(?:\brequire\s*\(|\bimport\s*\(|\bfrom|\bimport)\s*$/u.test(text.slice(Math.max(0, index - 16), index));
 }
 
 /**
  * Prove no staged module refers to a module the package excludes (pm-998juj).
  * Every quoted relative string in a staged JavaScript module is resolved the
- * way Node would load it (exact, CommonJS extension or directory index, with
- * any URL query or fragment dropped). It refuses the pack when the target
- * exists in the checkout but is not packed: a static, dynamic or require
- * import or a worker path built from a string. The check fails closed: a
- * comment or string spelling such a path refuses too. It needs no parser,
- * so release controls copied without node_modules still run it.
+ * way Node would load it: its literal and URL-stripped spelling, a CommonJS
+ * extension, a directory's package.json main or its index. It refuses the
+ * pack when the target exists in the checkout but is not packed: a static,
+ * dynamic or require import or a worker path built from a string. The check
+ * fails closed: a comment or string spelling such a path refuses too. Only a
+ * dot-only string such as "../" outside a loader call is taken as a path
+ * check. It needs no parser, so release controls copied without node_modules
+ * still run it.
  */
 export function findExcludedModuleReferences(packedPaths, isExcluded, readText) {
+  const directoryMain = isExcluded.directoryMain ?? (() => undefined);
   const references = [];
   for (const file of packedPaths) {
     if (!MODULE_FILE.test(file) || file.startsWith("node_modules/")) continue;
-    for (const [, , specifier] of readText(file).matchAll(QUOTED_RELATIVE_PATH)) {
+    const text = readText(file);
+    for (const match of text.matchAll(QUOTED_RELATIVE_PATH)) {
+      const specifier = match[2];
+      const loader = isLoaderArgument(text, match.index);
       // require() reads "#" and "?" literally while an ESM URL drops them: judge both spellings.
-      const pathnames = [...new Set([specifier, specifier.replace(/[?#].*$/u, "")])];
-      const candidates = pathnames
-        // Dot-only strings such as "../" are path checks; require("./sdk/") still names sdk/index.js.
-        .filter((pathname) => !/^(?:\.{1,2}\/)+$/u.test(pathname))
+      const candidates = [...new Set([specifier, specifier.replace(/[?#].*$/u, "")])]
+        .filter((pathname) => loader || !/^(?:\.{1,2}\/)+$/u.test(pathname))
         .flatMap((pathname) => {
           const target = path.posix.join(path.posix.dirname(file), pathname).replace(/\/+$/u, "");
-          const indexes = MODULE_EXTENSIONS.map((extension) => `${target}/index${extension}`);
+          const directory = [
+            directoryMain(target),
+            ...MODULE_EXTENSIONS.map((extension) => `${target}/index${extension}`),
+          ].filter((candidate) => candidate !== undefined);
           // A trailing slash names only the directory, never a same-named sibling module.
           return pathname.endsWith("/")
-            ? indexes
-            : [target, ...MODULE_EXTENSIONS.map((extension) => `${target}${extension}`), ...indexes];
+            ? directory
+            : [target, ...MODULE_EXTENSIONS.map((extension) => `${target}${extension}`), ...directory];
         });
-      if (candidates.some(isExcluded)) references.push(`${file} -> ${specifier}`);
+      if (candidates.some((candidate) => isExcluded(candidate))) references.push(`${file} -> ${specifier}`);
     }
   }
   return [...new Set(references)];

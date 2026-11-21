@@ -464,10 +464,22 @@ function mergeEquivalentBridges(
   if (![ours, theirs].every((side) => verifyHistoryChainWithVersion(side).ok)) {
     return null;
   }
-  // Keep ours; carry over theirs' repairs ours does not represent yet, as neutral records.
-  const present = new Set(oursSuffix.map(historyEntryIdentity));
-  const anchor = ours.at(-1)!.after_hash;
-  return theirsSuffix
+  return neutralRepairCopies(oursSuffix, theirsSuffix, ours.at(-1)!.after_hash);
+}
+
+/** Repair class of a live bridge or neutral copy: what independent equivalent repairs share. */
+function repairClassIdentity(entry: HistoryEntry | undefined): string | null {
+  return entry === undefined ? null : historyBridgeRepairIdentity(neutralizedBridgeOriginal(entry) ?? entry);
+}
+
+/**
+ * Neutral copies of theirs' repairs that ours does not represent yet, anchored
+ * on the state ours' repair already established: their effect is applied, and
+ * each original sealed bridge stays as rewrite evidence for its provenance.
+ */
+function neutralRepairCopies(ours: HistoryEntry[], theirs: HistoryEntry[], anchor: string): HistoryEntry[] {
+  const present = new Set(ours.map(historyEntryIdentity));
+  return theirs
     .filter((entry) => !present.has(historyEntryIdentity(entry)))
     .map((entry) => {
       const original = neutralizedBridgeOriginal(entry) ?? entry;
@@ -478,6 +490,37 @@ function mergeEquivalentBridges(
         { retainOriginalPatch: true, retainPriorRecord: true },
       );
     });
+}
+
+/**
+ * Two clones that resolved one out-of-band change with equivalent repairs and
+ * then kept working diverge in a run of the same repair (live or neutral, in
+ * either order) followed by ordinary records. Ordering those runs record by
+ * record would demand contradictory orders, so the runs become one shared run
+ * first: ours' run plus neutral copies of theirs' repairs it lacks. Only the
+ * later records are then ordered (GH-1715).
+ */
+function normalizeEquivalentRepairRuns(
+  ours: HistoryEntry[],
+  theirs: HistoryEntry[],
+): { ours: HistoryEntry[]; theirs: HistoryEntry[] } {
+  const shared = commonHistoryPrefixLength(ours, theirs);
+  const runLength = (side: HistoryEntry[], repairClass: string) => {
+    let length = 0;
+    while (repairClassIdentity(side[shared + length]) === repairClass) length += 1;
+    return length;
+  };
+  const repairClass = repairClassIdentity(ours[shared]);
+  if (repairClass === null || repairClassIdentity(theirs[shared]) !== repairClass) return { ours, theirs };
+  const oursRun = ours.slice(shared, shared + runLength(ours, repairClass));
+  const theirsRun = theirs.slice(shared, shared + runLength(theirs, repairClass));
+  const oursRest = ours.slice(shared + oursRun.length);
+  const theirsRest = theirs.slice(shared + theirsRun.length);
+  if (oursRest.length === 0 && theirsRest.length === 0) return { ours, theirs };
+  if (![ours, theirs].every((side) => verifyHistoryChainWithVersion(side).ok)) return { ours, theirs };
+  const run = [...oursRun, ...neutralRepairCopies(oursRun, theirsRun, oursRun.at(-1)!.after_hash)];
+  const prefix = ours.slice(0, shared);
+  return { ours: [...prefix, ...run, ...oursRest], theirs: [...prefix, ...run, ...theirsRest] };
 }
 
 /**
@@ -499,8 +542,10 @@ export function mergeHistoryStreams(
   theirsRaw: string,
 ): HistoryMergeResult {
   const base = parseHistoryJsonl(baseRaw, "base");
-  const ours = parseHistoryJsonl(oursRaw, "ours");
-  const theirs = parseHistoryJsonl(theirsRaw, "theirs");
+  const { ours, theirs } = normalizeEquivalentRepairRuns(
+    parseHistoryJsonl(oursRaw, "ours"),
+    parseHistoryJsonl(theirsRaw, "theirs"),
+  );
   const creates = [base, ours, theirs].map((entries) =>
     entries.filter((entry) => entry.op === "create"),
   );

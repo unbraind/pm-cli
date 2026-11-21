@@ -366,6 +366,10 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   expect(findExcludedModuleReferences(["dist/a.cjs"], (candidate) => candidate === "dist/sdk/index.js", () => "require('./sdk/')")).toEqual([
     "dist/a.cjs -> ./sdk/",
   ]);
+  // Inside a loader call even a dot-only specifier names a module.
+  expect(findExcludedModuleReferences(["dist/sdk/a.cjs"], (candidate) => candidate === "dist/sdk/index.js", () => 'const x = require("./"); const y = p.startsWith("./");')).toEqual([
+    "dist/sdk/a.cjs -> ./",
+  ]);
   // A trailing slash never names the same-named sibling file.
   expect(findExcludedModuleReferences(["dist/a.cjs"], (candidate) => candidate === "dist/graph.js", () => "require('./graph/')")).toEqual([]);
 });
@@ -379,6 +383,16 @@ it("treats a checkout module as excluded only when it exists inside the checkout
     }
     const isExcluded = createExcludedModulePredicate(root, ["dist/cli.js", "README.md"]);
     expect(["dist/sdk/index.js", "top.js", "lib/private.mjs"].every(isExcluded)).toBe(true);
+    // A directory's package.json main is a load target too.
+    await mkdir(path.join(root, "dist/local"), { recursive: true });
+    await writeFile(path.join(root, "dist/local/package.json"), JSON.stringify({ main: "hidden.js" }));
+    await writeFile(path.join(root, "dist/local/hidden.js"), "");
+    await mkdir(path.join(root, "dist/nomain"), { recursive: true });
+    await writeFile(path.join(root, "dist/nomain/package.json"), JSON.stringify({ name: "x" }));
+    expect(isExcluded.directoryMain("dist/local")).toBe("dist/local/hidden.js");
+    expect(isExcluded.directoryMain("dist/nomain")).toBeUndefined();
+    expect(isExcluded.directoryMain("dist/absent")).toBeUndefined();
+    expect(findExcludedModuleReferences(["dist/cli.js"], isExcluded, () => "require('./local')")).toEqual(["dist/cli.js -> ./local"]);
     expect(["dist/cli.js", "README.md", "dist/missing.js", "../outside.js", "dist/node_modules/dep/index.js"].some(isExcluded)).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });

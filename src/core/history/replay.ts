@@ -884,15 +884,22 @@ function applyProjectedReanchorPatch(replay: ReplayDocument, entry: HistoryEntry
 function indexBridgedSegments(
   entries: HistoryEntry[],
   options: ReanchorHistoryOptions,
+  itemHashVersion: HistoryItemHashVersion,
 ): { preservable: Map<number, number>; inexact: Set<number>; inputVerifies: boolean } {
   const verification = verifyHistoryChainWithVersion(entries);
-  const verified = verification.bridged_segments ?? [];
+  // A projected or continuous-surface rewrite re-anchors every record, and a
+  // segment recorded under another epoch than the one requested cannot be
+  // kept verbatim either; those rewrites dissolve the bridge.
+  const keepsVerbatim = options.projectPatch === undefined && options.continuousHashSurface !== true;
+  const verified = (verification.bridged_segments ?? []).filter((segment) =>
+    entries
+      .slice(segment.start, segment.end + 1)
+      .every((entry) => (entry.item_hash_version ?? 1) === itemHashVersion),
+  );
   return {
     inputVerifies: verification.ok,
     preservable: new Map(
-      options.projectPatch === undefined
-        ? verified.map((segment) => [segment.start, segment.end])
-        : [],
+      keepsVerbatim ? verified.map((segment) => [segment.start, segment.end]) : [],
     ),
     // Located, not only verified: a rewrite that repairs a record before the
     // bridge still dissolves it, and must keep its versions refused. A merge
@@ -1045,7 +1052,7 @@ export function reanchorHistoryEntries(
   const explicitItemHashVersion =
     itemHashVersion !== 1 ||
     entries.some((entry) => entry.item_hash_version !== undefined);
-  const bridged = indexBridgedSegments(entries, options);
+  const bridged = indexBridgedSegments(entries, options, itemHashVersion);
   let unchangedPrefix = true;
 
   for (let index = 0; index < entries.length; index += 1) {

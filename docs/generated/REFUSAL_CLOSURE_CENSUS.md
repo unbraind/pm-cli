@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 481
+- Catalog error codes: 482
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 462
-- Coverage fraction: 0.039501
+- Uncovered error codes: 463
+- Coverage fraction: 0.039419
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -142,6 +142,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `history_author_acknowledge_target_not_actionable` | `history_author_acknowledge_target_not_actionable` | uncovered | none | 0 |
 | `history_author_acknowledge_target_unreadable` | `history_author_acknowledge_target_unreadable` | uncovered | none | 0 |
 | `history_baseline_unavailable` | `history_baseline_unavailable` | uncovered | none | 0 |
+| `history_compact_boundary_bridged` | `history_compact_boundary_bridged` | uncovered | none | 0 |
 | `history_drift_chain_mismatch` | `history_drift_chain_mismatch` | uncovered | none | 0 |
 | `history_drift_hash_mismatch` | `history_drift_hash_mismatch` | uncovered | none | 0 |
 | `history_drift_merge_receipt` | `history_drift_merge_receipt` | uncovered | none | 0 |

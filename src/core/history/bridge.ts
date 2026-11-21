@@ -129,6 +129,15 @@ export interface LocatedBridgedSegments {
   unlocated: number[];
 }
 
+/** The segment digest, or null when the bridge names an algorithm this build cannot compute. */
+function safeSegmentDigest(segment: readonly HistoryEntry[], bridge: HistoryEntry): string | null {
+  try {
+    return digestBridgedSegment(segment, bridge);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Index where a bridge's segment provably starts, or -1. The segment digest
  * proves it from a start the first break's record hash or recorded anchors
@@ -152,7 +161,7 @@ function findBridgedSegmentStart(
     const named = first.record_hash !== null && entry.record_hash === first.record_hash;
     if (!anchored && !named) continue;
     const covered = entries.slice(start, end);
-    if (digestBridgedSegment(covered, entries[end]!) === bridge.segment_digest) return start;
+    if (safeSegmentDigest(covered, entries[end]!) === bridge.segment_digest) return start;
     if (materialized < 0 && anchored && covered.every((record) => record.replay_inexact === true)) {
       materialized = start;
     }

@@ -23564,6 +23564,23 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_compact_boundary_bridged",
+      "class": "usage",
+      "code": "history_compact_boundary_bridged",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "History compact boundary bridged condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/history-compact.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_drift_chain_mismatches"
       ],
