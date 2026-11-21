@@ -104,18 +104,25 @@ export function digestBridgedSegment(
   );
 }
 
+/** Canonical array-index keys, which JavaScript always orders first and numerically. */
+const ARRAY_INDEX_KEY = /^(?:0|[1-9]\d*)$/u;
+const isArrayIndexKey = (key: string) => ARRAY_INDEX_KEY.test(key) && Number(key) < 2 ** 32 - 1;
+
 /**
- * Canonical JSON with sorted keys that keeps every own key, including one
- * named `__proto__`, which copying into a plain object by assignment drops.
+ * Canonical JSON in the order stableStringify produces (array-index keys
+ * first and numerically, every other key sorted by code unit), keeping every
+ * own key, including one named `__proto__`, which copying into a plain object
+ * by assignment drops. Records without such a key digest exactly as before.
  */
 function canonicalBridgeJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map((item) => canonicalBridgeJson(item ?? null)).join(",")}]`;
   if (value === null || typeof value !== "object") return JSON.stringify(value);
   const record = value as Record<string, unknown>;
-  const members = Object.keys(record)
-    .filter((key) => record[key] !== undefined)
-    .sort()
-    .map((key) => `${JSON.stringify(key)}:${canonicalBridgeJson(record[key])}`);
+  // Object.keys already lists array-index keys first, in ascending order.
+  const keys = Object.keys(record).filter((key) => record[key] !== undefined);
+  const members = [...keys.filter(isArrayIndexKey), ...keys.filter((key) => !isArrayIndexKey(key)).sort()].map(
+    (key) => `${JSON.stringify(key)}:${canonicalBridgeJson(record[key])}`,
+  );
   return `{${members.join(",")}}`;
 }
 

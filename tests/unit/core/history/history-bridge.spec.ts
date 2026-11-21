@@ -1,7 +1,9 @@
 /**
  * Bridge envelope parsing for append-only history repair (GH-1715, pm-gh1715).
  */
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { stableStringify } from "../../../../src/core/shared/serialization.js";
 import {
   describeHistoryBreak,
   digestBridgedSegment,
@@ -123,6 +125,9 @@ describe("history bridge envelope", () => {
     expect(digestBridgedSegment([withContext('{"__proto__":{"a":2},"b":2}')], {})).not.toBe(original);
     expect(digestBridgedSegment([withContext('{"b":2,"__proto__":{"a":1}}')], {})).toBe(original);
     expect(digestBridgedSegment([entry({ message: undefined, patch: [null as never] })], {})).toBe(digestBridgedSegment([entry({ patch: [null as never] })], {}));
+    // Without such a key the digest is the one stableStringify gives, array-index keys first and numerically.
+    const indexed = [entry({ context: { b: 1, 10: "ten", a: 2, 2: "two", 4294967295: "big" } as Record<string, unknown> })];
+    expect(digestBridgedSegment(indexed, {})).toBe(createHash("sha256").update(stableStringify(indexed), "utf8").digest("hex"));
   });
 
   it("never lets replay mutate the recorded patch it applies", () => {

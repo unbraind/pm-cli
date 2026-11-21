@@ -366,33 +366,34 @@ const MODULE_FILE = /\.[cm]?js$/u;
 const MODULE_EXTENSIONS = [".js", ".json", ".node"];
 const QUOTED_RELATIVE_PATH = /(["'`])(\.{1,2}\/[^"'`\r\n]*)\1/gu;
 
-/**
- * The two file layouts the closure check resolves against: the checkout and
- * the packed package. Each answers which regular files exist and which
- * `main` a directory's package.json declares. A manifest only counts in the
- * package when it is packed too.
- */
-export function createModuleLayouts(root, packedPaths) {
-  const packed = new Set(packedPaths);
-  const isFile = (candidate) => {
+/** Which regular files a directory holds and which `main` each package.json under it declares. */
+function directoryLayout(directory) {
+  const has = (candidate) => {
     try {
-      return statSync(path.join(root, candidate)).isFile();
+      return statSync(path.join(directory, candidate)).isFile();
     } catch {
       return false;
     }
   };
-  const readMain = (manifest) => {
+  const main = (manifest) => {
     try {
-      const main = JSON.parse(readFileSync(path.join(root, manifest), "utf8")).main;
-      return typeof main === "string" ? main : undefined;
+      const declared = JSON.parse(readFileSync(path.join(directory, manifest), "utf8")).main;
+      return typeof declared === "string" ? declared : undefined;
     } catch {
       return undefined;
     }
   };
-  return {
-    checkout: { has: isFile, main: (manifest) => (isFile(manifest) ? readMain(manifest) : undefined) },
-    package: { has: (candidate) => packed.has(candidate), main: (manifest) => (packed.has(manifest) ? readMain(manifest) : undefined) },
-  };
+  return { has, main };
+}
+
+/**
+ * The two file layouts the closure check resolves against: the checkout and
+ * the completed stage, which holds exactly what the package ships (first-party
+ * files and the bundled runtime), so a directory main into a staged
+ * production dependency resolves while a development-only one does not.
+ */
+export function createModuleLayouts(root, stage) {
+  return { checkout: directoryLayout(root), package: directoryLayout(stage) };
 }
 
 const resolveModuleFile = (layout, target) =>
@@ -415,34 +416,43 @@ function resolveModule(layout, target, directoryOnly) {
   );
 }
 
-const SKIPPED_TRIVIA = String.raw`(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*`;
-const LOADER_BEFORE = new RegExp(String.raw`(?:\b(require)\s*\(|\b(import)\s*\(|\bfrom|\bimport)${SKIPPED_TRIVIA}$`, "u");
+// Whitespace and comments; a block comment ends at its first "*/", so the
+// pattern never spans code and cannot backtrack across adjacent comments.
+const SKIPPED_TRIVIA = String.raw`(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/|\/\/[^\n]*\n)*`;
+const LOADER_BEFORE = new RegExp(
+  String.raw`(?:\b(require)${SKIPPED_TRIVIA}\(|\b(import)${SKIPPED_TRIVIA}\(|\bfrom|\bimport)${SKIPPED_TRIVIA}$`,
+  "u",
+);
 const ARGUMENT_END = new RegExp(String.raw`^${SKIPPED_TRIVIA}[),]`, "u");
 
 /**
- * The loader whose whole specifier the quoted string spanning `start` to
- * `end` is: "require" for a require() argument, "import" for an import
- * clause or an import() argument, or null. A call argument the string only
- * begins (an expression transforms it before loading) is null, so both
- * spellings are judged. Comments around the string are skipped.
+ * The loader the quoted string spanning `start` to `end` is an argument of
+ * ("require" for require(), "import" for an import clause or import(), or
+ * null) and whether it is the whole specifier. A call argument the string
+ * only begins, because an expression transforms it before loading, is not
+ * whole, so both spellings are judged. Comments around the string are skipped.
  */
-function loaderKind(text, start, end) {
+function loaderContext(text, start, end) {
   const loader = LOADER_BEFORE.exec(text.slice(Math.max(0, start - 400), start));
-  if (loader === null) return null;
+  if (loader === null) return { kind: null, whole: false };
   const call = loader[1] ?? loader[2];
-  if (call !== undefined && !ARGUMENT_END.test(text.slice(end, end + 400))) return null;
-  return loader[1] === undefined ? "import" : "require";
+  return {
+    kind: loader[1] === undefined ? "import" : "require",
+    whole: call === undefined || ARGUMENT_END.test(text.slice(end, end + 400)),
+  };
 }
 
 /**
  * The value of a quoted specifier with its JavaScript escapes decoded, so
  * "./\u0069ndex.js" names "./index.js". An escape outside Unicode stays as written.
  */
+const CHARACTER_ESCAPES = { b: "\b", f: "\f", n: "\n", r: "\r", t: "\t", v: "\v", 0: "\0" };
+
 function decodeSpecifier(raw) {
   return raw.replace(
     /\\(?:u\{([0-9a-fA-F]+)\}|u([0-9a-fA-F]{4})|x([0-9a-fA-F]{2})|([\s\S]))/gu,
     (escape, braced, unicode, hex, other) => {
-      if (other !== undefined) return other;
+      if (other !== undefined) return CHARACTER_ESCAPES[other] ?? other;
       const point = Number.parseInt(braced ?? unicode ?? hex, 16);
       return point <= 0x10ffff ? String.fromCodePoint(point) : escape;
     },
@@ -486,8 +496,9 @@ export function findExcludedModuleReferences(packedPaths, layouts, readText) {
     const text = readText(file);
     for (const match of text.matchAll(QUOTED_RELATIVE_PATH)) {
       const specifier = match[2];
-      const loader = loaderKind(text, match.index, match.index + match[0].length);
-      const dangling = specifierSpellings(decodeSpecifier(specifier), loader)
+      const { kind: loader, whole } = loaderContext(text, match.index, match.index + match[0].length);
+      const dangling = specifierSpellings(decodeSpecifier(specifier), whole ? loader : null)
+        // A dot-only string outside any loader call is a path check; inside one it names a directory.
         .filter((pathname) => loader !== null || !/^(?:\.{1,2}\/)+$/u.test(pathname))
         .some((pathname) => {
           const target = path.posix.join(path.posix.dirname(file), pathname).replace(/(.)\/+$/u, "$1");
@@ -619,16 +630,6 @@ function packLeasedDistribution(root, options) {
       ),
     );
     stageSourceFiles(root, stage, manifest, sourceReport.files);
-    const packedPaths = sourceReport.files.map((file) => file.path);
-    const excludedReferences = findExcludedModuleReferences(
-      packedPaths,
-      createModuleLayouts(root, packedPaths),
-      (file) => readFileSync(path.join(stage, file), "utf8"),
-    );
-    if (excludedReferences.length > 0)
-      throw new Error(
-        `Packed modules import files the package excludes:\n${excludedReferences.join("\n")}`,
-      );
     stageRuntime(root, stage, manifest, ledger);
     const published = structuredClone(manifest);
     delete published.devDependencies;
@@ -642,6 +643,16 @@ function packLeasedDistribution(root, options) {
       path.join(stage, "package.json"),
       `${JSON.stringify(published, null, 2)}\n`,
     );
+    // Judge the completed stage, which holds exactly what the package ships.
+    const excludedReferences = findExcludedModuleReferences(
+      sourceReport.files.map((file) => file.path),
+      createModuleLayouts(root, stage),
+      (file) => readFileSync(path.join(stage, file), "utf8"),
+    );
+    if (excludedReferences.length > 0)
+      throw new Error(
+        `Packed modules import files the package excludes:\n${excludedReferences.join("\n")}`,
+      );
     const args = [...prefix, "pack", "--json", "--ignore-scripts"];
     if (options.destination)
       args.push("--pack-destination", path.resolve(options.destination));

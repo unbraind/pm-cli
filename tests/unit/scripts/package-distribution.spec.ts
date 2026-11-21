@@ -408,6 +408,24 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   expect(referencesIn("dist/cli.js", 'import "./sdk/\\u{69}nde\\x78\\.js";', escaped)).toEqual(["dist/cli.js -> ./sdk/\\u{69}nde\\x78\\.js"]);
   expect(referencesIn("dist/cli.js", 'import "./sdk/index.js";', escaped)).toEqual(["dist/cli.js -> ./sdk/index.js"]);
   expect(referencesIn("dist/cli.js", 'import "./sdk/\\u{110000}index.js";', escaped)).toEqual([]);
+  // Control-character escapes decode to their JavaScript values.
+  const tabbed = layoutsOf(["dist/tindex.js"], ["dist/\tindex.js"]);
+  expect(referencesIn("dist/cli.cjs", "require('./\\tindex.js')", tabbed)).toEqual([]);
+  expect(referencesIn("dist/cli.cjs", "require('./\\tindex.js')", layoutsOf(["dist/\tindex.js"], ["dist/tindex.js"]))).toEqual([
+    "dist/cli.cjs -> ./\\tindex.js",
+  ]);
+  // Comments may sit between the loader name and its parenthesis.
+  expect(referencesIn("dist/sdk/a.cjs", 'require /* local SDK */ ("./")', indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
+  // A transformed argument keeps its loader context, so a dot-only prefix still names the directory.
+  expect(referencesIn("dist/sdk/a.cjs", 'require("./" + "index.js")', indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
+  // A block comment ends at its first "*/": an expression between two comments is still an expression.
+  expect(referencesIn("dist/cli.js", 'require("./sdk/graph.js?worker" /* lead */ .split("?")[0] /* tail */)', layoutsOf(["dist/sdk/graph.js"], []))).toEqual([
+    "dist/cli.js -> ./sdk/graph.js?worker",
+  ]);
+  const comments = `require("./sdk/graph.js?worker" ${"/**/ ".repeat(40)}.slice(0))`;
+  const started = performance.now();
+  expect(referencesIn("dist/cli.js", comments, layoutsOf(["dist/sdk/graph.js"], []))).toEqual(["dist/cli.js -> ./sdk/graph.js?worker"]);
+  expect(performance.now() - started).toBeLessThan(1000);
   // A string an expression transforms before loading is judged in both spellings.
   const transformed = layoutsOf(["dist/sdk/graph.js"], []);
   expect(referencesIn("dist/cli.js", "require('./sdk/graph.js?worker'.split('?')[0])", transformed)).toEqual([
@@ -459,18 +477,21 @@ it("resolves a directory's package.json main as Node does and refuses one the pa
   expect(referencesIn("dist/cli.cjs", "require('./absent'); read('./notes.md')", layoutsOf(["dist/notes.md"], []))).toEqual([]);
 });
 
-it("reads checkout and package layouts from regular files and packed manifests only (pm-998juj)", async () => {
+it("reads checkout and stage layouts from regular files and the manifests each holds (pm-998juj)", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "pm-excluded-modules-"));
+  const stage = await mkdtemp(path.join(tmpdir(), "pm-excluded-stage-"));
+  const put = async (base: string, file: string, text = "") => {
+    await mkdir(path.dirname(path.join(base, file)), { recursive: true });
+    await writeFile(path.join(base, file), text);
+  };
   try {
-    for (const file of ["dist/cli.js", "dist/sdk/index.js", "dist/local/hidden.js", "README.md"]) {
-      await mkdir(path.dirname(path.join(root, file)), { recursive: true });
-      await writeFile(path.join(root, file), "");
-    }
-    await writeFile(path.join(root, "dist/local/package.json"), JSON.stringify({ main: "hidden.js" }));
-    await mkdir(path.join(root, "dist/nomain"), { recursive: true });
-    await writeFile(path.join(root, "dist/nomain/package.json"), JSON.stringify({ name: "x" }));
-    await writeFile(path.join(root, "dist/broken.json"), "{");
-    const layouts = createModuleLayouts(root, ["dist/cli.js", "README.md", "dist/nomain/package.json"]);
+    for (const file of ["dist/cli.js", "dist/sdk/index.js", "dist/local/hidden.js", "README.md"]) await put(root, file);
+    await put(root, "dist/local/package.json", JSON.stringify({ main: "hidden.js" }));
+    await put(root, "dist/nomain/package.json", JSON.stringify({ name: "x" }));
+    await put(root, "dist/broken.json", "{");
+    for (const file of ["dist/cli.js", "README.md"]) await put(stage, file);
+    await put(stage, "dist/nomain/package.json", JSON.stringify({ name: "x" }));
+    const layouts = createModuleLayouts(root, stage);
     expect(["dist/sdk/index.js", "dist/cli.js", "dist/local/package.json"].every(layouts.checkout.has)).toBe(true);
     expect(["dist/sdk", "dist/missing.js"].some(layouts.checkout.has)).toBe(false);
     expect(layouts.package.has("dist/cli.js")).toBe(true);
@@ -484,8 +505,16 @@ it("reads checkout and package layouts from regular files and packed manifests o
     expect(findExcludedModuleReferences(["dist/cli.js"], layouts, () => "require('./local'); import '../outside.js'; import './node_modules/dep/index.js'")).toEqual([
       "dist/cli.js -> ./local",
     ]);
+    // A main into a dependency resolves when the stage bundles it, and refuses when only the checkout has it.
+    await put(root, "dist/dep/package.json", JSON.stringify({ main: "../../node_modules/dep/index.js" }));
+    await put(stage, "dist/dep/package.json", JSON.stringify({ main: "../../node_modules/dep/index.js" }));
+    await put(root, "node_modules/dep/index.js");
+    expect(findExcludedModuleReferences(["dist/cli.js"], layouts, () => "require('./dep')")).toEqual(["dist/cli.js -> ./dep"]);
+    await put(stage, "node_modules/dep/index.js");
+    expect(findExcludedModuleReferences(["dist/cli.js"], layouts, () => "require('./dep')")).toEqual([]);
   } finally {
     await rm(root, { recursive: true, force: true });
+    await rm(stage, { recursive: true, force: true });
   }
 });
 

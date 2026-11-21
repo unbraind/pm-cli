@@ -319,8 +319,13 @@ function timestampBoundaryGuidance(
   segment: { start: number; end: number },
 ): [string, string, string] {
   const earliest = entries[segment.start]!.ts;
+  // A fold, not a spread, so a long stream cannot exceed the argument limit.
   const latest = new Date(
-    Math.max(...entries.slice(0, segment.end + 1).map((entry) => Date.parse(entry.ts)).filter(Number.isFinite)),
+    entries
+      .slice(0, segment.end + 1)
+      .map((entry) => Date.parse(entry.ts))
+      .filter(Number.isFinite)
+      .reduce((max, time) => Math.max(max, time), Number.NEGATIVE_INFINITY),
   ).toISOString();
   return [
     "that boundary",
