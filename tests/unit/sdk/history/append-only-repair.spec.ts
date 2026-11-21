@@ -1,6 +1,7 @@
 /**
  * Append-only repair planning on hash-epoch edge cases (GH-1715, pm-gh1715).
  */
+import * as fsPromises from "node:fs/promises";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -78,7 +79,48 @@ const ordered = [
   { command: "a-first", scope: "project" as const },
 ];
 
+const withProvenance = [
+  {
+    command: "z-last",
+    scope: "project" as const,
+    workspace_context_mode: "source" as const,
+    provenance: {
+      author: "fixture",
+      created_at: "2026-08-21T00:00:00.000Z",
+      source_kind: "local_mutation" as const,
+      source_ref: "fixture/v2-writer",
+    },
+  },
+];
+
 describe("append-only repair hash surfaces", () => {
+  it("anchors on the newest declared epoch, even after an older implicit prefix", () => {
+    const created = document("Created", ordered);
+    const edited = document("Edited outside pm", ordered);
+    const renamed = { ...edited, metadata: { ...edited.metadata, status: "in_progress" } } as ItemDocument;
+    const tail = { ...entry(edited, renamed), item_hash_version: 3 as const };
+    tail.before_hash = hashDocumentForVersion(edited, 3);
+    tail.after_hash = hashDocumentForVersion(renamed, 3);
+    const plan = buildAppendOnlyRepairPlan(subject, {}, snapshot([entry(null, created), tail], renamed), helpers);
+    expect(plan.rewrittenEntries.at(-1)).toMatchObject({ item_hash_version: 3, after_hash: hashDocumentForVersion(renamed, 3) });
+  });
+
+  it("proves a bridged epoch-2 variant from the on-disk item and refuses when nothing proves it", () => {
+    const created = document("Created", withProvenance);
+    const edited = document("Edited outside pm", withProvenance);
+    const renamed = { ...edited, metadata: { ...edited.metadata, priority: 0 } } as ItemDocument;
+    // Declared epoch 2: unversioned, the field-frozen variant also reads as epoch 1.
+    const entries = [entry(null, created, 1), entry(edited, renamed, 1)].map((value) => ({ ...value, item_hash_version: 2 }));
+    const plan = buildAppendOnlyRepairPlan(subject, {}, snapshot(entries, renamed), helpers);
+    expect(plan.rewrittenEntries.at(-1)!.after_hash).toBe(hashDocumentVerificationCandidates(renamed, 2)[1]);
+    expect(plan.rewrittenEntries.at(-1)!.after_hash).not.toBe(hashDocumentVerificationCandidates(renamed, 2)[0]);
+    expect(verifyHistoryChainWithVersion(plan.rewrittenEntries).ok).toBe(true);
+    const drifted = { ...renamed, metadata: { ...renamed.metadata, title: "Changed again" } } as ItemDocument;
+    expect(() => buildAppendOnlyRepairPlan(subject, {}, snapshot(entries, drifted), helpers)).toThrow(
+      /neither replay nor the on-disk item proves/,
+    );
+  });
+
   it("keeps the epoch an implicit stream's verified prefix proves when bridging it", () => {
     const created = document("Created", ordered);
     const edited = document("Edited outside pm", ordered);
@@ -94,19 +136,6 @@ describe("append-only repair hash surfaces", () => {
 
   it("reconciles a verified tail on the same epoch-2 variant it recorded", () => {
     // Provenance on a linked test is what separates the field-frozen variant from the expanded one.
-    const withProvenance = [
-      {
-        command: "z-last",
-        scope: "project" as const,
-        workspace_context_mode: "source" as const,
-        provenance: {
-          author: "fixture",
-          created_at: "2026-08-21T00:00:00.000Z",
-          source_kind: "local_mutation" as const,
-          source_ref: "fixture/v2-writer",
-        },
-      },
-    ];
     const created = document("Created", withProvenance);
     const updated = document("Updated", withProvenance);
     const entries = [entry(null, created), entry(created, updated, 1)];
@@ -131,6 +160,21 @@ describe("append-only repair hash surfaces", () => {
       await expect(_testOnly.appendRepairRecord("pm-epoch", file, "first", record)).rejects.toMatchObject({
         context: { code: "history_append_only_repair_unavailable", reason: "stream_changed" },
       });
+      // A stream replaced while the record was appended loses the record, so the repair refuses.
+      const replaced = async () => ({ ino: -1, dev: -1 });
+      await expect(
+        _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, replaced),
+      ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
+      const removed = async (): Promise<{ ino: number; dev: number }> => {
+        throw new Error("gone");
+      };
+      await expect(
+        _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, removed),
+      ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
+      const sameInode = (await fsPromises.stat(file)).ino;
+      await expect(
+        _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, async () => ({ ino: sameInode, dev: -1 })),
+      ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
       await writeFile(file, Buffer.from([0x7b, 0xff, 0x7d]));
       await expect(_testOnly.appendRepairRecord("pm-epoch", file, "{}", record)).rejects.toMatchObject({
         context: { reason: "stream_not_utf8" },

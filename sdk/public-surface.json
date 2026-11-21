@@ -41052,6 +41052,7 @@
     "history_json_invalid",
     "history_merge_conflict_markers_detected",
     "history_record_invalid",
+    "history_redact_bridge_unlocated",
     "history_replay_invalid",
     "history_salvage_refused",
     "history_stream_over_compact_threshold",

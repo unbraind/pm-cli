@@ -1430,7 +1430,7 @@ pm telemetry local-analytics status
 "remediation_map": { "locks_stale_count": "pm gc --scope locks" }
 ```
 
-When more than one history stream is drifted, the `history_drift` remediation commands are rewritten to `pm history-repair --all` so the whole tree is repaired in one audited pass instead of one command per stream.
+When more than one history stream is drifted, the `history_drift` remediation commands are rewritten to `pm history-repair --all` so the whole tree is repaired in one audited pass instead of one command per stream; `history_drift_chain_mismatch` becomes `pm history-repair --all --append-only`, so the bulk remedy never rewrites recorded entries either.
 
 `remediation_map` appears in default and `--full` output and is omitted in `--brief`/`--summary` to stay token-efficient. Extension checks keep their existing richer `details.triage.remediation` instead.
 

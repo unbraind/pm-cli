@@ -784,6 +784,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/history/read.ts"],
   },
   {
+    code: "history_redact_bridge_unlocated",
+    exit_code: 1,
+    sources: ["sdk/history-redact.ts"],
+  },
+  {
     code: "history_replay_invalid",
     exit_code: 1,
     sources: ["core/history/projection.ts", "core/history/tombstone.ts"],

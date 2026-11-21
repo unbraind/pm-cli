@@ -14,7 +14,7 @@ import {
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { withBuildLease } from "../build-lease.mjs";
@@ -360,12 +360,51 @@ export function exportedDeclarationClosure(manifest, packedPaths, readText) {
   return reachable;
 }
 
-/** Lex one JavaScript module's import specifiers with TypeScript's comment- and string-aware pre-processor. */
-function lexModuleImports(text) {
-  const typescript = createRequire(import.meta.url)("typescript");
-  return typescript.preProcessFile(text, true, true).importedFiles.map(
-    (file) => file.fileName,
-  );
+/** Load a package from the first base that resolves it, so copied controls fall back to the checkout. */
+function requireFirstResolvable(name, bases) {
+  for (const base of bases) {
+    try {
+      return createRequire(base)(name);
+    } catch (error) {
+      if (error?.code !== "MODULE_NOT_FOUND") throw error;
+    }
+  }
+  throw new Error(`Packing needs ${name} to prove import closure; install the checkout's dependencies.`);
+}
+
+/**
+ * Build a lexer that collects one JavaScript module's import specifiers from a
+ * real syntax tree: import and export declarations plus literal import() and
+ * require() calls. Comments, strings, template text and regular-expression
+ * literals are never edges. TypeScript resolves from the checkout being
+ * packed first, so release controls copied without node_modules still find
+ * it, and then from this script's own installation.
+ */
+export function createModuleImportLexer(
+  root,
+  resolutionBases = [path.join(root, "package.json"), fileURLToPath(import.meta.url)],
+) {
+  const ts = requireFirstResolvable("typescript", resolutionBases);
+  return (text) => {
+    const source = ts.createSourceFile("module.js", text, ts.ScriptTarget.Latest, false, ts.ScriptKind.JS);
+    const specifiers = [];
+    const visit = (node) => {
+      if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier !== undefined) {
+        specifiers.push(node.moduleSpecifier.text);
+      } else if (
+        ts.isCallExpression(node) &&
+        (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+          (ts.isIdentifier(node.expression) && node.expression.text === "require")) &&
+        node.arguments.length > 0 &&
+        ts.isStringLiteralLike(node.arguments[0])
+      ) {
+        specifiers.push(node.arguments[0].text);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+    return specifiers;
+  };
 }
 
 /**
@@ -375,7 +414,7 @@ function lexModuleImports(text) {
  * staged JavaScript module must therefore name another staged file, or the
  * pack refuses. Bundled runtime packages own their own graphs.
  */
-export function findUnresolvedModuleImports(paths, readText, lex = lexModuleImports) {
+export function findUnresolvedModuleImports(paths, readText, lex) {
   const packed = new Set(paths);
   const unresolved = [];
   for (const file of paths) {
@@ -503,6 +542,7 @@ function packLeasedDistribution(root, options) {
     const unresolvedImports = findUnresolvedModuleImports(
       sourceReport.files.map((file) => file.path),
       (file) => readFileSync(path.join(stage, file), "utf8"),
+      createModuleImportLexer(root),
     );
     if (unresolvedImports.length > 0)
       throw new Error(

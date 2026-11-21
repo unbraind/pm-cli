@@ -8,7 +8,7 @@
  * consumers, other clones and later merges keep the bytes they already hold.
  */
 import { isUtf8 } from "node:buffer";
-import { readFile } from "node:fs/promises";
+import { open, readFile, stat } from "node:fs/promises";
 import jsonPatch from "fast-json-patch";
 import {
   describeHistoryBreak,
@@ -20,10 +20,10 @@ import {
 } from "../../core/history/digest.js";
 import { classifyHistoryEvent } from "../../core/history/event-classification.js";
 import {
+  SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
   sealHistoryRecord,
   type HistoryItemHashVersion,
 } from "../../core/history/history.js";
-import { writeHistoryRawWithRollback } from "../../core/history/history-rewrite.js";
 import {
   cloneEmptyReplayDocument,
   replayHashVerificationCandidates,
@@ -136,17 +136,22 @@ interface AppendedRecordSurface {
 }
 
 /**
- * Keep the epoch the verified part of the stream proves (the whole stream, or
- * the prefix before the first break), so a bridge never downgrades an
- * implicit epoch-2 stream to epoch 1 the way the rewrite resolver would.
+ * Anchor on the hash surface the stream already uses: the newest epoch a
+ * record declares, otherwise the epoch the verified part proves (the whole
+ * stream, or the prefix before the first break). A bridge therefore never
+ * downgrades a declared epoch-3 tail or an implicit epoch-2 stream to epoch 1.
  */
 function resolveAppendedRecordSurface(
   entries: HistoryEntry[],
   firstBreak: number | null,
 ): AppendedRecordSurface {
+  const declared = [...entries].reverse().find((entry) =>
+    (SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly unknown[]).includes(entry.item_hash_version),
+  )?.item_hash_version as HistoryItemHashVersion | undefined;
   const verified = firstBreak === null ? entries : entries.slice(0, firstBreak);
   // A verified nonempty chain always proves its epoch; every other verdict was refused earlier.
-  const itemHashVersion = verifyHistoryChainWithVersion(verified).item_hash_version!;
+  const itemHashVersion =
+    declared ?? verifyHistoryChainWithVersion(verified).item_hash_version!;
   return {
     itemHashVersion,
     explicitVersion:
@@ -156,8 +161,39 @@ function resolveAppendedRecordSurface(
   };
 }
 
+/**
+ * Epoch 2 has two semantic variants; the appended record must reuse the
+ * tail's. Replay proves it on a verified stream and the on-disk item proves
+ * it after a bridged break; when neither does and the variants differ, the
+ * surface is ambiguous and the repair refuses instead of guessing.
+ */
+function resolveTailVariant(
+  id: string,
+  surface: AppendedRecordSurface,
+  previousAfterHash: string,
+  finalReplay: ReplayDocument,
+  itemReplay: ReplayDocument,
+): number {
+  const candidates = (document: ReplayDocument) =>
+    replayHashVerificationCandidates(document, surface.itemHashVersion, surface.algorithm);
+  const itemCandidates = candidates(itemReplay);
+  if (new Set(itemCandidates).size === 1) return 0;
+  const proven = [candidates(finalReplay), itemCandidates]
+    .map((hashes) => hashes.indexOf(previousAfterHash))
+    .find((index) => index >= 0);
+  if (proven === undefined) {
+    refuseAppendOnly(
+      id,
+      "hash_surface_ambiguous",
+      `History for ${id} records an epoch-2 hash variant that neither replay nor the on-disk item proves, so an appended record cannot anchor on it.`,
+    );
+  }
+  return proven;
+}
+
 /** Build the sealed bridge or reconciliation record appended after the last entry. */
 function buildAppendedRepairRecord(params: {
+  id: string;
   entries: HistoryEntry[];
   surface: AppendedRecordSurface;
   finalReplay: ReplayDocument;
@@ -169,15 +205,7 @@ function buildAppendedRepairRecord(params: {
 }): HistoryEntry {
   const { entries, surface, finalReplay, itemReplay } = params;
   const previousAfterHash = entries.at(-1)!.after_hash;
-  // Epoch 2 has two semantic variants; reuse the tail's variant on both sides.
-  const variant = Math.max(
-    0,
-    replayHashVerificationCandidates(
-      finalReplay,
-      surface.itemHashVersion,
-      surface.algorithm,
-    ).indexOf(previousAfterHash),
-  );
+  const variant = resolveTailVariant(params.id, surface, previousAfterHash, finalReplay, itemReplay);
   const record: HistoryEntry = {
     hash_algorithm: surface.algorithm,
     ts: nowIso(),
@@ -266,29 +294,58 @@ async function appendRepairRecord(
   historyPath: string,
   verifiedRaw: string | null,
   record: HistoryEntry,
+  statPath: (file: string) => Promise<{ ino: number; dev: number }> = stat,
 ): Promise<void> {
-  const bytes = await readFile(historyPath);
-  if (!isUtf8(bytes)) {
+  // Append through O_APPEND on the very handle whose bytes were checked: the
+  // write can never replace bytes another writer added, and nothing rolls the
+  // stream back from a stale snapshot.
+  const handle = await open(historyPath, "a+");
+  try {
+    const bytes = await handle.readFile();
+    if (!isUtf8(bytes)) {
+      refuseAppendOnly(
+        id,
+        "stream_not_utf8",
+        `History for ${id} is not valid UTF-8, so its bytes cannot be kept exactly.`,
+      );
+    }
+    const raw = bytes.toString("utf8");
+    if (raw !== verifiedRaw) {
+      refuseAppendOnly(
+        id,
+        "stream_changed",
+        `History for ${id} changed after the repair verified it; retry.`,
+      );
+    }
+    const separator = raw === "" || raw.endsWith("\n") ? "" : "\n";
+    await handle.appendFile(`${separator}${JSON.stringify(record)}\n`);
+    await handle.sync();
+    const [written, current] = [await handle.stat(), await statPath(historyPath).catch(() => null)];
+    if (current === null || current.ino !== written.ino || current.dev !== written.dev) {
+      refuseAppendOnly(
+        id,
+        "stream_changed",
+        `History for ${id} was replaced while the repair appended; the bridge was not recorded, retry.`,
+      );
+    }
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Refuse a stream whose bytes are not UTF-8 before planning, so a preview never offers a repair the write must refuse. */
+export async function assertAppendOnlyStreamEncoding(
+  id: string,
+  historyPath: string,
+): Promise<void> {
+  const bytes = await readFile(historyPath).catch(() => null);
+  if (bytes !== null && !isUtf8(bytes)) {
     refuseAppendOnly(
       id,
       "stream_not_utf8",
       `History for ${id} is not valid UTF-8, so its bytes cannot be kept exactly.`,
     );
   }
-  const raw = bytes.toString("utf8");
-  if (raw !== verifiedRaw) {
-    refuseAppendOnly(
-      id,
-      "stream_changed",
-      `History for ${id} changed after the repair verified it; retry.`,
-    );
-  }
-  const separator = raw === "" || raw.endsWith("\n") ? "" : "\n";
-  await writeHistoryRawWithRollback({
-    historyPath,
-    historyRawUnderLock: verifiedRaw,
-    nextHistoryRaw: `${raw}${separator}${JSON.stringify(record)}\n`,
-  });
 }
 
 /**
@@ -328,6 +385,7 @@ export function buildAppendOnlyRepairPlan(
   const surface = resolveAppendedRecordSurface(entries, firstBreak);
   const appended = changed
     ? buildAppendedRepairRecord({
+        id,
         entries,
         surface,
         finalReplay,

@@ -2857,7 +2857,11 @@ function rewriteBulkHealthRemediation(params: {
         code !== "history_drift_merge_receipt" &&
         code !== "history_drift_version_skew"
       ) {
-        params.remediationMap[code] = "pm history-repair --all";
+        // A chain mismatch keeps the append-only remedy, so the bulk form never rewrites recorded entries.
+        params.remediationMap[code] =
+          code === "history_drift_chain_mismatch"
+            ? "pm history-repair --all --append-only"
+            : "pm history-repair --all";
       }
     }
   }

@@ -371,6 +371,8 @@ function buildHistoryCompactEntries(params: {
       )[0],
       after_hash: checkpointEntry.after_hash,
       item_hash_version: checkpointEntry.item_hash_version,
+      // A checkpoint taken at a version re-anchored across an unrecorded change keeps refusing it.
+      ...(checkpointEntry.replay_inexact === true ? { replay_inexact: true as const } : {}),
     }),
     ...retained,
   ];

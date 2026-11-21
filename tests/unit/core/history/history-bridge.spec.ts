@@ -4,7 +4,9 @@
 import { describe, expect, it } from "vitest";
 import {
   describeHistoryBreak,
+  digestBridgedSegment,
   findNextHistoryBridge,
+  locateBridgedSegments,
   matchesHistoryBreak,
   readHistoryBridge,
 } from "../../../../src/core/history/bridge.js";
@@ -64,5 +66,21 @@ describe("history bridge envelope", () => {
     const stream = [previous, legacy, entry({ bridge: { version: 1, breaks: [descriptor], segment_digest } })];
     expect(findNextHistoryBridge(stream, 0)).toBe(2);
     expect(findNextHistoryBridge(stream, 2)).toBe(-1);
+  });
+
+  it("locates segments from each bridge's own commitments", () => {
+    const first = entry({ after_hash: descriptor.gap_from, record_hash: "1".repeat(64) });
+    const broken = entry({ before_hash: descriptor.gap_to, record_hash: undefined });
+    const covered = [broken, entry({ record_hash: "2".repeat(64) })];
+    const bridge = entry({
+      bridge: { version: 1, breaks: [descriptor], segment_digest: digestBridgedSegment(covered, {}) },
+    });
+    const stream = [first, ...covered, bridge];
+    expect(locateBridgedSegments(stream)).toEqual({ segments: [{ start: 1, end: 3 }], unlocated: [] });
+    // A digest that does not match, a malformed envelope, and a bridge with nothing before it stay unlocated.
+    const wrongDigest = entry({ bridge: { version: 1, breaks: [descriptor], segment_digest } });
+    const malformed = entry({ bridge: { version: 1 } });
+    expect(locateBridgedSegments([first, ...covered, wrongDigest, malformed])).toEqual({ segments: [], unlocated: [3, 4] });
+    expect(locateBridgedSegments([bridge])).toEqual({ segments: [], unlocated: [0] });
   });
 });

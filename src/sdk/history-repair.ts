@@ -9,6 +9,7 @@ import {
   type HistorySalvageReceipt,
 } from "./history/salvage.js";
 import {
+  assertAppendOnlyStreamEncoding,
   buildAppendOnlyRepairPlan,
   type HistoryRepairBridgeReceipt,
 } from "./history/append-only-repair.js";
@@ -25,6 +26,7 @@ import {
   toReplayDocument,
   verifyHistoryChainWithVersion,
   type ReplayDocument,
+  materializeBridgedSegments,
 } from "../core/history/replay.js";
 import {
   sealHistoryRecord,
@@ -849,6 +851,7 @@ export async function runHistoryRepair(
   }
   if (options.appendOnly === true) {
     assertAppendOnlyRepairOptions(options);
+    await assertAppendOnlyStreamEncoding(subject.id, subject.historyPath);
     return runHistoryMaintenance({
       pmRoot,
       subject,
@@ -919,6 +922,19 @@ function shouldAppendForcedHistoryAudit(
   return options.forceAuditEntry === true && !alreadyRecorded;
 }
 
+/**
+ * Normalization reseals the records it changes, which voids a covering
+ * bridge's segment digest before re-anchoring can see it. When it changes
+ * anything, the bridges' unreconstructable ranges are first written onto the
+ * covered records so the rewrite keeps refusing those versions.
+ */
+function normalizeHistoryProvenancePreservingBridges(entries: HistoryEntry[]) {
+  const probe = normalizeInvalidHistoryProvenance(entries);
+  return probe.receipt.changed
+    ? normalizeInvalidHistoryProvenance(materializeBridgedSegments(entries))
+    : probe;
+}
+
 /** Reanchor and reconcile as a plan whose receipt proof is repeated under the shared write lock. */
 async function buildHistoryRepairPlan(
   params: {
@@ -933,7 +949,7 @@ async function buildHistoryRepairPlan(
   const chainBefore = snapshot.verification;
   const chainVersionBefore = verifyHistoryChainWithVersion(historyEntries);
   const provenanceNormalization = options.normalizeProvenance
-    ? normalizeInvalidHistoryProvenance(historyEntries)
+    ? normalizeHistoryProvenancePreservingBridges(historyEntries)
     : {
         entries: historyEntries,
         receipt: {

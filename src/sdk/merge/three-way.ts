@@ -16,10 +16,11 @@ import {
   toReplayDocument,
   tryApplyReplayPatch,
   verifyHistoryChainWithVersion,
+  collectBridgedInteriorIndexes,
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import jsonPatch from "fast-json-patch";
-import { readHistoryBridge } from "../../core/history/bridge.js";
+import { locateBridgedSegments, readHistoryBridge } from "../../core/history/bridge.js";
 import { resealHistoryRewrite } from "../../core/history/history.js";
 import { rebaseHistoryScalarPatch } from "./history-scalar-rebase.js";
 import {
@@ -160,6 +161,8 @@ function historyEntryIdentity(entry: HistoryEntry): string {
     op: entry.op,
     patch: entry.patch,
     message: entry.message ?? null,
+    // Bridges that differ are different repairs and never one shared record.
+    ...(Object.hasOwn(entry, "bridge") ? { bridge: entry.bridge } : {}),
   });
 }
 
@@ -299,10 +302,34 @@ function historyBridgeRepairIdentity(entry: HistoryEntry): string | null {
         patch: entry.patch,
         before_hash: entry.before_hash,
         after_hash: entry.after_hash,
-        item_hash_version: entry.item_hash_version ?? null,
-        hash_algorithm: entry.hash_algorithm ?? null,
+        item_hash_version: entry.item_hash_version,
+        hash_algorithm: entry.hash_algorithm,
       })
     : null;
+}
+
+/**
+ * A union interleaves both branches before re-anchoring, so a bridge from
+ * either side no longer names a break of the merged stream and dissolves.
+ * Mark every record a verified bridge covers on either original branch
+ * replay_inexact first, matched by the same identity the union deduplicates
+ * on, so the merged stream keeps refusing those versions (GH-1715).
+ */
+function markBridgedUnionEntries(
+  merged: HistoryEntry[],
+  ours: HistoryEntry[],
+  theirs: HistoryEntry[],
+): HistoryEntry[] {
+  const covered = new Set<string>();
+  for (const side of [ours, theirs]) {
+    const interior = collectBridgedInteriorIndexes(locateBridgedSegments(side).segments);
+    for (const index of interior) covered.add(historyEntryIdentity(side[index]!));
+  }
+  return merged.map((entry) =>
+    covered.has(historyEntryIdentity(entry)) && entry.replay_inexact !== true
+      ? resealHistoryRewrite(entry, { ...entry, replay_inexact: true }, { retainPriorRecord: true })
+      : entry,
+  );
 }
 
 /**
@@ -336,7 +363,8 @@ function mergeEquivalentBridges(
     { ...neutral, patch: [], before_hash: anchor, after_hash: anchor },
     { retainOriginalPatch: true, retainPriorRecord: true },
   );
-  return verifyHistoryChainWithVersion([...ours, appended]).ok ? appended : null;
+  // Both sides verified and the bridges agree, so the appended neutral record verifies too.
+  return appended;
 }
 
 /**
@@ -430,7 +458,7 @@ export function mergeHistoryStreams(
     .filter((entry) => !seenIdentities.has(historyEntryIdentity(entry)));
   const mergedSuffix = orderHistoryUnionSuffix(oursSuffix, theirs.slice(shared), theirsSuffix, seenIdentities);
   const reanchored = reanchorHistoryEntries(
-    [...ours.slice(0, shared), ...mergedSuffix],
+    markBridgedUnionEntries([...ours.slice(0, shared), ...mergedSuffix], ours, theirs),
     undefined,
     { continuousHashSurface: true, projectPatch: historyUnionPatchProjection(ours, theirs, shared) },
   );

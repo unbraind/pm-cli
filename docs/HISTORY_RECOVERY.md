@@ -132,17 +132,24 @@ bridge names each break by the `after_hash` before it (`gap_from`), the
 `before_hash` after it (`gap_to`) and that entry's `record_hash`. Its
 `segment_digest` commits to every record from the first break up to the bridge,
 so no record it covers can change under it, sealed or not. Its patch
-reconciles replay with the on-disk item, and its anchors keep the hash epoch
-and variant the verified records already use. Every earlier line stays
+reconciles replay with the on-disk item. Its anchors keep the hash epoch the
+stream already uses: the newest declared epoch, or else the epoch the verified
+records prove. They also keep the epoch-2 variant that replay or the on-disk
+item proves (`hash_surface_ambiguous` when neither does). The record is
+appended with `O_APPEND` to the exact bytes the repair verified. Every earlier line stays
 byte-identical, so the stream before the repair remains a prefix of the
 repaired stream. Other clones, worktrees and append-only consumers keep the
-bytes they already hold. `--all --append-only` bridges every drifted stream.
+bytes they already hold. `--all --append-only` bridges every drifted stream, and
+when several streams drift `pm health` names it as the bulk remedy for
+`history_drift_chain_mismatch`.
 
 Verification accepts a break exactly when the next bridge names it. Inside the
 bridged segment it checks the recorded links, and each further break must be
 the next one the bridge names. Wherever replay proves an entry's recorded
 before-state, for example after a later change overwrote the edited field, that
-entry's recorded effect must match too. The bridge must name no break that did
+entry's recorded effect must match too. Every record from the break to the
+bridge must be complete (`record_incomplete`), and a declared epoch inside the
+segment governs the records after it. The bridge must name no break that did
 not occur, must match its `segment_digest`, and must re-anchor replay on its
 own `after_hash`. A forged, unsealed or partial bridge is drift
 (`bridge_invalid`, `bridge_unnamed_break`, `bridge_names_absent_break`,
@@ -158,7 +165,17 @@ Three rewrites must dissolve the bridge into an ordinary re-anchored record:
 
 Each keeps the original bridge as rewrite evidence. It also marks every entry
 the segment covered with a sealed `replay_inexact`, because those states were
-re-anchored without the unrecorded change. When two clones bridged the same
+re-anchored without the unrecorded change. Each rewrite locates a bridge's segment from the bridge's own commitments, its
+first named break and its segment digest, so a rewrite that repairs a record
+before the segment still marks it. `history-redact` refuses a stream whose
+bridge does not locate its segment (`history_redact_bridge_unlocated`) instead
+of dropping that bridge's evidence. The markers are written before anything can
+void the bridge:
+
+- Provenance normalization writes them before it reseals a covered record.
+- A merge union writes them on the records a bridge covers on either original
+  branch, before it interleaves the branches.
+- A compaction checkpoint taken at an inexact version keeps the marker. When two clones bridged the same
 break independently, the merge driver keeps ours byte-for-byte. It appends the
 other bridge as a neutral record with an empty patch (`equivalent_bridges`), so
 both repairs' provenance survives. It does this only when both sides and the
@@ -179,7 +196,8 @@ rewriting repair as the fallback when a bridge cannot carry the drift:
 | `patch_does_not_replay` | A recorded patch only applies on top of the unrecorded change. |
 | `item_missing` | No on-disk item exists to anchor the bridge. |
 | `stream_not_utf8` | The stream bytes cannot be kept exactly. |
-| `stream_changed` | The stream changed after the repair verified it; retry. |
+| `stream_changed` | The stream changed or was replaced after the repair verified it; retry. |
+| `hash_surface_ambiguous` | Neither replay nor the on-disk item proves the tail's epoch-2 variant. |
 | `bridge_does_not_verify` | The extended stream would not verify. |
 
 A preview reports the recorded effects the reconciliation overwrites

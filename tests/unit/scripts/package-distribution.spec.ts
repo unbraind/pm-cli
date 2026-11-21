@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { compactMarkdownTables, exportedDeclarationClosure, findUnresolvedModuleImports, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, createModuleImportLexer, exportedDeclarationClosure, findUnresolvedModuleImports, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -337,20 +337,29 @@ it("proves the staged module graph is closed with a comment- and string-aware le
       'const lazy = await import(`./sdk/${name}.js`);',
       'const json = require("./data.json");',
       'import node from "node:fs";',
+      'const pattern = /import".\\/x"/;',
+      'export { k } from "./sdk/kept.mjs"; export { local };',
     ].join("\n"),
     "dist/sdk/kept.mjs": 'export const k = await import("../sdk/excluded.cjs");',
     "node_modules/dep/index.js": 'import "./missing.js";',
     "docs/README.md": 'import "./not-code.js"',
   };
   const read = (file: string): string => files[file]!;
-  expect(findUnresolvedModuleImports(Object.keys(files), read)).toEqual([
+  const lex = createModuleImportLexer(process.cwd());
+  expect(findUnresolvedModuleImports(Object.keys(files), read, lex)).toEqual([
     "dist/cli.js -> ./sdk/hidden.js",
     "dist/cli.js -> ./data.json",
     "dist/sdk/kept.mjs -> ../sdk/excluded.cjs",
   ]);
   expect(
-    findUnresolvedModuleImports([...Object.keys(files), "dist/sdk/hidden.js", "dist/data.json", "dist/sdk/excluded.cjs"], (file) => files[file] ?? ""),
+    findUnresolvedModuleImports([...Object.keys(files), "dist/sdk/hidden.js", "dist/data.json", "dist/sdk/excluded.cjs"], (file) => files[file] ?? "", lex),
   ).toEqual([]);
+  // TypeScript resolves from the packed checkout first, then from the script's own installation.
+  expect(createModuleImportLexer(path.join(tmpdir(), "pm-no-typescript-root"))('import "./x.js"')).toEqual(["./x.js"]);
+  expect(() => createModuleImportLexer("/", [path.join(tmpdir(), "pm-no-typescript-root", "package.json")])).toThrow(
+    "Packing needs typescript to prove import closure",
+  );
+  expect(() => createModuleImportLexer("/", ["\0invalid"])).toThrow();
 });
 
 it("refuses to pack a module that imports a file the files list excludes (pm-998juj)", async () => {

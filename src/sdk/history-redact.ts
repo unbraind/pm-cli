@@ -14,6 +14,7 @@ export {
 } from "./history/subject.js";
 import fs from "node:fs/promises";
 import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
+import { locateBridgedSegments } from "../core/history/bridge.js";
 import { writeFileAtomic } from "../core/fs/fs-utils.js";
 import {
   createHistoryEntry,
@@ -32,7 +33,6 @@ import {
   historyEntriesToRaw,
   replayHash,
   replayToItemDocument,
-  verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../core/history/replay.js";
 import { applyHistoryPatch } from "../core/history/projection.js";
@@ -517,9 +517,20 @@ function rewriteHistoryEntries(
   // Redaction recomputes every state anchor from replay, which cannot prove a
   // bridged segment's recorded states: it dissolves each bridge and marks the
   // segment's entries replay_inexact so history reads keep refusing them.
-  const inexact = collectBridgedInteriorIndexes(
-    verifyHistoryChainWithVersion(entries).bridged_segments ?? [],
-  );
+  const located = locateBridgedSegments(entries);
+  if (located.unlocated.length > 0) {
+    throw new PmCliError(
+      `history-redact refuses a stream whose bridge at record ${located.unlocated[0]! + 1} does not locate its segment; repair the history first.`,
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "history_redact_bridge_unlocated",
+        required:
+          "Every bridge must name its first break and match its segment digest, so redaction can keep that segment's versions refused.",
+        nextSteps: ["Run pm history-repair <id> --dry-run to see how the stream would be repaired."],
+      },
+    );
+  }
+  const inexact = collectBridgedInteriorIndexes(located.segments);
 
   for (let index = 0; index < entries.length; index += 1) {
     const original = entries[index];

@@ -115,3 +115,51 @@ export function findNextHistoryBridge(
   }
   return -1;
 }
+
+/** Where each bridge's own commitments place its segment, independent of whether the stream verifies. */
+export interface LocatedBridgedSegments {
+  /** Zero-based inclusive ranges from a segment's first break to its bridge. */
+  segments: Array<{ start: number; end: number }>;
+  /** Indexes of bridge records whose segment no break and digest locate, or whose envelope is malformed. */
+  unlocated: number[];
+}
+
+/** First index after `floor` where a bridge's first named break and its segment digest both match. */
+function findBridgedSegmentStart(
+  entries: readonly HistoryEntry[],
+  bridge: HistoryBridge,
+  floor: number,
+  end: number,
+): number {
+  for (let start = Math.max(1, floor); start < end; start += 1) {
+    if (
+      matchesHistoryBreak(bridge.breaks[0], entries[start - 1]!, entries[start]!) &&
+      digestBridgedSegment(entries.slice(start, end), entries[end]!) === bridge.segment_digest
+    ) {
+      return start;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Locate every bridge's segment from the records it commits to (its first
+ * named break and its segment digest), without requiring the stream before
+ * it to verify. Rewrites use this to mark the versions a bridge proves
+ * unreconstructable even when an earlier record is what they repair; markers
+ * only ever restrict reads, so a forged bridge cannot widen what verifies.
+ */
+export function locateBridgedSegments(entries: readonly HistoryEntry[]): LocatedBridgedSegments {
+  const located: LocatedBridgedSegments = { segments: [], unlocated: [] };
+  let floor = 1;
+  entries.forEach((entry, index) => {
+    if (!Object.hasOwn(entry, "bridge")) return;
+    const bridge = readHistoryBridge(entry);
+    const start =
+      typeof bridge === "object" ? findBridgedSegmentStart(entries, bridge, floor, index) : -1;
+    if (start < 0) located.unlocated.push(index);
+    else located.segments.push({ start, end: index });
+    floor = index + 1;
+  });
+  return located;
+}

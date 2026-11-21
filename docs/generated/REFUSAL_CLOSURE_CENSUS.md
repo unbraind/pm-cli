@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 480
+- Catalog error codes: 481
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 461
-- Coverage fraction: 0.039583
+- Uncovered error codes: 462
+- Coverage fraction: 0.039501
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -151,6 +151,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `history_json_invalid` | `history_json_invalid` | uncovered | none | 0 |
 | `history_merge_conflict_markers_detected` | `merge_conflict_markers_detected` | uncovered | none | 0 |
 | `history_record_invalid` | `history_record_invalid` | uncovered | none | 0 |
+| `history_redact_bridge_unlocated` | `history_redact_bridge_unlocated` | uncovered | none | 0 |
 | `history_replay_invalid` | `history_replay_invalid` | uncovered | none | 0 |
 | `history_salvage_refused` | `history_salvage_refused` | uncovered | none | 0 |
 | `history_stream_over_compact_threshold` | `history_stream_over_compact_threshold` | uncovered | none | 0 |

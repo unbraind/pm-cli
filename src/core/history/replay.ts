@@ -9,6 +9,7 @@ import { findHistoryIdentityDiscontinuities } from "./identity.js";
 import {
   digestBridgedSegment,
   findNextHistoryBridge,
+  locateBridgedSegments,
   matchesHistoryBreak,
   readHistoryBridge,
 } from "./bridge.js";
@@ -23,6 +24,7 @@ import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
   hashDocumentVerificationCandidates,
+  isCompleteHistoryRecord,
   resealHistoryRewrite,
   verifyHistoryRecordHash,
   verifyHistoryRewriteEvidence,
@@ -396,7 +398,7 @@ function openBridgedSegment(
   entries: HistoryEntry[],
   index: number,
 ): OpenBridgedSegment | undefined {
-  if (index === 0) return undefined;
+  if (index === 0 || !isCompleteHistoryRecord(entries[index])) return undefined;
   const closer = findNextHistoryBridge(entries, index);
   if (closer < 0) return undefined;
   const bridge = readHistoryBridge(entries[closer]);
@@ -429,6 +431,7 @@ function verifyBridgedInteriorEntry(
 ): BridgedEntryVerdict {
   const entry = entries[index];
   const previous = entries[index - 1];
+  if (!isCompleteHistoryRecord(entry)) return { ok: false, error: "record_incomplete" };
   const input = verifyHistoryEntryInput(entry, replay);
   if (!input.ok) return input;
   const matches = candidates.map((version) =>
@@ -461,6 +464,7 @@ function verifyBridgeCloser(
   candidates: HistoryItemHashVersion[],
 ): BridgedEntryVerdict {
   const entry = entries[index];
+  if (!isCompleteHistoryRecord(entry)) return { ok: false, error: "record_incomplete" };
   const input = verifyHistoryEntryInput(entry, replay);
   if (!input.ok) return input;
   if (segment.next !== segment.bridge.breaks.length) {
@@ -533,6 +537,10 @@ function stepBridgedSegment(
   if (bridged.version === undefined) {
     walk.replay = bridged.document;
     walk.beforeHashMemo = new Map();
+    // A declared epoch inside the segment governs later unversioned records.
+    walk.authoritativeExplicitVersion =
+      (entry.item_hash_version as HistoryItemHashVersion | undefined) ??
+      walk.authoritativeExplicitVersion;
     return undefined;
   }
   walk.bridgedSegments.push({ start: segment.start, end: index });
@@ -584,6 +592,9 @@ function stepAnchoredEntry(
   }
   walk.replay = input.document;
   walk.beforeHashMemo = new Map();
+  walk.authoritativeExplicitVersion =
+    (entry.item_hash_version as HistoryItemHashVersion | undefined) ??
+    walk.authoritativeExplicitVersion;
   return undefined;
 }
 
@@ -833,14 +844,16 @@ function indexBridgedSegments(
   entries: HistoryEntry[],
   options: ReanchorHistoryOptions,
 ): { preservable: Map<number, number>; inexact: Set<number> } {
-  const segments = verifyHistoryChainWithVersion(entries).bridged_segments ?? [];
+  const verified = verifyHistoryChainWithVersion(entries).bridged_segments ?? [];
   return {
     preservable: new Map(
       options.projectPatch === undefined
-        ? segments.map((segment) => [segment.start, segment.end])
+        ? verified.map((segment) => [segment.start, segment.end])
         : [],
     ),
-    inexact: collectBridgedInteriorIndexes(segments),
+    // Located, not only verified: a rewrite that repairs a record before the
+    // bridge still dissolves it, and must keep its versions refused.
+    inexact: collectBridgedInteriorIndexes(locateBridgedSegments(entries).segments),
   };
 }
 
@@ -853,6 +866,23 @@ export function collectBridgedInteriorIndexes(
     for (let index = start; index < end; index += 1) interior.add(index);
   }
   return interior;
+}
+
+/**
+ * Write the unreconstructable knowledge a verified bridge carries onto the
+ * records it covers, before any rewrite that may dissolve the bridge: each
+ * covered entry is resealed with replay_inexact (its prior record kept as
+ * rewrite evidence). Rewrites that reseal, interleave or re-anchor entries
+ * before they can see the segment (provenance normalization, merge unions)
+ * call this first, so the marker survives whatever they do to the bridge.
+ */
+export function materializeBridgedSegments(entries: HistoryEntry[]): HistoryEntry[] {
+  const interior = collectBridgedInteriorIndexes(locateBridgedSegments(entries).segments);
+  return entries.map((entry, index) =>
+    interior.has(index) && entry.replay_inexact !== true
+      ? resealHistoryRewrite(entry, { ...entry, replay_inexact: true }, { retainPriorRecord: true })
+      : entry,
+  );
 }
 
 /** Keep one verified bridged segment byte-identical while advancing replay through it. */
@@ -868,8 +898,9 @@ function keepBridgedSegment(
   for (let index = start; index <= end; index += 1) {
     const kept = entries[index];
     const applied = tryApplyReplayPatch(current, kept.patch);
-    /* c8 ignore next -- the verifier already applied this exact patch */
+    /* c8 ignore start -- the verifier already applied this exact patch to this replay. */
     if (!applied.ok) throw new TypeError(`patch_apply_failed:entry_${index + 1}`);
+    /* c8 ignore stop */
     current = applied.document;
     rewritten.push(kept);
     details.push({

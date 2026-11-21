@@ -23728,6 +23728,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "history_redact_bridge_unlocated",
+      "class": "generic_failure",
+      "code": "history_redact_bridge_unlocated",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History redact bridge unlocated condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/history-redact.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "history_replay_invalid",
       "class": "generic_failure",
       "code": "history_replay_invalid",
