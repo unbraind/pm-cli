@@ -81,13 +81,13 @@ pm guide release --json
 - [Agent Recovery and Guidance](AGENT_RECOVERY_AND_GUIDANCE.md) - policy refusal evidence, canonical help, and managed instruction freshness.
 - [Declarative Workflow Policies](WORKFLOW_POLICIES.md) - portable lifecycle requirements, independent approvals, and completeness reports.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.
-- [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.
+- [Agent Provenance ADR Amendment](https://github.com/unbraind/pm-cli/blob/main/docs/AGENT_PROVENANCE_ADR.md) (repository-only, excluded from npm) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.
 - [SDK Agent Session and Episode Context](SDK_AGENT_SESSION_CONTEXT.md) - inherited role/topic context, cross-process episode identity, and deterministic history grouping.
 - [SDK Agent Environments](AGENT_ENVIRONMENTS.md) - calibrated observations, total verdicts, isolated episodes, and an executable public-SDK environment.
 - [Improvement Ledger and History Analytics](IMPROVEMENT_ANALYTICS.md) - audited quantitative observations, live provenance coverage, and bounded observational fleet outcomes.
 - [Project Assurance Primitives](ASSURANCE.md) - SDK-owned measurements, assertions, lifecycle gates, cost receipts, and durable verdict history shared by CLI and MCP.
 - [Planning Measurements](PLANNING_MEASUREMENTS.md) - lifecycle coverage, set-membership aggregation, and derived deadline constraints.
-- [Defect Recurrence and Boundary Evidence](DEFECT_RECURRENCE.md) - captured external samples, structured defect-escape evidence, incremental change-risk indexing, and executable recovery-producer census.
+- [Defect Recurrence and Boundary Evidence](https://github.com/unbraind/pm-cli/blob/main/docs/DEFECT_RECURRENCE.md) (repository-only, excluded from npm) - captured external samples, structured defect-escape evidence, incremental change-risk indexing, and executable recovery-producer census.
 - [Recurrence and Executable Recovery Contracts](RECURRENCE_RECOVERY_CONTRACTS.md) - terminal-item recurrence, duplicate-intake routing, capability-aware reindex recovery, and target-aware generated test guidance.
 - [Trustworthy Context and Evidence Contracts](TRUSTWORTHY_CONTEXT_EVIDENCE.md) - full-record assurance, graph composition, boolean health rows, lossless linked-test removal, and role-labelled recovery.
 - [Context Integrity Contracts](CONTEXT_INTEGRITY_CONTRACTS.md) - sparse-read identity, closed extension manifests, lossless remote docs, direction-locked graph impact, and cross-version history epochs.

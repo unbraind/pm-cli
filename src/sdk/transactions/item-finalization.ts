@@ -12,6 +12,7 @@ import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { stableStringify } from "../../core/shared/serialization.js";
+import { pruneResolvedDeferredFields } from "../../core/item/deferred-fields.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemMetadata } from "../../types/index.js";
@@ -40,8 +41,8 @@ export interface ItemFinalizationPatch {
 
 /** Refuse a field name the patch cannot address: malformed, inherited from Object, or derived by the writer. */
 function assertFinalizationField(field: unknown, label: string): asserts field is string {
-  if (typeof field !== "string" || !/^[a-z][a-z0-9_]*$/u.test(field) || field in Object.prototype) {
-    throw new TypeError(`${label} names an invalid field ${JSON.stringify(field)}; use lower_snake_case front-matter field names`);
+  if (typeof field !== "string" || !/^[A-Za-z][A-Za-z0-9_]*$/u.test(field) || field in Object.prototype) {
+    throw new TypeError(`${label} names an invalid field ${JSON.stringify(field)}; use a front-matter field name of letters, digits and underscores`);
   }
   if (FINALIZATION_RESERVED_FIELDS.includes(field)) {
     throw new TypeError(`${label} cannot change "${field}"; the item writer derives it, or an update row owns it`);
@@ -66,7 +67,7 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** True for a value the transaction journal can retain and replay unchanged. */
-function isJournalValue(value: unknown): boolean {
+export function isJournalValue(value: unknown): boolean {
   if (value === null || typeof value === "string" || typeof value === "boolean") return true;
   if (typeof value === "number") return Number.isFinite(value);
   // Array.from turns a sparse hole into undefined, which is not a journal value.
@@ -156,6 +157,8 @@ export async function applyItemFinalization(params: ApplyItemFinalizationParams)
       for (const field of params.unset ?? []) delete metadata[field];
       let after: Record<string, unknown>;
       try {
+        // The store prunes resolved deferrals after this callback, so the candidate is judged in that final form.
+        pruneResolvedDeferredFields(document.metadata);
         const canonical = canonicalDocument(document, format);
         const reread = canonicalDocument(parseItemDocument(serializeItemDocument(canonical, format), format), format);
         // A field the format reserves (an envelope or body key) would make the reader return another document.

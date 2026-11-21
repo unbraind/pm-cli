@@ -173,7 +173,7 @@ handshake. Optional host-provided `model`, `session`, `provenance`, and
 session. Provenance keys must use the bounded
 lowercase dimension vocabulary; blank, malformed, and oversized data is
 discarded before mutation context is created. See
-[Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) for precedence,
+[Agent Provenance ADR Amendment](https://github.com/unbraind/pm-cli/blob/main/docs/AGENT_PROVENANCE_ADR.md) (repository-only, excluded from npm) for precedence,
 privacy, compatibility, and coverage-report contracts.
 
 ## Unknown-author remediation

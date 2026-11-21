@@ -1063,9 +1063,9 @@ function flatUpdateManyFields(options: Record<string, unknown>): Record<string, 
  * Keep typed nulls that string normalization would drop (pm-w7clh6). A typed
  * caller's `null` on an update field reaches the update judge under its
  * canonical option, which clears a clearable field and refuses any other by
- * name, exactly as a single update does. A `null` on a selection key (flat or
- * inside `list`) and a `null` on a key that is no declared update option are
- * refused here by name. Only a typed SDK dispatch opts in: an MCP client's
+ * name, exactly as a single update does. A `null` on a selection or control
+ * key (flat or inside `list`), on an outer key beside a nested `update`, and
+ * on a key that is no declared update option are refused here by name. Only a typed SDK dispatch opts in: an MCP client's
  * `null` commonly stands for an omitted argument, so it stays absent there.
  */
 function carryUpdateManyNulls(
@@ -1074,13 +1074,16 @@ function carryUpdateManyNulls(
   normalizedUpdate: Record<string, unknown>,
 ): void {
   if (!typedNulls) return;
-  const updateSource = isRuntimeRecord(options.update) ? options.update : flatUpdateManyFields(options);
   const list = isRuntimeRecord(options.list) ? options.list : {};
-  const selectionKey = Object.keys(options).find((key) => options[key] === null && isUpdateManySelectionKey(key))
+  const nested = isRuntimeRecord(options.update) ? options.update : undefined;
+  // A null on a selection or control key (ids, list, dryRun, ...) would be read as absent and widen or change the run;
+  // beside a nested update record no other outer key is an update field, so a null there has no meaning either.
+  const strayKey = Object.keys(options).find((key) => options[key] === null && (nested !== undefined || UPDATE_MANY_FLAT_CONTROL_KEYS.has(key) || isUpdateManySelectionKey(key)))
     ?? Object.keys(list).filter((key) => list[key] === null).map((key) => `list.${key}`)[0];
-  if (selectionKey !== undefined) {
-    refuseUpdateManyNull(selectionKey, `"${selectionKey}" selects rows: omit it to leave rows unfiltered by it, or pass a value. To clear an item field, pass null on the field itself.`);
+  if (strayKey !== undefined) {
+    refuseUpdateManyNull(strayKey, `"${strayKey}" selects rows or controls the run: omit it or pass a value. To clear an item field, pass null on the field itself${nested === undefined ? "" : " inside update"}.`);
   }
+  const updateSource = nested ?? flatUpdateManyFields(options);
   for (const [key, value] of Object.entries(updateSource)) {
     if (value !== null) continue;
     const target = UPDATE_OPTION_TARGET_BY_KEY.get(key);

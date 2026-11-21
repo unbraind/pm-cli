@@ -258,7 +258,7 @@ and identifier-minified, and command-family registration loads only the create
 surface for a cold `pm create`.
 
 The fixed 10,000-item latency, RSS, correctness, and token budgets remain
-unchanged. See [Performance and scale](PERFORMANCE.md) for the reproducible
+unchanged. See [Performance and scale](https://github.com/unbraind/pm-cli/blob/main/docs/PERFORMANCE.md) (repository-only, excluded from npm) for the reproducible
 gate; never relax a budget to accommodate a new context primitive.
 
 ## Contract discovery

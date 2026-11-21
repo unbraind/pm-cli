@@ -52,6 +52,12 @@ describe("update-many typed null transport (pm-w7clh6)", () => {
     ["offset", (id) => ({ ids: [id], description: "changed", offset: null })],
     // A nested list record is the same selection: a null there must not widen the update to every row.
     ["list.assignee", (id) => ({ list: { ids: id, assignee: null }, update: { description: "changed" } })],
+    // Null controls would be read as absent: an unfiltered run, or a real write where a dry run was meant.
+    ["list", () => ({ list: null, update: { description: "changed" } })],
+    ["dryRun", (id) => ({ ids: [id], description: "changed", dryRun: null })],
+    ["update", (id) => ({ ids: [id], description: "changed", update: null })],
+    // Beside a nested update record an outer field is not an update field, so its null means nothing.
+    ["assignee", (id) => ({ ids: [id], assignee: null, update: { description: "changed" } })],
     // A key that is no declared update option has no clear rule; a schema field would store the text "null".
     ["customer_tier", (id) => ({ ids: [id], description: "changed", customer_tier: null })],
     ["customer_tier", (id) => ({ ids: [id], update: { description: "changed", customer_tier: null } })],

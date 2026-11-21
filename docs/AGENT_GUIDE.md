@@ -226,7 +226,7 @@ and MCP release options use the same atomic transition.
 
 Before closing repository defects, set `escape_class` and structured
 `gate_evidence` through `pm update` as described in
-[Defect Evidence](DEFECT_RECURRENCE.md#defect-evidence-on-pm-items).
+[Defect Evidence](https://github.com/unbraind/pm-cli/blob/main/docs/DEFECT_RECURRENCE.md#defect-evidence-on-pm-items) (repository-only, excluded from npm).
 Run `pnpm quality:defect-evidence` after the terminal transitions: a static
 gate run before closure cannot validate evidence required only for closed items.
 

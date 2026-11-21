@@ -3,6 +3,7 @@
  *
  * Implements the SDK-owned restore lifecycle operation shared by every surface.
  */
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { normalizeItemFormatVersion, requiredItemFormatVersion } from "../../core/item/item-format-version.js";
 import { assertProjectRuntimeFormatGuard } from "../environment/project-runtime-compatibility.js";
@@ -77,13 +78,22 @@ interface RestoreCurrentState {
   originalRaw: string | null;
 }
 
+/**
+ * Schema a restore reads and writes under: the workspace schema plus the
+ * fields active extensions register, so a version holding a registered field
+ * restores under `unknown_field_policy: "reject"` as it was written.
+ */
+function restoreFormat(settings: Awaited<ReturnType<typeof readSettings>>): { schema: Awaited<ReturnType<typeof readSettings>>["schema"]; extensionFieldNames: readonly string[] } {
+  return { schema: settings.schema, extensionFieldNames: collectRegisteredItemFieldNames(getActiveExtensionRegistrations()) };
+}
+
 /** Read a restore input without discarding unreadable bytes needed for rollback. */
 async function readRestoreItem(
   located: NonNullable<ResolvedRestoreSubject["located"]>,
   settings: Awaited<ReturnType<typeof readSettings>>,
   history: HistoryEntry[],
 ): Promise<{ raw: string; document: ItemDocument; recovered?: boolean }> {
-  const snapshot = await readLocatedItemSnapshot(located, { schema: settings.schema });
+  const snapshot = await readLocatedItemSnapshot(located, restoreFormat(settings));
   return snapshot.error === null
     ? { raw: snapshot.raw, document: snapshot.document }
     : { raw: snapshot.raw, document: replayCurrentDocument(history), recovered: true };
@@ -339,9 +349,7 @@ export async function runRestore(
     replayToTarget(history, resolvedTarget.historyIndex),
     resolvedTarget,
   );
-  const restoredDocument = replayToCanonicalItemDocument(replayDocument, {
-    schema: settings.schema,
-  });
+  const restoredDocument = replayToCanonicalItemDocument(replayDocument, restoreFormat(settings));
 
   if (restoredDocument.metadata.id !== resolvedId) {
     throw new PmCliError(
@@ -421,7 +429,7 @@ export async function runRestore(
 
     const serializedRestore = serializeItemDocument(restoredDocument, {
       format: itemFormat,
-      schema: settings.schema,
+      ...restoreFormat(settings),
     });
     /* c8 ignore next -- restored item path typing is exercised in restore integration workflows. */
     const restoredItemPath = getItemPath(

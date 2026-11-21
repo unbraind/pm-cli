@@ -35,7 +35,7 @@ import { stableStringify } from "../core/shared/serialization.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 import { readHistoryEntries } from "./history-read.js";
 import { readHistorySnapshot } from "../core/history/read.js";
-import { applyItemFinalization, assertValidItemFinalization } from "./transactions/item-finalization.js";
+import { applyItemFinalization, assertValidItemFinalization, isJournalValue } from "./transactions/item-finalization.js";
 import { PM_CONTEXT_INTENTS_FILE } from "./context-intent-runtime.js";
 import {
   close,
@@ -1061,6 +1061,8 @@ function assertValidBulkFinalization(mutation: BulkItemFinalizeMutation, index: 
   const unknown = Object.keys(mutation).filter((key) => !FINALIZE_ROW_KEYS.includes(key));
   if (unknown.length > 0) throw new TypeError(`${label} has unsupported keys: ${unknown.join(", ")}; a finalization carries only ${FINALIZE_ROW_KEYS.join(", ")}`);
   if (mutation.force !== undefined && typeof mutation.force !== "boolean") throw new TypeError(`${label} force must be a boolean`);
+  // The journal replays the guard, so its value must survive serialization unchanged, like every set value.
+  if (mutation.match !== undefined && !isJournalValue(mutation.match.value)) throw new TypeError(`${label} match value must be a JSON value`);
   assertValidItemFinalization(mutation, label);
 }
 

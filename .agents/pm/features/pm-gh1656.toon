@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: extensions,"gh:1656",importers,sdk,transactions
 created_at: "2026-11-03T21:20:19.362Z"
-updated_at: "2026-11-21T20:19:15.745Z"
+updated_at: "2026-11-21T20:55:48.761Z"
 closed_at: "2026-11-21T19:51:58.375Z"
 completed_at: "2026-11-21T19:51:58.375Z"
 author: "harness:claude-code"
@@ -18,22 +18,27 @@ confidence: medium
 resolution: "Added the finalize row to the bulk mutation union: exact front-matter set and unset under the item lock, validated through the item reader, attributed by the step marker, inspected by marker and compensated by restoring the captured version. The ownership guard is unchanged. Documented in docs/SDK.md; SDK surface, contracts and error catalog regenerated."
 expected_result: "An importer finalization inside commitItemMutations is journaled as a step the transaction owns, so a failure after it restores the pre-batch document"
 actual_result: "Spec finalize-step.spec.ts (36 cases): the GH reproduction restores the pre-batch document with history create, update, import, restore, restore; an unowned write in the same window still refuses with transaction_partial_mutation; interrupted journals re-apply or adopt; an installed guard judges the write on direct and scoped calls"
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
   pm-pllp78,discovered_from,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
   pm-xm7c,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
   pm-y9hq,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
   pm-zi34i1,related,"2026-11-21T20:19:14.133Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+  pm-eqlsg9,related,"2026-11-21T20:55:47.843Z","harness:claude-code","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-11-03T21:20:19.362Z","harness:claude-code","Duplicate check: the create-time detector matched pm-pllp78 (GH-1591, the ownership guard fix, closed). This item is not a recurrence of that defect: the guard stays as shipped, and this asks for a new journaled step type the guard can attribute. pm search for 'finalization commitItemMutations' found only the closed bulk-helper lineage (pm-xm7c, pm-y9hq)."
   "2026-11-21T18:42:32.583Z","harness:claude-code","Implementation plan: add a fifth bulk op, finalize, to the commitItemMutations union (option 2 of the GH issue, shaped as declarative data so the journal can retain it). The row carries set (exact front-matter values, including closed_at/completed_at and extension fields) and unset (field names), plus the optional match guard an update row has. The step reuses the update step's contract: prepareRestoreCompensation snapshot, apply marker in history message and item_transaction_step context, isUpdateMarkerApplied inspection, compensateByRestore. Writer-owned fields (id, updated_at, pm_format_version) are refused at admission. The patched document must load through the item reader (serialize then parse under the workspace schema) before it is written. A patch that changes nothing appends no event, so recovery re-applies it as the same no-op. Fixed history op 'finalize'; no custom op or message, to keep ownership attribution unambiguous. SDK-only: the structured document planner does not emit it."
   "2026-11-21T19:07:46.024Z","harness:claude-code","Implementation evidence. New row { op: 'finalize', id, set?, unset?, match?, force? } in the BulkItemMutation union; the step lives in buildFinalizeStep (src/sdk/item-transaction.ts) and the fenced write in applyItemFinalization (src/sdk/transactions/item-finalization.ts). Decisions taken while building: (1) the event is recorded under the existing native history operation 'import' (the identity pm-github already writes for this finalization), so the declared operation vocabulary, event classification and stale-work readers need no contract change; (2) 'type' joins id, updated_at and pm_format_version as refused fields, because a probe showed set type to an unregistered name moved the document where the locator cannot find it; (3) null is refused and unset removes a field; (4) besides the reader round trip (serialize then parseItemDocument under the workspace schema), each set value must be stored in its own JSON shape, because a probe showed tags: 'a' normalizing to an empty tag list without any refusal; (5) the structured document planner keeps create/update/close/release only and now names the narrower BulkItemLifecycleMutation type, acknowledged in sdk/public-surface.json. Probe before/after on the GH reproduction: update + finalization + throw in the committing observer now ends with history create, update, import, restore, restore and the pre-batch document; the same observer writing through client.update still ends in transaction_partial_mutation (negative control kept as a spec)."
   "2026-11-21T20:19:13.595Z","harness:claude-code","Codex review of 0f835c542 (gpt-6.2-sol, xhigh): seven findings on the finalize step, six fixed. (1) A no-op finalization left no marker, so after a crash recovery replayed it against state a later row had produced (finalize open, then finalize closed, crash, row 1 reopens): every finalization now appends its event, and a spec interrupts after the second row and requires the closed result. This also covers a write whose item file landed without its event, because the re-applied row appends the marker and restore then owns it. (2) A set field named front_matter made the reader return the nested document: the stored form is now parsed, canonicalized and compared with the candidate. (3) Nested __proto__, constructor and prototype keys, sparse arrays and a class instance passed as set are refused at admission. (4) Extension activation ran inside the step's attribution scope, so an activation-time write would have carried the step marker: activation now wraps the scope instead. (5) The resolved extension field names are passed to the store writer. (6) Field presence is compared apart from the value. Declined here and filed as pm-zi34i1: the active extension scope is not bound to a tracker root, a rule shared by every SDK dispatch and older than this change."
-files[8]{path,scope}:
+  "2026-11-21T20:55:47.227Z","harness:claude-code","Codex review of 9bbb1dd30 (round two): eight findings, six fixed. Fixed: the shape check now runs after the store's deferral pruning, so a deferral resolved by the same write is refused instead of dropped; a finalize match value must be journal-safe JSON; field names accept letters, digits and underscores so a registered camelCase extension field is addressable; restore (src/sdk/lifecycle/restore.ts) reads and writes under the workspace schema plus registered extension fields, because under unknown_field_policy reject the rollback of a registered field was refused while the forward write succeeded (spec fails without the fix). Filed as pm-eqlsg9, both older than this change and shared with update rows: a store write that landed without its history event is not detected by compensation, and a format upgrade retained by restore makes a sibling step refuse."
+files[11]{path,scope}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   sdk/public-surface.json,project
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/index.ts,project
   src/sdk/item-transaction.ts,project
+  src/sdk/lifecycle/restore.ts,project
+  src/sdk/runtime.ts,project
   src/sdk/structured-mutations.ts,project
   src/sdk/transactions/item-finalization.ts,project
   tests/fixtures/contracts/full.json,project

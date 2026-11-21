@@ -1365,13 +1365,16 @@ type the clearable fields as nullable, so `runCreate`/`runUpdate` accept the
 same input as `PmClient.create`/`update`. `update-many` follows the same rule
 in every typed spelling (pm-w7clh6): a direct SDK `runUpdateMany`, and
 `runAction("update-many")` with flat fields or a nested `update` record, clear a
-clearable field given `null` on every matched row and refuse any other `null`
-by name before a row changes, so `PmUpdateManyActionOptions` types the
-clearable fields as nullable. A `null` on a selection key (`ids`, `limit`,
-`offset`, any `filter*` key, or any key of a nested `list` record) is refused
-by name: it neither filters nor clears. So is a `null` on a key that is no
-declared update option, such as a schema or extension field; clear those with
-`unset`.
+clearable built-in field given `null` on every matched row and refuse a `null`
+on any other built-in update option by name before a row changes, so
+`PmUpdateManyActionOptions` types the clearable fields as nullable.
+`runAction("update-many")` also refuses, by name, a `null` that would otherwise
+be read as absent or stored as text: on a selection or control key (`ids`,
+`list`, `update`, `limit`, `offset`, `dryRun`, `rollback`, the checkpoint keys,
+any `filter*` key, any key of a nested `list` record), on an outer key beside a
+nested `update` record, and on a key that is no declared update option, such as
+a schema or extension field (clear those with `unset`). Those refusals belong
+to action dispatch; a direct `runUpdateMany` does not add them.
 MCP tools keep `null` as an omitted argument; use `unset` there.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
@@ -1843,11 +1846,14 @@ await commitItemMutations({
 });
 ```
 
-- `set` writes each front-matter field as given and `unset` removes fields. A
+- `set` writes each front-matter field as given and `unset` removes fields
+  (a field the item format always stores, such as `tags`, is left empty). A
   row needs at least one of them. Values are retained in the journal, so they
   must be plain JSON data (no class instances, sparse arrays, or `__proto__`,
   `constructor` and `prototype` keys) and must not be secrets.
-- `id`, `updated_at`, `pm_format_version` and `type` are refused: the writer
+- Field names are letters, digits and underscores, so an extension field keeps
+  its registered spelling (`legacyId`). `id`, `updated_at`, `pm_format_version`
+  and `type` are refused: the writer
   derives the first three, and `type` selects the storage location, so it
   changes through an `update` row. `null` is refused; remove a field with
   `unset`.
@@ -1865,6 +1871,9 @@ await commitItemMutations({
   every call path, but the checks the lifecycle commands add (dependency target
   resolution, close validation, deferral rules) do not run. Use `update`,
   `close` and `release` rows for everything those commands can express.
+- A deferral that the same write resolves (`assignee` set beside a
+  `deferred_fields` entry for `assignee`) is pruned by the store, so the row is
+  refused as not stored as declared.
 - `match` is re-checked under the item lock and refuses with
   `upsert_match_changed` when the item no longer carries that field value.
   `force: true` overrides the assignee-ownership check, as it does for an

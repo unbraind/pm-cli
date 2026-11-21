@@ -164,6 +164,28 @@ describe("transaction-owned finalization step (GH-1656)", () => {
     });
   });
 
+  it("rolls back a registered extension field under a schema that rejects unknown fields", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTestExtension({
+        root: path.join(pmPath, "extensions", "source-fields"),
+        name: "source-fields",
+        manifestOverrides: { capabilities: ["schema"] },
+        entrySource: `export default { activate(api) { api.registerItemFields([{ name: "sourceIssue", type: "number" }]); } };`,
+      });
+      const settings = await readSettings(pmPath);
+      await writeSettings(pmPath, { ...settings, schema: { ...settings.schema, unknown_field_policy: "reject" } });
+      const client = new PmClient({ pmRoot: pmPath });
+      const item = (await client.create({ title: "Original", type: "Task" })).item;
+      const finalize = (sourceIssue: number, fail: boolean) => commitItemMutations({ pmRoot: pmPath, author, transactionId: `finalize-extension-${sourceIssue}`, mutations: [{ op: "finalize", id: item.id, set: { sourceIssue } }],
+        onTransition: ({ transition }) => { if (fail && transition === "committing") throw new Error("Abort the import"); } });
+      await expect(finalize(42, false)).resolves.toMatchObject({ status: "committed" });
+      await expect(finalize(43, true)).rejects.toThrow("Abort the import");
+      expect((await client.get(item.id)).item).toMatchObject({ sourceIssue: 42 });
+      await expect(commitItemMutations({ pmRoot: pmPath, author, transactionId: "finalize-unregistered", mutations: [{ op: "finalize", id: item.id, set: { otherIssue: 1 } }] }))
+        .rejects.toMatchObject({ context: { code: "finalization_invalid_document" } });
+    });
+  });
+
   it("re-checks the match guard under the item lock", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const { client, item } = await seed(pmPath, { sprint: "source-1" });
@@ -190,6 +212,7 @@ describe("transaction-owned finalization step (GH-1656)", () => {
     ["a value the reader refuses", { status: 5 }, "status must be a non-empty string"],
     ["a value stored in another shape", { tags: "a" }, 'set "tags" is not stored as declared (string normalizes to array of 0)'],
     ["array entries normalization would drop", { tags: [1, "kept"] }, 'set "tags" is not stored as declared (array of 2 normalizes to array of 1)'],
+    ["a deferral the same write resolves", { assignee: "alice", deferred_fields: [{ field: "assignee", reason: "Unknown at source" }] }, 'set "deferred_fields" is not stored as declared'],
     ["a value normalized away", { assignee: "  " }, 'set "assignee" is not stored as declared (string normalizes to an absent field)'],
     ["an envelope key the reader would follow", { front_matter: { id: "pm-other", title: "Other", description: "", type: "Task", status: "closed", priority: 2, tags: [], created_at: "2020-01-01T00:00:00.000Z", updated_at: "2020-01-01T00:00:00.000Z" } }, "reads back as a different document"],
   ])("refuses %s before anything is written", async (_label, set, message) => {
@@ -226,6 +249,8 @@ describe("transaction-owned finalization step (GH-1656)", () => {
     ["a nested prototype key", { set: { source: JSON.parse('{"__proto__":{"polluted":true}}') as unknown } }, 'set "source" must be a non-null JSON value'],
     ["a non-array unset", { unset: "closed_at" }, "unset must be an array of front-matter field names"],
     ["a malformed field name", { set: { "Closed-At": "x" } }, 'names an invalid field "Closed-At"'],
+    ["an Object method name", { unset: ["hasOwnProperty"] }, 'names an invalid field "hasOwnProperty"'],
+    ["a match value the journal would change", { set: { sprint: "s1" }, match: { key: "source_keys", value: [undefined] } }, "match value must be a JSON value"],
     ["an inherited field name", { unset: ["constructor"] }, 'names an invalid field "constructor"'],
     ["a non-string unset entry", { unset: [7] }, "names an invalid field 7"],
     ["a writer-derived field", { set: { updated_at: "2020-01-01T00:00:00.000Z" } }, 'cannot change "updated_at"'],
