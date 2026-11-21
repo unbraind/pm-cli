@@ -358,7 +358,7 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
     "docs/README.md": 'import "./dist/sdk/hidden.js"',
   };
   const read = (file: string): string => files[file]!;
-  const excluded = ["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js", "dist/sdk/legacy.cjs", "dist/sdk/folder/index.js"];
+  const excluded = ["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js", "dist/sdk/legacy.js", "dist/sdk/folder/index.js"];
   expect(findExcludedModuleReferences(Object.keys(files), layoutsOf(excluded, Object.keys(files)), read)).toEqual([
     "dist/cli.js -> ./sdk/hidden.js",
     "dist/cli.js -> ./sdk/worker.js",
@@ -384,6 +384,24 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   expect(referencesIn("cli.cjs", "require('./')", layoutsOf([], ["cli.cjs", "index.js"]))).toEqual([]);
   // A trailing slash never names the same-named sibling file.
   expect(referencesIn("dist/a.cjs", "require('./graph/')", layoutsOf(["dist/graph.js"], ["dist/graph/index.js"]))).toEqual([]);
+  // CommonJS appends only .js, .json and .node: a packed .cjs sibling never stands in for the index.
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/index.js"], ["dist/local.cjs"]))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  expect(referencesIn("dist/cli.cjs", "require('./legacy')", layoutsOf(["dist/legacy.cjs"], []))).toEqual([]);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/package.json"], ["dist/local.json", "dist/local/entry.js"], {
+    "dist/local/package.json": "entry.js",
+  }))).toEqual([]);
+  // A terminal "/." or "/.." names the directory, not a same-named sibling.
+  const dotted = layoutsOf(["dist/types/index.js", "index.js"], ["dist/types.js"]);
+  expect(referencesIn("dist/cli.cjs", "require('./types/.')", dotted)).toEqual(["dist/cli.cjs -> ./types/."]);
+  expect(referencesIn("dist/types/x.cjs", "require('./..')", layoutsOf(["dist/index.js"], ["dist.js"]))).toEqual(["dist/types/x.cjs -> ./.."]);
+  // require() resolves the literal spelling only, an import only the URL spelling.
+  const hashed = layoutsOf(["dist/local/package.json"], ["dist/local#prod.js", "dist/local/entry.js"], { "dist/local/package.json": "entry.js" });
+  expect(referencesIn("dist/cli.cjs", "require('./local#prod.js')", hashed)).toEqual([]);
+  expect(referencesIn("dist/cli.mjs", "import('./local#prod.js')", layoutsOf(["dist/local.js"], ["dist/local#prod.js"]))).toEqual([
+    "dist/cli.mjs -> ./local#prod.js",
+  ]);
   // Node loads a packed sibling file before it consults a same-named directory.
   const precedence = layoutsOf(["dist/helper/package.json", "dist/helper/private.js"], ["dist/helper.js"], {
     "dist/helper/package.json": "private.js",
@@ -410,6 +428,12 @@ it("resolves a directory's package.json main as Node does and refuses one the pa
   expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/index.js"], ["dist/local/package.json"], missing))).toEqual([
     "dist/cli.cjs -> ./local",
   ]);
+  // An empty main is ignored in favor of the directory index.
+  const empty = layoutsOf(["dist/local/index.js"], ["dist/local.js", "dist/local/package.json"], { "dist/local/package.json": "" });
+  expect(referencesIn("dist/cli.cjs", "require('./local/')", empty)).toEqual(["dist/cli.cjs -> ./local/"]);
+  // A main that leaves the package root or enters node_modules is runtime staging's concern, not this check's.
+  const external = layoutsOf(["node_modules/dep/index.js"], ["dist/local/package.json"], { "dist/local/package.json": "../../node_modules/dep/index.js" });
+  expect(referencesIn("dist/cli.cjs", "require('./local')", external)).toEqual([]);
   // A reference the checkout resolves to no module, or only to a non-module file, is not judged.
   expect(referencesIn("dist/cli.cjs", "require('./absent'); read('./notes.md')", layoutsOf(["dist/notes.md"], []))).toEqual([]);
 });

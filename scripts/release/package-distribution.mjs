@@ -362,7 +362,8 @@ export function exportedDeclarationClosure(manifest, packedPaths, readText) {
 }
 
 const MODULE_FILE = /\.[cm]?js$/u;
-const MODULE_EXTENSIONS = [".js", ".cjs", ".mjs"];
+/** Extensions CommonJS appends to an extensionless request, in Node's order; .cjs and .mjs load only by exact name. */
+const MODULE_EXTENSIONS = [".js", ".json", ".node"];
 const QUOTED_RELATIVE_PATH = /(["'`])(\.{1,2}\/[^"'`\r\n]*)\1/gu;
 
 /**
@@ -404,17 +405,35 @@ function resolveModule(layout, target, directoryOnly) {
   const file = directoryOnly ? undefined : resolveModuleFile(layout, target);
   if (file !== undefined) return file;
   const main = layout.main(path.posix.join(target, "package.json"));
-  const entry = main === undefined ? undefined : path.posix.join(target, main);
+  // Node ignores an empty main and falls back to the directory index.
+  const entry = main === undefined || main.length === 0 ? undefined : path.posix.join(target, main);
   return (
     (entry === undefined ? undefined : (resolveModuleFile(layout, entry) ?? resolveModuleIndex(layout, entry))) ??
     resolveModuleIndex(layout, target)
   );
 }
 
-/** Whether the quoted string at `index` is the argument of a loader call or an import clause. */
-function isLoaderArgument(text, index) {
+/**
+ * The loader whose argument the quoted string at `index` is: "require" for a
+ * require() call, "import" for an import clause or import() call, or null.
+ * Comments between the call and the string are skipped.
+ */
+function loaderKind(text, index) {
   const before = text.slice(Math.max(0, index - 400), index).replace(/\/\*[\s\S]*?\*\//gu, " ");
-  return /(?:\brequire\s*\(|\bimport\s*\(|\bfrom|\bimport)(?:\s|\/\/[^\n]*\n)*$/u.test(before);
+  const loader = /(?:\b(require)\s*\(|\bimport\s*\(|\bfrom|\bimport)(?:\s|\/\/[^\n]*\n)*$/u.exec(before);
+  if (loader === null) return null;
+  return loader[1] === undefined ? "import" : "require";
+}
+
+/**
+ * Spellings of a specifier to resolve: require() reads "#" and "?"
+ * literally, an ESM URL drops them, and an ambiguous string gets both.
+ */
+function specifierSpellings(specifier, loader) {
+  const url = specifier.replace(/[?#].*$/u, "");
+  if (loader === "require") return [specifier];
+  if (loader === "import") return [url];
+  return [...new Set([specifier, url])];
 }
 
 /** A target outside the package root or inside node_modules is not first-party. */
@@ -423,9 +442,10 @@ const isFirstPartyTarget = (target) => target !== ".." && !target.startsWith("..
 /**
  * Prove no staged module refers to a module the package cannot load the same
  * way (pm-998juj). Every quoted relative string in a staged JavaScript module
- * is resolved as Node would load it, in its literal and URL-stripped
- * spelling: the exact file, a CommonJS extension, a directory's package.json
- * main, then its index; a trailing slash names only the directory. It
+ * is resolved as Node would load it: its literal spelling for require(), its
+ * URL spelling for an import, both for any other string; then the exact file,
+ * a CommonJS extension (.js, .json, .node), a directory's package.json main,
+ * then its index. A trailing "/", "/." or "/.." names only the directory. It
  * refuses the pack when the checkout resolves the string to a module and the
  * package does not resolve it to that same file: a static, dynamic or
  * require import or a worker path built from a string, a module the files
@@ -442,16 +462,21 @@ export function findExcludedModuleReferences(packedPaths, layouts, readText) {
     const text = readText(file);
     for (const match of text.matchAll(QUOTED_RELATIVE_PATH)) {
       const specifier = match[2];
-      const loader = isLoaderArgument(text, match.index);
-      // require() reads "#" and "?" literally while an ESM URL drops them: judge both spellings.
-      const dangling = [...new Set([specifier, specifier.replace(/[?#].*$/u, "")])]
-        .filter((pathname) => loader || !/^(?:\.{1,2}\/)+$/u.test(pathname))
+      const loader = loaderKind(text, match.index);
+      const dangling = specifierSpellings(specifier, loader)
+        .filter((pathname) => loader !== null || !/^(?:\.{1,2}\/)+$/u.test(pathname))
         .some((pathname) => {
           const target = path.posix.join(path.posix.dirname(file), pathname).replace(/(.)\/+$/u, "$1");
           if (!isFirstPartyTarget(target)) return false;
-          const directoryOnly = pathname.endsWith("/");
+          // A trailing "/", "/." or "/.." names a directory, never a same-named sibling file.
+          const directoryOnly = /\/(?:\.{1,2})?$/u.test(pathname);
           const loaded = resolveModule(layouts.checkout, target, directoryOnly);
-          return loaded !== undefined && MODULE_FILE.test(loaded) && resolveModule(layouts.package, target, directoryOnly) !== loaded;
+          return (
+            loaded !== undefined &&
+            MODULE_FILE.test(loaded) &&
+            isFirstPartyTarget(loaded) &&
+            resolveModule(layouts.package, target, directoryOnly) !== loaded
+          );
         });
       if (dangling) references.push(`${file} -> ${specifier}`);
     }

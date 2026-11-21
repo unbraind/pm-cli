@@ -604,6 +604,18 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
         message: expect.stringContaining("cannot checkpoint version 4"),
         context: nearest,
       });
+      // A legacy checkpoint without a trustworthy offset keeps the bridge refusal, with timestamps.
+      const compacted = await readHistoryEntries(paths(context).history, ID);
+      const { version_offset: _offset, ...receipt } = compacted[0]!.context!.history_compaction as Record<string, unknown>;
+      compacted[0] = reseal(compacted[0]!, { context: { ...compacted[0]!.context, history_compaction: receipt } });
+      await writeFile(paths(context).history, historyEntriesToRaw(compacted));
+      await expect(runHistoryCompact(ID, { before: compacted[2]!.ts }, { path: context.pmPath })).rejects.toMatchObject({
+        message: expect.stringContaining("cannot checkpoint that boundary"),
+        context: {
+          code: "history_compact_boundary_bridged",
+          nextSteps: [`Run pm history-compact <id> --before "${compacted[1]!.ts}", or with a timestamp after "${compacted[3]!.ts}".`],
+        },
+      });
     });
   });
 
@@ -797,6 +809,15 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       });
       expect(verifyHistoryChainWithVersion(oneSided.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry)).ok).toBe(true);
       expect(oneSided.merged).toContain('"text":"theirs next"');
+      // A marker only theirs carries on a shared record survives normalization.
+      const theirsLines = theirsNext.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      theirsLines[1] = reseal(theirsLines[1]!, { replay_inexact: true });
+      const markedTheirs = historyEntriesToRaw(theirsLines);
+      const markedMerge = mergeHistoryStreams(base, ours, markedTheirs);
+      expect(markedMerge.strategy).toBe("equivalent_bridges");
+      const markedEntries = markedMerge.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      expect(markedEntries[1]).toMatchObject({ replay_inexact: true });
+      expect(verifyHistoryChainWithVersion(markedEntries).ok).toBe(true);
       expect(verifyHistoryChainWithVersion(thirdEntries).ok).toBe(true);
       expect(thirdEntries.filter((entry) => Object.hasOwn(entry, "bridge"))).toHaveLength(0);
       expect(third.merged).toContain('"text":"ours next"');

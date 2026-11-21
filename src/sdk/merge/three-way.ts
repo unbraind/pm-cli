@@ -587,25 +587,31 @@ export function mergeHistoryStreams(
   theirsRaw: string,
 ): HistoryMergeResult {
   const base = parseHistoryJsonl(baseRaw, "base");
-  const { ours, theirs, normalization } = normalizeEquivalentRepairRuns(
-    parseHistoryJsonl(oursRaw, "ours"),
-    parseHistoryJsonl(theirsRaw, "theirs"),
-  );
+  const recorded = [parseHistoryJsonl(oursRaw, "ours"), parseHistoryJsonl(theirsRaw, "theirs")];
+  const { ours, theirs, normalization } = normalizeEquivalentRepairRuns(recorded[0]!, recorded[1]!);
+  // Normalization rebuilds the shared prefix from ours, so markers either
+  // recorded input carries are still collected from the inputs themselves.
   const result = mergeParsedHistoryStreams(
     base,
     ours,
     theirs,
-    normalization === null ? oursRaw : historyEntriesToRaw(ours),
+    normalization === null || normalization.neutralCopies === 0 ? oursRaw : historyEntriesToRaw(ours),
+    normalization === null ? [ours, theirs] : [ours, theirs, ...recorded],
   );
   return normalization === null ? result : accountNormalizedMerge(result, normalization);
 }
 
-/** Merge parsed history streams; `oursRaw` holds ours' exact bytes, kept when nothing else changes. */
+/**
+ * Merge parsed history streams. `oursRaw` holds ours' exact bytes, kept when
+ * nothing else changes; `markerSides` are the streams whose replay_inexact
+ * markers and bridges decide which merged records are marked.
+ */
 function mergeParsedHistoryStreams(
   base: HistoryEntry[],
   ours: HistoryEntry[],
   theirs: HistoryEntry[],
   oursRaw: string,
+  markerSides: HistoryEntry[][],
 ): HistoryMergeResult {
   const creates = [base, ours, theirs].map((entries) =>
     entries.filter((entry) => entry.op === "create"),
@@ -625,7 +631,7 @@ function mergeParsedHistoryStreams(
   /** Keep a side's records unless either side proves one of them inexact. */
   const keepSide = (entries: HistoryEntry[]) =>
     historyEntriesToRaw(
-      markInexactUnionEntries(entries, collectUnionInexactIndexes(entries, [ours, theirs], false)).entries,
+      markInexactUnionEntries(entries, collectUnionInexactIndexes(entries, markerSides, false)).entries,
     );
 
   if (shared === ours.length && shared === theirs.length) {
@@ -668,7 +674,7 @@ function mergeParsedHistoryStreams(
     const separator = oursRaw.endsWith("\n") || neutralBridges.length === 0 ? "" : "\n";
     const oursMarked = markInexactUnionEntries(
       ours,
-      collectUnionInexactIndexes(ours, [ours, theirs], false),
+      collectUnionInexactIndexes(ours, markerSides, false),
     );
     return {
       merged: oursMarked.changed
@@ -691,7 +697,7 @@ function mergeParsedHistoryStreams(
   const reanchored = reanchorHistoryEntries(
     markInexactUnionEntries(
       unionInput,
-      collectUnionInexactIndexes(unionInput, [ours, theirs], true),
+      collectUnionInexactIndexes(unionInput, markerSides, true),
     ).entries,
     undefined,
     {

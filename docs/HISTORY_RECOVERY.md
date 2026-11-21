@@ -207,7 +207,7 @@ and after a dissolution. Versions before the break and from the bridge onward
 remain addressable. `pm history-compact` cannot checkpoint such a version
 either. It refuses with `history_compact_boundary_bridged` and names the
 nearest durable `--before` versions before the break and from the bridge
-onward.
+onward, or timestamps when a legacy checkpoint has no trustworthy offset.
 
 Clones that repaired the same break independently and then kept working
 diverge in a run of the same repair, live or neutral and in either order,

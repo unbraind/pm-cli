@@ -314,18 +314,25 @@ function assertReconstructableCompactBoundary(entries: HistoryEntry[], compactCo
     ({ start, end }) => start <= checkpoint && checkpoint < end,
   );
   if (segment === undefined) return;
-  // Report durable versions: physical index i is version offset + i + 1.
-  const offset = historyVersionOffset(entries);
-  const lastBefore = offset + segment.start + 1;
-  const firstAfter = offset + segment.end + 2;
+  // Report durable versions: physical index i is version offset + i + 1. A
+  // legacy checkpoint without a trustworthy offset gets timestamps instead.
+  const offset = historyVersionOffset(entries, true);
+  const [checkpointName, required, nextStep] =
+    offset === null
+      ? [
+          "that boundary",
+          `Choose a --before timestamp at or before "${entries[segment.start]!.ts}", or after "${entries[segment.end]!.ts}".`,
+          `Run pm history-compact <id> --before "${entries[segment.start]!.ts}", or with a timestamp after "${entries[segment.end]!.ts}".`,
+        ]
+      : [
+          `version ${offset + compactCount}`,
+          `Choose --before ${offset + segment.start + 1} or lower, or --before ${offset + segment.end + 2} or higher.`,
+          `Run pm history-compact <id> --before ${offset + segment.start + 1} or --before ${offset + segment.end + 2}.`,
+        ];
   throw new PmCliError(
-    `history-compact cannot checkpoint version ${offset + compactCount}: it lies inside a bridged segment whose states cannot be reconstructed.`,
+    `history-compact cannot checkpoint ${checkpointName}: it lies inside a bridged segment whose states cannot be reconstructed.`,
     EXIT_CODE.USAGE,
-    {
-      code: "history_compact_boundary_bridged",
-      required: `Choose --before ${lastBefore} or lower, or --before ${firstAfter} or higher.`,
-      nextSteps: [`Run pm history-compact <id> --before ${lastBefore} or --before ${firstAfter}.`],
-    },
+    { code: "history_compact_boundary_bridged", required, nextSteps: [nextStep] },
   );
 }
 

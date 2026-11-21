@@ -410,6 +410,9 @@ export interface HistoryBridgedSegment {
   end: number;
 }
 
+/** The epoch each closed segment's bridge verified under, for rewrites that keep it verbatim. */
+const BRIDGED_SEGMENT_EPOCHS = new WeakMap<HistoryBridgedSegment, HistoryItemHashVersion>();
+
 /** Bridged segment still open during a chain walk. */
 interface OpenBridgedSegment {
   start: number;
@@ -580,7 +583,9 @@ function stepBridgedSegment(
       walk.authoritativeExplicitVersion;
     return undefined;
   }
-  walk.bridgedSegments.push({ start: segment.start, end: index });
+  const closed = { start: segment.start, end: index };
+  BRIDGED_SEGMENT_EPOCHS.set(closed, bridged.version);
+  walk.bridgedSegments.push(closed);
   walk.segment = undefined;
   acceptHistoryEpoch(walk, entry, bridged.version, bridged.document, new Map());
   return undefined;
@@ -893,18 +898,18 @@ function indexBridgedSegments(
   // the requested epoch when its closer verified under it and every covered
   // record declares that epoch or inherits it by declaring none.
   const keepsVerbatim = options.projectPatch === undefined && options.continuousHashSurface !== true;
-  const verified = (verification.bridged_segments ?? []).filter(
-    (segment) =>
-      verifyHistoryChainWithVersion(entries.slice(0, segment.end + 1)).item_hash_version === itemHashVersion &&
-      entries
-        .slice(segment.start, segment.end + 1)
-        .every((entry) => entry.item_hash_version === undefined || entry.item_hash_version === itemHashVersion),
-  );
+  const verified = keepsVerbatim
+    ? (verification.bridged_segments ?? []).filter(
+        (segment) =>
+          BRIDGED_SEGMENT_EPOCHS.get(segment) === itemHashVersion &&
+          entries
+            .slice(segment.start, segment.end + 1)
+            .every((entry) => entry.item_hash_version === undefined || entry.item_hash_version === itemHashVersion),
+      )
+    : [];
   return {
     inputVerifies: verification.ok,
-    preservable: new Map(
-      keepsVerbatim ? verified.map((segment) => [segment.start, segment.end]) : [],
-    ),
+    preservable: new Map(verified.map((segment) => [segment.start, segment.end])),
     // Located, not only verified: a rewrite that repairs a record before the
     // bridge still dissolves it, and must keep its versions refused. A merge
     // union interleaves branches, so it marks each original branch first.
