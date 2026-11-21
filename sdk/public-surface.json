@@ -3526,6 +3526,16 @@
       ],
       "package_version": "2026.11.20",
       "reason": "GH-1715 review round 4: additive optional ReanchorHistoryOptions.callerMarksBridgeCoverage and a new ReanchorResult.entriesResealed count; existing fields unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryMaintenanceParams",
+        "signature ./sdk:HistoryRepairResult",
+        "signature ./sdk/governance:HistoryMaintenanceParams",
+        "signature ./sdk/runtime:HistoryRepairResult"
+      ],
+      "package_version": "2026.11.21",
+      "reason": "pm-3os5p6/pm-rpucvb: HistoryRepairResult gains an optional reseed receipt and HistoryMaintenanceParams an optional reseed plan; both are additive optional members, and the three repair receipt types are now exported beside the result that names them"
     }
   ],
   "entrypoints": {
@@ -11018,7 +11028,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryMaintenanceParams",
-          "signature": "export interface HistoryMaintenanceParams<Result> { pmRoot: string; subject: HistorySubject; settings: PmSettings; typeRegistry: ItemTypeRegistry; operation: HistoryMaintenanceOperation; options: HistoryMaintenanceOptions; transform: (snapshot: HistoryMaintenanceSnapshot) => HistoryMaintenancePlan<Result> | Promise<HistoryMaintenancePlan<Result>>; }"
+          "signature": "export interface HistoryMaintenanceParams<Result> { pmRoot: string; subject: HistorySubject; settings: PmSettings; typeRegistry: ItemTypeRegistry; operation: HistoryMaintenanceOperation; options: HistoryMaintenanceOptions; transform: (snapshot: HistoryMaintenanceSnapshot) => HistoryMaintenancePlan<Result> | Promise<HistoryMaintenancePlan<Result>>; reseed?: (snapshot: HistoryMaintenanceSnapshot, stream: { absent: boolean; }) => HistoryMaintenancePlan<Result> | Promise<HistoryMaintenancePlan<Result>>; }"
         },
         {
           "classification": "supported",
@@ -11137,6 +11147,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "HistoryRepairBridgeReceipt",
+          "signature": "export interface HistoryRepairBridgeReceipt extends HistoryBridge { first_break_entry: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "HistoryRepairCommandOptions",
           "signature": "export interface HistoryRepairCommandOptions { salvageTail?: boolean; appendOnly?: boolean; dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; mergeReceiptProof?: { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }; mergeReceiptProofById?: Record<string, { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }>; mergeAbandonmentProof?: { gitWorkspaceRoot: string; receipt: MergeDecisionReceipt; }; }"
         },
@@ -11155,14 +11171,26 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "HistoryRepairReseedReceipt",
+          "signature": "export interface HistoryRepairReseedReceipt { reason: \"missing_stream\" | \"empty_stream\"; prior_versions: \"unrecorded\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "HistoryRepairResult",
-          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; bridge?: HistoryRepairBridgeReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; bridge?: HistoryRepairBridgeReceipt; reseed?: HistoryRepairReseedReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryResult",
           "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; total: number; order: \"newest_first\" | \"oldest_first\"; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; version_addressing?: { offset: number | null; first_version: number | null; last_version: number | null; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HistorySalvageReceipt",
+          "signature": "export interface HistorySalvageReceipt { first_invalid_line: number; discarded_bytes: number; discarded_sha256: string; retained_entries: number; non_record_lines?: number; }"
         },
         {
           "classification": "supported",
@@ -31370,7 +31398,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryMaintenanceParams",
-          "signature": "export interface HistoryMaintenanceParams<Result> { pmRoot: string; subject: HistorySubject; settings: PmSettings; typeRegistry: ItemTypeRegistry; operation: HistoryMaintenanceOperation; options: HistoryMaintenanceOptions; transform: (snapshot: HistoryMaintenanceSnapshot) => HistoryMaintenancePlan<Result> | Promise<HistoryMaintenancePlan<Result>>; }"
+          "signature": "export interface HistoryMaintenanceParams<Result> { pmRoot: string; subject: HistorySubject; settings: PmSettings; typeRegistry: ItemTypeRegistry; operation: HistoryMaintenanceOperation; options: HistoryMaintenanceOptions; transform: (snapshot: HistoryMaintenanceSnapshot) => HistoryMaintenancePlan<Result> | Promise<HistoryMaintenancePlan<Result>>; reseed?: (snapshot: HistoryMaintenanceSnapshot, stream: { absent: boolean; }) => HistoryMaintenancePlan<Result> | Promise<HistoryMaintenancePlan<Result>>; }"
         },
         {
           "classification": "supported",
@@ -37616,7 +37644,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairResult",
-          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; bridge?: HistoryRepairBridgeReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; bridge?: HistoryRepairBridgeReceipt; reseed?: HistoryRepairReseedReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -41053,6 +41081,8 @@
     "history_baseline_unavailable",
     "history_compact_boundary_bridged",
     "history_drift_chain_mismatch",
+    "history_drift_chain_unbridgeable",
+    "history_drift_chain_unrepairable",
     "history_drift_hash_mismatch",
     "history_drift_merge_receipt",
     "history_drift_missing_stream",
@@ -41060,6 +41090,7 @@
     "history_drift_version_skew",
     "history_json_invalid",
     "history_merge_conflict_markers_detected",
+    "history_record_integrity_invalid",
     "history_record_invalid",
     "history_redact_bridge_unlocated",
     "history_replay_invalid",

@@ -7,8 +7,8 @@
  * lazily built DFA one path character at a time. Matching therefore never
  * backtracks: time is linear in the walked path text for every pattern, and a
  * directory whose path can no longer match is never read. This replaces the
- * runtime tinyglobby/fdir/picomatch graph, whose extglob compiler is subject to
- * GHSA-fc5q-39xc-vjpf.
+ * runtime tinyglobby/fdir/picomatch graph, whose extglob compiler backtracks on
+ * single-branch repeated extglobs (GHSA-fc5q-39xc-vjpf, withdrawn 2026-11-18).
  *
  * Grammar (docs/COMMANDS.md, "Linked Artifacts"): `*`, `?`, `**` as a whole
  * segment, bracket expressions with ranges, `!`/`^` negation and POSIX classes

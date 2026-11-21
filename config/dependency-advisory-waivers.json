@@ -1,14 +1,5 @@
 {
   "version": 1,
   "waiver_notice_days": 3,
-  "waivers": [
-    {
-      "advisory": "GHSA-fc5q-39xc-vjpf",
-      "package": "picomatch",
-      "versions": ["4.0.7"],
-      "owner": "pm-03q389",
-      "reason": "No patched picomatch release exists: the advisory covers every version through 4.0.7 and GitHub lists no first patched version (re-verified 2026-11-17). pm-gh1748 removed picomatch from the runtime graph; it remains only in development tooling (tinyglobby in repository scripts and the parity test, fdir and Vite), where a crafted repeated extglob can stall only the developer's own process. Replace this waiver with the patched release as soon as upstream publishes it (fix pull requests 257 to 261 opened 2026-11-17).",
-      "expires_at": "2026-12-01T00:00:00Z"
-    }
-  ]
+  "waivers": []
 }

@@ -110,30 +110,26 @@ above, and when a waiver's owner is no longer an open tracker item. Closing
 the owner therefore requires retiring the waiver too. See
 [Waiver Notice Window](DEFECT_RECURRENCE.md#waiver-notice-window).
 
-## Unpatched picomatch extglob ReDoS
+## Withdrawn picomatch extglob advisory
 
-[pm-03q389](../.agents/pm/issues/pm-03q389.toon) tracks
+[pm-03q389](../.agents/pm/issues/pm-03q389.toon) tracked
 [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
-(npm advisory 1247710, high: picomatch through 4.0.7 backtracks
-exponentially on single-branch repeated extglobs such as `+(*)`). GitHub
-widened the advisory on 2026-11-17 to cover 4.0.7, the latest release, with
-no patched version, and both feeds reported it on the next run, so Gates
-(static) failed on every branch, `main` included. pm reaches picomatch through
-`tinyglobby`, which expands the linked-artifact globs the local caller
-supplies, and through `fdir` and Vite in development tooling. A crafted
-pattern can therefore stall only the caller's own process.
-[pm-gh1748](../.agents/pm/issues/pm-gh1748.toon) removes the runtime path:
-`--add-glob` now uses a built-in, linear-time matcher (`src/core/fs/file-glob.ts`)
-and `tinyglobby` moved to the development dependencies. A consumer's
-`npm audit --omit=dev` therefore no longer reports picomatch through pm.
-Development tooling still resolves picomatch through `tinyglobby` (repository
-scripts and the parity test), `fdir` and Vite. The waiver
-covers picomatch 4.0.7 until 2026-12-01 with a three-day notice window.
-Replace it with the patched release once upstream publishes one (fix pull
-requests opened on 2026-11-17) and satisfies the dependency cooldown, then
-delete the waiver and its mirrored `.trivyignore` entry
-(`CVE-2026-112366`) in the same pull request; the waiver spec fails while a
-`.trivyignore` entry has no declared waiver to mirror.
+(npm advisory 1247710, high: picomatch through 4.0.7 backtracking on
+single-branch repeated extglobs such as `+(*)`). GitHub widened the advisory on
+2026-11-17 to cover 4.0.7, the latest release, with no patched version, so
+Gates (static) failed on every branch, `main` included.
+[pm-gh1748](../.agents/pm/issues/pm-gh1748.toon) removed the runtime path:
+`--add-glob` uses a built-in, linear-time matcher (`src/core/fs/file-glob.ts`)
+and `tinyglobby` moved to the development dependencies, so a consumer's
+`npm audit --omit=dev` no longer reaches picomatch through pm. Until then the
+first recorded waiver covered picomatch 4.0.7 in development tooling.
+
+GitHub withdrew the advisory on 2026-11-18. The next gate run reported the
+waiver under `unused_waivers`, with neither feed reporting picomatch, so the
+waiver and its mirrored `.trivyignore` entry (`CVE-2026-112366`) were deleted
+together. The registry keeps its empty `waivers` list and notice window. The
+built-in matcher stays, because it bounds glob expansion for every pattern,
+not only this advisory's.
 
 The command then verifies the installed CodSpeed bundle policy. Network/audit errors,
 missing packages, incomplete policy entries, changed package files, and unreviewed

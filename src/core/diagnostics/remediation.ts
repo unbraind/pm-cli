@@ -291,19 +291,20 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "Review the pending merge receipts before reconciliation; history-repair alone does not settle them, and lossy receipts require explicit --force acceptance.",
   },
   // --- pm health: history_drift ---
-  // `pm health` rewrites these commands to `pm history-repair --all` in the
-  // per-check remediation_map when more than one stream is drifted.
+  // `pm health` rewrites these commands to a bulk `pm history-repair --all`
+  // form in the per-check remediation_map when more than one stream is
+  // drifted and the bulk form repairs every stream it runs on (pm-3os5p6).
   {
     code: "history_drift_missing_stream",
     command: "pm history-repair <id>",
     summary:
-      "The item has no history stream; re-anchor the chain to rebuild it (pm history-repair --all repairs every drifted stream in one pass).",
+      "The item has no history record; the repair rebuilds the stream as one audited baseline from the on-disk item, and earlier versions stay unrecorded. When the stream was deleted by mistake, restore it from version control first (pm history-repair --all, with or without --append-only, rebuilds every missing stream in one pass).",
   },
   {
     code: "history_drift_unreadable_stream",
-    command: "pm history-repair <id>",
+    command: "pm history-repair <id> --salvage-tail --dry-run",
     summary:
-      "The item's history stream is unreadable; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
+      "The item's history stream cannot be read; preview salvage, which removes lines that cannot hold a record and an invalid tail after a verified prefix, then apply it without --dry-run. Salvage refuses interior corruption, which needs recovery from version control, and a permission error needs the file's access fixed.",
   },
   {
     code: "history_drift_hash_mismatch",
@@ -315,7 +316,19 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     code: "history_drift_chain_mismatch",
     command: "pm history-repair <id> --append-only",
     summary:
-      "The item's history chain is broken; append one record that bridges every break in the stream and keeps every recorded line byte-identical (pm history-repair <id> re-anchors the recorded entries instead). With --all --append-only every drifted stream is attempted, and a stream a bridge cannot repair, such as a missing one, refuses with a typed reason.",
+      "The item's history chain is broken; append one record that bridges every break in the stream and keeps every recorded line byte-identical (pm history-repair <id> re-anchors the recorded entries instead). pm health previews the bridge for every chain mismatch, so a break a bridge cannot repair is reported as history_drift_chain_unbridgeable instead.",
+  },
+  {
+    code: "history_drift_chain_unbridgeable",
+    command: "pm history-repair <id>",
+    summary:
+      "The item's history chain is broken in a way an append-only bridge cannot repair, for example a recorded patch that applies only on top of the unrecorded change (details.chain_unbridgeable names the refusal reason); re-anchor the recorded entries instead (pm history-repair --all repairs every drifted stream in one pass).",
+  },
+  {
+    code: "history_drift_chain_unrepairable",
+    command: "pm history <id> --verify --full",
+    summary:
+      "Neither history repair can keep this stream: both previews refused (details.chain_unbridgeable names both reasons), for example because a sealed record no longer matches its seal. Locate the record, restore the stream from version control or a backup, then run pm history <id> --verify --strict-exit.",
   },
   {
     code: "history_drift_version_skew",
@@ -552,13 +565,13 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     code: "validate_history_drift_missing_streams",
     command: "pm history-repair <id>",
     summary:
-      "Re-anchor the history chains of the items missing a history stream.",
+      "Rebuild the history streams of the items without a history record as one audited baseline from each on-disk item.",
   },
   {
     code: "validate_history_drift_unreadable_streams",
-    command: "pm history-repair <id>",
+    command: "pm history-repair <id> --salvage-tail --dry-run",
     summary:
-      "Re-anchor the history chains of the items with an unreadable history stream.",
+      "Preview salvage of the unreadable history streams, then apply it without --dry-run; interior corruption needs recovery from version control.",
   },
   {
     code: "validate_history_drift_hash_mismatches",

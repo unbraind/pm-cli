@@ -21,9 +21,13 @@ import {
 } from "../../core/history/history-rewrite.js";
 import { replayHistoryToTarget } from "../../core/history/projection.js";
 import {
+  cloneEmptyReplayDocument,
+  lenientApplyReplayPatch,
   replayToItemDocument,
   verifyHistoryChainWithVersion,
+  type ReplayDocument,
 } from "../../core/history/replay.js";
+import { SUPPORTED_HISTORY_ITEM_HASH_VERSIONS } from "../../core/history/history.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import {
   describeHistoryRecordDefect,
@@ -132,15 +136,30 @@ function decodeSalvageLine(line: string): SalvageLine {
   return { kind: "record", entry: entry as HistoryEntry };
 }
 
+/** The newest epoch a retained record declares, for a stream whose chain does not verify. */
+function newestDeclaredEpoch(entries: readonly HistoryEntry[]): HistoryItemHashVersion | undefined {
+  return [...entries].reverse().find((entry) =>
+    (SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly unknown[]).includes(entry.item_hash_version),
+  )?.item_hash_version as HistoryItemHashVersion | undefined;
+}
+
 /**
- * Select a hash-verified prefix. Any parseable JSON after the first invalid
- * line makes the corruption interior and therefore unsalvageable by truncation.
+ * Select the records to keep. Discarding an invalid suffix requires a
+ * hash-verified prefix, because truncation must not cut a chain whose damage
+ * it cannot see. Removing only lines that cannot hold a record conceals
+ * nothing, so it keeps a chain that does not verify and reports the verdict:
+ * the chain fault is left to history-repair (pm-rpucvb). Any parseable JSON
+ * after the first invalid line makes the corruption interior and therefore
+ * unsalvageable by truncation.
  */
 export function inspectHistoryTail(raw: string): {
   entries: HistoryEntry[];
   prefix: string;
   receipt: HistorySalvageReceipt | null;
-  itemHashVersion: HistoryItemHashVersion;
+  /** Epoch for the audit record; undefined keeps an implicit stream implicit. */
+  itemHashVersion: HistoryItemHashVersion | undefined;
+  /** Chain verdict for the retained records. */
+  verification: { ok: boolean; errors: string[] };
 } {
   if (findFirstMergeConflictMarker(raw)) {
     throw new PmCliError(
@@ -149,42 +168,68 @@ export function inspectHistoryTail(raw: string): {
       { code: "history_salvage_refused" },
     );
   }
-  const entries: HistoryEntry[] = [];
+  const scan = scanSalvageLines(raw);
+  const judged = judgeRetainedChain(scan);
+  return {
+    entries: scan.entries,
+    ...judged,
+    ...selectSalvagedBytes(raw, scan.nonRecord, scan.invalidOffset, scan.invalidLine, scan.entries.length),
+  };
+}
+
+/** Line-level salvage decisions for one stream. */
+interface SalvageScan {
+  entries: HistoryEntry[];
+  nonRecord: Array<{ start: number; end: number; line: number }>;
+  invalidOffset: number | undefined;
+  invalidLine: number;
+}
+
+/** Classify every physical line; a record after the first invalid line refuses. */
+function scanSalvageLines(raw: string): SalvageScan {
+  const scan: SalvageScan = { entries: [], nonRecord: [], invalidOffset: undefined, invalidLine: 0 };
   let offset = 0;
-  let invalidOffset: number | undefined;
-  let invalidLine = 0;
-  const nonRecord: Array<{ start: number; end: number; line: number }> = [];
   for (const [index, line] of raw.split("\n").entries()) {
     const start = offset;
     offset += line.length + 1;
     if (!line.trim()) continue;
     const decoded = decodeSalvageLine(line);
-    if (decoded.kind === "non_record" && invalidOffset === undefined) {
-      nonRecord.push({ start, end: Math.min(offset, raw.length), line: index + 1 });
-      continue;
-    }
-    if (decoded.kind !== "record") {
-      if (invalidOffset === undefined) {
-        invalidOffset = start;
-        invalidLine = index + 1;
+    if (decoded.kind === "record") {
+      if (scan.invalidOffset !== undefined) {
+        throw new PmCliError(
+          "History salvage would discard a record or conceal interior corruption.",
+          EXIT_CODE.CONFLICT,
+          {
+            code: "history_salvage_refused",
+            required:
+              "Recover the damaged record from version control or a backup; no bytes were changed.",
+          },
+        );
       }
-      continue;
+      scan.entries.push(decoded.entry);
+    } else if (decoded.kind === "non_record" && scan.invalidOffset === undefined) {
+      scan.nonRecord.push({ start, end: Math.min(offset, raw.length), line: index + 1 });
+    } else if (scan.invalidOffset === undefined) {
+      scan.invalidOffset = start;
+      scan.invalidLine = index + 1;
     }
-    if (invalidOffset !== undefined) {
-      throw new PmCliError(
-        "History salvage would discard a record or conceal interior corruption.",
-        EXIT_CODE.CONFLICT,
-        {
-          code: "history_salvage_refused",
-          required:
-            "Recover the damaged record from version control or a backup; no bytes were changed.",
-        },
-      );
-    }
-    entries.push(decoded.entry);
   }
-  const verification = verifyHistoryChainWithVersion(entries);
-  if (!verification.ok || verification.item_hash_version === undefined) {
+  return scan;
+}
+
+/**
+ * Judge the retained records. Discarding an invalid suffix needs a verified
+ * chain; removing only non-record lines keeps whatever chain remains.
+ */
+function judgeRetainedChain(scan: SalvageScan): {
+  itemHashVersion: HistoryItemHashVersion | undefined;
+  verification: { ok: boolean; errors: string[] };
+} {
+  const verification = verifyHistoryChainWithVersion(scan.entries);
+  const verified = verification.ok && verification.item_hash_version !== undefined;
+  const removesOnlyNonRecordLines = scan.invalidOffset === undefined && scan.nonRecord.length > 0;
+  if (!removesOnlyNonRecordLines && (scan.entries.length === 0 || !verified)) {
+    const nothingToDiscard = scan.entries.length > 0 && scan.invalidOffset === undefined;
     throw new PmCliError(
       "History salvage requires a nonempty verified prefix.",
       EXIT_CODE.CONFLICT,
@@ -193,14 +238,61 @@ export function inspectHistoryTail(raw: string): {
         verification_errors: verification.errors,
         required:
           "Recover an intact history prefix from version control or a backup.",
+        ...(nothingToDiscard
+          ? { nextSteps: ["Run pm history-repair <id> --append-only --dry-run: salvage has nothing to discard, and the chain needs a repair."] }
+          : {}),
       },
     );
   }
   return {
-    entries,
-    itemHashVersion: verification.item_hash_version,
-    ...selectSalvagedBytes(raw, nonRecord, invalidOffset, invalidLine, entries.length),
+    itemHashVersion: verified ? verification.item_hash_version : newestDeclaredEpoch(scan.entries),
+    verification: { ok: verification.ok, errors: verification.errors },
   };
+}
+
+/**
+ * The kept bytes plus a `history_salvage` record anchored on the last kept
+ * record. A stream left without a record has nothing to anchor on, so it is
+ * written as kept and the result names the rebuild (pm-3os5p6).
+ */
+function salvagedStream(
+  selected: ReturnType<typeof inspectHistoryTail>,
+  document: ItemDocument,
+  author: string,
+  message: string | undefined,
+): string {
+  const last = selected.entries.at(-1);
+  if (last === undefined) return selected.prefix;
+  // createHistoryEntry stamps the current epoch; the record keeps the stream's own, or none.
+  const { item_hash_version: _stamped, ...entry } = createHistoryEntry({
+    hashAlgorithm: resolveHistoryHashAlgorithm(last.hash_algorithm),
+    nowIso: nowIso(),
+    author,
+    op: "history_salvage",
+    before: document,
+    after: document,
+    message,
+    context: { history_salvage: selected.receipt },
+  });
+  const audit = sealHistoryRecord({
+    ...entry,
+    before_hash: last.after_hash,
+    after_hash: last.after_hash,
+    ...(selected.itemHashVersion === undefined ? {} : { item_hash_version: selected.itemHashVersion }),
+  });
+  return `${selected.prefix}${JSON.stringify(audit)}\n`;
+}
+
+/** Replay the retained records; a chain that does not verify replays leniently. */
+function replayRetainedRecords(selected: ReturnType<typeof inspectHistoryTail>): ReplayDocument {
+  if (selected.verification.ok && selected.entries.length > 0) {
+    return replayHistoryToTarget(selected.entries, selected.entries.length - 1);
+  }
+  let replay = cloneEmptyReplayDocument();
+  for (const entry of selected.entries) {
+    replay = lenientApplyReplayPatch(replay, entry.patch).document;
+  }
+  return replay;
 }
 
 /** Bytes kept and the receipt for those removed: non-record lines plus the invalid suffix. */
@@ -315,10 +407,7 @@ export async function salvageHistoryTail(params: {
     );
   await runActiveOnReadHooks({ path: subject.historyPath, scope: "project" });
   const selected = inspectHistoryTail(raw);
-  const replay = replayHistoryToTarget(
-    selected.entries,
-    selected.entries.length - 1,
-  );
+  const replay = replayRetainedRecords(selected);
   const document = replayToItemDocument(replay);
   if (
     typeof replay.metadata.id === "string" &&
@@ -338,7 +427,6 @@ export async function salvageHistoryTail(params: {
     force: options.force,
     settings,
   });
-  const version = selected.itemHashVersion;
   const dryRun = options.dryRun === true;
   const changed = selected.receipt !== null;
   if (changed && !dryRun) {
@@ -373,25 +461,10 @@ export async function salvageHistoryTail(params: {
         );
       }
       const live = assertSalvageRevision(params.pmRoot, subject.id, ownership);
-      const audit = sealHistoryRecord({
-        ...createHistoryEntry({
-          hashAlgorithm: resolveHistoryHashAlgorithm(selected.entries.at(-1)!.hash_algorithm),
-          nowIso: nowIso(),
-          author,
-          op: "history_salvage",
-          before: document,
-          after: document,
-          message: options.message,
-          context: { history_salvage: selected.receipt },
-        }),
-        before_hash: selected.entries.at(-1)!.after_hash,
-        after_hash: selected.entries.at(-1)!.after_hash,
-        item_hash_version: version,
-      });
       await writeHistoryRawWithRollback({
         historyPath: subject.historyPath,
         historyRawUnderLock: raw,
-        nextHistoryRaw: `${selected.prefix}${JSON.stringify(audit)}\n`,
+        nextHistoryRaw: salvagedStream(selected, document, author, options.message),
       });
       // The item document is unchanged; advancing records this scope's committed write.
       advanceItemMutationPreconditions(params.pmRoot, live, subject.id);
@@ -406,24 +479,46 @@ export async function salvageHistoryTail(params: {
       await release();
     }
   }
+  return reportSalvage(subject, selected, { changed, dryRun, warnings });
+}
+
+/** Name the repair a salvaged stream still needs: a chain repair, or a rebuild of a stream left without a record. */
+function salvageFollowUp(subject: HistorySubject, selected: ReturnType<typeof inspectHistoryTail>): string[] {
+  if (selected.entries.length === 0) {
+    return subject.located === null ? [] : [`history_stream_empty:${subject.id}:run pm history-repair ${subject.id}`];
+  }
+  return selected.verification.ok
+    ? []
+    : [`history_chain_unverified:${subject.id}:run pm history-repair ${subject.id} --append-only --dry-run`];
+}
+
+/** Render the public repair result for a salvage preview or application. */
+function reportSalvage(
+  subject: HistorySubject,
+  selected: ReturnType<typeof inspectHistoryTail>,
+  outcome: { changed: boolean; dryRun: boolean; warnings: string[] },
+): HistoryRepairResult {
+  const version = selected.itemHashVersion;
+  const { ok, errors } = selected.verification;
   return {
     id: subject.id,
-    dry_run: dryRun,
-    changed,
+    dry_run: outcome.dryRun,
+    changed: outcome.changed,
     history: {
       path: subject.historyPath,
       entries_scanned: selected.entries.length,
-      chain_drift_before: false,
+      chain_drift_before: !ok,
       entries_rehashed: 0,
       entries_patch_repaired: 0,
       converted_replace_to_add: 0,
       skipped_ops: 0,
       reconciled_with_item: false,
-      audit_entry_added: changed && !dryRun,
-      verify_ok: true,
-      verify_errors: [],
-      item_hash_version_before: version,
-      item_hash_version_after: version,
+      audit_entry_added: outcome.changed && !outcome.dryRun && selected.entries.length > 0,
+      verify_ok: ok,
+      verify_errors: errors,
+      item_hash_version_before: version ?? null,
+      // A stream that declares no epoch stays on the legacy epoch 1.
+      item_hash_version_after: version ?? 1,
       version_disposition: "preserved",
     },
     item: {
@@ -439,7 +534,8 @@ export async function salvageHistoryTail(params: {
       invalid_values: [],
     },
     ...(selected.receipt ? { salvage: selected.receipt } : {}),
-    warnings,
+    // The fault salvage leaves is named with the repair that fixes it (pm-rpucvb, pm-3os5p6).
+    warnings: [...outcome.warnings, ...salvageFollowUp(subject, selected)],
     generated_at: nowIso(),
   };
 }

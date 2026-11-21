@@ -1508,7 +1508,8 @@ describe("runHealth", () => {
           `history_drift_missing_stream:${missingId}`,
           `history_drift_unreadable_stream:${unreadableId}`,
           `history_drift_hash_mismatch:${mismatchId}`,
-          `history_drift_chain_mismatch:${mismatchId}`,
+          // Neither repair can keep a sealed record edited without a reseal (pm-3os5p6).
+          `history_drift_chain_unrepairable:${mismatchId}`,
         ]),
       );
 
@@ -1621,7 +1622,8 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
-      expect(health.warnings).toContain(`history_drift_chain_mismatch:${id}`);
+      // The first record was edited without a reseal, so neither repair can keep it (pm-3os5p6).
+      expect(health.warnings).toContain(`history_drift_chain_unrepairable:${id}`);
       expect(health.warnings).not.toContain(
         `history_drift_hash_mismatch:${id}`,
       );
@@ -3609,7 +3611,7 @@ describe("runHealth", () => {
     });
   });
 
-  it("rewrites history_drift remediation to pm history-repair --all when more than one stream is drifted", async () => {
+  it("keeps history_drift remedies per item when a version-skewed stream would fail the bulk repair", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createSeedItem(context);
       const secondId = createSeedItem(context);
@@ -3654,10 +3656,13 @@ describe("runHealth", () => {
         | { remediation_map?: Record<string, string> }
         | undefined;
       const remediationMap = historyDriftDetails?.remediation_map;
-      expect(remediationMap).toMatchObject({
-        history_drift_missing_stream: "pm history-repair --all",
+      // --all would also run on the version-skewed stream and fail its row, so the remedies stay per item (pm-3os5p6).
+      // The skewed stream's chain verdict is this runtime's misreading, so only its upgrade remedy remains.
+      expect(remediationMap).toEqual({
+        history_drift_missing_stream: "pm history-repair <id>",
         history_drift_version_skew: "npm install -g @unbrained/pm-cli@latest",
       });
+      expect(health.warnings).not.toContain(`history_drift_chain_mismatch:${versionSkewId}`);
     });
   });
 

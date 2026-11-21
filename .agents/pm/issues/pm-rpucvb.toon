@@ -2,11 +2,13 @@ id: pm-rpucvb
 title: "A history stream with both a non-record line and a chain break has no pm recovery: salvage needs a verified chain and repair reads through the refusing decoder"
 description: "Found while fixing pm-jbplbq on 2026-11-21. The shared decoder now refuses a line that is valid JSON but not an object with history_record_invalid, and names pm history-repair <id> --salvage-tail as the recovery. Salvage removes a JSON null, boolean or number line wherever it sits, but it still requires the retained records to verify (inspectHistoryTail refuses with 'History salvage requires a nonempty verified prefix'). pm history-repair, with or without --append-only, reads through the decoder, so it refuses before it can repair the chain. A stream with both faults, for example an out-of-band edit followed by a tool that appended null, therefore has no pm-native recovery, and the only way out is restoring the stream from version control. Fix: let salvage remove scalar lines without requiring a verified chain when no invalid suffix is discarded (removal cannot conceal a record), report the chain verdict honestly instead of the hard-coded verify_ok true, and leave chain repair to the next history-repair. Duplicate check: searched salvage, chain break, scalar and history repair; pm-jbplbq owns the refusal and the single-fault salvage, pm-gh1715 the append-only chain repair."
 type: Issue
-status: open
+status: in_progress
 priority: 3
 tags[4]: history,recovery,robustness,salvage
 created_at: "2026-11-21T01:43:06.212Z"
-updated_at: "2026-11-21T01:43:06.212Z"
+updated_at: "2026-11-21T11:55:13.891Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#27675b3cf25f0c8ca46c5936"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A stream with a JSON null line and a chain break recovers with pm history-repair <id> --salvage-tail followed by pm history-repair <id> --append-only, executed in a spec; Salvage that only removes scalar lines never requires a verified chain and reports the real verify_ok and verify_errors; Salvage that discards an invalid suffix keeps its verified-prefix requirement"
@@ -15,7 +17,17 @@ risk: low
 confidence: 80
 expected_result: Every combination of a non-record line and a chain break has a pm-native recovery sequence
 actual_result: "Salvage refuses because the chain does not verify, and history-repair refuses because the decoder refuses the line"
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1715,related,"2026-11-21T01:43:06.212Z","harness:claude-code","cli:create:dep",detected
   pm-jbplbq,discovered_from,"2026-11-21T01:43:06.212Z","harness:claude-code","cli:create:dep",detected
+  pm-3os5p6,related,"2026-11-21T11:55:13.552Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-21T11:55:06.687Z","harness:claude-code","Implementation on branch fix/history-remedies-converge, 2026-11-21. In src/sdk/history/salvage.ts, inspectHistoryTail now separates the line scan (scanSalvageLines) from the chain judgment (judgeRetainedChain). Discarding an invalid suffix still requires a nonempty hash-verified prefix. Removing only lines that cannot hold a record (JSON null, boolean or number) no longer requires the chain to verify, because removal conceals nothing. The retained records then replay leniently for the id check and the ownership fallback, and the history_salvage record keeps the newest epoch a record declares, or none for an implicit stream. The result reports the real verdict: chain_drift_before, verify_ok and verify_errors, which were hard-coded to false, true and [] before. A history_chain_unverified warning names pm history-repair <id> --append-only --dry-run. A record-less stream (only scalar lines) still refuses. A broken chain with nothing to discard refuses with a next step naming the append-only repair preview. pm health then reports the stream as a bridgeable history_drift_chain_mismatch (pm-3os5p6), and the advised append-only repair bridges the break with the salvaged stream as a byte prefix. Proven in tests/integration/lifecycle/history-remedies.integration.spec.ts (the null line plus the bridgeable break, then salvage, append-only repair, a clean history_drift check and history --verify --strict-exit), together with the suffix refusal, the nothing-to-discard next step and the implicit-epoch case."
+files[2]{path,scope,note}:
+  src/sdk/history/salvage.ts,project,scalar-only salvage keeps an unverified chain and reports it; suffix salvage keeps the verified-prefix rule
+  tests/integration/lifecycle/history-remedies.integration.spec.ts,project,salvage then append-only repair of a double-fault stream
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle/history-remedies.integration.spec.ts tests/integration/history-durability.integration.spec.ts,project,900,"harness:claude-code","2026-11-21T11:43:30.370Z",local_mutation,fix/history-remedies-converge
+docs[1]{path,scope,note}:
+  docs/HISTORY_RECOVERY.md,project,"Recover an invalid history tail: double faults"
 body: ""

@@ -6,8 +6,10 @@ Tracked by [pm-96fsma](../.agents/pm/issues/pm-96fsma.toon),
 [pm-e3gn0z](../.agents/pm/issues/pm-e3gn0z.toon),
 [pm-wlqxg3](../.agents/pm/tasks/pm-wlqxg3.toon),
 [pm-nb4zwz](../.agents/pm/issues/pm-nb4zwz.toon),
-[pm-jbplbq](../.agents/pm/issues/pm-jbplbq.toon), and
-[pm-gh1715](../.agents/pm/issues/pm-gh1715.toon).
+[pm-jbplbq](../.agents/pm/issues/pm-jbplbq.toon),
+[pm-gh1715](../.agents/pm/issues/pm-gh1715.toon),
+[pm-3os5p6](../.agents/pm/issues/pm-3os5p6.toon), and
+[pm-rpucvb](../.agents/pm/issues/pm-rpucvb.toon).
 
 Project management depends on trustworthy context. History is not just an
 activity feed: it is the reconstructable source for prior item states, including
@@ -78,9 +80,18 @@ pm history-repair <id> --salvage-tail --json
 pm history <id> --verify --strict-exit
 ```
 
-Salvage requires a nonempty, hash-verified prefix and retains every record byte
-unchanged. It also removes lines whose JSON value is a null, a boolean or a
-number wherever they sit, because such a value cannot hold a record. A string,
+Salvage retains every record byte unchanged. Discarding an invalid suffix
+requires a nonempty, hash-verified prefix, because truncation must not cut a
+chain whose damage it cannot see. It also removes lines whose JSON value is a
+null, a boolean or a number wherever they sit, because such a value cannot hold
+a record. Removing only such lines conceals nothing, so it does not require the
+chain to verify: a stream with both a scalar line and a chain break is salvaged
+first, the result reports `verify_ok: false` with the `verify_errors`, its
+`history_chain_unverified` warning names the append-only repair preview, and
+`pm history-repair <id> --append-only` then bridges the break. A record-less
+stream (only scalar lines) still refuses, and with nothing to discard salvage
+names the repair the chain needs. A broken stream that declares no hash epoch
+keeps its salvage record implicit too. A string,
 an array or a complete malformed object might encode one, so salvage refuses
 those. A truncated object at the tail, such as `{"ts":`, is part of the invalid
 suffix after the verified prefix and is discarded with it.
@@ -119,11 +130,45 @@ console.log(preview.salvage);
 The CLI and MCP expose this SDK-owned contract; package authors do not need a
 separate recovery implementation.
 
+## Rebuild a missing history stream
+
+A live item whose history stream is absent, or holds no record (the default
+`history.missing_stream: auto_create` policy recreates a deleted stream as an
+empty file on read), is reported by `pm health` as
+`history_drift_missing_stream`. When the stream was deleted by mistake, restore
+it from version control first. Otherwise rebuild it:
+
+```bash
+pm history-repair <id> --dry-run --json
+pm history-repair <id> --json
+pm health --strict-exit
+```
+
+The repair writes one sealed `history_repair` record from the empty document
+to the on-disk item, after any whitespace the stream held, so it keeps every
+existing byte in either repair mode. `context.history_reseed` and the result's
+`reseed` receipt record why (`missing_stream` or `empty_stream`) and
+`prior_versions: "unrecorded"`: version 1 is the item as of the repair, and
+earlier versions cannot be read or restored. The record is maintenance, so it
+does not count as work on the item. `pm history-repair --all`, with or without
+`--append-only`, rebuilds every missing stream in one pass. A deleted item's
+empty stream has nothing to anchor on and keeps refusing, as do the audited
+merge-reconciliation modes, which prove their evidence against recorded
+history.
+
 ## Bridge a broken chain without rewriting it
 
 A change made outside pm, such as a hand edit or a merge resolution that
-bypassed the driver, breaks the item's history chain. `pm health` reports
-`history_drift_chain_mismatch`. Repair it append-only:
+bypassed the driver, breaks the item's history chain. `pm health` previews
+the append-only repair for every broken chain and reports
+`history_drift_chain_mismatch` when a bridge can repair it. A break only the
+rewriting repair can fix (`pm history-repair <id>`), such as a recorded patch
+that applies only on top of the unrecorded change, is reported as
+`history_drift_chain_unbridgeable`. A stream neither repair can keep, such as
+one whose sealed record no longer matches its seal, is reported as
+`history_drift_chain_unrepairable`. Restore that one from version control:
+the rewriting repair refuses it with `history_record_integrity_invalid`.
+Repair a bridgeable break append-only:
 
 ```bash
 pm history-repair <id> --append-only --dry-run --json

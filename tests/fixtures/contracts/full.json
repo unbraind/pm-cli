@@ -23600,6 +23600,40 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_chain_unbridgeable",
+      "class": "generic_failure",
+      "code": "history_drift_chain_unbridgeable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift chain unbridgeable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_drift_chain_unrepairable",
+      "class": "generic_failure",
+      "code": "history_drift_chain_unrepairable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift chain unrepairable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_drift_hash_mismatches"
       ],
@@ -23725,6 +23759,23 @@
         "core/history/read.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_record_integrity_invalid",
+      "class": "conflict",
+      "code": "history_record_integrity_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History record integrity invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/history/reanchor-refusal.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
