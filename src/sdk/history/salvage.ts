@@ -333,7 +333,7 @@ function replayRetainedRecords(id: string, selected: ReturnType<typeof inspectHi
   for (const entry of selected.entries) {
     // A verified chain is judged on the states its readers replay; only a broken one replays leniently.
     const applied = strict ? tryApplyReplayPatch(replay, entry.patch) : undefined;
-    replay = applied?.ok === true ? applied.document : lenientApplyReplayPatch(replay, entry.patch).document;
+    replay = applied?.ok === true ? applied.document : lenientApplyReplayPatch(replay, entry.patch, entry.op).document;
     assertSalvageIdentity(id, replay);
   }
   if (strict && selected.entries.length > 0) {

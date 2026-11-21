@@ -788,12 +788,20 @@ function applyPatchLeniently(
   return { working, convertedReplaceToAdd, skippedOps };
 }
 
-/** Apply a legacy patch op-by-op, recovering from drift that strict replay rejects: a `replace` whose path no longer exists is retried as `add`, and any op that still cannot apply against the current replay state is skipped. A patch may pass through a non-object root and restore the item; one that ends without an item root is replayed again without its root transitions, so the ops that did apply are kept and no empty state is invented. The resulting document is what the repaired entry's recomputed patch should target. */
+/** Apply a legacy patch op-by-op, recovering from drift that strict replay rejects: a `replace` whose path no longer exists is retried as `add`, and any op that still cannot apply against the current replay state is skipped. A patch may pass through a non-object root and restore the item. One that ends without an item root records a deletion when it belongs to a `delete` entry, which replays as the canonical empty document; any other is replayed again without its root transitions, so the ops that did apply are kept and no empty state is invented. The resulting document is what the repaired entry's recomputed patch should target. */
 export function lenientApplyReplayPatch(
   current: ReplayDocument,
   patch: HistoryPatchOp[],
+  operation?: string,
 ): LenientApplyResult {
   const first = applyPatchLeniently(current, patch, false);
+  if (!isObjectRoot(first.working) && operation === "delete") {
+    return {
+      document: { metadata: {}, body: "" },
+      convertedReplaceToAdd: first.convertedReplaceToAdd,
+      skippedOps: first.skippedOps,
+    };
+  }
   const { working, convertedReplaceToAdd, skippedOps } = isObjectRoot(first.working)
     ? first
     : applyPatchLeniently(current, patch, true);
@@ -904,7 +912,7 @@ function applyReanchorPatch(
       skipped: 0,
     };
   }
-  const lenient = lenientApplyReplayPatch(replay, projectedPatch);
+  const lenient = lenientApplyReplayPatch(replay, projectedPatch, entry.op);
   return {
     next: lenient.document,
     patch: jsonPatch.compare(replay, lenient.document) as HistoryPatchOp[],

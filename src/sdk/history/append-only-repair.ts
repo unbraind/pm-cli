@@ -10,7 +10,7 @@
 import { isUtf8 } from "node:buffer";
 import { constants } from "node:fs";
 import { lstat, open, readFile, stat, type FileHandle } from "node:fs/promises";
-import { createFileAtomic } from "../../core/fs/atomic-create.js";
+import { AtomicLinkUnsupportedError, createFileAtomic } from "../../core/fs/atomic-create.js";
 import { invalidateHistoryDriftCacheForPath } from "../../core/history/drift-cache.js";
 import { isFileAbsentError } from "../../core/fs/fs-utils.js";
 import jsonPatch from "fast-json-patch";
@@ -423,39 +423,27 @@ async function appendRepairRecord(
  * stream (or link) another writer created meanwhile wins untouched.
  */
 async function createStreamExclusively(id: string, historyPath: string, record: HistoryEntry): Promise<void> {
-  const contents = `${JSON.stringify(record)}\n`;
   let published: boolean;
   try {
-    published = await createFileAtomic(historyPath, contents, { sync: true });
+    published = await createFileAtomic(historyPath, `${JSON.stringify(record)}\n`, { sync: true });
   } catch (error: unknown) {
-    if (!HARD_LINK_UNSUPPORTED.has((error as NodeJS.ErrnoException).code ?? "")) throw error;
-    published = await createWithExclusiveOpen(historyPath, contents);
+    if (!(error instanceof AtomicLinkUnsupportedError)) throw error;
+    throw new PmCliError(
+      `History for ${id} cannot be rebuilt here: the tracker's filesystem cannot publish a new stream atomically (${error.code}).`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "history_append_only_repair_unavailable",
+        item_id: id,
+        reason: "stream_publish_unsupported",
+        required: "Rebuilding an absent stream needs a filesystem with hard links; nothing was written.",
+        nextSteps: [
+          `Restore ${id}'s history stream from version control or a backup, or run the repair from a clone on a filesystem with hard links.`,
+        ],
+      },
+    );
   }
   if (!published) {
     refuseAppendOnly(id, "stream_changed", `History for ${id} was created after the repair verified it; retry.`);
-  }
-}
-
-/** Link failures that mean the filesystem cannot hard-link, not that the path exists. */
-const HARD_LINK_UNSUPPORTED = new Set(["EPERM", "ENOTSUP", "EOPNOTSUPP", "ENOSYS"]);
-
-/**
- * Where hard links are unavailable (exFAT and some network shares), create the
- * stream the way `pm create` reserves a genesis stream: exclusive open, one
- * write, then a flush. Only a writer that ignores the lock can interleave.
- */
-async function createWithExclusiveOpen(historyPath: string, contents: string): Promise<boolean> {
-  const handle = await open(historyPath, "wx").catch((error: unknown) => {
-    if ((error as NodeJS.ErrnoException).code === "EEXIST") return null;
-    throw error;
-  });
-  if (handle === null) return false;
-  try {
-    await handle.writeFile(contents);
-    await handle.sync();
-    return true;
-  } finally {
-    await handle.close();
   }
 }
 
@@ -487,7 +475,7 @@ function refuseLinkedStream(id: string): never {
       reason: "stream_not_regular_file",
       required: "A history stream must be a regular file at its own path; no bytes were changed.",
       nextSteps: [
-        `Replace the link at ${id}'s history path with a regular copy of the stream it points to, then run pm health again.`,
+        `Restore ${id}'s own history stream as a regular file from version control or a backup. When none exists and the item is live, move the link aside and preview the rebuild with pm history-repair ${id} --dry-run.`,
       ],
     },
   );

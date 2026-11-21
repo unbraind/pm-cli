@@ -62,6 +62,13 @@ describe("history replay helpers", () => {
         ]),
       ).toEqual({ document: { metadata: { id: "pm-a", title: "kept" }, body: "updated" }, convertedReplaceToAdd: 0, skippedOps: 1 });
     }
+    // A root removal that ends a delete entry records the deletion as the canonical empty document.
+    expect(
+      lenientApplyReplayPatch({ metadata: { id: "pm-a" }, body: "b" }, [
+        { op: "remove", path: "" } as never,
+        { op: "remove", path: "/metadata/missing" },
+      ], "delete"),
+    ).toEqual({ document: { metadata: {}, body: "" }, convertedReplaceToAdd: 0, skippedOps: 1 });
     // A patch may pass through a non-object root and restore the item before it ends.
     const item = { metadata: { id: "pm-a", title: "t" }, body: "b" };
     expect(
