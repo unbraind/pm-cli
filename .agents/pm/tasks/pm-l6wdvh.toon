@@ -2,20 +2,22 @@ id: pm-l6wdvh
 title: "Shorten module-private identifiers in the unbundled runtime modules, restoring 1.76 MB of publication headroom"
 description: "The packed distribution stood at 19,985,525 of 20,000,000 B after PR 1764, so the next SDK change could not ship. Build finalization compacted the 714 tsc-emitted modules outside dist/cli-bundle with identifier shortening off, although the CLI bundle built from the same sources has always shortened them. Turn it on, keep export names, module paths, declarations and source-map names, and keep repeated builds byte-stable."
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags[4]: "area:release",distribution,packaging,performance
 created_at: "2026-11-22T02:21:01.211Z"
-updated_at: "2026-11-22T13:15:14.774Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#8fcf1176eceedef40be11ce4"
+updated_at: "2026-11-22T13:35:03.872Z"
+closed_at: "2026-11-22T13:35:03.850Z"
+completed_at: "2026-11-22T13:35:03.850Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "The packed distribution is at least 1.5 MB below the 20,000,000 B base ceiling on a clean build; Export names, module paths and declarations are unchanged and composed source maps keep original names, proven by the runtime compaction spec; A repeated finalization leaves an unchanged output and its source map byte-identical; The packed npx and bunx smoke passes"
 parent: pm-998juj
 risk: low
 confidence: high
+resolution: "Build finalization compacts tsc-emitted modules outside dist/cli-bundle with a digest ledger; the ledger is withdrawn before modules are overwritten and verified before each compile, so repeated, interrupted and post-injection builds compact raw output only"
 expected_result: "The packed distribution stays under the 20 MB publication ceiling with at least 1.5 MB of headroom, and repeated or interrupted builds emit the bytes a clean build emits"
+actual_result: "Packed size 18.23 MB against the 20 MB ceiling; runtime-compaction, finalize-build and prepare-build-cache specs pass"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-998juj,implements,"2026-11-22T02:21:01.211Z","harness:claude-code","cli:create:dep",detected
   pm-fx0rcb,related,"2026-11-22T02:21:01.211Z","harness:claude-code","cli:create:dep",detected
@@ -36,4 +38,5 @@ tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
 docs[2]{path,scope}:
   docs/RELEASING.md,project
   docs/REPOSITORY_TESTING.md,project
+close_reason: "Module-private identifiers are shortened in the unbundled runtime modules, restoring 1.76 MB of publication headroom"
 body: ""

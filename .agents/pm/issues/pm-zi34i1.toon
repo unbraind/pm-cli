@@ -2,21 +2,22 @@ id: pm-zi34i1
 title: "A nested SDK dispatch for another tracker reuses the caller's active extension scope, so the second tracker's guards and extension fields never load"
 description: "Reported by the Codex review of PR 1764. The active extension scope is one process-local boolean (activeExtensionScope in src/sdk/runtime.ts). runAction, PmClient item-transaction helpers and runInActiveExtensionScope all skip activation when it is set, without comparing the tracker the scope was opened for. A host that opens runWithActiveExtensions for tracker A and then dispatches a mutation for tracker B inside the callback runs it under A's registrations: a beforeMutation guard installed only in B never judges the write, and B's extension fields are unknown. The same call made outside the scope activates B and is refused. The behaviour predates PR 1764; the new finalize step inherits it through the shared rule."
 type: Issue
-status: in_progress
+status: closed
 priority: 3
 tags[4]: "area:sdk",extensions,guards,multi-tracker
 created_at: "2026-11-21T20:18:59.522Z"
-updated_at: "2026-11-22T13:15:15.316Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#8fcf1176eceedef40be11ce4"
+updated_at: "2026-11-22T13:35:01.782Z"
+closed_at: "2026-11-22T13:35:01.772Z"
+completed_at: "2026-11-22T13:35:01.772Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The active extension scope records the resolved tracker root it was opened for; A dispatch or runInActiveExtensionScope call for a different root activates that root's extensions or refuses with a typed error naming both roots, never reusing the other tracker's registrations; A spec installs a refusing guard in tracker B only and proves the nested write is judged; Same-root nesting keeps reusing the scope without a second activation"
 parent: pm-9rgaal
 risk: medium
 confidence: medium
+resolution: "The active scope records its physical tracker root, readiness and liveness; runAction, runWithActiveExtensions, runInActiveExtensionScope, PmClient transactions and injected host clients share one decision: the same ready, live root reuses the registrations, anything else activates the addressed tracker. Nested cwd changes and lifecycle-callback writes to an activating tracker are refused"
 expected_result: A write to tracker B is judged by tracker B's guards whether or not a scope for tracker A is open
-actual_result: "Inside a scope opened for tracker A, a write to tracker B runs under A's registrations and B's guards are skipped"
+actual_result: scope-tracker-identity.spec.ts passes 15 cases across two trackers; full suite and 100 percent coverage pass on the final head
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1656,discovered_from,"2026-11-21T20:18:59.522Z","harness:claude-code","cli:create:dep",detected
   pm-fyg1hl,related,"2026-11-22T12:27:15.956Z","harness:claude-code","cli:update:dep",detected
@@ -39,9 +40,18 @@ tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/extension/scope-tracker-identity.spec.ts,project,"harness:claude-code","2026-11-22T02:20:49.430Z",local_mutation,fix/sdk-admission-scope-identity
 docs[1]{path,scope}:
   docs/SDK.md,project
+close_reason: "An extension scope is bound to its tracker on every SDK call path, including injected host clients"
 contract_change:
   api: "runAction, runWithActiveExtensions, runInActiveExtensionScope, PmClient item-transaction methods (nested calls inside an open extension scope)"
   before: "Any nested call reused the open scope whatever tracker it addressed, ignored a nested noExtensions and a nested cwd in runAction, and a nested runWithActiveExtensions with its own cwd waited for the activation gate"
   after: "A nested call for another tracker activates that tracker in request-local registries; a nested noExtensions call runs in empty registries; a nested cwd other than the current directory is refused with reason nested_cwd_unavailable; runAction publishes its scope, so nested same-tracker work reuses it and a nested extension action dispatches; a scope ends when its callback settles"
   migrate: Inside a scope address a tracker with path instead of cwd. A host that relied on tracker A registrations judging tracker B writes must install the guard in tracker B. Await nested work inside the callback that started it
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-zi34i1
+  gate_id: extension-scope-tracker-identity
+  negative_control: "tests/unit/sdk/extension/scope-tracker-identity.spec.ts drives nested, resumed, lifecycle and host-client writes across two trackers and requires each tracker's own guard to refuse; the original four cases fail on main"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/extension/scope-tracker-identity.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
