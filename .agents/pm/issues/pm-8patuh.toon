@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:cli",schema,validation
 created_at: "2026-11-22T21:23:51.347Z"
-updated_at: "2026-11-22T21:23:51.347Z"
+updated_at: "2026-11-22T21:43:15.467Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Reproduce both cases in a scratch tracker and record the observed failure; schema add-field, profile apply and rename-field refuse a flag or alias that is not exactly one option spelling, with a typed refusal naming the spelling; The implicit help flags are reserved for every command a field is registered for; validate reports stored definitions with such spellings"
@@ -16,4 +16,6 @@ confidence: medium
 expected_result: A field flag that the parser would split or that shadows implicit help is refused at registration and reported by validate when already stored
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-pta8um,discovered_from,"2026-11-22T21:23:51.347Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-22T21:43:15.467Z","harness:claude-code","Additional cases for this item from the second local review of PR 1768 (2026-11-22), none reproduced here yet:\n\n- rename-field accepts a target containing a comma and writes it as a flag, which the parser then splits; add-field already refuses commas.\n- An explicit short flag or alias equal to a built-in short option (for example the priority short flag) is accepted, after which registration skips it and the field has no usable spelling.\n- With a fields file that holds a duplicate key, a rename preview reads the hydrated definition while execution copies the first stored entry, so a preview can succeed where execution refuses after the plan was saved. The stage step does refuse; the preview should read the same entry.\n- A field whose key equals a global output control but whose flag is different (key json with another flag) is refused although the two flags work independently on the command line; decide whether a bare key should be compared only with options that reach the field reader.\n"
 body: ""

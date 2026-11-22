@@ -12,7 +12,7 @@
  * shadow is silent.
  */
 
-import { resolveSubcommandFlagContractsForCommand, type CliFlagContract } from "../cli-contracts/flag-contracts.js";
+import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand, type CliFlagContract } from "../cli-contracts/flag-contracts.js";
 import { BUILTIN_FIELD_KEYS, type NormalizedAddFieldInput } from "../../core/schema/fields-file.js";
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -82,7 +82,8 @@ function builtInOptions(command: string): ReadonlyMap<string, string> {
   let options = builtInOptionsByCommand.get(command);
   if (options === undefined) {
     const declared = new Map<string, string>();
-    for (const contract of resolveSubcommandFlagContractsForCommand(command) as CliFlagContract[]) {
+    // Root switches such as --version and --explain are parsed on every command but are not all repeated in a command's own contract.
+    for (const contract of [...resolveSubcommandFlagContractsForCommand(command), ...GLOBAL_FLAG_CONTRACTS] as CliFlagContract[]) {
       for (const key of [contract.flag, ...(contract.aliases ?? [])].flatMap(optionKeys)) {
         if (!declared.has(key)) declared.set(key, contract.flag);
       }

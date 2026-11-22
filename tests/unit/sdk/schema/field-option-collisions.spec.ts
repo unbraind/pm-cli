@@ -49,6 +49,11 @@ describe("resolveFieldOptionCollisions", () => {
     ]);
     // The negation is removed once, as the parser does: a doubled prefix is a different option.
     expect(resolveFieldOptionCollisions([field("review_visibility", ["list"], { cli_aliases: ["no-no-full"] })])).toEqual([]);
+    // Root switches are parsed on every command even where the command's own contract does not repeat them.
+    expect(resolveFieldOptionCollisions([field("explain", ["list"]), field("version", ["create"])]).map(describeFieldOptionCollision)).toEqual([
+      "--explain shadows built-in --explain on pm list",
+      "--version shadows built-in --version on pm create",
+    ]);
     // Several options shadowed on one command are ordered by option.
     expect(resolveFieldOptionCollisions([field("owner_team", ["list"], { cli_flag: "sort", cli_aliases: ["limit", "json"] })]).map((row) => row.option)).toEqual(["--json", "--limit", "--sort"]);
     // Two spellings of one built-in option are one collision.
