@@ -59,14 +59,23 @@ export function verifyReleaseSourceRun(provenance, run, defaultBranch) {
   return true;
 }
 
-/** Select one bounded immutable artifact from the complete verified producer inventory. */
-function selectProducerBindingArtifact(pages, source, defaultBranch) {
+/** Whether one listed artifact is a bounded, unexpired binding of exactly the declared producer run. */
+function isDeclaredProducerBinding(artifact, source, defaultBranch) {
+  return artifact.expired === false && Number.isSafeInteger(artifact.size_in_bytes) && artifact.size_in_bytes >= 1 && artifact.size_in_bytes <= 4096 && artifact.workflow_run?.id === source.run_id && artifact.workflow_run.head_sha === source.source_sha && artifact.workflow_run.head_branch === defaultBranch;
+}
+
+/** The inventory's artifacts and this attempt's bindings among them, or a refusal of a malformed listing. */
+function producerBindingInventory(pages, source) {
   if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) => !Array.isArray(page.artifacts))) throw new Error("Invalid release producer binding inventory.");
   const artifacts = pages.flatMap((page) => page.artifacts);
-  const matching = artifacts.filter((artifact) => artifact.name === `release-producer-binding-${source.run_attempt}`);
-  const artifact = matching[0];
-  if (artifacts.length !== pages[0].total_count || matching.length !== 1 || artifact.expired !== false || !Number.isSafeInteger(artifact.size_in_bytes) || artifact.size_in_bytes < 1 || artifact.size_in_bytes > 4096 || artifact.workflow_run?.id !== source.run_id || artifact.workflow_run.head_sha !== source.source_sha || artifact.workflow_run.head_branch !== defaultBranch) throw new Error("Missing, ambiguous or mismatched release producer binding.");
-  return artifact;
+  return { complete: artifacts.length === pages[0].total_count, matching: artifacts.filter((artifact) => artifact.name === `release-producer-binding-${source.run_attempt}`) };
+}
+
+/** Select one bounded immutable artifact from the complete verified producer inventory. */
+function selectProducerBindingArtifact(pages, source, defaultBranch) {
+  const { complete, matching } = producerBindingInventory(pages, source);
+  if (!complete || matching.length !== 1 || !isDeclaredProducerBinding(matching[0], source, defaultBranch)) throw new Error("Missing, ambiguous or mismatched release producer binding.");
+  return matching[0];
 }
 
 const INVENTORY_REREAD_DELAYS_MS = [1000, 2000, 4000, 8000, 15_000];
@@ -78,16 +87,17 @@ function pauseSync(milliseconds) {
 
 /**
  * Read the producer run's artifact inventory. The listing trails an upload finalized moments
- * earlier, so a well-formed inventory that is still partial, or does not yet list this attempt's
- * binding, is read again within a bounded wait. A duplicate or mismatched binding is never
- * retried: the last inventory read is judged exactly as a single read was.
+ * earlier, so an inventory that does not yet list this attempt's binding, or lists one valid
+ * binding while still partial, is read again within a bounded wait. A duplicate or invalid
+ * binding visible in any read ends the wait at once, and the last inventory read is judged
+ * exactly as a single read was.
  */
-function readProducerBindingInventory(execute, options, source, pause) {
+function readProducerBindingInventory(execute, options, source, defaultBranch, pause) {
   const read = () => JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/artifacts?per_page=100`, "--paginate", "--slurp"], options));
   const trailing = (pages) => {
-    if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) => !Array.isArray(page.artifacts))) return false;
-    const artifacts = pages.flatMap((page) => page.artifacts);
-    return artifacts.length !== pages[0].total_count || !artifacts.some((artifact) => artifact.name === `release-producer-binding-${source.run_attempt}`);
+    const { complete, matching } = producerBindingInventory(pages, source);
+    if (matching.length === 0) return true;
+    return !complete && matching.length === 1 && isDeclaredProducerBinding(matching[0], source, defaultBranch);
   };
   let pages = read();
   for (const delay of INVENTORY_REREAD_DELAYS_MS) {
@@ -122,7 +132,7 @@ export function recordReleasePublicationOrigin(env = process.env, cwd = process.
     const repository = JSON.parse(execute("gh", ["api", `repos/${source.repository}`], options));
     const run = JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/attempts/${source.run_attempt}`], options));
     verifyReleaseSourceRun(source, run, repository.default_branch);
-    const pages = readProducerBindingInventory(execute, options, source, pause);
+    const pages = readProducerBindingInventory(execute, options, source, repository.default_branch, pause);
     const artifact = selectProducerBindingArtifact(pages, source, repository.default_branch);
     const directory = mkdtempSync(path.join(tmpdir(), "pm-producer-binding-"));
     const releaseCleanup = registerTempCleanup(directory);

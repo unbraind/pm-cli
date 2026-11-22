@@ -4625,11 +4625,15 @@ operand `id` is refused with an `ids` hint (flat or inside `list`), a nested
 `list` record replaces every flat selector, so a flat `ids`, `limit`, `offset`
 or `filter*` key beside it is refused, and the status selection is always
 `filterStatus` (`list.status` is refused). Every other key of a `list` record
-must be one the list contract reads (a declared list option in its camelCase
-spelling, such as `assigneeFilter`, `sort` or `notes: false`) or a list filter
-of a runtime schema field; a misspelled selector such as `assigneee` is
-refused by name with the nearest declared key, where it was previously carried
-unread while the update reached every row the remaining selectors matched. A `list` or `update` value that is
+must be one the bulk selection applies: a declared list option (`assigneeFilter`,
+`sort`, `notes: false`, with the aliases the list reader accepts, such as
+`assignee_filter`), an SDK-only selector (`excludeTerminal`, `lifecycleBucket`,
+`dependencyBlocked`) or a list filter of a runtime schema field. A misspelled
+selector such as `assigneee` is refused by name with the nearest declared key,
+and the intent keys `for` and `tokenBudget` are refused with a `list.limit`
+hint, because they bound a list command's page and not the rows a bulk write
+reaches; both were previously carried unread while the update reached every
+row the remaining selectors matched. A `list` or `update` value that is
 no object, a snake_case selector such as `filter_status`, a CLI input-source
 option such as `bodyFile`, and a top-level argument that is neither a runtime
 argument nor an output control (including a top-level `force`, which names its

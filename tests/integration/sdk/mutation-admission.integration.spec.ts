@@ -96,7 +96,9 @@ describe("mutation request admission", () => {
         // A misspelled or pre-normalized selector inside the list record would be carried unread and widen the write.
         [{ list: { ids: [id], assigneee: "alice" }, update: { description: "changed" } }, 'update-many list option "assigneee". Did you mean "assignee"?'],
         [{ list: { ids: [id], noNotes: true }, update: { description: "changed" } }, 'update-many list option "noNotes"'],
-        [{ list: { ids: [id], tree_depth: "1" }, update: { description: "changed" } }, 'update-many list option "tree_depth". Did you mean "treeDepth"?'],
+        // An intent bounds a list command's page, not the rows a bulk write reaches.
+        [{ list: { ids: [id], for: "triage" }, update: { description: "changed" } }, 'update-many "list.for" does not bound a bulk selection. Bound the selection with list.limit.'],
+        [{ list: { ids: [id], tokenBudget: 1000 }, update: { description: "changed" } }, "list.tokenBudget"],
         // A snake_case selector would select nothing, and CLI input-source flags are not read by the bulk runner.
         [{ ids: [id], filter_status: "open", description: "changed" }, "filter_status"],
         [{ ids: [id], update: { description: "changed", bodyFile: "body.md" } }, "bodyFile"],
@@ -130,7 +132,7 @@ describe("mutation request admission", () => {
       await client.run("update-many", { options: { list: { ids: [id] }, update: { description: "nested", externalId: "nested" }, checkpoint: false, fullChangedFields: true } });
       expect((await client.get(id, { full: true })).item).toMatchObject({ external_id: "nested", description: "nested", estimated_minutes: 5 });
       // Every selector the list contract reads stays accepted inside the list record, with a runtime field's list filter.
-      await expect(client.run("update-many", { options: { list: { ids: [id], assigneeFilter: "unassigned", notes: false, sort: "priority", regionCode: "none" }, update: { description: "listed" }, dryRun: true } })).resolves.toMatchObject({ dry_run: true });
+      await expect(client.run("update-many", { options: { list: { ids: [id], assigneeFilter: "unassigned", notes: false, sort: "priority", tree: true, tree_depth: "1", assignee_filter: "unassigned", filterEstimateMissing: false, excludeTerminal: true, lifecycleBucket: "open", regionCode: "none" }, update: { description: "listed" }, dryRun: true } })).resolves.toMatchObject({ dry_run: true });
       // Spellings the dispatch consumes stay accepted: a snake_case output control and the annotation snapshot guard.
       await expect(client.run("update-many", { options: { ids: [id], description: "snake", output_format: "json", dry_run: true } })).resolves.toMatchObject({ dry_run: true });
       await expect(client.run("update-many", { options: { ids: [id], description: "guarded", documentAnnotationSnapshot: { comments: [], notes: [], learnings: [] } } })).resolves.toBeDefined();

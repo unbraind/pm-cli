@@ -6,6 +6,7 @@ import { resolvePmRoot } from "../../core/store/paths.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../cli-contracts/commander-mutation-options.js";
+import { LIST_COMMANDER_STRING_OPTION_CONTRACTS } from "../cli-contracts/commander-types.js";
 import { CREATE_FLAG_CONTRACTS, LIST_FILTER_FLAG_CONTRACTS, UPDATE_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
 import { isMcpMutationTransportInput, isRuntimeRecord, UPDATE_MANY_FLAT_CONTROL_KEYS } from "../runtime-input.js";
 
@@ -72,8 +73,23 @@ const FLAT_SELECTION_KEYS = new Set([...UPDATE_MANY_FLAT_CONTROL_KEYS].filter((k
 
 const camelKey = (key: string): string => key.replace(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
 
-/** Every key the list contract reads from a list record: each declared list flag and alias, a negated flag under its positive key. */
-const listRecordKeys = (): Set<string> => new Set(LIST_FILTER_FLAG_CONTRACTS.flatMap(({ flag, aliases }) => [flag, ...(aliases ?? [])]).map((flag) => flag.replace(/^--(?:no-)?/u, "").replace(/[-_]([a-z])/gu, (_match, letter: string) => letter.toUpperCase())));
+/** Intent keys a list command turns into a row limit; the bulk planner reads rows directly and would apply neither. */
+const LIST_INTENT_KEYS = new Set(["for", "tokenBudget", "token_budget"]);
+
+/** Selectors of the SDK list contract that have no CLI flag. */
+const SDK_LIST_SELECTOR_KEYS = ["excludeTerminal", "lifecycleBucket", "dependencyBlocked"];
+
+/**
+ * Every key the bulk planner's list read applies from a list record: each declared list flag
+ * (a negated flag under its positive key), every alias the list option reader accepts, and the
+ * SDK-only selectors; the intent keys are left out, because nothing bounds the write from them.
+ */
+function listRecordKeys(): Set<string> {
+  const flagKeys = LIST_FILTER_FLAG_CONTRACTS.map(({ flag }) => flag.replace(/^--(?:no-)?/u, "").replace(/-([a-z])/gu, (_match, letter: string) => letter.toUpperCase()));
+  const keys = new Set([...flagKeys, ...LIST_COMMANDER_STRING_OPTION_CONTRACTS.flatMap((contract) => contract.keys), "filterEstimateMissing", ...SDK_LIST_SELECTOR_KEYS]);
+  for (const key of LIST_INTENT_KEYS) keys.delete(key);
+  return keys;
+}
 
 /** One refusal shape for a key the bulk path would not read where the caller put it. */
 function refuseUnread(message: string, field: string, required: string, reason = "unknown_mutation_option"): never {
@@ -107,14 +123,17 @@ function assertBulkContainers(options: Record<string, unknown>): void {
 /**
  * One selection, stated in one place: the plan reads status from filterStatus only, a list record
  * replaces every flat selector, and `id` is a single update's operand. Any other key must be one
- * the list contract reads or a list filter of a runtime schema field; a misspelled selector would
- * otherwise be carried unread and widen the write to every row the remaining selectors match.
+ * the bulk planner's list read applies or a list filter of a runtime schema field; a misspelled
+ * selector, or an intent key that bounds only a list command, would otherwise be carried unread
+ * and widen the write to every row the remaining selectors match.
  */
 async function assertListRecord(list: Record<string, unknown>, outerKeys: Set<string>, pmRoot: string | undefined): Promise<void> {
   if (Object.hasOwn(list, "id")) refuseKey("update-many list", "id", new Set(["ids"]));
   if (Object.hasOwn(list, "status")) refuseUnread('update-many "list.status" is not read beside this selection.', "list.status", "State the status selection as filterStatus beside the list record.");
   const flat = [...outerKeys].find((key) => FLAT_SELECTION_KEYS.has(key));
   if (flat !== undefined) refuseUnread(`update-many "${flat}" is not read beside this selection.`, flat, `Put the selection inside list, or drop the list record; a flat "${flat}" beside it is not read.`);
+  const intent = Object.keys(list).find((key) => LIST_INTENT_KEYS.has(key));
+  if (intent !== undefined) refuseUnread(`update-many "list.${intent}" does not bound a bulk selection.`, `list.${intent}`, "Bound the selection with list.limit.");
   await refuseUndeclaredKeys("update-many list", "list", Object.keys(list), listRecordKeys(), pmRoot);
 }
 

@@ -125,7 +125,16 @@ describe("tag-carried release provenance", () => {
       expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: copiedTag }, root, execute, pause)).toThrow("producer binding");
       for (const artifacts of [[], [artifact, artifact], [{ ...artifact, expired: true }], [{ ...artifact, size_in_bytes: 4097 }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, id: 43 } }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, head_sha: source } }]]) {
         responses.set(artifactEndpoint, [{ total_count: artifacts.length, artifacts }]);
+        pauses.length = 0;
         expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute, pause)).toThrow("producer binding");
+        // Only an inventory that lists no binding yet is read again; a duplicate or invalid binding is refused at once.
+        expect(pauses).toEqual(artifacts.length === 0 ? [1000, 2000, 4000, 8000, 15_000] : []);
+        if (artifacts.length > 0) {
+          // The same holds while the listing is still partial: a visible defect is never waited out.
+          responses.set(artifactEndpoint, [{ total_count: artifacts.length + 1, artifacts }]);
+          expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute, pause)).toThrow("producer binding");
+          expect(pauses).toEqual([]);
+        }
         expect(JSON.parse(readFileSync(output, "utf8")).source_run_verified).toBe(false);
       }
       responses.set(artifactEndpoint, [{ total_count: 1, artifacts: artifact }]);

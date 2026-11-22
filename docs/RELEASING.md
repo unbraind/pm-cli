@@ -210,11 +210,11 @@ uses `--push --defer-push` to write an exact producer binding. Auto Release uplo
 prepared refs. Publication independently fetches the verified run's artifact and
 compares the tag name, target commit, tag object and declaration. Missing, expired,
 ambiguous or mismatched evidence fails closed; artifact retention is 90 days.
-The artifact listing can trail an upload finalized moments earlier, so a
-well-formed inventory that is still partial or does not yet list the attempt's
-binding is read again within a bounded wait of 30 seconds
+The artifact listing can trail an upload finalized moments earlier, so an
+inventory that does not yet list the attempt's binding, or lists one valid
+binding while still partial, is read again within a bounded wait of 30 seconds
 ([pm-jvb9pk](../.agents/pm/issues/pm-jvb9pk.toon)); a duplicate, expired,
-oversized or mismatched binding is never retried.
+oversized or mismatched binding visible in any read is refused at once.
 A branch advance after sealing refuses publication rather than rebasing into a
 different target. Local `--push` refuses before Git inspection or asset mutation;
 local preparation without pushing remains supported. Historical admission remains
