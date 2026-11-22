@@ -3562,6 +3562,14 @@
       ],
       "package_version": "2026.11.21",
       "reason": "pm-w7clh6: PmUpdateManyActionOptions widens its clearable update fields to accept null, matching PmUpdateActionOptions; every previously valid value stays valid"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PROFILE_LINT_CODES",
+        "signature ./sdk/authoring:PROFILE_LINT_CODES"
+      ],
+      "package_version": "2026.11.22",
+      "reason": "PROFILE_LINT_CODES gains field_option_collision (pm-pta8um); the tuple is additive, existing codes are unchanged"
     }
   ],
   "entrypoints": {
@@ -17156,7 +17164,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PROFILE_LINT_CODES",
-          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
+          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"field_option_collision\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
         },
         {
           "classification": "supported",
@@ -25694,7 +25702,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PROFILE_LINT_CODES",
-          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
+          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"field_option_collision\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
         },
         {
           "classification": "supported",
@@ -41115,6 +41123,7 @@
     "field_duplicate",
     "field_invalid",
     "field_mcp_input_collision",
+    "field_option_collision",
     "finalization_invalid_document",
     "github_source_entry_unbuilt",
     "hierarchy_cardinality_created",
@@ -41332,6 +41341,7 @@
     "reported_zero_tests",
     "reserved_item_field",
     "retry_failed",
+    "schema_field_option_collision",
     "schema_migration_input_required",
     "semantic_spelling_collision",
     "settings_invalid",
@@ -41457,6 +41467,7 @@
     "validate_metadata_missing_risk",
     "validate_metadata_missing_sprint",
     "validate_resolution_missing_fields",
+    "validate_schema_field_option_collision",
     "validate_storage_duplicate_item_ids",
     "validate_storage_history_conflict_markers",
     "validate_storage_resurrected_items",

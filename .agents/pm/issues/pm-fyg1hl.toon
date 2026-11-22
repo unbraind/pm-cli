@@ -2,19 +2,41 @@ id: pm-fyg1hl
 title: "A configuration-only settings scope does not expire for work captured inside it, so a deferred SDK read keeps seeing no file-backed schema fields"
 description: "Found by review of the host-client preview path. PmClient.previewItemMutations and itemTransactions.status run their extension activation inside runWithConfigurationOnlySettings. A callback captured during that activation and run after the preview settled still carries the configuration-only policy in its async context, so a later same-tracker read such as schemaListFields returns no file-backed fields. The ordinary client path has had this shape since previews were introduced; the host-client path gained it when host transactions started to activate their own tracker. The extension scope already expires on settle (live flag); the settings policy layer has no equivalent."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: "area:sdk",scope-lifetime,settings
 created_at: "2026-11-22T12:27:03.471Z"
-updated_at: "2026-11-22T12:27:03.471Z"
+updated_at: "2026-11-22T20:07:43.511Z"
+closed_at: "2026-11-22T20:02:43.109Z"
+completed_at: "2026-11-22T20:02:43.109Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "runWithConfigurationOnlySettings marks its layer expired when its callback settles and readers skip an expired layer; A spec captures a read inside a preview's activation, runs it after the preview settles, and sees file-backed schema fields"
 parent: pm-9rgaal
 risk: low
 confidence: medium
-expected_result: A settings policy layer ends when the call that opened it settles; deferred work reads ordinary settings
-actual_result: Deferred work captured inside a preview keeps configuration-only settings indefinitely
+resolution: "The layer carries a settled flag set in a finally block and its predicate checks it first, so work captured inside a preview and run afterwards reads file-backed schema normally while an enclosing live scope still applies."
+expected_result: A read captured during a preview's activation and run after the preview settled sees file-backed schema fields
+actual_result: "The settings store spec and the new SDK preview spec pass and both fail with the change reverted; 311 related settings, transaction and telemetry cases pass"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-zi34i1,discovered_from,"2026-11-22T12:27:03.471Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-22T20:02:42.438Z","harness:claude-code","Implementation evidence (2026-11-22).\n\nrunWithConfigurationOnlySettings now wraps its policy layer in a settled flag that is set in a finally block, and the layer's predicate reads that flag before the caller's own predicate. A continuation that captured the scope's async context and runs after the callback returned or threw therefore reads the tracker normally. An enclosing scope that is still running keeps protecting the same root, so a settled inner layer does not release an outer preview.\n\nSpecs. The settings store spec captures a read inside the scope, releases it after the scope returned and after it threw, and sees the file-backed status both times; it also proves an outer live layer still applies after an inner one settled. A new SDK spec installs an extension whose activation defers a schema field read, runs a host preview, and sees the file-backed field only after the preview settled, while the read made during activation still sees none. Both specs fail with the fix reverted (the deferred read returned an empty field list).\n\nCallers checked: the CLI structured preview, the SDK transaction context, the settings dry run and the telemetry flush all await their work inside the callback, so none relied on the layer outliving it.\n"
+files[3]{path,scope}:
+  src/core/store/settings.ts,project
+  tests/unit/core/store/settings-store.spec.ts,project
+  tests/unit/sdk/transactions/preview-scope-expiry.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/preview-scope-expiry.spec.ts,project,"harness:claude-code","2026-11-22T18:57:41.419Z",local_mutation,fix/sdk-field-option-collisions-settings-scope-expiry
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: A configuration-only settings layer now expires when its callback settles
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-fyg1hl
+  gate_id: configuration-only-settings-scope-expiry
+  negative_control: tests/unit/sdk/transactions/preview-scope-expiry.spec.ts defers a schema field read during a preview activation and requires it to see the file-backed field after the preview settled; with the change reverted the read returns no fields
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/preview-scope-expiry.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

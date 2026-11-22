@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { PmClient } from "../../../src/sdk/index.js";
@@ -135,11 +135,18 @@ describe("mutation request admission", () => {
       // Every selector the list contract reads stays accepted inside the list record, with a runtime field's list filter.
       await expect(client.run("update-many", { options: { list: { ids: [id], assigneeFilter: "unassigned", notes: false, sort: "priority", tree: true, tree_depth: "1", assignee_filter: "unassigned", filterEstimateMissing: false, excludeTerminal: true, lifecycleBucket: "open", regionCode: "none" }, update: { description: "listed" }, dryRun: true } })).resolves.toMatchObject({ dry_run: true });
       // A runtime schema field that shares an intent's name is this tracker's list filter, not an unread intent.
-      expect(context.runCli(["schema", "add-field", "token_budget", "--type", "string", "--commands", "create,list", "--json"]).code).toBe(0);
+      // add-field now refuses this name on list (pm-pta8um); a field stored by an earlier release keeps this meaning.
+      expect(context.runCli(["schema", "add-field", "token_budget", "--type", "string", "--commands", "create,list", "--json"]).code).toBe(2);
+      const fieldsPath = path.join(context.pmPath, "schema", "fields.json");
+      const stored = JSON.parse(await readFile(fieldsPath, "utf8")) as { fields: unknown[] };
+      stored.fields.push({ key: "token_budget", type: "string", commands: ["create", "list"] });
+      await writeFile(fieldsPath, JSON.stringify(stored));
       await expect(client.run("update-many", { options: { list: { ids: [id], tokenBudget: "none" }, update: { description: "filtered" }, dryRun: true } })).resolves.toMatchObject({ dry_run: true });
       // A projection option the planner clears is harmless, until a schema field filters under that name: its filter would be dropped.
       await expect(client.run("update-many", { options: { list: { ids: [id], full: true, brief: true }, update: { description: "projected" }, dryRun: true } })).resolves.toMatchObject({ dry_run: true });
-      expect(context.runCli(["schema", "add-field", "compact", "--type", "string", "--commands", "create,list", "--json"]).code).toBe(0);
+      expect(context.runCli(["schema", "add-field", "compact", "--type", "string", "--commands", "create,list", "--json"]).code).toBe(2);
+      stored.fields.push({ key: "compact", type: "string", commands: ["create", "list"] });
+      await writeFile(fieldsPath, JSON.stringify(stored));
       await expect(client.run("update-many", { options: { list: { ids: [id], compact: "west" }, update: { description: "widened" } } })).rejects.toMatchObject({ message: expect.stringContaining('"list.compact" is not read beside this selection'), context: { changed: false, field: "list.compact" } });
       // Spellings the dispatch consumes stay accepted: a snake_case output control and the annotation snapshot guard.
       await expect(client.run("update-many", { options: { ids: [id], description: "snake", output_format: "json", dry_run: true } })).resolves.toMatchObject({ dry_run: true });

@@ -80,6 +80,7 @@ import {
   readSettings,
   resolveGovernanceKnobs,
 } from "../core/store/settings.js";
+import { assertFieldOptionsAvailable } from "./schema/field-option-collisions.js";
 import { resolvePmToolCustomFieldCollision } from "./cli-contracts/tool-schema.js";
 import { WORKFLOW_POLICY_ACTIONS } from "./governance/workflow-policy.js";
 export * from "./governance/workflow-policy.js";
@@ -1669,6 +1670,8 @@ export async function runSchemaAddField(
       EXIT_CODE.USAGE,
     );
   }
+
+  assertFieldOptionsAvailable(normalized);
 
   const settings = await readSettings(pmRoot);
   const schema = normalizeRuntimeSchemaSettings(settings.schema);

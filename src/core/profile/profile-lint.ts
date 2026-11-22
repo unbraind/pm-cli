@@ -79,6 +79,7 @@ export const PROFILE_LINT_CODES = [
   "field_invalid",
   "field_duplicate",
   "field_mcp_input_collision",
+  "field_option_collision",
   "workflow_type_empty",
   "workflow_type_unknown",
   "workflow_duplicate_type",

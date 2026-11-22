@@ -1,0 +1,26 @@
+id: pm-gh1767
+title: "GH-1767: Windows nightly history append test asserts a POSIX name-length errno"
+description: "Nightly Validation run 45021851394 (windows-latest, Node 24, shard 3/4) failed on both attempts in tests/unit/sdk/history/reseed-append.spec.ts, case passes other creation failures through. The fixture creates a stream under a 300-character file name and asserts the errno ENAMETOOLONG. The Windows runner reports ENOENT for the same over-long name. The product contract under test is unchanged and correct: appendRecordToVerifiedStream propagates a non-collision creation failure unchanged. Only the expectation is platform-specific. This is the same class as pm-v3umtp (GH-1112)."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: ci,"gh:1767",nightly,tests,windows
+created_at: "2026-11-22T18:43:04.907Z"
+updated_at: "2026-11-22T20:20:20.366Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#b9e4cf9ce07ea8638f2c8986"
+author: "harness:claude-code"
+estimated_minutes: 30
+acceptance_criteria: "The case asserts that the propagated error carries the same code the filesystem reports for a direct exclusive create of the same path, with no errno literal; The case still proves a non-collision creation failure is not converted into a stream_changed refusal; The spec passes on Linux locally and the Windows nightly leg is green on the next scheduled run"
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: "The history append spec passes on Linux, macOS and the Windows Node 24 nightly leg without an errno literal"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-11-22T18:43:04.907Z","harness:claude-code","cli:create:dep",detected
+  pm-v3umtp,related,"2026-11-22T18:43:04.907Z","harness:claude-code","cli:create:dep",detected
+files[1]{path,scope}:
+  tests/unit/sdk/history/reseed-append.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history/reseed-append.spec.ts,project,"harness:claude-code","2026-11-22T18:57:36.062Z",local_mutation,fix/sdk-field-option-collisions-settings-scope-expiry
+body: ""

@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -365,6 +365,13 @@ describe("runtime MCP capabilities", () => {
 
   it("projects runtime fields into schemas and mutation options", async () => {
     await withTempPmPath(async (context) => {
+      // Two colliding names are built-in CLI options that add-field now refuses (pm-pta8um). A tracker may still
+      // hold such fields from an earlier release, so they are stored before the first audited schema write.
+      const fieldsPath = path.join(context.pmPath, "schema", "fields.json");
+      const stored = JSON.parse(await readFile(fieldsPath, "utf8").catch(() => '{"fields":[]}')) as { fields: unknown[] };
+      stored.fields.push(...["path", "allow_missing_parent"].map((key) => ({ key, type: "string", commands: ["create", "update"] })));
+      await mkdir(path.dirname(fieldsPath), { recursive: true });
+      await writeFile(fieldsPath, JSON.stringify(stored));
       const addField = context.runCli([
         "schema",
         "add-field",
@@ -397,9 +404,7 @@ describe("runtime MCP capabilities", () => {
       }
       for (const collision of [
         "cwd",
-        "path",
         "options",
-        "allow-missing-parent",
       ]) {
         expect(
           context.runCli([

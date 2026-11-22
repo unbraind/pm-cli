@@ -137,6 +137,40 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("expires a configuration-only layer for work captured inside it and run after it settles", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      await writeLegacySettings(pmRoot);
+      await readSettings(pmRoot);
+      const statusesPath = path.join(pmRoot, "schema", "statuses.json");
+      await fs.mkdir(path.dirname(statusesPath), { recursive: true });
+      await fs.writeFile(statusesPath, JSON.stringify({ statuses: [...DEFAULT_STATUS_DEFINITIONS, { id: "reviewed", roles: ["active"] }] }));
+      const statusIds = async (): Promise<string[]> => (await readSettings(pmRoot)).schema.statuses.map((status) => status.id);
+      for (const outcome of ["returns", "throws"]) {
+        let release: () => void = () => undefined;
+        let deferred: Promise<string[]> = Promise.resolve([]);
+        const scope = runWithConfigurationOnlySettings(pmRoot, async () => {
+          // The continuation is created here, so it carries this scope's async context when it runs later.
+          deferred = new Promise<void>((resolve) => { release = resolve; }).then(statusIds);
+          expect(await statusIds()).not.toContain("reviewed");
+          if (outcome === "throws") throw new Error("Preview callback failed");
+        });
+        await (outcome === "throws" ? expect(scope).rejects.toThrow("Preview callback failed") : scope);
+        release();
+        expect(await deferred).toContain("reviewed");
+      }
+      // A layer whose callback is still running keeps protecting captured work, and an enclosing live layer outlives a settled inner one.
+      let release: () => void = () => undefined;
+      let deferred: Promise<string[]> = Promise.resolve([]);
+      await runWithConfigurationOnlySettings(pmRoot, async () => {
+        await runWithConfigurationOnlySettings(pmRoot, async () => {
+          deferred = new Promise<void>((resolve) => { release = resolve; }).then(statusIds);
+        });
+        release();
+        expect(await deferred).not.toContain("reviewed");
+      });
+    });
+  });
+
   it.skipIf(process.platform === "win32")("keeps a selected tracker link and its resolved alias in the same configuration-only scope", async () => {
     await withTempPmRoot(async (pmRoot) => {
       await writeLegacySettings(pmRoot);

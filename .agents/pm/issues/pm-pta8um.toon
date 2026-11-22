@@ -2,19 +2,55 @@ id: pm-pta8um
 title: "A runtime schema field may take the name of a built-in read option (full, fields, compact), after which that option stops working for the command"
 description: "Observed while testing update-many admission in a scratch tracker. pm schema add-field full --type string --commands create,list is accepted, and so are fields, compact, brief and include_body; only status is refused. Afterwards a get with the full option no longer returned the complete item projection in the SDK spec that registered the field, and the bulk planner clears list.fields, list.full, list.compact and list.brief, so a filter on such a field cannot reach a bulk selection (update-many now refuses that key by name). The schema should refuse a field whose option spelling collides with a declared option of a command it is registered for, as it does for status."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: "area:schema",honesty,option-collision
 created_at: "2026-11-22T13:15:13.188Z"
-updated_at: "2026-11-22T13:15:13.188Z"
+updated_at: "2026-11-22T20:33:18.102Z"
+closed_at: "2026-11-22T20:02:24.774Z"
+completed_at: "2026-11-22T20:02:24.774Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "schema add-field refuses an option-spelling collision per registered command with a typed refusal naming the option; pm validate reports existing fields that collide; A spec covers full, fields and compact for list and get"
 parent: pm-9rgaal
 risk: low
 confidence: medium
-expected_result: "schema add-field refuses a name or alias that collides with a declared option of a command the field is registered for, naming the option"
-actual_result: The field is accepted and silently shadows or is shadowed by the built-in option
+resolution: "Added a shared SDK check that compares a field's key, flag and aliases with the declared flag contract of each registered command. schema add-field and profile apply refuse with schema_field_option_collision, profile lint reports field_option_collision, and validate reports already stored fields. The severity redefinition the ops profile relies on stays allowed."
+expected_result: "A field named like a built-in option is refused per registered command with the option named, stored collisions are reported by validate, and the built-in option keeps working"
+actual_result: "13 spec cases pass, the new module is at 100 percent coverage, shipped profiles and this tracker report zero collisions, and pm list --full returns the seeded item after the refused registration"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp7ldt,discovered_from,"2026-11-22T13:15:13.188Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-22T20:02:22.363Z","harness:claude-code","Implementation evidence (2026-11-22).\n\nReproduced on the released build in a scratch tracker: after schema add-field full --commands create,list, pm list --full returned count 0 with filters.runtime_filters reading the flag as a field filter, so the defect is a silent wrong answer and not only a lost projection. Cause: the CLI reuses an existing option of the same name instead of adding a second one, so one flag carries two meanings.\n\nRule. A field is refused when its key, flag or any alias equals a built-in option of a command it is registered for. The built-in side is read from the command's declared flag contract (the same source the parser registers from), so no second list exists. The key is compared as well as the flags because the parsed value is stored under the key whatever the flag is spelled, and a negated built-in such as no-pager reserves pager. Collisions are evaluated per registered command, so full is still accepted for create.\n\nDeclared exception. The shipped ops profile defines severity on create and update, where it deliberately replaces the built-in severity option. The exemption is derived from the reserved-key list (item metadata a custom field is allowed to redefine), and it covers the field's own key only. An alias severity on a differently named field is refused: probed with a stored field, the flag wrote both the built-in and the custom field and the built-in validator refused custom values.\n\nSurfaces. schema add-field and profile apply (dry run included) refuse with schema_field_option_collision, exit 2, naming every shadowed option per command and the narrower commands list when one exists. profile lint reports field_option_collision as an error. validate --check-metadata reports stored fields as validate_schema_field_option_collision with rows, a truncation flag and a fix hint, and adds no keys when there are none.\n\nCensus before tightening. The three shipped profiles and this repository's tracker report zero collisions. Four existing specs registered names the rule refuses (allow_missing_parent, path, token_budget, compact, and the severity alias); they now store such fields directly, as a tracker created by an earlier release would hold them, so the behaviour for stored fields stays covered.\n\nNot covered. Fields an extension registers through registerItemFields do not pass through this check. The acceptance criterion names get, but get is not a command a field can be registered for; the spec covers list, search and context.\n"
+files[16]{path,scope}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  sdk/public-surface.json,project
+  src/core/diagnostics/remediation.ts,project
+  src/core/profile/profile-lint.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/governance/validate.ts,project
+  src/sdk/profile.ts,project
+  src/sdk/schema.ts,project
+  src/sdk/schema/field-option-collisions.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/mcp-handshake.spec.ts,project
+  tests/integration/sdk/mutation-admission.integration.spec.ts,project
+  tests/unit/commands/workspace/schema-command.spec.ts,project
+  tests/unit/mcp/runtime-capabilities.spec.ts,project
+  tests/unit/sdk/schema/field-option-collisions.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema/field-option-collisions.spec.ts,project,"harness:claude-code","2026-11-22T18:57:51.947Z",local_mutation,fix/sdk-field-option-collisions-settings-scope-expiry
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/EXTENSIONS.md,project
+close_reason: Custom fields can no longer shadow a built-in option of a command they are registered for
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-pta8um
+  gate_id: schema-field-option-collision
+  negative_control: "tests/unit/sdk/schema/field-option-collisions.spec.ts registers full, fields and compact for list, search and context and requires a named refusal and a working pm list --full; on the previous release the registration succeeds and pm list --full returns zero rows"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/schema/field-option-collisions.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

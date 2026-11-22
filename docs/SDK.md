@@ -2259,7 +2259,11 @@ Nested async-local scopes compose through new policy layers without modifying
 their ancestors. Matching-root reads evaluate live predicates, so returning
 `false` disables that layer while an enabled caller-owned ancestor can still
 protect the same root. Concurrent invocations keep separate policies, and scopes
-restore when the callback returns or throws. Staged and unrelated roots retain
+restore when the callback returns or throws. A layer also expires when its
+callback settles: a continuation created inside the scope and run afterwards
+(for example a read an extension deferred during a preview's activation) reads
+the tracker normally, including file-backed schema fields, unless an enclosing
+scope is still running. Staged and unrelated roots retain
 normal settings behavior, including schema-file hydration.
 
 CLI bootstrap conservatively protects normalized invocations in the `item`
