@@ -1,0 +1,30 @@
+id: pm-jvb9pk
+title: "Release publication reads the producer-binding artifact inventory once, within a second of the upload, and blocks the daily cut when the listing trails it"
+description: "The morning-dispatched Auto Release run 44982029251 on 2026-11-22 passed every gate, sealed and uploaded release-producer-binding-1 (finalized 04:14:35.0Z), and failed 0.4 s later in recordReleasePublicationOrigin with: Missing, ambiguous or mismatched release producer binding. Nothing was pushed or published; GH-1766 was opened. Read afterwards, the same inventory satisfies every predicate of selectProducerBindingArtifact (one binding for attempt 1, 436 bytes, not expired, run id, head sha and branch all matching), so the single read saw a listing that had not caught up with the upload. The gate treats a trailing listing the same as a forged or duplicate binding and never reads again, so an eventual-consistency window of the artifacts API costs the whole daily release."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: "area:release",auto-release,"gh:1766",reliability
+created_at: "2026-11-22T09:13:16.783Z"
+updated_at: "2026-11-22T09:29:06.294Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#ab4bb49999c22e44f166c80b"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "The publication gate re-reads a well-formed inventory that is partial or does not yet list this attempt's binding, within a bounded wait; A duplicate, expired, oversized or mismatched binding is still refused, judged on the last inventory read exactly as before; A spec drives trailing inventories through the gate and proves the bounded waits and the unchanged refusals; GH-1766 carries a root-cause comment naming this item and the day's release is cut through the blocker retry"
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: "A producer binding uploaded by the same job is found by the publication gate, and the release is pushed"
+actual_result: "The gate reads the artifact inventory once, sees a partial listing, and refuses publication; the daily release is blocked"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-riryrs,related,"2026-11-22T09:13:16.783Z","harness:claude-code","cli:create:dep",detected
+  pm-zi34i1,related,"2026-11-22T09:29:05.933Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-22T09:29:04.473Z","harness:claude-code","Implemented in scripts/release/release-tag-provenance.mjs: readProducerBindingInventory reads the run's artifact inventory and reads it again after 1, 2, 4, 8 and 15 s (30 s in total) while the well-formed listing is partial (artifact count below total_count) or does not yet list release-producer-binding-<attempt>. The last inventory read is passed to selectProducerBindingArtifact unchanged, so a duplicate, expired, oversized or mismatched binding is refused without any wait, and a malformed inventory is refused immediately. Evidence for the cause: gh api repos/unbraind/pm-cli/actions/runs/44982029251/artifacts read after the failure lists three artifacts with total_count 3, the binding at 436 bytes, expired false, head_branch main and head_sha 097123a8f. The spec feeds an empty listing, a partial listing and a listing without the binding before the settled one and asserts waits of 1000, 2000 and 4000 ms, plus one run through the real blocking wait.\n"
+files[2]{path,scope,note}:
+  scripts/release/release-tag-provenance.mjs,project,bounded inventory re-read
+  tests/unit/scripts/release/release-tag-provenance.spec.ts,project,trailing inventory spec
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-tag-provenance.spec.ts,project,"harness:claude-code","2026-11-22T09:13:25.452Z",local_mutation,fix/sdk-admission-scope-identity
+body: ""

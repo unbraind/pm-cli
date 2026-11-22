@@ -6,7 +6,7 @@ import { resolvePmRoot } from "../../core/store/paths.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../cli-contracts/commander-mutation-options.js";
-import { CREATE_FLAG_CONTRACTS, UPDATE_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
+import { CREATE_FLAG_CONTRACTS, LIST_FILTER_FLAG_CONTRACTS, UPDATE_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
 import { isMcpMutationTransportInput, isRuntimeRecord, UPDATE_MANY_FLAT_CONTROL_KEYS } from "../runtime-input.js";
 
 /** Refuse a key with a bounded nearest-name hint and an explicit no-write guarantee. */
@@ -39,7 +39,7 @@ function assertOptionsRecord(rawOptions: unknown): asserts rawOptions is Record<
 }
 
 /** Refuse each undeclared key that is no runtime schema field option of the command, naming it. */
-async function refuseUndeclaredKeys(action: string, command: "create" | "update" | "update_many", keys: Iterable<string>, allowed: Set<string>, pmRoot: string | undefined): Promise<void> {
+async function refuseUndeclaredKeys(action: string, command: "create" | "update" | "update_many" | "list", keys: Iterable<string>, allowed: Set<string>, pmRoot: string | undefined): Promise<void> {
   const unknown = [...keys].filter((key) => !allowed.has(key));
   if (unknown.length === 0) return;
   const registry = resolveRuntimeFieldRegistry((await readSettings(resolvePmRoot(process.cwd(), pmRoot))).schema);
@@ -72,6 +72,61 @@ const FLAT_SELECTION_KEYS = new Set([...UPDATE_MANY_FLAT_CONTROL_KEYS].filter((k
 
 const camelKey = (key: string): string => key.replace(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
 
+/** Every key the list contract reads from a list record: each declared list flag and alias, a negated flag under its positive key. */
+const listRecordKeys = (): Set<string> => new Set(LIST_FILTER_FLAG_CONTRACTS.flatMap(({ flag, aliases }) => [flag, ...(aliases ?? [])]).map((flag) => flag.replace(/^--(?:no-)?/u, "").replace(/[-_]([a-z])/gu, (_match, letter: string) => letter.toUpperCase())));
+
+/** One refusal shape for a key the bulk path would not read where the caller put it. */
+function refuseUnread(message: string, field: string, required: string, reason = "unknown_mutation_option"): never {
+  throw new PmCliError(`${message} ${required} No changes were made.`, 2, { code: "invalid_argument_value", reason, changed: false, field, required, nextSteps: [required] });
+}
+
+/** Update fields the bulk path applies: a single update's options without its item operand and CLI input sources. */
+function updateManyFieldKeys(): Set<string> {
+  const fields = declaredMutationOptionKeys("update");
+  // A single update's item operand; the bulk path would read no selection from it.
+  fields.delete("id");
+  // Input-source flags are read by the CLI adapter; the bulk runner would apply nothing from them.
+  for (const key of fields) if (/File$|^stdin/u.test(key)) fields.delete(key);
+  fields.add("documentAnnotationSnapshot");
+  return fields;
+}
+
+/**
+ * A container that is present but no record would be read as absent: an unfiltered selection, or
+ * no nested fields. A null is left to the typed-null rule, which names it.
+ */
+function assertBulkContainers(options: Record<string, unknown>): void {
+  for (const container of ["list", "update"]) {
+    const value = options[container];
+    if (value !== undefined && value !== null && !isRuntimeRecord(value)) {
+      refuseUnread(`update-many "${container}" must be an object.`, container, `Pass ${container} as an object, or omit it.`, "invalid_mutation_option_value");
+    }
+  }
+}
+
+/**
+ * One selection, stated in one place: the plan reads status from filterStatus only, a list record
+ * replaces every flat selector, and `id` is a single update's operand. Any other key must be one
+ * the list contract reads or a list filter of a runtime schema field; a misspelled selector would
+ * otherwise be carried unread and widen the write to every row the remaining selectors match.
+ */
+async function assertListRecord(list: Record<string, unknown>, outerKeys: Set<string>, pmRoot: string | undefined): Promise<void> {
+  if (Object.hasOwn(list, "id")) refuseKey("update-many list", "id", new Set(["ids"]));
+  if (Object.hasOwn(list, "status")) refuseUnread('update-many "list.status" is not read beside this selection.', "list.status", "State the status selection as filterStatus beside the list record.");
+  const flat = [...outerKeys].find((key) => FLAT_SELECTION_KEYS.has(key));
+  if (flat !== undefined) refuseUnread(`update-many "${flat}" is not read beside this selection.`, flat, `Put the selection inside list, or drop the list record; a flat "${flat}" beside it is not read.`);
+  await refuseUndeclaredKeys("update-many list", "list", Object.keys(list), listRecordKeys(), pmRoot);
+}
+
+/** Beside a nested update record an outer key selects rows, controls the run or states its attribution. */
+function assertOuterKeysBesideNestedUpdate(outerKeys: Set<string>, controls: Set<string>, fields: Set<string>): void {
+  for (const key of outerKeys) {
+    if (controls.has(key)) continue;
+    if (fields.has(key)) refuseUnread(`Unknown update-many option "${key}".`, key, `Put update fields inside update (update.${key}); beside a nested update record an outer key selects rows or controls the run.`);
+    refuseKey("update-many", key, controls);
+  }
+}
+
 /**
  * Refuse an undeclared update-many key by name before any row changes (pm-xp7ldt), as a single
  * update refuses it. The caller's own keys are read before normalization copies them, so a key a
@@ -89,12 +144,7 @@ export async function assertNativeUpdateManyOptions(
   if (isMcpMutationTransportInput(args)) return;
   const rawOptions = args.options;
   assertOptionsRecord(rawOptions);
-  const fields = declaredMutationOptionKeys("update");
-  // A single update's item operand; the bulk path would read no selection from it.
-  fields.delete("id");
-  // Input-source flags are read by the CLI adapter; the bulk runner would apply nothing from them.
-  for (const key of [...fields]) if (/File$|^stdin/u.test(key)) fields.delete(key);
-  fields.add("documentAnnotationSnapshot");
+  const fields = updateManyFieldKeys();
   const controls = new Set([...UPDATE_MANY_FLAT_CONTROL_KEYS, "author", "message", "force", "fullChangedFields", "idOnly", ...OUTPUT_KEYS]);
   const everyOption = new Set([...fields, ...controls]);
   // A top-level force is not read by the bulk handler; it is refused with its options.force placement.
@@ -102,42 +152,12 @@ export async function assertNativeUpdateManyOptions(
   for (const key of Object.keys(args)) if (!topLevel.has(key)) refuseKey("update-many", key, everyOption, everyOption.has(key));
   // Only output controls are read under a snake_case spelling; a selection key spelled that way would select nothing.
   const outerKeys = new Set([...Object.keys(rawOptions ?? {}), ...Object.keys(options)].map((key) => (OUTPUT_KEYS.includes(camelKey(key)) ? camelKey(key) : key)));
-  // A container that is present but no record would be read as absent: an unfiltered selection, or no nested fields.
-  // A null is left to the typed-null rule, which names it.
-  for (const container of ["list", "update"]) {
-    const value = options[container];
-    if (value !== undefined && value !== null && !isRuntimeRecord(value)) {
-      const required = `Pass ${container} as an object, or omit it.`;
-      throw new PmCliError(`update-many "${container}" must be an object. No changes were made.`, 2, { code: "invalid_argument_value", reason: "invalid_mutation_option_value", changed: false, field: container, required, nextSteps: [required] });
-    }
-  }
-  // The list record's selectors belong to the list contract; the one key judged here is the single-update operand.
-  if (isRuntimeRecord(options.list) && Object.hasOwn(options.list, "id")) refuseKey("update-many list", "id", new Set(["ids"]));
-  if (isRuntimeRecord(options.list)) {
-    // One selection, stated in one place: the plan reads status from filterStatus only, and a list record replaces every flat selector.
-    const conflict = Object.hasOwn(options.list, "status") ? { key: "list.status", required: "State the status selection as filterStatus beside the list record." }
-      : [...outerKeys].filter((key) => FLAT_SELECTION_KEYS.has(key))
-        .map((key) => ({ key, required: `Put the selection inside list, or drop the list record; a flat "${key}" beside it is not read.` }))[0];
-    if (conflict !== undefined) {
-      throw new PmCliError(`update-many "${conflict.key}" is not read beside this selection. ${conflict.required} No changes were made.`, 2, {
-        code: "invalid_argument_value", reason: "unknown_mutation_option", changed: false, field: conflict.key, required: conflict.required, nextSteps: [conflict.required],
-      });
-    }
-  }
-  const nested = isRuntimeRecord(options.update) ? options.update : undefined;
-  if (nested === undefined) {
+  assertBulkContainers(options);
+  if (isRuntimeRecord(options.list)) await assertListRecord(options.list, outerKeys, pmRoot);
+  if (!isRuntimeRecord(options.update)) {
     await refuseUndeclaredKeys("update-many", "update_many", outerKeys, everyOption, pmRoot);
     return;
   }
-  for (const key of outerKeys) {
-    if (controls.has(key)) continue;
-    if (fields.has(key)) {
-      const required = `Put update fields inside update (update.${key}); beside a nested update record an outer key selects rows or controls the run.`;
-      throw new PmCliError(`Unknown update-many option "${key}". ${required} No changes were made.`, 2, {
-        code: "invalid_argument_value", reason: "unknown_mutation_option", changed: false, field: key, required, nextSteps: [required],
-      });
-    }
-    refuseKey("update-many", key, controls);
-  }
-  await refuseUndeclaredKeys("update-many", "update_many", Object.keys(nested), fields, pmRoot);
+  assertOuterKeysBesideNestedUpdate(outerKeys, controls, fields);
+  await refuseUndeclaredKeys("update-many", "update_many", Object.keys(options.update), fields, pmRoot);
 }

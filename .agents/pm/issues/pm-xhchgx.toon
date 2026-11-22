@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: "area:sdk",cursor,determinism,flaky-test,read-output
 created_at: "2026-11-22T02:41:23.132Z"
-updated_at: "2026-11-22T02:41:23.132Z"
+updated_at: "2026-11-22T10:13:23.269Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The cause is identified by reproducing the refusal deterministically, for example with a controlled clock between the first page and the replay; If a wall-clock-derived field is the cause, the context fingerprint excludes it through a declared continuation fingerprint policy or the field is made stable for a cursor's lifetime, and a spec replays a cursor across the boundary; If the cause is a test-fixture interaction instead, the spec is isolated and this item records the evidence"
@@ -15,8 +15,9 @@ risk: low
 confidence: low
 expected_result: A cursor issued by a context read is accepted on replay while the tracker is unchanged
 actual_result: One replay under load was refused with read_output_cursor_stale although no write intervened
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1753,related,"2026-11-22T02:41:23.132Z","harness:claude-code","cli:create:dep",detected
+  pm-oahhyc,related,"2026-11-22T10:13:23.058Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-11-22T02:41:23.132Z","harness:claude-code","Duplicate check: pm search for 'read_output_cursor_stale context cursor flaky' returned the closed GH-1753 item (intent reads, fixed by binding cursors to first-pass rows) and the closed health replay isolation item pm-oahhyc; neither covers a plain context read going stale without a write."
 body: ""

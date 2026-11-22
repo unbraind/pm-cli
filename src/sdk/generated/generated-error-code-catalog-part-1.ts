@@ -1018,6 +1018,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
       "sdk/linked-artifacts.ts",
       "sdk/query/next.ts",
       "sdk/runtime-input.ts",
+      "sdk/runtime.ts",
       "sdk/runtime/mutation-admission.ts",
       "sdk/runtime/mutation-value-validation.ts",
       "sdk/runtime/schema-preview.ts",

@@ -83,6 +83,10 @@ it.each([false, true])("compacts redundant runtime syntax and private identifier
     await mod.compactRuntimeOutputs(buildRoot);
     expect(Object.keys((JSON.parse(await readFile(ledgerPath, "utf8")) as { files: Record<string, string> }).files)).toEqual(["example.js"]);
   }
+  // A finalization stopped after it began overwriting modules leaves no ledger, so the next build starts from raw compiler output.
+  await writeFile(path.join(dist, "broken.js"), "export const = ;\n");
+  await expect(mod.compactRuntimeOutputs(buildRoot)).rejects.toThrow();
+  await expect(readFile(ledgerPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
   const empty = path.join(root, "empty-dist");
   await mkdir(empty);
   await mod.compactRuntimeOutputs(empty);

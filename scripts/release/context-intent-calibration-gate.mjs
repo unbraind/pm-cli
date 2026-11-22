@@ -16,6 +16,7 @@ import {
   applyContextIntentProjection,
   attachReadOutputContracts,
 } from "../../dist/sdk/context-intent-contracts.js";
+import { _testOnly as historyStreamSummarySeams } from "../../dist/core/history/stream-summary.js";
 import { runContext } from "../../dist/sdk/query/context.js";
 import { runGet } from "../../dist/sdk/query/get.js";
 import { runList } from "../../dist/sdk/query/list.js";
@@ -434,6 +435,11 @@ export async function measureContextIntentCalibration(
 ) {
   const previousUsageSetting = process.env.PM_CONTEXT_USAGE_DISABLED;
   process.env.PM_CONTEXT_USAGE_DISABLED = "1";
+  // The synthetic tracker is written moments before it is read. Streams changed inside the summary's
+  // racy window are read again and disclosed, in a share that depends on how long generation took, so
+  // the measured bytes varied between runs. Reading as one racy window later measures a settled tracker.
+  const racyWindowMs = Number(historyStreamSummarySeams.RACY_WINDOW_NS / 1_000_000n) + 1;
+  const restoreWallClock = historyStreamSummarySeams.setWallClock(() => Date.now() + racyWindowMs);
   try {
     return {
       version: 2,
@@ -447,6 +453,7 @@ export async function measureContextIntentCalibration(
       ],
     };
   } finally {
+    restoreWallClock();
     if (previousUsageSetting === undefined) {
       delete process.env.PM_CONTEXT_USAGE_DISABLED;
     } else {

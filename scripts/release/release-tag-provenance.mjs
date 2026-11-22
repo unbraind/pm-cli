@@ -69,6 +69,35 @@ function selectProducerBindingArtifact(pages, source, defaultBranch) {
   return artifact;
 }
 
+const INVENTORY_REREAD_DELAYS_MS = [1000, 2000, 4000, 8000, 15_000];
+
+/** Block this synchronous gate without spinning. */
+function pauseSync(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+/**
+ * Read the producer run's artifact inventory. The listing trails an upload finalized moments
+ * earlier, so a well-formed inventory that is still partial, or does not yet list this attempt's
+ * binding, is read again within a bounded wait. A duplicate or mismatched binding is never
+ * retried: the last inventory read is judged exactly as a single read was.
+ */
+function readProducerBindingInventory(execute, options, source, pause) {
+  const read = () => JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/artifacts?per_page=100`, "--paginate", "--slurp"], options));
+  const trailing = (pages) => {
+    if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) => !Array.isArray(page.artifacts))) return false;
+    const artifacts = pages.flatMap((page) => page.artifacts);
+    return artifacts.length !== pages[0].total_count || !artifacts.some((artifact) => artifact.name === `release-producer-binding-${source.run_attempt}`);
+  };
+  let pages = read();
+  for (const delay of INVENTORY_REREAD_DELAYS_MS) {
+    if (!trailing(pages)) break;
+    pause(delay);
+    pages = read();
+  }
+  return pages;
+}
+
 /** Validate a bounded regular producer document against every actual Git identity and declaration. */
 function verifyProducerBindingFile(directory, report) {
   const file = path.join(directory, "producer-binding.json");
@@ -79,7 +108,7 @@ function verifyProducerBindingFile(directory, report) {
 }
 
 /** Admit exact historical objects or hosted producers independently bound to the actual tag object. */
-export function recordReleasePublicationOrigin(env = process.env, cwd = process.cwd(), execute = execFileSync) {
+export function recordReleasePublicationOrigin(env = process.env, cwd = process.cwd(), execute = execFileSync, pause = pauseSync) {
   const report = { schema: "pm-release-publication-origin/1", ...readReleaseTagProvenance(env.RELEASE_TAG, cwd, execute), publication_event: env.GITHUB_EVENT_NAME, recovery_origin: env.RELEASE_RECOVERY_TRIGGER_ORIGIN || null, source_run_verified: false, producer_binding_verified: false };
   writeFileSync(env.RELEASE_PROVENANCE_OUTPUT, `${JSON.stringify(report)}\n`);
   if (report.provenance === null) {
@@ -93,7 +122,7 @@ export function recordReleasePublicationOrigin(env = process.env, cwd = process.
     const repository = JSON.parse(execute("gh", ["api", `repos/${source.repository}`], options));
     const run = JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/attempts/${source.run_attempt}`], options));
     verifyReleaseSourceRun(source, run, repository.default_branch);
-    const pages = JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/artifacts?per_page=100`, "--paginate", "--slurp"], options));
+    const pages = readProducerBindingInventory(execute, options, source, pause);
     const artifact = selectProducerBindingArtifact(pages, source, repository.default_branch);
     const directory = mkdtempSync(path.join(tmpdir(), "pm-producer-binding-"));
     const releaseCleanup = registerTempCleanup(directory);

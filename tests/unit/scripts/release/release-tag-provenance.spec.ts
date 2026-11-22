@@ -96,7 +96,25 @@ describe("tag-carried release provenance", () => {
         if (response === undefined) throw new Error(`Unexpected provider endpoint: ${args[1]}`);
         return JSON.stringify(response);
       }) as typeof execFileSync;
-      const publication = recordReleasePublicationOrigin(publicationEnv, root, execute);
+      const pauses: number[] = [];
+      const pause = (milliseconds: number) => { pauses.push(milliseconds); };
+      const publication = recordReleasePublicationOrigin(publicationEnv, root, execute, pause);
+      expect(pauses).toEqual([]);
+      // The listing trails a just-finalized upload: a partial inventory and one without the binding are read again.
+      const settled = responses.get(artifactEndpoint);
+      const trailing = [[{ total_count: 0, artifacts: [] }], [{ total_count: 2, artifacts: [artifact] }], [{ total_count: 1, artifacts: [{ ...artifact, name: "dependency-advisory-42-1" }] }]];
+      responses.delete(artifactEndpoint);
+      const lagging = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) =>
+        command === "gh" && args[1] === artifactEndpoint ? JSON.stringify(trailing.shift() ?? settled) : execute(command, args, options)) as typeof execFileSync;
+      expect(recordReleasePublicationOrigin(publicationEnv, root, lagging, pause)).toMatchObject({ source_run_verified: true, producer_binding_verified: true });
+      expect(pauses).toEqual([1000, 2000, 4000]);
+      // The default wait blocks for the declared delay before the second read.
+      trailing.push([{ total_count: 0, artifacts: [] }]);
+      const started = Date.now();
+      expect(recordReleasePublicationOrigin(publicationEnv, root, lagging)).toMatchObject({ producer_binding_verified: true });
+      expect(Date.now() - started).toBeGreaterThanOrEqual(900);
+      responses.set(artifactEndpoint, settled);
+      pauses.length = 0;
       expect(publication).toMatchObject({ source_run_verified: true, recovery_origin: null, publication_event: "push", provenance: { trigger_origin: "morning_dispatcher" } });
       expect(JSON.parse(readFileSync(output, "utf8"))).toEqual(publication);
       git(["commit", "--allow-empty", "-m", "Unrelated descendant"]);
@@ -104,21 +122,21 @@ describe("tag-carried release provenance", () => {
       const copiedTarget = git(["rev-parse", "HEAD"]);
       git(["tag", "-a", "-m", JSON.stringify(createReleaseProvenance(copiedTag, sha, copiedTarget, env)), copiedTag]);
       expect(readReleaseTagProvenance(copiedTag, root).tag_sha).toBe(copiedTarget);
-      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: copiedTag }, root, execute)).toThrow("producer binding");
+      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: copiedTag }, root, execute, pause)).toThrow("producer binding");
       for (const artifacts of [[], [artifact, artifact], [{ ...artifact, expired: true }], [{ ...artifact, size_in_bytes: 4097 }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, id: 43 } }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, head_sha: source } }]]) {
         responses.set(artifactEndpoint, [{ total_count: artifacts.length, artifacts }]);
-        expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute)).toThrow("producer binding");
+        expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute, pause)).toThrow("producer binding");
         expect(JSON.parse(readFileSync(output, "utf8")).source_run_verified).toBe(false);
       }
       responses.set(artifactEndpoint, [{ total_count: 1, artifacts: artifact }]);
-      expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute)).toThrow("Invalid release producer binding inventory");
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute, pause)).toThrow("Invalid release producer binding inventory");
       expect(JSON.parse(readFileSync(output, "utf8"))).toMatchObject({ source_run_verified: false, producer_binding_verified: false });
       responses.set(artifactEndpoint, [{ total_count: 1, artifacts: [artifact] }]);
       downloadedBinding = JSON.stringify({ ...binding, extension: "x".repeat(4097) });
-      expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute)).toThrow("Invalid release producer binding file");
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute, pause)).toThrow("Invalid release producer binding file");
       expect(JSON.parse(readFileSync(output, "utf8"))).toMatchObject({ source_run_verified: false, producer_binding_verified: false });
       downloadedBinding = JSON.stringify(binding);
-      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, GITHUB_REPOSITORY: "other/project" }, root, execute)).toThrow("repository mismatch");
+      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, GITHUB_REPOSITORY: "other/project" }, root, execute, pause)).toThrow("repository mismatch");
       git(["tag", "v2026.10.9"]);
       expect(readReleaseTagProvenance("v2026.10.9", root)).toMatchObject({ provenance: null, attribution: "legacy_unattributed" });
       expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: "v2026.10.9", GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_RECOVERY_TRIGGER_ORIGIN: "operator" }, root)).toThrow("historical tag object");

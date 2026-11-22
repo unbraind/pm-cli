@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { chmod, glob, readFile, realpath, rename, stat, writeFile } from "node:fs/promises";
+import { chmod, glob, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
@@ -144,6 +144,9 @@ export async function compactRuntimeOutputs(directory) {
     else entryPoints.push(key);
   }
   if (entryPoints.length > 0) {
+    // Withdrawn before any module is overwritten: a build stopped past this point leaves no ledger,
+    // so the next one discards the compiler cache and compacts raw output instead of shortened modules.
+    await rm(ledgerPath, { force: true });
     await build({
       entryPoints: entryPoints.map((relative) => path.join(outputRoot, relative)),
       outdir: outputRoot,

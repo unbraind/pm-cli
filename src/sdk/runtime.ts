@@ -2750,7 +2750,7 @@ function runUnderOpenExtensionScope<T>(
   if (sameTracker && !scope.ready) {
     // An activate() or deactivate() callback addressing its own tracker: the guards are not all in place.
     const required = "Do the work from a command or hook handler, after the tracker's extensions have activated.";
-    throw new PmCliError(`An extension lifecycle callback cannot run SDK work for tracker ${scope.root} while its extensions activate or deactivate. ${required}`, EXIT_CODE.CONFLICT, {
+    throw new PmCliError(`An extension lifecycle callback cannot run SDK work for tracker ${scope.root} while its extensions activate or deactivate. ${required}`, EXIT_CODE.USAGE, {
       code: "invalid_argument_value", reason: "extension_scope_not_ready", changed: false, required, nextSteps: [required],
     });
   }
@@ -2762,6 +2762,18 @@ function runUnderOpenExtensionScope<T>(
       withActiveExtensionsExclusively(global, cwd, (active) => runAsExtensionScope(pmRoot, active, () => run(active))),
     false),
   );
+}
+
+/**
+ * Dispatch an injected host client's call for `pmRoot`. It runs under registrations already in
+ * place when no scope is open or the context's own scope was opened for that tracker. A scope
+ * reached through a settled child has no registrations in this context, so its tracker is
+ * activated again, as another tracker's is.
+ */
+function dispatchForExtensionHost<T>(pmRoot: string, global: GlobalOptions, cwd: string, dispatch: (active: ActiveExtensionRuntime | null) => Promise<T>): Promise<T> {
+  const scope = openExtensionScope();
+  if (scope === undefined || (scope === activeExtensionScope.getStore() && scope.root === trackerScopeRoot(pmRoot))) return dispatch(null);
+  return runUnderOpenExtensionScope(pmRoot, { ...global, noExtensions: false }, cwd, dispatch)!;
 }
 
 /** Publishes empty active extension registries so built-in fallback actions cannot observe stale or partially published extension state from a failed activation cycle. */
@@ -3152,9 +3164,7 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
     ) {
       // An injected host client shares its host's registrations for the host's tracker only. A call it
       // addresses to another tracker is judged by that tracker's extensions, like any other nested call.
-      const hostScope = openExtensionScope();
-      if (hostScope === undefined || hostScope.root === trackerScopeRoot(pmRoot)) return await dispatch(null);
-      return await runUnderOpenExtensionScope(pmRoot, { ...global, noExtensions: false }, resolutionCwd, dispatch);
+      return await dispatchForExtensionHost(pmRoot, global, resolutionCwd, dispatch);
     }
     if (openExtensionScope() !== undefined) assertNestedCwdIsCurrent(explicitCwd);
     const nested = runUnderOpenExtensionScope(pmRoot, global, resolutionCwd, dispatch);

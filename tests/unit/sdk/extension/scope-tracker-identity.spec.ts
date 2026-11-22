@@ -215,6 +215,23 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
     });
   });
 
+  it("judges a host client's write resumed from a settled nested scope with a fresh activation of its tracker", async () => {
+    await withTwoTrackers(async (first, second) => {
+      await installScopeExtension(first.pmPath, "alpha");
+      await installScopeExtension(second.pmPath, "beta");
+      const host = PmClient.forActiveExtensionHost({ pmRoot: first.pmPath, author });
+      await runWithActiveExtensions({ path: first.pmPath, cwd: process.cwd() }, async () => {
+        let resumed: (() => Promise<unknown>) | undefined;
+        await runWithActiveExtensions({ path: second.pmPath }, async () => {
+          resumed = AsyncLocalStorage.bind(() => host.update(first.id, { sprint: "refused-by-alpha" } as never));
+        });
+        // The callback carries the settled scope's cleared registries; the live ancestor's root matching is not enough to share them.
+        await expect(resumed!()).rejects.toMatchObject({ context: { code: "alpha_denied" } });
+      });
+      expect(probe.pmScopeActivations).toEqual(["alpha", "beta", "alpha"]);
+    });
+  });
+
   it("keeps a nested disabled scope bound to the tracker it was opened for", async () => {
     await withTwoTrackers(async (first, second) => {
       await installScopeExtension(second.pmPath, "beta");

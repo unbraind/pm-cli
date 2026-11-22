@@ -1797,7 +1797,9 @@ nested work inside the callback that started it; work left running after
 every enclosing scope has settled no longer holds the activation gate. An
 injected extension-host client (`context.sdk.client`) shares its host's
 registrations for the host's tracker only; a call it addresses to another
-tracker is activated and judged like any other nested call. An `activate()` or
+tracker is activated and judged like any other nested call, and so is a call
+it makes from work resumed after the nested scope it was captured in has
+settled, because that context no longer carries the host's registrations. An `activate()` or
 `deactivate()` callback that runs SDK work for its own tracker inside a nested
 activation is refused with `context.reason = "extension_scope_not_ready"`,
 because that tracker's guards are not all in place. A relative
@@ -4622,7 +4624,12 @@ record states its own. Selection is stated in one place: the single-update
 operand `id` is refused with an `ids` hint (flat or inside `list`), a nested
 `list` record replaces every flat selector, so a flat `ids`, `limit`, `offset`
 or `filter*` key beside it is refused, and the status selection is always
-`filterStatus` (`list.status` is refused). A `list` or `update` value that is
+`filterStatus` (`list.status` is refused). Every other key of a `list` record
+must be one the list contract reads (a declared list option in its camelCase
+spelling, such as `assigneeFilter`, `sort` or `notes: false`) or a list filter
+of a runtime schema field; a misspelled selector such as `assigneee` is
+refused by name with the nearest declared key, where it was previously carried
+unread while the update reached every row the remaining selectors matched. A `list` or `update` value that is
 no object, a snake_case selector such as `filter_status`, a CLI input-source
 option such as `bodyFile`, and a top-level argument that is neither a runtime
 argument nor an output control (including a top-level `force`, which names its

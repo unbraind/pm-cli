@@ -64,6 +64,7 @@ describe("mutation request admission", () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--commands", "create,update,update_many", "--json"]).code).toBe(0);
       expect(context.runCli(["schema", "add-field", "filter_region", "--type", "string", "--commands", "create,update,update_many", "--json"]).code).toBe(0);
+      expect(context.runCli(["schema", "add-field", "region_code", "--type", "string", "--commands", "create,list", "--json"]).code).toBe(0);
       expect(context.runCli(["schema", "add-field", "single_only", "--type", "string", "--commands", "create,update", "--json"]).code).toBe(0);
       const id = createTestItemId(context, { title: "bulk input admission", createMode: "progressive" });
       const client = new PmClient({ pmRoot: context.pmPath });
@@ -92,6 +93,10 @@ describe("mutation request admission", () => {
         [{ list: { ids: [id], status: "open" }, update: { description: "changed" } }, "list.status"],
         [{ list: {}, ids: [id], update: { description: "changed" } }, '"ids"'],
         [{ list: { ids: [id] }, filterTag: "x", update: { description: "changed" } }, "filterTag"],
+        // A misspelled or pre-normalized selector inside the list record would be carried unread and widen the write.
+        [{ list: { ids: [id], assigneee: "alice" }, update: { description: "changed" } }, 'update-many list option "assigneee". Did you mean "assignee"?'],
+        [{ list: { ids: [id], noNotes: true }, update: { description: "changed" } }, 'update-many list option "noNotes"'],
+        [{ list: { ids: [id], tree_depth: "1" }, update: { description: "changed" } }, 'update-many list option "tree_depth". Did you mean "treeDepth"?'],
         // A snake_case selector would select nothing, and CLI input-source flags are not read by the bulk runner.
         [{ ids: [id], filter_status: "open", description: "changed" }, "filter_status"],
         [{ ids: [id], update: { description: "changed", bodyFile: "body.md" } }, "bodyFile"],
@@ -124,6 +129,8 @@ describe("mutation request admission", () => {
       await client.run("update-many", { options: { ids: [id], externalId: "flat", estimate: "5", noCheckpoint: true } });
       await client.run("update-many", { options: { list: { ids: [id] }, update: { description: "nested", externalId: "nested" }, checkpoint: false, fullChangedFields: true } });
       expect((await client.get(id, { full: true })).item).toMatchObject({ external_id: "nested", description: "nested", estimated_minutes: 5 });
+      // Every selector the list contract reads stays accepted inside the list record, with a runtime field's list filter.
+      await expect(client.run("update-many", { options: { list: { ids: [id], assigneeFilter: "unassigned", notes: false, sort: "priority", regionCode: "none" }, update: { description: "listed" }, dryRun: true } })).resolves.toMatchObject({ dry_run: true });
       // Spellings the dispatch consumes stay accepted: a snake_case output control and the annotation snapshot guard.
       await expect(client.run("update-many", { options: { ids: [id], description: "snake", output_format: "json", dry_run: true } })).resolves.toMatchObject({ dry_run: true });
       await expect(client.run("update-many", { options: { ids: [id], description: "guarded", documentAnnotationSnapshot: { comments: [], notes: [], learnings: [] } } })).resolves.toBeDefined();
