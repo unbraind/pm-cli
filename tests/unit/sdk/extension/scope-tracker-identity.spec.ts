@@ -258,6 +258,27 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
     });
   });
 
+  it("refuses a lifecycle callback's host call while a deferred host call reactivates the tracker, instead of waiting on its own slot", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTestExtension({
+        root: path.join(pmPath, "extensions", "writer"),
+        name: "writer",
+        manifestOverrides: { capabilities: ["hooks"] },
+        entrySource: "export default { async activate() { globalThis.pmScopeLifecycle = await (globalThis.pmScopeNested?.() ?? Promise.resolve()).then(() => 'ran', (error) => error.context?.reason); } };",
+      });
+      const id = await seed(pmPath);
+      const host = PmClient.forActiveExtensionHost({ pmRoot: pmPath, author });
+      let deferred: (() => Promise<unknown>) | undefined;
+      await runWithActiveExtensions({ path: pmPath }, async () => {
+        deferred = AsyncLocalStorage.bind(() => host.run("update", { cwd: process.cwd(), id, options: { sprint: "deferred" } }));
+      });
+      probe.pmScopeNested = () => host.update(id, { sprint: "from-activate" } as never);
+      await expect(deferred!()).resolves.toBeDefined();
+      expect((globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle).toBe("extension_scope_not_ready");
+      delete (globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle;
+    });
+  });
+
   it("judges a host client's direct transaction by its own tracker when another tracker's scope is open", async () => {
     await withTwoTrackers(async (first, second) => {
       await installScopeExtension(first.pmPath, "alpha");

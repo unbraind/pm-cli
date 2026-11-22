@@ -139,9 +139,11 @@ function assertBulkContainers(options: Record<string, unknown>): void {
  */
 async function assertListRecord(list: Record<string, unknown>, outerKeys: Set<string>, pmRoot: string | undefined): Promise<void> {
   if (Object.hasOwn(list, "id")) refuseKey("update-many list", "id", new Set(["ids"]));
+  // The planner overwrites the list record's status with filterStatus, so no schema field can claim this key.
+  if (Object.hasOwn(list, "status")) refuseUnread('update-many "list.status" is not read beside this selection.', "list.status", LIST_COMMAND_ONLY_KEYS.get("status")!);
   const flat = [...outerKeys].find((key) => FLAT_SELECTION_KEYS.has(key));
   if (flat !== undefined) refuseUnread(`update-many "${flat}" is not read beside this selection.`, flat, `Put the selection inside list, or drop the list record; a flat "${flat}" beside it is not read.`);
-  // A runtime schema field that shares one of those names is that tracker's list filter and stays accepted.
+  // A runtime schema field that shares one of the other names is that tracker's list filter and stays accepted.
   await refuseUndeclaredKeys("update-many list", "list", Object.keys(list), listRecordKeys(), pmRoot, (key, allowed) => {
     const required = LIST_COMMAND_ONLY_KEYS.get(key);
     if (required === undefined) refuseKey("update-many list", key, allowed);

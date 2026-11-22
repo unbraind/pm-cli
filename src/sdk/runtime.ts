@@ -779,7 +779,11 @@ export class PmClient {
       return run({ pmRoot, author: resolveAuthor(this.defaults.author, settings.author_default) });
     };
     // A host client's direct transaction takes the decision its dispatched actions take: the host's registrations for the host's tracker only.
-    if (this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] === true) return runForExtensionHost(pmRoot, globalOptions({ path: pmRoot }), undefined, process.cwd(), execute);
+    if (this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] === true) {
+      // A preview keeps configuration-only reads around any activation the decision starts, as the ordinary client path does.
+      const hosted = () => runForExtensionHost(pmRoot, globalOptions({ path: pmRoot }), undefined, process.cwd(), execute);
+      return configurationOnly ? runWithConfigurationOnlySettings(pmRoot, hosted) : hosted();
+    }
     // An open scope decides by tracker: the same root is reused, another root activates its own extensions.
     // The root is already resolved; inside an open scope the client's cwd cannot be applied to the process again.
     const nested = openExtensionScope() !== undefined;
@@ -2778,7 +2782,9 @@ function runForExtensionHost<T>(pmRoot: string, global: GlobalOptions, explicitC
   if (own === undefined) return run(null);
   const scope = openExtensionScope();
   const hostGlobal = { ...global, noExtensions: false };
-  if (scope === undefined) return withActiveExtensions(hostGlobal, explicitCwd === undefined ? undefined : cwd, cwd, (active) => runAsExtensionScope(pmRoot, active, () => run(active)));
+  // Published as activating before the slot is taken: a lifecycle callback that calls back through the
+  // host client is refused by the shared check instead of queueing behind the slot its own caller holds.
+  if (scope === undefined) return runAsExtensionScope(pmRoot, null, () => withActiveExtensions(hostGlobal, explicitCwd === undefined ? undefined : cwd, cwd, (active) => runAsExtensionScope(pmRoot, active, () => run(active))), false);
   if (scope === own && scope.ready && scope.root === trackerScopeRoot(pmRoot)) return run(null);
   return runUnderOpenExtensionScope(pmRoot, hostGlobal, cwd, run)!;
 }
