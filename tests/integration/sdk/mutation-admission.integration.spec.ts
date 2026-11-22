@@ -87,7 +87,13 @@ describe("mutation request admission", () => {
         // A single update's operand selects nothing in bulk: without the refusal every matching row would change.
         [{ id, description: "changed" }, '"ids"'],
         [{ list: { id }, update: { description: "changed" } }, 'update-many list option "id"'],
-        [{ list: { ids: [id], asignee: "x" }, update: { description: "changed" } }, "asignee"],
+        // A selector the plan would not read: the list record's status, and a flat selector beside a list record.
+        [{ list: { ids: [id], status: "open" }, update: { description: "changed" } }, "list.status"],
+        [{ list: {}, ids: [id], update: { description: "changed" } }, '"ids"'],
+        [{ list: { ids: [id] }, filterTag: "x", update: { description: "changed" } }, "filterTag"],
+        // A snake_case selector would select nothing, and CLI input-source flags are not read by the bulk runner.
+        [{ ids: [id], filter_status: "open", description: "changed" }, "filter_status"],
+        [{ ids: [id], update: { description: "changed", bodyFile: "body.md" } }, "bodyFile"],
         // A runtime field the bulk path does not apply is refused instead of dropped.
         [{ ids: [id], singleOnly: "dropped", description: "changed" }, "singleOnly"],
         [JSON.parse(`{"ids":["${id}"],"description":"changed","__proto__":{"priority":0}}`), "__proto__"],
@@ -102,6 +108,12 @@ describe("mutation request admission", () => {
       await expect(client.run("update-many", { asignee: "x", options: { ids: [id], description: "changed" } })).rejects.toMatchObject({ context: { reason: "unknown_mutation_option", field: "asignee", changed: false } });
       await expect(client.run("update-many", { description: "changed", options: { ids: [id] } })).rejects.toThrow("options.description");
       expect(await capture(context)).toEqual(before);
+      // A container that is no record, and a force the handler would not read or would misread.
+      for (const options of [{ list: [], update: { description: "changed" } }, { ids: [id], update: "description=changed" }]) {
+        await expect(client.run("update-many", { options } as never)).rejects.toMatchObject({ context: { reason: "invalid_mutation_option_value", changed: false } });
+      }
+      await expect(client.run("update-many", { force: true, options: { ids: [id], description: "changed" } })).rejects.toThrow("options.force");
+      expect(await capture(context)).toEqual(before);
       for (const options of [null, [], "ids=x"]) {
         await expect(client.run("update-many", { options } as never)).rejects.toMatchObject({ code: "invalid_argument_value", context: { changed: false } });
       }
@@ -115,7 +127,7 @@ describe("mutation request admission", () => {
       await expect(client.run("update-many", { options: { ids: [id], description: "snake", output_format: "json", dry_run: true } })).resolves.toMatchObject({ dry_run: true });
       await expect(client.run("update-many", { options: { ids: [id], description: "guarded", documentAnnotationSnapshot: { comments: [], notes: [], learnings: [] } } })).resolves.toBeDefined();
       // Attribution stated once beside a nested update record reaches every row; the record's own value wins.
-      await client.run("update-many", { options: { ids: [id], update: { description: "attributed" }, author: "outer-author", message: "outer message", noCheckpoint: true } });
+      await client.run("update-many", { options: { ids: [id], update: { description: "attributed" }, author: "outer-author", message: "outer message", force: true, filterStatus: "all", noCheckpoint: true } });
       await client.run("update-many", { options: { ids: [id], update: { description: "inner wins", author: "inner-author" }, author: "outer-author", noCheckpoint: true } });
       const history = (await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8")).trim().split("\n").map((line) => JSON.parse(line) as { author: string; message?: string });
       expect(history.at(-2)).toMatchObject({ author: "outer-author", message: "outer message" });

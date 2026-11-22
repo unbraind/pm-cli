@@ -781,7 +781,9 @@ export class PmClient {
     if (this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] === true) return execute();
     // An open scope decides by tracker: the same root is reused, another root activates its own extensions.
     // The root is already resolved; inside an open scope the client's cwd cannot be applied to the process again.
-    const cwd = openExtensionScope() === undefined ? this.defaults.cwd : undefined;
+    const nested = openExtensionScope() !== undefined;
+    if (nested) assertNestedCwdIsCurrent(this.defaults.cwd);
+    const cwd = nested ? undefined : this.defaults.cwd;
     const activate = () => runWithActiveExtensions({ ...this.defaults, cwd, path: pmRoot }, execute);
     return configurationOnly ? runWithConfigurationOnlySettings(pmRoot, activate) : activate();
   }
@@ -2676,6 +2678,8 @@ interface ActiveExtensionScope {
   active: ActiveExtensionRuntime | null;
   /** False once the scope's callback settled: work it left behind no longer holds the activation gate. */
   live: boolean;
+  /** The scope this one was opened under, whose gate slot it borrows. */
+  parent: ActiveExtensionScope | undefined;
 }
 
 const activeExtensionScope = new AsyncLocalStorage<ActiveExtensionScope>();
@@ -2689,15 +2693,20 @@ function trackerScopeRoot(pmRoot: string): string {
   }
 }
 
-/** The scope the calling context still holds; a scope whose callback settled is treated as absent. */
+/**
+ * The nearest scope the calling context still holds. A scope whose callback settled is skipped:
+ * its registries are gone, but a live ancestor still holds the gate slot, so work resumed from
+ * the settled scope runs under that ancestor instead of queueing behind it.
+ */
 function openExtensionScope(): ActiveExtensionScope | undefined {
-  const scope = activeExtensionScope.getStore();
-  return scope?.live === true ? scope : undefined;
+  let scope = activeExtensionScope.getStore();
+  while (scope !== undefined && !scope.live) scope = scope.parent;
+  return scope;
 }
 
 /** Publish a scope for `run` and expire it when `run` settles, so deferred work cannot reuse a released gate slot. */
 async function runAsExtensionScope<T>(pmRoot: string, active: ActiveExtensionRuntime | null, run: () => Promise<T>): Promise<T> {
-  const scope: ActiveExtensionScope = { root: trackerScopeRoot(pmRoot), active, live: true };
+  const scope: ActiveExtensionScope = { root: trackerScopeRoot(pmRoot), active, live: true, parent: openExtensionScope() };
   try {
     return await activeExtensionScope.run(scope, run);
   } finally {
@@ -2733,9 +2742,15 @@ function runUnderOpenExtensionScope<T>(
 ): Promise<T> | undefined {
   const scope = openExtensionScope();
   if (scope === undefined) return undefined;
-  if (scope.root === trackerScopeRoot(pmRoot) && global.noExtensions !== true) return run(scope.active);
+  // Only the context's own scope has its registries in place; one reached through a settled child does not.
+  const ownRegistries = scope === activeExtensionScope.getStore();
+  if (ownRegistries && scope.root === trackerScopeRoot(pmRoot) && global.noExtensions !== true) return run(scope.active);
+  // The scope is published for the tracker before its extensions load, so a lifecycle callback that
+  // writes to the caller's tracker is judged by a fresh activation, never by these half-built registries.
   return runWithIsolatedExtensionRuntime(() =>
-    withActiveExtensionsExclusively(global, cwd, (active) => runAsExtensionScope(pmRoot, active, () => run(active))),
+    runAsExtensionScope(pmRoot, null, () =>
+      withActiveExtensionsExclusively(global, cwd, (active) => runAsExtensionScope(pmRoot, active, () => run(active))),
+    ),
   );
 }
 
@@ -2813,7 +2828,8 @@ export async function runWithActiveExtensions<T>(
   if (nested !== undefined) return nested;
   return withActiveExtensions(
     global,
-    explicitCwd,
+    // The directory captured at entry, so a relative cwd cannot name another one by the time the slot opens.
+    explicitCwd === undefined ? undefined : resolutionCwd,
     resolutionCwd,
     (active) => runAsExtensionScope(pmRoot, active, run),
   );
@@ -3133,7 +3149,7 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
     // reuses it instead of waiting for an activation slot behind its own caller.
     return await withActiveExtensions(
       global,
-      explicitCwd,
+      explicitCwd === undefined ? undefined : resolutionCwd,
       resolutionCwd,
       (activeExtensions) => runAsExtensionScope(pmRoot, activeExtensions, () => dispatch(activeExtensions)),
     );

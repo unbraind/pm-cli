@@ -69,6 +69,7 @@ describe("finalize-build", () => {
     vi.doMock("node:fs/promises", () => ({
       glob: vi.fn().mockReturnValue([]),
       realpath: vi.fn(async (target: string) => target),
+      rename: vi.fn(async () => {}),
       chmod,
       readFile: vi.fn(async () => "{}"),
       writeFile: vi.fn(async () => {}),
@@ -90,6 +91,7 @@ describe("finalize-build", () => {
     vi.doMock("node:fs/promises", () => ({
       glob: vi.fn().mockReturnValue([]),
       realpath: vi.fn(async (target: string) => target),
+      rename: vi.fn(async () => {}),
       chmod,
       readFile: vi.fn(async () => "{}"),
       writeFile: vi.fn(async () => {}),
@@ -104,6 +106,7 @@ describe("finalize-build", () => {
     vi.doMock("node:fs/promises", () => ({
       glob: vi.fn().mockReturnValue([]),
       realpath: vi.fn(async (target: string) => target),
+      rename: vi.fn(async () => {}),
       readFile: vi.fn(async () => "{}"),
       writeFile: vi.fn(async () => {}),
       chmod: vi.fn(async () => {}),

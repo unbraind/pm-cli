@@ -1790,8 +1790,11 @@ process working directory, which needs exclusive use of the activation gate
 its caller holds: a `cwd` naming the current directory is accepted, any other
 is refused before dispatch with `context.reason = "nested_cwd_unavailable"`;
 address the tracker with `path` instead. A scope ends when its callback
-settles: a timer or promise it left behind activates for itself through the
-gate instead of reusing registrations that were already torn down. A relative
+settles: a timer or promise it left behind activates for itself instead of
+reusing registrations that were already torn down, under a still-open
+ancestor scope's slot when there is one and through the gate otherwise. Await
+nested work inside the callback that started it; work left running after
+every enclosing scope has settled no longer holds the activation gate. A relative
 `cwd` is resolved once, before activation, so the scope records the tracker
 that was activated.
 
@@ -4608,12 +4611,17 @@ record is refused by name with the same hint, instead of being dropped while
 the remaining fields are applied to every matched row. Beside a nested
 `update` record an outer key must select rows or control the run; an update
 field there is refused with its `update.<key>` placement, while outer `author`,
-`message` and `force` are carried into every row unless the record states its
-own. The single-update operand `id` is refused with an `ids` hint, a nested
-`list` record admits list selection keys only, and a top-level argument that
-is neither a runtime argument nor an output control is refused with its
-`options.<key>` placement: each of these was previously read as no selection
-or no field at all. A runtime schema field is admitted only when it is declared
+`message` and a literal `force: true` are carried into every row unless the
+record states its own. Selection is stated in one place: the single-update
+operand `id` is refused with an `ids` hint (flat or inside `list`), a nested
+`list` record replaces every flat selector, so a flat `ids`, `limit`, `offset`
+or `filter*` key beside it is refused, and the status selection is always
+`filterStatus` (`list.status` is refused). A `list` or `update` value that is
+no object, a snake_case selector such as `filter_status`, a CLI input-source
+option such as `bodyFile`, and a top-level argument that is neither a runtime
+argument nor an output control (including a top-level `force`, which names its
+`options.force` placement) are refused too: each of these was previously read
+as no selection or no field at all. A runtime schema field is admitted only when it is declared
 for `update_many`, because the bulk path applies no other.
 MCP retains its existing transport-specific admission contract. The no-change
 receipt applies to these preflight refusals; an executed operation's outcome

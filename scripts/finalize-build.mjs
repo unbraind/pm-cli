@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { chmod, glob, readFile, realpath, stat, writeFile } from "node:fs/promises";
+import { chmod, glob, readFile, realpath, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
@@ -164,7 +164,10 @@ export async function compactRuntimeOutputs(directory) {
     for (const key of entryPoints) files[key] = await digestFile(path.join(outputRoot, key));
   }
   const sorted = Object.fromEntries(Object.keys(files).sort().map((key) => [key, files[key]]));
-  await writeFile(ledgerPath, `${JSON.stringify({ schema_version: 1, files: sorted })}\n`);
+  // Published by rename, so an interrupted build leaves the previous ledger or none, never a truncated one.
+  const pendingLedgerPath = `${ledgerPath}.tmp-${process.pid}`;
+  await writeFile(pendingLedgerPath, `${JSON.stringify({ schema_version: 1, files: sorted })}\n`);
+  await rename(pendingLedgerPath, ledgerPath);
 }
 
 /** Finalize executable modes and the semantically identical compact public SDK manifest. */

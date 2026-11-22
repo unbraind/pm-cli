@@ -1094,16 +1094,18 @@ function carryUpdateManyNulls(
 }
 
 /** Run-wide attribution a caller may state once beside a nested update record. */
-const UPDATE_MANY_OUTER_ATTRIBUTION_KEYS = ["author", "message", "force"] as const;
+const UPDATE_MANY_OUTER_ATTRIBUTION_KEYS = ["author", "message"] as const;
 
 /**
- * Carry outer `author`, `message` and `force` into a nested update record, which
- * is otherwise the only source of per-row options; the record's own value wins.
+ * Carry outer `author`, `message` and a literal `force: true` into a nested update
+ * record, which is otherwise the only source of per-row options; the record's own value wins.
  */
 function withOuterAttribution(options: Record<string, unknown>, update: Record<string, unknown>): Record<string, unknown> {
-  const carried = Object.fromEntries(UPDATE_MANY_OUTER_ATTRIBUTION_KEYS
-    .filter((key) => options[key] !== undefined && options[key] !== null && update[key] === undefined)
+  const carried: Record<string, unknown> = Object.fromEntries(UPDATE_MANY_OUTER_ATTRIBUTION_KEYS
+    .filter((key) => typeof options[key] === "string" && update[key] === undefined)
     .map((key) => [key, options[key]]));
+  // Only a literal true forces: a carried "false" would otherwise be read as a truthy override.
+  if (options.force === true && update.force === undefined) carried.force = true;
   return Object.keys(carried).length === 0 ? update : transferMutationStdinTokenPolicy(update, { ...carried, ...update });
 }
 

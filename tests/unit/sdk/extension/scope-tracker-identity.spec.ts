@@ -118,6 +118,7 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
         await runAction({ action: "get", path: pmPath, id, cwd: process.cwd() });
         await expect(runAction({ action: "get", path: pmPath, id, cwd: tempRoot })).rejects.toMatchObject({ context: { reason: "nested_cwd_unavailable", field: "cwd" } });
         await expect(runWithActiveExtensions({ path: pmPath, cwd: tempRoot }, async () => undefined)).rejects.toMatchObject({ context: { reason: "nested_cwd_unavailable" } });
+        await expect(new PmClient({ pmRoot: pmPath, cwd: tempRoot, author }).commitItemMutations({ transactionId: "nested-cwd", mutations: [{ op: "finalize", id, set: { sprint: "x" } }] })).rejects.toMatchObject({ context: { reason: "nested_cwd_unavailable" } });
         return "done";
       };
       await expect(runAction({ action: "scope-nest", path: pmPath })).resolves.toBe("done");
@@ -135,6 +136,41 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
       });
       await expect(deferred!()).resolves.toBe("late");
       expect(probe.pmScopeActivations).toEqual(["alpha", "alpha"]);
+    });
+  });
+
+  it("runs work resumed from a settled nested scope under the live ancestor's slot, with fresh registries", async () => {
+    await withTwoTrackers(async (first, second) => {
+      await installScopeExtension(first.pmPath, "alpha");
+      await installScopeExtension(second.pmPath, "beta");
+      // The outer scope holds the exclusive slot (explicit cwd); queueing behind it from inside would never finish.
+      await runWithActiveExtensions({ path: first.pmPath, cwd: process.cwd() }, async () => {
+        let resumed: (() => Promise<unknown>) | undefined;
+        await runWithActiveExtensions({ path: second.pmPath }, async () => {
+          resumed = AsyncLocalStorage.bind(() => commitItemMutations({ pmRoot: first.pmPath, author, transactionId: "resumed", mutations: [{ op: "finalize", id: first.id, set: { sprint: "refused-by-alpha" } }] }));
+        });
+        // The settled scope's registries are gone, so the caller's tracker is activated again instead of being judged by nothing.
+        await expect(resumed!()).rejects.toMatchObject({ context: { code: "alpha_denied" } });
+      });
+      // Each store write of the resumed commit activates the caller's tracker for itself, as it would with no scope.
+      expect(probe.pmScopeActivations?.slice(0, 3)).toEqual(["alpha", "beta", "alpha"]);
+      expect(probe.pmScopeActivations?.slice(2).every((name) => name === "alpha")).toBe(true);
+    });
+  });
+
+  it("judges a write an extension makes to the caller's tracker while another tracker activates", async () => {
+    await withTwoTrackers(async (first, second) => {
+      await installScopeExtension(first.pmPath, "alpha");
+      await writeTestExtension({
+        root: path.join(second.pmPath, "extensions", "writer"),
+        name: "writer",
+        manifestOverrides: { capabilities: ["hooks"] },
+        entrySource: "export default { async activate() { globalThis.pmScopeLifecycle = await globalThis.pmScopeNested().then(() => 'written', (error) => error.context?.code); } };",
+      });
+      probe.pmScopeNested = () => runInActiveExtensionScope(first.pmPath, () => commitItemMutations({ pmRoot: first.pmPath, author, transactionId: "lifecycle", mutations: [{ op: "finalize", id: first.id, set: { sprint: "refused-by-alpha" } }] }));
+      await runWithActiveExtensions({ path: first.pmPath }, () => runWithActiveExtensions({ path: second.pmPath }, async () => undefined));
+      expect((globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle).toBe("alpha_denied");
+      delete (globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle;
     });
   });
 

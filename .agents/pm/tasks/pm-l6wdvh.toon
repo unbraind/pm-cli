@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: "area:release",distribution,packaging,performance
 created_at: "2026-11-22T02:21:01.211Z"
-updated_at: "2026-11-22T03:03:51.464Z"
+updated_at: "2026-11-22T03:21:46.040Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#8fcf1176eceedef40be11ce4"
 author: "harness:claude-code"
@@ -18,9 +18,10 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-998juj,implements,"2026-11-22T02:21:01.211Z","harness:claude-code","cli:create:dep",detected
   pm-fx0rcb,related,"2026-11-22T02:21:01.211Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-22T02:21:01.211Z","harness:claude-code","Duplicate check: pm search for runtime compaction and identifier minification returned the closed whitespace tranche pm-fx0rcb, which deliberately left identifiers alone, and no open item for identifier shortening. Filed as the closeable tranche child of the publication-weight owner."
   "2026-11-22T03:03:51.464Z","harness:claude-code","First Codex review finding: the first incremental build after switching from a tree built by the previous finalizer has no ledger, so already compacted outputs would be compacted again and differ from a clean build. scripts/prepare-build-cache.mjs now treats dist/.runtime-compaction.json as a required output: when it is missing, the TypeScript build cache is dropped and the compiler re-emits raw output for the finalizer."
+  "2026-11-22T03:21:46.039Z","harness:claude-code","Second Codex round: an interrupted finalizer could leave a truncated ledger that the next build reads as empty while tsc reuses compacted outputs. The ledger is now written to a temporary file and published by rename, so an interruption leaves the previous ledger or none. Validating the ledger's JSON in prepare-build-cache was not added: with an atomic publish a truncated ledger cannot arise from an interrupted build."
 files[5]{path,scope}:
   package.json,project
   scripts/finalize-build.mjs,project
