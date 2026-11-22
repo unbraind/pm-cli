@@ -2,23 +2,59 @@ id: pm-xp7ldt
 title: update-many ignores an unknown flat update key where a single update refuses it by name
 description: "Observed while fixing typed null handling in update-many. runAction('update-many', { options: { ids: [id], bogus: 'x', description: 'changed' } }) changes the description and reports one updated row; the unknown key is dropped without a warning. The same payload through runAction('update') refuses with: Unknown update option \"bogus\". Did you mean \"body\"? No changes were made. The GH-1520 admission check covers native create and update only, so a misspelled bulk field (for example asignee) is silently not applied to any matched row."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: admission,"area:sdk",honesty,update-many
 created_at: "2026-11-21T19:34:43.782Z"
-updated_at: "2026-11-21T21:42:48.289Z"
+updated_at: "2026-11-22T13:35:02.554Z"
+closed_at: "2026-11-22T13:35:02.527Z"
+completed_at: "2026-11-22T13:35:02.527Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "runAction update-many refuses an undeclared flat update key by name with the nearest declared key before any row changes, in the flat and nested spellings; Declared aliases, runtime schema fields and extension fields stay accepted; MCP update-many keeps its transport contract; A spec proves parity with the single update refusal for the same key"
 parent: pm-9rgaal
 risk: low
 confidence: high
+resolution: "assertNativeUpdateManyOptions judges the flat payload, the nested update record and the list record against the bulk path's own contracts and the runtime schema; undeclared, misplaced, list-command-only and planner-cleared keys are refused with a hint, and outer author, message and force are carried into each row"
 expected_result: "An unknown update key in an update-many payload is refused by name, as a single update refuses it"
-actual_result: The unknown key is dropped and the remaining fields are applied to every matched row
+actual_result: mutation-admission.integration.spec.ts refuses each spelling with an unchanged tracker and accepts every selector the planner reads; MCP update-many is unchanged
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fl3phm,related,"2026-11-21T19:34:43.782Z","harness:claude-code","cli:create:dep",detected
   pm-w7clh6,discovered_from,"2026-11-21T19:34:43.782Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-11-21T19:34:43.782Z","harness:claude-code","Duplicate check: pm search for 'update-many unknown option key silently ignored' returned the closed GH-1520 item (create and update admission, not bulk) and no open item for the bulk path."
   "2026-11-21T21:42:48.288Z","harness:claude-code","Related shape from the third Codex review of PR 1764: a JSON-decoded options bag with an own __proto__ key loses that key when normalization copies it into a plain object, so neither the unknown-key check nor the typed null scan sees it. The admission check should read the caller's own keys before any copy."
+  "2026-11-22T01:53:55.817Z","harness:claude-code","Implemented on branch fix/sdk-admission-scope-identity. dispatchAction now calls assertNativeUpdateManyOptions (src/sdk/runtime/mutation-admission.ts) for a native update-many before the handler runs. It reads the caller's own option keys before any normalization copy, so an own __proto__ key is judged, and refuses an undeclared key with the message, nearest-name hint and typed context a single update gives for the same key. With a nested update record, the record's keys are judged as update options and every outer key must select rows or control the run; an update field left outside is refused with its update.<key> placement instead of being ignored. Finding while writing the spec: the bulk path applies a runtime schema field only when the field is declared for update_many (collectRuntimeUpdateFieldValues in update-many.ts), so a field declared for update alone was also dropped without notice. Admission therefore accepts runtime fields by the update_many declaration, not the update one. MCP transport input returns before the check. Proof: tests/integration/sdk/mutation-admission.integration.spec.ts, case 'refuses an undeclared update-many key by name before any row changes, as a single update does'."
+  "2026-11-22T03:03:50.811Z","harness:claude-code","First Codex review findings on the bulk admission, each verified and fixed in the follow-up commit. options.id and list.id passed admission and selected nothing, so the update would have reached every matching row: id is refused with an ids hint and a nested list record admits list selection keys only. A misspelled top-level argument was not judged: the action envelope is now checked and a misplaced field names options.<key>. Outer author, message and force beside a nested update record were admitted but dropped by the normalizer: updateManyOptionsFromFlat now carries them into the record unless the record states its own. output_format and documentAnnotationSnapshot, which the dispatch consumes, were refused: snake_case run and output controls and the annotation snapshot guard are admitted."
+  "2026-11-22T03:21:45.475Z","harness:claude-code","Second Codex round on bulk admission, verified and fixed. Selection is now stated in one place: list.status (which the plan overwrites with filterStatus) and a flat ids, limit, offset or filter key beside a list record (which the normalizer drops) are refused by name. A snake_case selector such as filter_status was admitted through the control-key mapping and selected nothing: only output controls are mapped. A list or update value that is an array or a string was read as absent and is refused. An outer force is carried into a nested update record only when it is the literal true, since a carried string would be read as truthy, and a top-level force, which the bulk handler never read, is refused with its options.force placement. CLI input-source options (bodyFile, stdinJson and their kin) are no longer admitted as bulk fields. The first round's allowlist for nested list keys rejected selectors the list runner consumes (excludeTerminal, alias spellings, workspace list fields): it is replaced by the single rule that id is refused, leaving the list record to the list contract."
+  "2026-11-22T03:40:39.296Z","harness:claude-code","Third Codex round, verified and fixed. The flat-selector conflict check matched any key starting with filter, so a runtime schema field such as filter_region declared for update_many was refused beside a list record: the check now uses the exact flat selector keys. An undefined inner author, message or force overwrote the carried outer value through spread order: carried values are applied after the nested record."
+  "2026-11-22T09:29:02.736Z","harness:claude-code","Review round on head 7e0844634. (1) Gates (static) failed on ESLint complexity 21 and cognitive complexity 25 in assertNativeUpdateManyOptions; the function is now a sequence of four named checks (updateManyFieldKeys, assertBulkContainers, assertListRecord, assertOuterKeysBesideNestedUpdate) with one refusal builder. (2) Greptile P1: a misspelled key inside the list record (list.assigneee) passed admission, was carried unread by normalizeListOptions, and the update reached every row the remaining selectors matched. The list record's keys are now judged against the list contract (every flag and alias of LIST_FILTER_FLAG_CONTRACTS in camelCase, a negated flag under its positive key) plus list filters of runtime schema fields; anything else is refused by name with the nearest declared key. That also refuses a pre-normalized key such as noNotes and a snake_case key such as tree_depth, both of which were dropped. Spec rows added to mutation-admission.integration.spec.ts, with an accepted row covering type, assignee, notes false, sort and a runtime list filter.\n"
+  "2026-11-22T11:02:10.896Z","harness:claude-code","Second review round on head 38d735f67 (Codex gpt-6.2-sol xhigh and Greptile). The list-record allowlist was derived from CLI flags alone, which was wrong in both directions. It refused selectors the bulk planner reads: the reader aliases assignee_filter and tree_depth, and the SDK-only selectors excludeTerminal, lifecycleBucket and dependencyBlocked. It admitted the intent keys for and tokenBudget, which bound a list command's page through applyContextIntentProjection but are not applied by buildUpdateManyPlan, so a caller expecting a budget-sized page would have updated every matching row. The allowlist is now the declared list flags plus every key of LIST_COMMANDER_STRING_OPTION_CONTRACTS plus the three SDK-only selectors; for and tokenBudget are refused with a list.limit hint. The spec accepts a list record using the aliases and SDK-only selectors and refuses the two intent keys.\n"
+  "2026-11-22T11:39:36.218Z","harness:claude-code","Third review round on head 59164549e (Codex). The list-record admission now checks the runtime schema before refusing a list-command-only key, so a tracker that registers a list field named token_budget keeps its filter; list.all is refused with a filterStatus all hint like list.status, because the bulk planner never applies it. Projection keys such as fields stay accepted: the planner clears them and they do not change which rows are written.\n"
+  "2026-11-22T12:15:39.233Z","harness:claude-code","Fourth review round on head 18b89b882 (Codex and Greptile). list.status is refused before the runtime schema lookup again: the planner overwrites the list record's status with filterStatus, so a schema field claiming that spelling would lose its filter and the write would widen.\n"
+  "2026-11-22T13:15:14.229Z","harness:claude-code","CodeRabbit round on head 42fa849f4. A projection option the bulk planner clears (compact, brief, fields, includeBody, full) stays accepted in a list record, but is refused by name when a runtime schema field reads that spelling as its list filter, because the planner would drop the filter and the write would widen. The underlying name collision is filed separately as a schema defect (discovered from this item).\n"
+files[5]{path,scope}:
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime.ts,project
+  src/sdk/runtime/mutation-admission.ts,project
+  tests/integration/sdk/mutation-admission.integration.spec.ts,project
+  tests/unit/sdk/runtime/update-many-null-transport.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk/mutation-admission.integration.spec.ts tests/unit/sdk/runtime/update-many-null-transport.spec.ts,project,"harness:claude-code","2026-11-22T02:20:50.438Z",local_mutation,fix/sdk-admission-scope-identity
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: "update-many refuses every key it would not read, by name, before any row changes"
+contract_change:
+  api: "runAction update-many (flat payload, nested list and update records, top-level arguments)"
+  before: "An undeclared key, a single-update id, list.status, a flat selector beside a list record, a snake_case selector, a non-object list or update, a top-level force and CLI input-source options were dropped silently while the remaining fields were applied; outer author and message beside a nested update record were dropped"
+  after: "Each of those is refused by name with invalid_argument_value before any row changes, with the hint a single update gives. Outer author, message and a literal force true are carried into a nested update record. Only runtime schema fields declared for update_many are admitted. MCP update-many is unchanged"
+  migrate: "Fix the key the refusal names: use ids instead of id, filterStatus instead of list.status, state selection either flat or inside list, put update fields inside update when a nested update record is used, and put force inside options"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-xp7ldt
+  gate_id: update-many-key-admission
+  negative_control: "tests/integration/sdk/mutation-admission.integration.spec.ts sends misspelled, misplaced and unread keys through flat, nested and list-record update-many payloads and requires a named refusal with an unchanged tracker; on main the rows change"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/sdk/mutation-admission.integration.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

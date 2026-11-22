@@ -1772,11 +1772,47 @@ registries across concurrent requests, and is reentrant: SDK primitives called
 inside the callback reuse the active scope instead of attempting a nested
 activation cycle.
 
+A scope belongs to the tracker it was opened for (pm-zi34i1). Nested work for
+the same tracker, under any path spelling that resolves to the same directory,
+reuses the scope without a second activation, including a nested extension
+action. Nested work for another tracker (`runAction`, `runWithActiveExtensions`,
+`runInActiveExtensionScope` and `PmClient` item-transaction methods) activates
+that tracker's extensions in request-local registries for the nested call, so
+its guards and extension fields judge the write and the caller's registrations
+are back afterwards. `runAction` publishes the scope its own dispatch holds: a
+command handler, including one dispatched with an explicit `cwd`, can start
+nested work for its tracker without waiting for a second activation slot.
+
+Three rules bound that reuse. A nested call that passes `noExtensions: true`
+runs in empty registries even for the scope's own tracker, so the per-call
+override holds under a caller's live scope. A nested call cannot change the
+process working directory, which needs exclusive use of the activation gate
+its caller holds: a `cwd` naming the current directory is accepted, any other
+is refused before dispatch with `context.reason = "nested_cwd_unavailable"`;
+address the tracker with `path` instead. A scope ends when its callback
+settles: a timer or promise it left behind activates for itself instead of
+reusing registrations that were already torn down, under a still-open
+ancestor scope's slot when there is one and through the gate otherwise. Await
+nested work inside the callback that started it; work left running after
+every enclosing scope has settled no longer holds the activation gate. An
+injected extension-host client (`context.sdk.client`) shares its host's
+registrations for the host's tracker only; a call it addresses to another
+tracker is activated and judged like any other nested call, and so is a call
+it makes from work resumed after the scope it was captured in has settled,
+because that context no longer carries the host's registrations. Its direct
+item transactions take the same decision as its dispatched actions. An `activate()` or
+`deactivate()` callback that runs SDK work for its own tracker inside a nested
+activation is refused with `context.reason = "extension_scope_not_ready"`,
+because that tracker's guards are not all in place. A relative
+`cwd` is resolved once, before activation, so the scope records the tracker
+that was activated.
+
 `runInActiveExtensionScope(pmRoot, run)` is the reentrant form for code that
 writes through the item store without dispatching an action: it reuses the
-caller's open scope, and otherwise activates the workspace's extensions for
-that one call. The SDK's own `finalize` step uses it, so guards and extension
-fields judge the write the same way whether or not the caller opened a scope.
+caller's open scope when that scope belongs to `pmRoot`, and otherwise
+activates that tracker's extensions for the one call. The SDK's own `finalize`
+step uses it, so guards and extension fields judge the write the same way
+whether or not the caller opened a scope.
 
 ```ts
 import {
@@ -4578,6 +4614,34 @@ nearest-name hint when available, and `context.changed = false`. Put mutation
 fields under `options` when using `run`; existing declared top-level aliases
 remain accepted. Workspace schema option identities remain available through
 `run`, while typed convenience methods support extension item fields through `field`.
+`runAction("update-many")` applies the same admission before any row changes
+(pm-xp7ldt): an undeclared key in the flat payload or in a nested `update`
+record is refused by name with the same hint, instead of being dropped while
+the remaining fields are applied to every matched row. Beside a nested
+`update` record an outer key must select rows or control the run; an update
+field there is refused with its `update.<key>` placement, while outer `author`,
+`message` and a literal `force: true` are carried into every row unless the
+record states its own. Selection is stated in one place: the single-update
+operand `id` is refused with an `ids` hint (flat or inside `list`), a nested
+`list` record replaces every flat selector, so a flat `ids`, `limit`, `offset`
+or `filter*` key beside it is refused, and the status selection is always
+`filterStatus` (`list.status` is refused). Every other key of a `list` record
+must be one the bulk selection applies: a declared list option (`assigneeFilter`,
+`sort`, `notes: false`, with the aliases the list reader accepts, such as
+`assignee_filter`), an SDK-only selector (`excludeTerminal`, `lifecycleBucket`,
+`dependencyBlocked`) or a list filter of a runtime schema field. A misspelled
+selector such as `assigneee` is refused by name with the nearest declared key,
+and the options only a list command applies are refused with the bulk
+spelling that does what they name: `for` and `tokenBudget` with a `list.limit`
+hint, `all` with `filterStatus: "all"` (unless the tracker registers a list
+field of that name); all of these were previously carried unread while the update reached every
+row the remaining selectors matched. A `list` or `update` value that is
+no object, a snake_case selector such as `filter_status`, a CLI input-source
+option such as `bodyFile`, and a top-level argument that is neither a runtime
+argument nor an output control (including a top-level `force`, which names its
+`options.force` placement) are refused too: each of these was previously read
+as no selection or no field at all. A runtime schema field is admitted only when it is declared
+for `update_many`, because the bulk path applies no other.
 MCP retains its existing transport-specific admission contract. The no-change
 receipt applies to these preflight refusals; an executed operation's outcome
 and evidence must be assessed separately.

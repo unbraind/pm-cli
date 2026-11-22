@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-11-21T21:29:39.185Z"
+updated_at: "2026-11-22T02:21:27.114Z"
 author: unknown
 estimated_minutes: 300
 acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
@@ -89,7 +89,7 @@ dependencies[14]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[68]:
+comments[69]:
   - created_at: "2026-07-25T07:12:23.380Z"
     author: "harness:claude-code"
     text: "Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
@@ -297,6 +297,9 @@ comments[68]:
   - created_at: "2026-11-21T21:19:28.918Z"
     author: "harness:claude-code"
     text: "Headroom with the transaction finalize bundle (PR #1764, pm-gh1656 and pm-w7clh6), measured 2026-11-21. The first commit passed the base ceiling; the review fixes took the hosted clean build to 20,026,458 of 20,000,000 B (Gates static run 44947696130). A census of what ships found no cheap structural saving: the bundle is already minified (7.46 MB of JavaScript), the tsc-emitted JavaScript holds about 30 KB of comments in 5.8 MB, and a reachability walk from the export map, bins and shipped scripts found no further unreachable emitted module. This PR therefore moves three repository-process pages out of the tarball (docs/PERFORMANCE.md, docs/AGENT_PROVENANCE_ADR.md, docs/DEFECT_RECURRENCE.md, 43 KB before table compaction), each declared in scripts/release/docs-reachability-exceptions.json and linked from packaged pages by canonical GitHub URL. Clean local build afterwards: 19,985,525 B, 1,580 files (14,475 B left). Every bundled entry chunk duplicates shared code, so one KB of SDK source costs several KB of package; the next change of this size needs the structural tranche named in the previous census (route pm-mcp and ./cli through bundle chunks)."
+  - created_at: "2026-11-22T01:53:51.079Z"
+    author: "harness:claude-code"
+    text: "Identifier tranche (branch fix/sdk-admission-scope-identity), measured 2026-11-22 on a clean local build. The census of 2026-11-21 counted comments in the tsc-emitted JavaScript and found nothing to remove, but did not count identifiers: scripts/finalize-build.mjs compacted the 714 emitted modules outside dist/cli-bundle with minifyIdentifiers off, while the bundle built from the same sources has always shortened them. Turning it on for compactRuntimeOutputs takes the packed distribution from 19,985,525 B to 18,229,399 B (1,756,126 B freed, 1,770,601 B left under the 20,000,000 B ceiling, 1,580 files). Export names, module paths and declarations are unchanged, and the composed source maps keep the original names (asserted through the map's names array). A function's runtime name is no longer preserved in these modules; a search of src and scripts found no read of a function or constructor name. Renaming is not a fixed point (a second pass over its own output swapped two names), and an incremental tsc leaves unchanged outputs in place, so the finalizer now records the sha256 of every compacted output in dist/.runtime-compaction.json (excluded from package.json files) and skips outputs whose digest still matches. Two consecutive builds left dist/sdk/errors.js byte-identical. Routing pm-mcp and ./cli through bundle chunks remains the larger structural option and is not needed for the current headroom."
 notes[2]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
   "2026-11-05T22:54:21.153Z","harness:claude-code","Next-tranche headroom census, 2026-11-05. Measured at the PR 1672 head on the npm packlist from package-distribution.mjs, excluding the bundled runtime.\n\nCurrent state: base 19,980,344 of 20,000,000 bytes (about 19.7 KB headroom) and 1,799 of 1,800 files. Headroom is one file, so the next change that ships one more emitted module or packaged doc fails the PR base gate.\n\nMeasured candidate groups (files, bytes):\n\n| Group | Files | Bytes |\n| --- | ---: | ---: |\n| dist tsc JavaScript under dist/sdk | 388 | 3,823,149 |\n| dist **/*.d.ts | 684 | 2,655,971 |\n| docs/*.md | 108 | 1,506,584 |\n| packages/pm-* | 85 | 387,014 |\n| .agents/skills | 27 | 77,198 |\n| plugins/ | 57 | 72,944 |\n| docs/examples | 27 | 46,155 |\n| repo-only community files (CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md) | 3 | 16,234 |\n\nThe community files are referenced only by the validate well-known-files list and by docs-skills and release-readiness specs, not by any runtime package read.\n\nEach of these is a user-visible packaging decision. It belongs in its own tranche with consumer proof (npx, bunx, the SDK entrypoints and extension installs), not in a release-blocker fix."
@@ -359,7 +362,7 @@ files[20]:
     note: Binds the per-file injection allowance to the installed sentry-cli
   - path: tests/unit/scripts/runtime-compaction.spec.ts
     scope: project
-tests[9]:
+tests[10]:
   - command: node scripts/release/package-artifact-gate.mjs
     scope: project
     timeout_seconds: 180
@@ -431,6 +434,13 @@ tests[9]:
       created_at: "2026-11-21T02:21:07.767Z"
       source_kind: local_mutation
       source_ref: fix/append-only-history-recovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts tests/unit/scripts/finalize-build.spec.ts
+    scope: project
+    provenance:
+      author: "harness:claude-code"
+      created_at: "2026-11-22T02:20:51.843Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-admission-scope-identity
 test_runs[5]:
   - run_id: test-local-msdbz6wt-4n92fd
     kind: test
@@ -483,7 +493,7 @@ test_runs[5]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/finalize-build.spec.ts tests/unit/scripts/release/package-artifact-gate.spec.ts,schema,schema,source,local_source_ref
-docs[6]:
+docs[7]:
   - path: AGENTS.md
     scope: project
   - path: CHANGELOG.md
@@ -499,4 +509,6 @@ docs[6]:
   - path: docs/RELEASING.md
     scope: project
     note: artifact budget policy and maintainer workflow
+  - path: docs/REPOSITORY_TESTING.md
+    scope: project
 body: ""

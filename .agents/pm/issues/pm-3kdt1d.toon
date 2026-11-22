@@ -1,0 +1,38 @@
+id: pm-3kdt1d
+title: "The context-intent calibration gate measures a tracker written moments earlier, so its orientation bytes depend on how many history streams sit inside the summary's racy window"
+description: "Since the history stream summary landed (bounded activity reads), the calibration gate at the 2243-item tier is bimodal: the orientation session delivers 32724 bytes when most synthetic streams are older than the 2 s racy window at the first read, and 32816 bytes when more than half are not, because context then discloses activity_history_read with reason summary_stale. The approved ceiling is the smaller value, so the gate failed 4 of 6 local runs on an unchanged tree with: calibration session orientation regressed. Hosted runs pass or fail by how long workspace generation takes on the runner."
+type: Issue
+status: closed
+priority: 2
+tags[4]: "area:release",calibration,flaky-gate,reliability
+created_at: "2026-11-22T10:03:52.854Z"
+updated_at: "2026-11-22T13:35:05.204Z"
+closed_at: "2026-11-22T13:35:05.183Z"
+completed_at: "2026-11-22T13:35:05.183Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "The gate reads the synthetic tracker as settled, one racy window after it was written, through the summary's wall-clock seam; Six consecutive runs on an unchanged tree pass against the approved report without regenerating it; The racy window itself is unchanged for every product read"
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: measureContextIntentCalibration moves the stream summary's wall clock one racy window ahead for the measurement and restores it; product reads are unchanged
+expected_result: The calibration gate reports the same bytes on every run of an unchanged tree
+actual_result: Six consecutive gate runs pass against the unchanged approved report; four of six failed before
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1664,discovered_from,"2026-11-22T10:04:07.304Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-22T10:04:10.269Z","harness:claude-code","Implemented in scripts/release/context-intent-calibration-gate.mjs: measureContextIntentCalibration moves the summary's wall clock one racy window (2 s) plus 1 ms ahead for the duration of the measurement and restores it afterwards. Every synthetic stream is then persisted by the first bounded read, and the orientation session no longer carries the summary_stale disclosure. Evidence: a per-command capture of five runs before the change showed context at 5536 bytes in four runs and 5444 in one, the difference being exactly the activity_history_read field (streams_read 1321 of 2244); list, search, get and next were identical. After the change six consecutive gate runs pass against the unchanged approved report. The racy window constant and every product read path are untouched.\n"
+files[1]{path,scope,note}:
+  scripts/release/context-intent-calibration-gate.mjs,project,settled-tracker wall clock
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/context-intent-calibration-gate.spec.ts,project,"harness:claude-code","2026-11-22T10:04:07.304Z",local_mutation,fix/sdk-admission-scope-identity
+close_reason: "The calibration gate reads its synthetic tracker as settled, so its bytes are the same on every run"
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_added
+  owner: pm-3kdt1d
+  gate_id: context-intent-calibration-settled-read
+  negative_control: scripts/release/context-intent-calibration-gate.mjs run six times on an unchanged tree; without the settled wall clock four of six runs fail with calibration session orientation regressed
+  local_checks[1]: node scripts/release/context-intent-calibration-gate.mjs
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

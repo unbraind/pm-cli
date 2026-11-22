@@ -7,7 +7,7 @@ import { createScriptHarness } from "../../helpers/scriptModule";
 
 const harness = createScriptHarness();
 
-it.each([false, true])("compacts redundant runtime syntax while preserving names, behavior, declarations, bundles, and original source mappings (aliased root: %s)", async (aliased) => {
+it.each([false, true])("compacts redundant runtime syntax and private identifiers while preserving export names, behavior, declarations, bundles, and original source mappings (aliased root: %s)", async (aliased) => {
   const root = await harness.createTempRoot("pm-runtime-compact-");
   const dist = path.join(root, "dist");
   await mkdir(path.join(dist, "cli-bundle"), { recursive: true });
@@ -38,7 +38,8 @@ it.each([false, true])("compacts redundant runtime syntax while preserving names
   if (aliased) await symlink(dist, buildRoot, "junction");
   await mod.compactRuntimeOutputs(buildRoot);
   const compact = await readFile(runtime, "utf8");
-  expect(compact).toContain("function importantName");
+  expect(compact).toMatch(/export\{\w+ as importantName\}/u);
+  expect(compact).not.toContain("adjusted");
   expect(compact).not.toContain("unreachable fixture branch");
   expect(compact.length).toBeLessThan(emitted.code.length + 39);
   expect(await readFile(path.join(dist, "example.d.ts"), "utf8")).toBe(
@@ -48,19 +49,46 @@ it.each([false, true])("compacts redundant runtime syntax while preserving names
     bundle,
   );
   const mapping = JSON.parse(await readFile(`${runtime}.map`, "utf8")) as {
+    names: string[];
     sources: string[];
     sourcesContent: string[];
   };
+  expect(mapping.names).toEqual(expect.arrayContaining(["importantName", "value"]));
   expect(mapping.sources).toContain("original.ts");
   expect(mapping.sourcesContent).toContain(source);
   const consumer = path.join(dist, "consumer.mjs");
   await writeFile(
     consumer,
-    'import { importantName } from "./example.js"; console.log(importantName.name, importantName(2)); try { importantName(-1); } catch (error) { console.log(error.name, error.message); }',
+    'import { importantName } from "./example.js"; console.log(importantName(2)); try { importantName(-1); } catch (error) { console.log(error.name, error.message); }',
   );
   expect(
     execFileSync(process.execPath, [consumer], { encoding: "utf8" }).trim(),
-  ).toBe("importantName 3\nRangeError negative");
+  ).toBe("3\nRangeError negative");
+  const compactMap = await readFile(`${runtime}.map`, "utf8");
+  const ledgerPath = path.join(dist, ".runtime-compaction.json");
+  const ledger = await readFile(ledgerPath, "utf8");
+  expect(Object.keys((JSON.parse(ledger) as { files: Record<string, string> }).files)).toEqual(["example.js"]);
+  // An incremental compile leaves unchanged outputs in place: a repeated finalization must keep their bytes.
   await mod.compactRuntimeOutputs(buildRoot);
   expect(await readFile(runtime, "utf8")).toBe(compact);
+  expect(await readFile(`${runtime}.map`, "utf8")).toBe(compactMap);
+  expect(await readFile(ledgerPath, "utf8")).toBe(ledger);
+  // A re-emitted output no longer matches its recorded digest and is compacted again.
+  await writeFile(runtime, "export function importantName(value) {\n  return value + 2;\n}\n");
+  await mod.compactRuntimeOutputs(buildRoot);
+  expect(await readFile(runtime, "utf8")).toMatch(/^function \w\(\w\)\{return \w\+2\}export\{\w as importantName\};/u);
+  // An unreadable or malformed ledger records nothing, and an empty output set still writes a ledger.
+  for (const broken of ["not json", "null", '{"files":null}']) {
+    await writeFile(ledgerPath, broken);
+    await mod.compactRuntimeOutputs(buildRoot);
+    expect(Object.keys((JSON.parse(await readFile(ledgerPath, "utf8")) as { files: Record<string, string> }).files)).toEqual(["example.js"]);
+  }
+  // A finalization stopped after it began overwriting modules leaves no ledger, so the next build starts from raw compiler output.
+  await writeFile(path.join(dist, "broken.js"), "export const = ;\n");
+  await expect(mod.compactRuntimeOutputs(buildRoot)).rejects.toThrow();
+  await expect(readFile(ledgerPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+  const empty = path.join(root, "empty-dist");
+  await mkdir(empty);
+  await mod.compactRuntimeOutputs(empty);
+  expect(await readFile(path.join(empty, ".runtime-compaction.json"), "utf8")).toBe('{"schema_version":1,"files":{}}\n');
 });

@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- update-many ignores an unknown flat update key where a single update refuses it by name: An undeclared key, a single-update id, list.status, a flat selector beside a list record, a snake_case selector, a non-object list or update, a top-level force and CLI input-source options were dropped silently while the remaining fields were applied; outer author and message beside a nested update record were dropped → Each of those is refused by name with invalid_argument_value before any row changes, with the hint a single update gives. Outer author, message and a literal force true are carried into a nested update record. Only runtime schema fields declared for update_many are admitted. MCP update-many is unchanged. Migrate: Fix the key the refusal names: use ids instead of id, filterStatus instead of list.status, state selection either flat or inside list, put update fields inside update when a nested update record is used, and put force inside options ([pm-xp7ldt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xp7ldt.toon))
+- A nested SDK dispatch for another tracker reuses the caller's active extension scope, so the second tracker's guards and extension fields never load: Any nested call reused the open scope whatever tracker it addressed, ignored a nested noExtensions and a nested cwd in runAction, and a nested runWithActiveExtensions with its own cwd waited for the activation gate → A nested call for another tracker activates that tracker in request-local registries; a nested noExtensions call runs in empty registries; a nested cwd other than the current directory is refused with reason nested_cwd_unavailable; runAction publishes its scope, so nested same-tracker work reuses it and a nested extension action dispatches; a scope ends when its callback settles. Migrate: Inside a scope address a tracker with path instead of cwd. A host that relied on tracker A registrations judging tracker B writes must install the guard in tracker B. Await nested work inside the callback that started it ([pm-zi34i1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zi34i1.toon))
+
+### Fixed
+
+- The context-intent calibration gate measures a tracker written moments earlier, so its orientation bytes depend on how many history streams sit inside the summary's racy window ([pm-3kdt1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3kdt1d.toon))
+- Release publication reads the producer-binding artifact inventory once, within a second of the upload, and blocks the daily cut when the listing trails it ([pm-jvb9pk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jvb9pk.toon))
+
+### Other
+
+- Shorten module-private identifiers in the unbundled runtime modules, restoring 1.76 MB of publication headroom ([pm-l6wdvh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l6wdvh.toon))
+
 ## 2026.11.22 - 2026-11-22
 
 ### Changed (SDK contract)

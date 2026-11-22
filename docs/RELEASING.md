@@ -210,6 +210,11 @@ uses `--push --defer-push` to write an exact producer binding. Auto Release uplo
 prepared refs. Publication independently fetches the verified run's artifact and
 compares the tag name, target commit, tag object and declaration. Missing, expired,
 ambiguous or mismatched evidence fails closed; artifact retention is 90 days.
+The artifact listing can trail an upload finalized moments earlier, so an
+inventory that does not yet list the attempt's binding, or lists one valid
+binding while still partial, is read again within a bounded wait of 30 seconds
+([pm-jvb9pk](../.agents/pm/issues/pm-jvb9pk.toon)); a duplicate, expired,
+oversized or mismatched binding visible in any read is refused at once.
 A branch advance after sealing refuses publication rather than rebasing into a
 different target. Local `--push` refuses before Git inspection or asset mutation;
 local preparation without pushing remains supported. Historical admission remains
@@ -556,6 +561,23 @@ and documentation remain intact; the publication-weight owner is
 and this delimiter-compaction tranche is
 [pm-5aze0q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5aze0q.toon)
 (repository-only tracker records excluded from npm).
+
+Build finalization also shortens module-private identifiers in the emitted
+runtime modules outside `dist/cli-bundle`
+([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon), a repository-only tracker record excluded from npm),
+as the CLI bundle already does for the same sources. Export names, module
+paths and declarations are unchanged, and the composed source maps uploaded for
+symbolication keep the original names; a function's runtime `name` is not part
+of the contract. Renaming is not a fixed point, so `dist/.runtime-compaction.json`
+(build-local, excluded from the package) records the digest of every compacted
+output and a repeated build skips outputs an incremental compile left in place.
+When the ledger is missing, `scripts/prepare-build-cache.mjs` drops the
+TypeScript build cache so the compiler re-emits raw output for the finalizer.
+The finalizer withdraws the ledger before it overwrites the first module, and
+the cache step also drops both when a recorded output no longer matches its
+digest (source-map injection, a stopped build), so a changed module is never
+shortened twice.
+The tranche removed about 1.76 MB from the packed distribution.
 
 The generated error-code catalog ships as compact rows
 ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon), a repository-only tracker record excluded from npm).
