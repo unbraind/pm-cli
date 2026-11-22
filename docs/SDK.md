@@ -1794,7 +1794,13 @@ settles: a timer or promise it left behind activates for itself instead of
 reusing registrations that were already torn down, under a still-open
 ancestor scope's slot when there is one and through the gate otherwise. Await
 nested work inside the callback that started it; work left running after
-every enclosing scope has settled no longer holds the activation gate. A relative
+every enclosing scope has settled no longer holds the activation gate. An
+injected extension-host client (`context.sdk.client`) shares its host's
+registrations for the host's tracker only; a call it addresses to another
+tracker is activated and judged like any other nested call. An `activate()` or
+`deactivate()` callback that runs SDK work for its own tracker inside a nested
+activation is refused with `context.reason = "extension_scope_not_ready"`,
+because that tracker's guards are not all in place. A relative
 `cwd` is resolved once, before activation, so the scope records the tracker
 that was activated.
 

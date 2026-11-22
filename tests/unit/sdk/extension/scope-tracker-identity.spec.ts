@@ -171,6 +171,11 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
       await runWithActiveExtensions({ path: first.pmPath }, () => runWithActiveExtensions({ path: second.pmPath }, async () => undefined));
       expect((globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle).toBe("alpha_denied");
       delete (globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle;
+      // The same callback addressing its own, still activating tracker is refused: its guards are not in place yet.
+      probe.pmScopeNested = () => runInActiveExtensionScope(second.pmPath, async () => "unguarded");
+      await runWithActiveExtensions({ path: first.pmPath }, () => runWithActiveExtensions({ path: second.pmPath }, async () => undefined));
+      expect((globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle).toBe("invalid_argument_value");
+      delete (globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle;
     });
   });
 
@@ -191,6 +196,22 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
         process.chdir(previous);
       }
       expect(probe.pmScopeActivations).toEqual(["alpha"]);
+    });
+  });
+
+  it("judges an injected host client's write to another tracker with that tracker's guards", async () => {
+    await withTwoTrackers(async (first, second) => {
+      await installScopeExtension(first.pmPath, "alpha");
+      await installScopeExtension(second.pmPath, "beta");
+      const host = PmClient.forActiveExtensionHost({ pmRoot: first.pmPath, author });
+      probe.pmScopeNested = async () => {
+        await expect(host.run("update", { path: second.pmPath, id: second.id, options: { sprint: "refused-by-beta" } })).rejects.toMatchObject({ context: { code: "beta_denied" } });
+        await host.run("update", { path: second.pmPath, id: second.id, options: { sprint: "refused-by-alpha" } });
+        // For its own tracker the host client keeps sharing the host's registrations.
+        await expect(host.update(first.id, { sprint: "refused-by-alpha" } as never)).rejects.toMatchObject({ context: { code: "alpha_denied" } });
+        return "done";
+      };
+      await expect(runAction({ action: "scope-nest", path: first.pmPath })).resolves.toBe("done");
     });
   });
 

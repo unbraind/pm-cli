@@ -67,6 +67,9 @@ export async function assertNativeMutationOptions(
   await refuseUndeclaredKeys(action, action, new Set([...Object.keys(rawOptions ?? {}), ...Object.keys(options)]), allowed, pmRoot);
 }
 
+/** Exact flat selectors a list record replaces; a schema field that merely starts with "filter" is an update field. */
+const FLAT_SELECTION_KEYS = new Set([...UPDATE_MANY_FLAT_CONTROL_KEYS].filter((key) => key !== "filterStatus" && (key.startsWith("filter") || key === "ids" || key === "limit" || key === "offset")));
+
 const camelKey = (key: string): string => key.replace(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
 
 /**
@@ -113,7 +116,7 @@ export async function assertNativeUpdateManyOptions(
   if (isRuntimeRecord(options.list)) {
     // One selection, stated in one place: the plan reads status from filterStatus only, and a list record replaces every flat selector.
     const conflict = Object.hasOwn(options.list, "status") ? { key: "list.status", required: "State the status selection as filterStatus beside the list record." }
-      : [...outerKeys].filter((key) => key !== "filterStatus" && (key.startsWith("filter") || key === "ids" || key === "limit" || key === "offset"))
+      : [...outerKeys].filter((key) => FLAT_SELECTION_KEYS.has(key))
         .map((key) => ({ key, required: `Put the selection inside list, or drop the list record; a flat "${key}" beside it is not read.` }))[0];
     if (conflict !== undefined) {
       throw new PmCliError(`update-many "${conflict.key}" is not read beside this selection. ${conflict.required} No changes were made.`, 2, {

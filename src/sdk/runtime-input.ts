@@ -1106,7 +1106,7 @@ function withOuterAttribution(options: Record<string, unknown>, update: Record<s
     .map((key) => [key, options[key]]));
   // Only a literal true forces: a carried "false" would otherwise be read as a truthy override.
   if (options.force === true && update.force === undefined) carried.force = true;
-  return Object.keys(carried).length === 0 ? update : transferMutationStdinTokenPolicy(update, { ...carried, ...update });
+  return Object.keys(carried).length === 0 ? update : transferMutationStdinTokenPolicy(update, { ...update, ...carried });
 }
 
 /**

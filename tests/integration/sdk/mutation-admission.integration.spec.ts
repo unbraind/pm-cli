@@ -63,6 +63,7 @@ describe("mutation request admission", () => {
   it("refuses an undeclared update-many key by name before any row changes, as a single update does", async () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--commands", "create,update,update_many", "--json"]).code).toBe(0);
+      expect(context.runCli(["schema", "add-field", "filter_region", "--type", "string", "--commands", "create,update,update_many", "--json"]).code).toBe(0);
       expect(context.runCli(["schema", "add-field", "single_only", "--type", "string", "--commands", "create,update", "--json"]).code).toBe(0);
       const id = createTestItemId(context, { title: "bulk input admission", createMode: "progressive" });
       const client = new PmClient({ pmRoot: context.pmPath });
@@ -128,9 +129,14 @@ describe("mutation request admission", () => {
       await expect(client.run("update-many", { options: { ids: [id], description: "guarded", documentAnnotationSnapshot: { comments: [], notes: [], learnings: [] } } })).resolves.toBeDefined();
       // Attribution stated once beside a nested update record reaches every row; the record's own value wins.
       await client.run("update-many", { options: { ids: [id], update: { description: "attributed" }, author: "outer-author", message: "outer message", force: true, filterStatus: "all", noCheckpoint: true } });
+      // An undefined inner value is absent, not an override, and a schema field named filter* beside a list record is a field.
+      await client.run("update-many", { options: { list: { ids: [id] }, filterRegion: "west", noCheckpoint: true } });
+      expect((await client.get(id, { full: true })).item).toMatchObject({ filter_region: "west" });
+      await client.run("update-many", { options: { list: { ids: [id] }, update: { description: "undefined inner", author: undefined }, author: "kept-author", noCheckpoint: true } });
+      expect(JSON.parse((await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8")).trim().split("\n").at(-1)!)).toMatchObject({ author: "kept-author" });
       await client.run("update-many", { options: { ids: [id], update: { description: "inner wins", author: "inner-author" }, author: "outer-author", noCheckpoint: true } });
       const history = (await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8")).trim().split("\n").map((line) => JSON.parse(line) as { author: string; message?: string });
-      expect(history.at(-2)).toMatchObject({ author: "outer-author", message: "outer message" });
+      expect(history.at(-4)).toMatchObject({ author: "outer-author", message: "outer message" });
       expect(history.at(-1)).toMatchObject({ author: "inner-author" });
       expect(context.runCli(["history", id, "--verify", "--strict-exit", "--json"]).code).toBe(0);
     });

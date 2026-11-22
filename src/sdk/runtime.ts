@@ -2680,6 +2680,8 @@ interface ActiveExtensionScope {
   live: boolean;
   /** The scope this one was opened under, whose gate slot it borrows. */
   parent: ActiveExtensionScope | undefined;
+  /** False while the tracker's extensions load or tear down: its registries cannot judge a write yet. */
+  ready: boolean;
 }
 
 const activeExtensionScope = new AsyncLocalStorage<ActiveExtensionScope>();
@@ -2705,8 +2707,8 @@ function openExtensionScope(): ActiveExtensionScope | undefined {
 }
 
 /** Publish a scope for `run` and expire it when `run` settles, so deferred work cannot reuse a released gate slot. */
-async function runAsExtensionScope<T>(pmRoot: string, active: ActiveExtensionRuntime | null, run: () => Promise<T>): Promise<T> {
-  const scope: ActiveExtensionScope = { root: trackerScopeRoot(pmRoot), active, live: true, parent: openExtensionScope() };
+async function runAsExtensionScope<T>(pmRoot: string, active: ActiveExtensionRuntime | null, run: () => Promise<T>, ready = true): Promise<T> {
+  const scope: ActiveExtensionScope = { root: trackerScopeRoot(pmRoot), active, live: true, parent: openExtensionScope(), ready };
   try {
     return await activeExtensionScope.run(scope, run);
   } finally {
@@ -2744,13 +2746,21 @@ function runUnderOpenExtensionScope<T>(
   if (scope === undefined) return undefined;
   // Only the context's own scope has its registries in place; one reached through a settled child does not.
   const ownRegistries = scope === activeExtensionScope.getStore();
-  if (ownRegistries && scope.root === trackerScopeRoot(pmRoot) && global.noExtensions !== true) return run(scope.active);
+  const sameTracker = scope.root === trackerScopeRoot(pmRoot);
+  if (sameTracker && !scope.ready) {
+    // An activate() or deactivate() callback addressing its own tracker: the guards are not all in place.
+    const required = "Do the work from a command or hook handler, after the tracker's extensions have activated.";
+    throw new PmCliError(`An extension lifecycle callback cannot run SDK work for tracker ${scope.root} while its extensions activate or deactivate. ${required}`, EXIT_CODE.CONFLICT, {
+      code: "invalid_argument_value", reason: "extension_scope_not_ready", changed: false, required, nextSteps: [required],
+    });
+  }
+  if (ownRegistries && sameTracker && global.noExtensions !== true) return run(scope.active);
   // The scope is published for the tracker before its extensions load, so a lifecycle callback that
   // writes to the caller's tracker is judged by a fresh activation, never by these half-built registries.
   return runWithIsolatedExtensionRuntime(() =>
     runAsExtensionScope(pmRoot, null, () =>
       withActiveExtensionsExclusively(global, cwd, (active) => runAsExtensionScope(pmRoot, active, () => run(active))),
-    ),
+    false),
   );
 }
 
@@ -3134,14 +3144,18 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
     if (resolved.action === "history-attest") {
       return await dispatch(null);
     }
+    const pmRoot = resolvePmRoot(resolutionCwd, global.path);
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
         ACTIVE_EXTENSION_HOST_CONTEXT
       ] === true
     ) {
-      return await dispatch(null);
+      // An injected host client shares its host's registrations for the host's tracker only. A call it
+      // addresses to another tracker is judged by that tracker's extensions, like any other nested call.
+      const hostScope = openExtensionScope();
+      if (hostScope === undefined || hostScope.root === trackerScopeRoot(pmRoot)) return await dispatch(null);
+      return await runUnderOpenExtensionScope(pmRoot, { ...global, noExtensions: false }, resolutionCwd, dispatch);
     }
-    const pmRoot = resolvePmRoot(resolutionCwd, global.path);
     if (openExtensionScope() !== undefined) assertNestedCwdIsCurrent(explicitCwd);
     const nested = runUnderOpenExtensionScope(pmRoot, global, resolutionCwd, dispatch);
     if (nested !== undefined) return await nested;
