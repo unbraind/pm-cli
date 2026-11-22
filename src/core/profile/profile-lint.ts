@@ -44,6 +44,7 @@ import { normalizeStatusToken } from "../schema/type-workflows.js";
 import { DEFAULT_RUNTIME_STATUS_DEFINITIONS } from "../schema/runtime-schema.js";
 import { toErrorMessage } from "../shared/primitives.js";
 import { resolvePmToolCustomFieldCollision } from "../../sdk/cli-contracts/tool-schema.js";
+import { describeFieldOptionCollision, resolveAddFieldOptionCollisions } from "../../sdk/schema/field-option-collisions.js";
 import {
   normalizeProfileLookupKey,
   type ProjectProfileDefinition,
@@ -263,8 +264,10 @@ function lintFields(
   const seen = new Set<string>();
   for (const [index, field] of profile.fields.entries()) {
     let key: string;
+    let normalized: ReturnType<typeof normalizeAddFieldInput>;
     try {
-      key = normalizeAddFieldInput(field).key;
+      normalized = normalizeAddFieldInput(field);
+      key = normalized.key;
     } catch (error) {
       findings.push({
         severity: "error",
@@ -286,6 +289,17 @@ function lintFields(
       continue;
     }
     seen.add(key);
+    // profile apply refuses this field, so the shared lint that package checks consume must say so too (pm-pta8um).
+    const optionCollisions = resolveAddFieldOptionCollisions(normalized);
+    if (optionCollisions.length > 0) {
+      findings.push({
+        severity: "error",
+        code: "field_option_collision",
+        dimension: "fields",
+        target: key,
+        message: `Field "${key}" would disable a built-in option: ${optionCollisions.map(describeFieldOptionCollision).join("; ")}. Rename the field or narrow its commands.`,
+      });
+    }
     const collision = resolvePmToolCustomFieldCollision(key);
     if (collision) {
       findings.push({

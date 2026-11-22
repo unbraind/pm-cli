@@ -38,7 +38,7 @@ import {
 } from "../core/schema/item-types-file.js";
 import { serializeStatusDefsFile } from "../core/schema/status-defs-file.js";
 import { normalizeAddFieldInput, serializeFieldsFile } from "../core/schema/fields-file.js";
-import { assertFieldOptionsAvailable, describeFieldOptionCollision, resolveAddFieldOptionCollisions, type FieldOptionCollision } from "./schema/field-option-collisions.js";
+import { assertFieldOptionsAvailable } from "./schema/field-option-collisions.js";
 import {
   resolveNestedSettingDescriptor,
   writeNestedSettingValue,
@@ -303,7 +303,7 @@ export function runProfileLint(name: string | undefined): ProfileLintResult {
     );
   }
   const { resolved } = entry;
-  const report = withFieldOptionCollisionFindings(resolved.definition, lintProjectProfile(resolved.definition));
+  const report = lintProjectProfile(resolved.definition);
   return {
     action: "lint",
     name: resolved.definition.name,
@@ -317,33 +317,6 @@ export function runProfileLint(name: string | undefined): ProfileLintResult {
     warnings: entry.warnings,
     generated_at: nowIso(),
   };
-}
-
-/** Each valid profile field's shadowed built-in options; an invalid field keeps its own diagnostic. */
-function profileFieldOptionCollisions(profile: ProjectProfileDefinition): Array<{ key: string; collisions: FieldOptionCollision[] }> {
-  return profile.fields.flatMap((field) => {
-    let normalized;
-    try { normalized = normalizeAddFieldInput(field); } catch { return []; }
-    const collisions = resolveAddFieldOptionCollisions(normalized);
-    return collisions.length > 0 ? [{ key: normalized.key, collisions }] : [];
-  });
-}
-
-/**
- * Add the built-in option shadows to a lint report. The rule reads the
- * command flag contracts, which the authoring entry point's lint does not
- * load, so the finding is added where the command runs (pm-pta8um).
- */
-function withFieldOptionCollisionFindings(profile: ProjectProfileDefinition, report: ReturnType<typeof lintProjectProfile>): ReturnType<typeof lintProjectProfile> {
-  const added = profileFieldOptionCollisions(profile).map(({ key, collisions }) => ({
-    severity: "error" as const,
-    code: "field_option_collision" as const,
-    dimension: "fields" as const,
-    target: key,
-    message: `Field "${key}" would disable a built-in option: ${collisions.map(describeFieldOptionCollision).join("; ")}. Rename the field or narrow its commands.`,
-  }));
-  if (added.length === 0) return report;
-  return { ...report, ok: false, errorCount: report.errorCount + added.length, findings: [...report.findings, ...added] };
 }
 
 /** Options accepted by {@link runProfileApply}. */

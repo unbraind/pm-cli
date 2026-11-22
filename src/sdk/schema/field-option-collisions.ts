@@ -44,10 +44,9 @@ export interface FieldOptionCollision {
   option: string;
 }
 
-/** Strip the dashes and a negation prefix: `--no-pager` and `--pager` parse into one option key. */
+/** A spelling without its leading dashes, in the case the parser compares. */
 function optionName(flag: string): string {
-  const name = flag.trim().toLowerCase().replace(/^-+/u, "");
-  return name.startsWith("no-") ? name.slice(3) : name;
+  return flag.trim().toLowerCase().replace(/^-+/u, "");
 }
 
 /**
@@ -55,7 +54,9 @@ function optionName(flag: string): string {
  * the reader of field values (`resolveCandidateOptionKeys`), which treats any
  * punctuation as a word break, plus the parser's own attribute for the flag,
  * so `token.budget`, `token_budget` and `--token-budget` all reach
- * `tokenBudget`.
+ * `tokenBudget`. A negated flag has two: `--no-notes` is parsed under `notes`
+ * and delivered to handlers as `noNotes`, and the negation is removed once,
+ * as the parser does.
  */
 function optionKeys(flag: string): string[] {
   const name = optionName(flag);
@@ -63,19 +64,15 @@ function optionKeys(flag: string): string[] {
   return [...new Set([...keys, commanderOptionAttribute(name)])];
 }
 
-/** The key a redefinable metadata name compares under. */
-function optionKey(flag: string): string {
-  return optionKeys(flag)[0]!;
-}
-
 /**
  * Item metadata a custom field may redefine (today `severity`, which the ops
  * profile ships): the built-in option then carries the field's own value, so
  * sharing that one option is the design and not a shadow. Derived from the
- * reserved-key list so the two cannot disagree.
+ * reserved-key list so the two cannot disagree. Only a field with exactly
+ * that key is exempt, and only for the option of the same name.
  */
 const REDEFINABLE_METADATA_KEYS: ReadonlySet<string> = new Set(
-  ITEM_METADATA_KEY_ORDER.filter((key) => !BUILTIN_FIELD_KEYS.has(key)).map(optionKey),
+  ITEM_METADATA_KEY_ORDER.filter((key) => !BUILTIN_FIELD_KEYS.has(key)),
 );
 
 const builtInOptionsByCommand = new Map<string, ReadonlyMap<string, string>>();
@@ -107,7 +104,7 @@ export function resolveFieldOptionCollisions(fields: readonly FieldOptionSource[
       const options = builtInOptions(command);
       const seen = new Set<string>();
       for (const spelling of spellings) {
-        if (optionKey(spelling) === optionKey(field.key) && REDEFINABLE_METADATA_KEYS.has(optionKey(spelling))) continue;
+        if (REDEFINABLE_METADATA_KEYS.has(field.key) && spelling.replaceAll("-", "_") === field.key) continue;
         const option = optionKeys(spelling).map((key) => options.get(key)).find((declared) => declared !== undefined);
         if (option === undefined || seen.has(option)) continue;
         seen.add(option);
@@ -146,7 +143,7 @@ export function scanFieldOptionCollisions(
       schema_field_option_collision_count: collisions.length,
       schema_field_option_collisions: collisions.slice(0, limit),
       schema_field_option_collisions_truncated: collisions.length > limit,
-      schema_field_option_collision_fix_hint: "Rename the field or narrow its commands: pm schema remove-field <key>, then pm schema add-field <new-key> --commands <commands>",
+      schema_field_option_collision_fix_hint: "Rename a file-backed field without losing item values: pm schema rename-field <key> --to <new-key>. For a colliding flag, alias or command list, re-register the same key: pm schema add-field <key> --cli-flag <flag> --commands <commands>. Edit a field defined inline in settings.json there.",
     },
     warnings: [`validate_schema_field_option_collision:${collisions.length}`],
   };
@@ -168,8 +165,9 @@ export function assertFieldDefinitionOptionsAvailable(definition: RuntimeFieldDe
 function refuseFieldOptionCollisions(fieldKey: string, fieldCommands: readonly RuntimeFieldCommand[], collisions: FieldOptionCollision[]): void {
   if (collisions.length === 0) return;
   const field = { key: fieldKey, commands: fieldCommands };
-  const commands = [...new Set(collisions.map((collision) => collision.command))];
-  const free = field.commands.map((command) => command.replaceAll("_", "-")).filter((command) => !commands.includes(command));
+  const commands = new Set(collisions.map((collision) => collision.command));
+  // The retry lists the names --commands accepts (update_many), not the command paths the collisions name.
+  const free = field.commands.filter((command) => !commands.has(command.replaceAll("_", "-")));
   throw new PmCliError(
     `Cannot define custom field "${field.key}": ${collisions.map(describeFieldOptionCollision).join("; ")}. The built-in option would stop working for that command.`,
     EXIT_CODE.USAGE,

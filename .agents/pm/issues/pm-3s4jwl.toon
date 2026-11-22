@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[3]: "area:sdk",extensions,schema
 created_at: "2026-11-22T20:02:44.365Z"
-updated_at: "2026-11-22T20:20:19.288Z"
+updated_at: "2026-11-22T21:23:54.120Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Measure whether an extension field named like a built-in option changes that option's behaviour on any command; If it does, activation or package doctor reports the collision using the shared collision helper; If it does not, the item records the evidence and the SDK doc states that extension fields are exempt"
@@ -16,4 +16,6 @@ confidence: medium
 expected_result: "Either a measured collision is reported at activation or by package doctor, or recorded evidence shows extension fields cannot shadow a built-in option"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-pta8um,discovered_from,"2026-11-22T20:02:44.365Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-22T21:23:54.120Z","harness:claude-code","Scope addition from the review of PR 1768 (2026-11-22): the extension settings mutation (mutateWorkspaceSettings) can append a field definition to the inline schema fields in settings, and that path only shape-validates the proposal, so a colliding definition can be stored there too. It belongs with this item: decide whether settings writers share the admission check for new or changed definitions while leaving unrelated writes able to preserve legacy definitions. validate already reports such a stored field.\n"
 body: ""

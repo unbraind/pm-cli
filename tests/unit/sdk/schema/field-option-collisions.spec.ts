@@ -2,7 +2,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { lintProjectProfile } from "../../../../src/core/profile/profile-lint.js";
 import { PROFILE_NAMES } from "../../../../src/core/profile/profile-presets.js";
+import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import { PmClient } from "../../../../src/sdk/index.js";
 import {
   describeFieldOptionCollision,
@@ -41,6 +43,12 @@ describe("resolveFieldOptionCollisions", () => {
       { field: "review_owner", command: "list", field_flag: "--token.budget", option: "--token-budget" },
     ]);
     expect(resolveFieldOptionCollisions([field("review_owner", ["list"], { cli_aliases: ["output:limit"] })])).toMatchObject([{ option: "--output-limit" }]);
+    // A negated built-in is parsed under its base name and delivered to handlers under its own, and both are reserved.
+    expect(resolveFieldOptionCollisions([field("no_notes", ["list"], { cli_flag: "review-visibility" })])).toEqual([
+      { field: "no_notes", command: "list", field_flag: "--no-notes", option: "--no-notes" },
+    ]);
+    // The negation is removed once, as the parser does: a doubled prefix is a different option.
+    expect(resolveFieldOptionCollisions([field("review_visibility", ["list"], { cli_aliases: ["no-no-full"] })])).toEqual([]);
     // Several options shadowed on one command are ordered by option.
     expect(resolveFieldOptionCollisions([field("owner_team", ["list"], { cli_flag: "sort", cli_aliases: ["limit", "json"] })]).map((row) => row.option)).toEqual(["--json", "--limit", "--sort"]);
     // Two spellings of one built-in option are one collision.
@@ -56,6 +64,9 @@ describe("resolveFieldOptionCollisions", () => {
       field("review_owner", ["create", "update", "update_many", "list", "search", "calendar", "context"]),
       field("severity", ["create", "update", "list"], { cli_aliases: ["sev"] }),
     ])).toEqual([]);
+    // Only the exact key is exempt: another key that merely reads the same option is a shadow.
+    expect(resolveFieldOptionCollisions([field("severity.", ["create"])])).toMatchObject([{ option: "--severity" }]);
+    expect(resolveFieldOptionCollisions([field("severity_level", ["create"], { cli_aliases: ["severity"] })])).toMatchObject([{ option: "--severity" }]);
     // Redefinition covers the field's own key only, not another built-in option reached through an alias.
     expect(resolveFieldOptionCollisions([field("severity", ["create"], { cli_aliases: ["json"] })])).toMatchObject([{ option: "--json" }]);
   });
@@ -63,15 +74,22 @@ describe("resolveFieldOptionCollisions", () => {
 
 describe("custom field registration", () => {
   it.each([
-    ["full", "list", "--full"],
-    ["fields", "list", "--fields"],
-    ["compact", "list", "--compact"],
-    ["full", "search", "--full"],
-    ["fields", "context", "--fields"],
-  ])("refuses %s on %s and leaves the option working", async (key, command, option) => {
+    ["full", "list", "--full", ["list", "--full"]],
+    ["fields", "list", "--fields", ["list", "--fields", "id"]],
+    ["compact", "list", "--compact", ["list", "--compact"]],
+    ["full", "search", "--full", ["search", "Seed", "--full"]],
+    ["fields", "context", "--fields", ["context", "--fields", "id"]],
+  ])("refuses %s on %s and leaves the option working", async (key, command, option, argv) => {
     await withTempPmPath(async ({ pmPath, runCli }) => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
-      await client.create({ title: "Seed", type: "Task" });
+      const seed = (await client.create({ title: "Seed", type: "Task", description: "Seed description" })).item;
+      const read = async (): Promise<Record<string, unknown>> => {
+        const result = await runCli([...argv, "--json", "--output-budget", "unbounded"], { expectJson: true });
+        expect(result.code).toBe(0);
+        return JSON.parse(result.stdout) as Record<string, unknown>;
+      };
+      const before = await read();
+      expect(JSON.stringify(before)).toContain(seed.id);
       const refusal = await client.schemaAddField(key, { type: "string", commands: ["create", command] }).then(() => null, (error: unknown) => error);
       expect(refusal).toMatchObject({
         exitCode: 2,
@@ -79,11 +97,19 @@ describe("custom field registration", () => {
       });
       expect((refusal as Error).message).toContain(`${option} shadows built-in ${option} on pm ${command}`);
       expect((await client.schemaListFields()).fields).toEqual([]);
-      // The same key is accepted where no built-in option carries it.
+      // The same key is accepted where no built-in option carries it, and the command's own option still answers as before.
       await expect(client.schemaAddField(key, { type: "string", commands: ["create"] })).resolves.toMatchObject({ registered: true });
-      const listed = await runCli(["list", "--full", "--json"], { expectJson: true });
-      expect(listed.code).toBe(0);
-      expect(JSON.parse(listed.stdout)).toMatchObject({ count: 1, items: [expect.objectContaining({ title: "Seed" })] });
+      const after = await read();
+      const stable = ({ now: _now, window: _window, generated_at: _generated, ...rest }: Record<string, unknown>) => rest;
+      expect(stable(after)).toEqual(stable(before));
+      expect((after.filters as { runtime_filters?: unknown } | undefined)?.runtime_filters ?? {}).toEqual({});
+    });
+  });
+
+  it("offers the accepted command name in the narrower registration", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const refusal = await new PmClient({ pmRoot: pmPath, noExtensions: true }).schemaAddField("full", { type: "string", commands: ["list", "update_many"] }).then(() => null, (error: unknown) => error);
+      expect(refusal).toMatchObject({ context: { nextSteps: [expect.any(String), expect.stringContaining("--commands update_many.")] } });
     });
   });
 
@@ -100,7 +126,14 @@ describe("custom field registration", () => {
       }
       expect(await readFile(path.join(pmPath, "schema", "fields.json"), "utf8")).toBe(before);
       expect((await client.get(item.id, { full: true })).item).toMatchObject({ review_owner: "ada" });
+      // A same-named field defined inline for another command does not make this rename a resumed one.
+      const settings = await readSettings(pmPath);
+      await writeSettings(pmPath, { ...settings, schema: { ...settings.schema, fields: [{ key: "full", type: "string", commands: ["create"] }] } });
+      await expect(client.schemaRenameField("review_owner", "full", { dryRun: true })).rejects.toMatchObject({ context: { code: "schema_field_option_collision" } });
+      await writeSettings(pmPath, settings);
       await expect(client.schemaRenameField("review_owner", "review_lead", {})).resolves.toBeDefined();
+      // A rename of a field that does not exist keeps its own diagnostic.
+      await expect(client.schemaRenameField("absent_field", "full", {})).rejects.not.toMatchObject({ context: { code: "schema_field_option_collision" } });
     });
   });
 
@@ -130,7 +163,7 @@ describe("custom field registration", () => {
           schema_field_option_collision_count: 1,
           schema_field_option_collisions: [{ field: "full", command: "list", field_flag: "--full", option: "--full" }],
           schema_field_option_collisions_truncated: false,
-          schema_field_option_collision_fix_hint: expect.stringContaining("pm schema remove-field"),
+          schema_field_option_collision_fix_hint: expect.stringContaining("pm schema rename-field"),
         },
       });
     });
@@ -159,12 +192,16 @@ describe("profile fields", () => {
       for (const dryRun of [true, false]) {
         await expect(client.profileApply("shadow", { dryRun })).rejects.toMatchObject({ context: { code: "schema_field_option_collision", field: "full" } });
       }
-      // The lint command adds the same finding as an error beside the profile's other findings.
+      // The shared lint that package checks consume carries the finding, and so does the command.
+      expect(lintProjectProfile({ name: "shadow", title: "Shadow", summary: "Shadows a list option.", types: [], statuses: [], workflows: [], config: [], templates: [], packages: [], fields: [{ key: "full", commands: ["create", "list"] }] } as never)).toMatchObject({
+        ok: false,
+        findings: expect.arrayContaining([expect.objectContaining({ severity: "error", code: "field_option_collision", target: "full" })]),
+      });
       await expect(client.profileLint("shadow")).resolves.toMatchObject({
         ok: false,
         error_count: 1,
         warning_count: 1,
-        findings: [expect.objectContaining({ code: "field_mcp_input_collision" }), expect.objectContaining({ severity: "error", code: "field_option_collision", dimension: "fields", target: "full", message: expect.stringContaining("--full shadows built-in --full on pm list") })],
+        findings: [expect.objectContaining({ severity: "error", code: "field_option_collision", dimension: "fields", target: "full", message: expect.stringContaining("--full shadows built-in --full on pm list") }), expect.objectContaining({ code: "field_mcp_input_collision" })],
       });
       const reserved = await client.profileLint("reserved");
       expect(reserved.findings.map((finding) => finding.code)).toEqual(["field_invalid"]);

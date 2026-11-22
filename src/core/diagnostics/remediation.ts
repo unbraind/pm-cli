@@ -445,9 +445,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "validate_schema_field_option_collision",
-    command: "pm schema remove-field <key>",
+    command: "pm schema rename-field <key> --to <new-key>",
     summary:
-      "A custom field shadows a built-in option of a command it is registered for; rename it or narrow its commands, then re-add it with pm schema add-field.",
+      "A custom field shadows a built-in option of a command it is registered for; rename it (item values move with it), or re-register the same key with another flag or a narrower --commands list.",
   },
   {
     code: "validate_metadata_missing_estimate",

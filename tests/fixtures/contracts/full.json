@@ -23338,7 +23338,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
-        "sdk/profile.ts"
+        "core/profile/profile-lint.ts"
       ],
       "stability": "provisional"
     },

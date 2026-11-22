@@ -313,14 +313,14 @@ function renamedFieldDefinition(source: RuntimeFieldDefinition, to: string): Run
 /**
  * A rename writes a field definition without schema add-field, so its target
  * takes the same built-in option refusal before a plan is stored or previewed
- * (pm-pta8um). A target that already exists is a resumed migration.
+ * (pm-pta8um). A migration with a stored plan is being resumed and is not
+ * judged again; a same-named definition elsewhere (inline settings beside
+ * the fields file) does not make a new rename a resume.
  */
-function assertRenameTargetOptionsAvailable(settings: PmSettings, request: SchemaEvolutionMigrationRequest): void {
-  if (request.kind !== "rename-field") return;
-  const fields = settings.schema.fields;
-  const source = fields.find((definition) => normalizeStatusToken(definition.key) === request.from);
-  if (source === undefined || fields.some((definition) => normalizeStatusToken(definition.key) === request.to)) return;
-  assertFieldDefinitionOptionsAvailable(renamedFieldDefinition(source, request.to));
+function assertRenameTargetOptionsAvailable(settings: PmSettings, request: SchemaEvolutionMigrationRequest, resumed: boolean): void {
+  if (request.kind !== "rename-field" || resumed) return;
+  const source = settings.schema.fields.find((definition) => normalizeStatusToken(definition.key) === request.from);
+  if (source !== undefined) assertFieldDefinitionOptionsAvailable(renamedFieldDefinition(source, request.to));
 }
 
 function mutateFieldDefinition(
@@ -1190,13 +1190,13 @@ export async function runSchemaEvolutionMigration(
       : requiredMigrationId(options.migrationId);
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
-  assertRenameTargetOptionsAvailable(settings, request);
   const resolvedPlan = await resolveMigrationPlan({
     pmRoot,
     settings,
     migrationId,
     request,
   });
+  assertRenameTargetOptionsAvailable(settings, request, resolvedPlan.stored);
   const plan = resolvedPlan.plan;
   if (options.dryRun === true) {
     return {
