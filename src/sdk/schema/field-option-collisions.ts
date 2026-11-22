@@ -16,8 +16,9 @@ import { resolveSubcommandFlagContractsForCommand, type CliFlagContract } from "
 import { BUILTIN_FIELD_KEYS, type NormalizedAddFieldInput } from "../../core/schema/fields-file.js";
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { resolveRuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
-import type { RuntimeFieldCommand, RuntimeSchemaSettings } from "../../types/index.js";
+import { commanderOptionAttribute, resolveCandidateOptionKeys } from "../../core/schema/runtime-field-values.js";
+import { resolveRuntimeFieldRegistry, type RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
+import type { RuntimeFieldCommand, RuntimeFieldDefinition, RuntimeSchemaSettings } from "../../types/index.js";
 
 /** The parts of a field definition that decide which options it adds. */
 export interface FieldOptionSource {
@@ -49,9 +50,22 @@ function optionName(flag: string): string {
   return name.startsWith("no-") ? name.slice(3) : name;
 }
 
-/** The key the parser stores an option under, so `output_limit` and `--output-limit` compare equal. */
+/**
+ * Every option key a spelling can be read or stored under. The set comes from
+ * the reader of field values (`resolveCandidateOptionKeys`), which treats any
+ * punctuation as a word break, plus the parser's own attribute for the flag,
+ * so `token.budget`, `token_budget` and `--token-budget` all reach
+ * `tokenBudget`.
+ */
+function optionKeys(flag: string): string[] {
+  const name = optionName(flag);
+  const keys = resolveCandidateOptionKeys({ key: name, cli_flag: name, cli_aliases: [] } as unknown as RuntimeFieldDefinitionResolved);
+  return [...new Set([...keys, commanderOptionAttribute(name)])];
+}
+
+/** The key a redefinable metadata name compares under. */
 function optionKey(flag: string): string {
-  return optionName(flag).replaceAll(/[-_]+/gu, "");
+  return optionKeys(flag)[0]!;
 }
 
 /**
@@ -72,8 +86,7 @@ function builtInOptions(command: string): ReadonlyMap<string, string> {
   if (options === undefined) {
     const declared = new Map<string, string>();
     for (const contract of resolveSubcommandFlagContractsForCommand(command) as CliFlagContract[]) {
-      for (const flag of [contract.flag, ...(contract.aliases ?? [])]) {
-        const key = optionKey(flag);
+      for (const key of [contract.flag, ...(contract.aliases ?? [])].flatMap(optionKeys)) {
         if (!declared.has(key)) declared.set(key, contract.flag);
       }
     }
@@ -94,9 +107,8 @@ export function resolveFieldOptionCollisions(fields: readonly FieldOptionSource[
       const options = builtInOptions(command);
       const seen = new Set<string>();
       for (const spelling of spellings) {
-        const key = optionKey(spelling);
-        if (key === optionKey(field.key) && REDEFINABLE_METADATA_KEYS.has(key)) continue;
-        const option = options.get(key);
+        if (optionKey(spelling) === optionKey(field.key) && REDEFINABLE_METADATA_KEYS.has(optionKey(spelling))) continue;
+        const option = optionKeys(spelling).map((key) => options.get(key)).find((declared) => declared !== undefined);
         if (option === undefined || seen.has(option)) continue;
         seen.add(option);
         collisions.push({ field: field.key, command, field_flag: `--${spelling.replaceAll("_", "-")}`, option });
@@ -142,8 +154,20 @@ export function scanFieldOptionCollisions(
 
 /** Refuse a field whose option would shadow a built-in option of a command it is registered for (pm-pta8um). */
 export function assertFieldOptionsAvailable(field: NormalizedAddFieldInput): void {
-  const collisions = resolveAddFieldOptionCollisions(field);
+  refuseFieldOptionCollisions(field.key, field.commands, resolveAddFieldOptionCollisions(field));
+}
+
+/** The same refusal for a stored definition a migration is about to write, such as a rename target. */
+export function assertFieldDefinitionOptionsAvailable(definition: RuntimeFieldDefinition): void {
+  // A definition the registry rejects resolves to nothing and so reports nothing here.
+  const resolved = resolveRuntimeFieldRegistry({ fields: [definition] } as RuntimeSchemaSettings).definitions;
+  refuseFieldOptionCollisions(definition.key, resolved.flatMap((entry) => entry.commands), resolveFieldOptionCollisions(resolved));
+}
+
+/** Throw the typed refusal when a field shadows any built-in option. */
+function refuseFieldOptionCollisions(fieldKey: string, fieldCommands: readonly RuntimeFieldCommand[], collisions: FieldOptionCollision[]): void {
   if (collisions.length === 0) return;
+  const field = { key: fieldKey, commands: fieldCommands };
   const commands = [...new Set(collisions.map((collision) => collision.command))];
   const free = field.commands.map((command) => command.replaceAll("_", "-")).filter((command) => !commands.includes(command));
   throw new PmCliError(

@@ -36,6 +36,11 @@ describe("resolveFieldOptionCollisions", () => {
     expect(resolveFieldOptionCollisions([field("output_limit", ["create"], { cli_flag: "ol" })])).toEqual([
       { field: "output_limit", command: "create", field_flag: "--output-limit", option: "--output-limit" },
     ]);
+    // Punctuation is a word break for the reader of field values, so a dotted or spaced alias reaches the same key.
+    expect(resolveFieldOptionCollisions([field("review_owner", ["list"], { cli_aliases: ["token.budget"] })])).toEqual([
+      { field: "review_owner", command: "list", field_flag: "--token.budget", option: "--token-budget" },
+    ]);
+    expect(resolveFieldOptionCollisions([field("review_owner", ["list"], { cli_aliases: ["output:limit"] })])).toMatchObject([{ option: "--output-limit" }]);
     // Several options shadowed on one command are ordered by option.
     expect(resolveFieldOptionCollisions([field("owner_team", ["list"], { cli_flag: "sort", cli_aliases: ["limit", "json"] })]).map((row) => row.option)).toEqual(["--json", "--limit", "--sort"]);
     // Two spellings of one built-in option are one collision.
@@ -79,6 +84,23 @@ describe("custom field registration", () => {
       const listed = await runCli(["list", "--full", "--json"], { expectJson: true });
       expect(listed.code).toBe(0);
       expect(JSON.parse(listed.stdout)).toMatchObject({ count: 1, items: [expect.objectContaining({ title: "Seed" })] });
+    });
+  });
+
+  it("refuses a rename whose target shadows a built-in option, before anything is staged", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      await client.schemaAddField("review_owner", { type: "string", commands: ["create", "list"] });
+      const item = (await client.create({ title: "Seed", type: "Task", reviewOwner: "ada" } as never)).item;
+      const before = await readFile(path.join(pmPath, "schema", "fields.json"), "utf8");
+      for (const dryRun of [true, false]) {
+        await expect(client.schemaRenameField("review_owner", "full", { dryRun })).rejects.toMatchObject({
+          context: { code: "schema_field_option_collision", field: "full", flag: "--full" },
+        });
+      }
+      expect(await readFile(path.join(pmPath, "schema", "fields.json"), "utf8")).toBe(before);
+      expect((await client.get(item.id, { full: true })).item).toMatchObject({ review_owner: "ada" });
+      await expect(client.schemaRenameField("review_owner", "review_lead", {})).resolves.toBeDefined();
     });
   });
 
