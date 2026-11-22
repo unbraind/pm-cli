@@ -781,7 +781,9 @@ export class PmClient {
     // A host client's direct transaction takes the decision its dispatched actions take: the host's registrations for the host's tracker only.
     if (this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] === true) {
       // A preview keeps configuration-only reads around any activation the decision starts, as the ordinary client path does.
-      const hosted = () => runForExtensionHost(pmRoot, globalOptions({ path: pmRoot }), undefined, process.cwd(), execute);
+      // The directory is read now: the settings wrapper awaits first, and another call may change it meanwhile.
+      const cwd = process.cwd();
+      const hosted = () => runForExtensionHost(pmRoot, globalOptions({ path: pmRoot }), undefined, cwd, execute);
       return configurationOnly ? runWithConfigurationOnlySettings(pmRoot, hosted) : hosted();
     }
     // An open scope decides by tracker: the same root is reused, another root activates its own extensions.
