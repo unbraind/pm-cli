@@ -3172,6 +3172,8 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       return await dispatch(null);
     }
     const pmRoot = resolvePmRoot(resolutionCwd, global.path);
+    // Any call under a live scope, a host client's included, cannot change the process working directory.
+    if (openExtensionScope() !== undefined) assertNestedCwdIsCurrent(explicitCwd);
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
         ACTIVE_EXTENSION_HOST_CONTEXT
@@ -3181,7 +3183,6 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       // addresses to another tracker is judged by that tracker's extensions, like any other nested call.
       return await runForExtensionHost(pmRoot, global, explicitCwd, resolutionCwd, dispatch);
     }
-    if (openExtensionScope() !== undefined) assertNestedCwdIsCurrent(explicitCwd);
     const nested = runUnderOpenExtensionScope(pmRoot, global, resolutionCwd, dispatch);
     if (nested !== undefined) return await nested;
     // Publish the scope this dispatch holds, so work the command starts for the same tracker

@@ -573,8 +573,10 @@ of the contract. Renaming is not a fixed point, so `dist/.runtime-compaction.jso
 output and a repeated build skips outputs an incremental compile left in place.
 When the ledger is missing, `scripts/prepare-build-cache.mjs` drops the
 TypeScript build cache so the compiler re-emits raw output for the finalizer.
-The finalizer withdraws the ledger before it overwrites the first module, so a
-build stopped midway takes the same path instead of shortening modules twice.
+The finalizer withdraws the ledger before it overwrites the first module, and
+the cache step also drops both when a recorded output no longer matches its
+digest (source-map injection, a stopped build), so a changed module is never
+shortened twice.
 The tranche removed about 1.76 MB from the packed distribution.
 
 The generated error-code catalog ships as compact rows

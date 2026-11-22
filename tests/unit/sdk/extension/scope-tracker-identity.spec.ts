@@ -213,6 +213,8 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
       probe.pmScopeNested = async () => {
         await expect(host.run("update", { path: second.pmPath, id: second.id, options: { sprint: "refused-by-beta" } })).rejects.toMatchObject({ context: { code: "beta_denied" } });
         await host.run("update", { path: second.pmPath, id: second.id, options: { sprint: "refused-by-alpha" } });
+        // A host client cannot change the working directory under the live scope either.
+        await expect(host.run("update", { cwd: os.tmpdir(), id: first.id, options: { sprint: "elsewhere" } })).rejects.toMatchObject({ context: { reason: "nested_cwd_unavailable" } });
         // For its own tracker the host client keeps sharing the host's registrations.
         await expect(host.update(first.id, { sprint: "refused-by-alpha" } as never)).rejects.toMatchObject({ context: { code: "alpha_denied" } });
         return "done";

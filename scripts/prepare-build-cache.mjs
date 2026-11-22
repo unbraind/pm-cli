@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { rm, stat } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -14,6 +15,21 @@ async function exists(filePath) {
     }
     throw error;
   }
+}
+
+/** The first compacted output whose bytes no longer match the digest its ledger recorded, if any. */
+async function changedCompactedOutput(repoRoot, ledgerPath) {
+  let recorded;
+  try {
+    recorded = JSON.parse(await readFile(ledgerPath, "utf8")).files;
+  } catch {
+    return undefined;
+  }
+  for (const [relative, digest] of Object.entries(recorded ?? {})) {
+    const actual = await readFile(path.join(repoRoot, "dist", relative)).then((bytes) => createHash("sha256").update(bytes).digest("hex"), () => null);
+    if (actual !== digest) return relative;
+  }
+  return undefined;
 }
 
 export async function main(repoRoot = process.cwd()) {
@@ -31,6 +47,14 @@ export async function main(repoRoot = process.cwd()) {
     if (!(await exists(outputPath))) {
       missingOutput.push(path.relative(repoRoot, outputPath));
     }
+  }
+
+  // An output changed since it was compacted (source-map injection, a stopped build) would be shortened a
+  // second time; without the ledger the finalizer compacts every output of a full re-emit instead.
+  const ledgerPath = path.join(repoRoot, "dist", ".runtime-compaction.json");
+  if (missingOutput.length === 0 && (await changedCompactedOutput(repoRoot, ledgerPath)) !== undefined) {
+    await rm(ledgerPath, { force: true });
+    missingOutput.push("dist/.runtime-compaction.json (an output changed after compaction)");
   }
 
   if (missingOutput.length > 0 && (await exists(buildInfoPath))) {

@@ -137,6 +137,10 @@ describe("mutation request admission", () => {
       // A runtime schema field that shares an intent's name is this tracker's list filter, not an unread intent.
       expect(context.runCli(["schema", "add-field", "token_budget", "--type", "string", "--commands", "create,list", "--json"]).code).toBe(0);
       await expect(client.run("update-many", { options: { list: { ids: [id], tokenBudget: "none" }, update: { description: "filtered" }, dryRun: true } })).resolves.toMatchObject({ dry_run: true });
+      // A projection option the planner clears is harmless, until a schema field filters under that name: its filter would be dropped.
+      await expect(client.run("update-many", { options: { list: { ids: [id], full: true, brief: true }, update: { description: "projected" }, dryRun: true } })).resolves.toMatchObject({ dry_run: true });
+      expect(context.runCli(["schema", "add-field", "compact", "--type", "string", "--commands", "create,list", "--json"]).code).toBe(0);
+      await expect(client.run("update-many", { options: { list: { ids: [id], compact: "west" }, update: { description: "widened" } } })).rejects.toMatchObject({ message: expect.stringContaining('"list.compact" is not read beside this selection'), context: { changed: false, field: "list.compact" } });
       // Spellings the dispatch consumes stay accepted: a snake_case output control and the annotation snapshot guard.
       await expect(client.run("update-many", { options: { ids: [id], description: "snake", output_format: "json", dry_run: true } })).resolves.toMatchObject({ dry_run: true });
       await expect(client.run("update-many", { options: { ids: [id], description: "guarded", documentAnnotationSnapshot: { comments: [], notes: [], learnings: [] } } })).resolves.toBeDefined();

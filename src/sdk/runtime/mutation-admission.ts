@@ -39,16 +39,22 @@ function assertOptionsRecord(rawOptions: unknown): asserts rawOptions is Record<
   }
 }
 
-/** Refuse each undeclared key that is no runtime schema field option of the command, naming it. */
-async function refuseUndeclaredKeys(action: string, command: "create" | "update" | "update_many" | "list", keys: Iterable<string>, allowed: Set<string>, pmRoot: string | undefined, refuse: (key: string, allowed: Set<string>) => never = (key, declared) => refuseKey(action, key, declared)): Promise<void> {
-  const unknown = [...keys].filter((key) => !allowed.has(key));
-  if (unknown.length === 0) return;
+type RuntimeFieldAdmissionCommand = "create" | "update" | "update_many" | "list";
+
+/** Whether a key is read as an option of some runtime schema field declared for the command. */
+async function runtimeFieldOptionReader(command: RuntimeFieldAdmissionCommand, pmRoot: string | undefined): Promise<{ targets: string[]; reads: (key: string) => boolean }> {
   const registry = resolveRuntimeFieldRegistry((await readSettings(resolvePmRoot(process.cwd(), pmRoot))).schema);
   const fields = registry.command_to_fields.get(command) ?? [];
-  for (const field of fields) allowed.add(runtimeFieldOptionTarget(field));
-  for (const key of unknown) {
-    if (!fields.some((field) => readRuntimeFieldOptionValue({ [key]: true }, field) === true)) refuse(key, allowed);
-  }
+  return { targets: fields.map((field) => runtimeFieldOptionTarget(field)), reads: (key) => fields.some((field) => readRuntimeFieldOptionValue({ [key]: true }, field) === true) };
+}
+
+/** Refuse each undeclared key that is no runtime schema field option of the command, naming it. */
+async function refuseUndeclaredKeys(action: string, command: RuntimeFieldAdmissionCommand, keys: Iterable<string>, allowed: Set<string>, pmRoot: string | undefined, refuse: (key: string, allowed: Set<string>) => never = (key, declared) => refuseKey(action, key, declared)): Promise<void> {
+  const unknown = [...keys].filter((key) => !allowed.has(key));
+  if (unknown.length === 0) return;
+  const runtime = await runtimeFieldOptionReader(command, pmRoot);
+  for (const target of runtime.targets) allowed.add(target);
+  for (const key of unknown) if (!runtime.reads(key)) refuse(key, allowed);
 }
 
 /** Validate only native create/update clients; MCP retains its declared transport admission. */
@@ -85,6 +91,19 @@ const LIST_COMMAND_ONLY_KEYS = new Map([
   ["all", 'State the status selection as filterStatus: "all" beside the list record.'],
   ["status", "State the status selection as filterStatus beside the list record."],
 ]);
+
+/** Projection options the bulk planner clears before it reads rows; harmless, unless a runtime field filters under the same name. */
+const PLANNER_CLEARED_LIST_KEYS = ["compact", "brief", "fields", "includeBody", "full"];
+
+/** Refuse a cleared projection key that a runtime schema field reads as its list filter: the filter would not be applied. */
+async function refuseClearedRuntimeFilters(list: Record<string, unknown>, pmRoot: string | undefined): Promise<void> {
+  const cleared = PLANNER_CLEARED_LIST_KEYS.filter((key) => Object.hasOwn(list, key));
+  if (cleared.length === 0) return;
+  const runtime = await runtimeFieldOptionReader("list", pmRoot);
+  for (const key of cleared) {
+    if (runtime.reads(key)) refuseUnread(`update-many "list.${key}" is not read beside this selection.`, `list.${key}`, "The bulk selection clears this list option, so the schema field's filter under that name is not applied; select the rows another way.");
+  }
+}
 
 /** Selectors of the SDK list contract that have no CLI flag. */
 const SDK_LIST_SELECTOR_KEYS = ["excludeTerminal", "lifecycleBucket", "dependencyBlocked"];
@@ -143,6 +162,7 @@ async function assertListRecord(list: Record<string, unknown>, outerKeys: Set<st
   if (Object.hasOwn(list, "status")) refuseUnread('update-many "list.status" is not read beside this selection.', "list.status", LIST_COMMAND_ONLY_KEYS.get("status")!);
   const flat = [...outerKeys].find((key) => FLAT_SELECTION_KEYS.has(key));
   if (flat !== undefined) refuseUnread(`update-many "${flat}" is not read beside this selection.`, flat, `Put the selection inside list, or drop the list record; a flat "${flat}" beside it is not read.`);
+  await refuseClearedRuntimeFilters(list, pmRoot);
   // A runtime schema field that shares one of the other names is that tracker's list filter and stays accepted.
   await refuseUndeclaredKeys("update-many list", "list", Object.keys(list), listRecordKeys(), pmRoot, (key, allowed) => {
     const required = LIST_COMMAND_ONLY_KEYS.get(key);
