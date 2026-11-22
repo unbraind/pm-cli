@@ -139,6 +139,11 @@ describe("tag-carried release provenance", () => {
       }
       responses.set(artifactEndpoint, [{ total_count: 1, artifacts: artifact }]);
       expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute, pause)).toThrow("Invalid release producer binding inventory");
+      // A listing without a numeric count is malformed, not partial: it is refused without a wait.
+      pauses.length = 0;
+      responses.set(artifactEndpoint, [{ artifacts: [artifact] }]);
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute, pause)).toThrow("Invalid release producer binding inventory");
+      expect(pauses).toEqual([]);
       expect(JSON.parse(readFileSync(output, "utf8"))).toMatchObject({ source_run_verified: false, producer_binding_verified: false });
       responses.set(artifactEndpoint, [{ total_count: 1, artifacts: [artifact] }]);
       downloadedBinding = JSON.stringify({ ...binding, extension: "x".repeat(4097) });

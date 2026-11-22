@@ -176,6 +176,12 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
       await runWithActiveExtensions({ path: first.pmPath }, () => runWithActiveExtensions({ path: second.pmPath }, async () => undefined));
       expect((globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle).toBe("invalid_argument_value");
       delete (globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle;
+      // An injected host client takes the same refusal: sharing registrations needs a tracker that finished activating.
+      const host = PmClient.forActiveExtensionHost({ pmRoot: second.pmPath, author });
+      probe.pmScopeNested = () => host.update(second.id, { sprint: "unguarded" } as never);
+      await runWithActiveExtensions({ path: first.pmPath }, () => runWithActiveExtensions({ path: second.pmPath }, async () => undefined));
+      expect((globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle).toBe("invalid_argument_value");
+      delete (globalThis as { pmScopeLifecycle?: unknown }).pmScopeLifecycle;
     });
   });
 
@@ -229,6 +235,40 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
         await expect(resumed!()).rejects.toMatchObject({ context: { code: "alpha_denied" } });
       });
       expect(probe.pmScopeActivations).toEqual(["alpha", "beta", "alpha"]);
+    });
+  });
+
+  it("activates a host client's tracker through the gate once every scope its context carried has settled", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await installScopeExtension(pmPath, "alpha");
+      const id = await seed(pmPath);
+      const host = PmClient.forActiveExtensionHost({ pmRoot: pmPath, author });
+      let deferred: (() => Promise<unknown>) | undefined;
+      await runWithActiveExtensions({ path: pmPath }, async () => {
+        deferred = AsyncLocalStorage.bind(() => host.update(id, { sprint: "refused-by-alpha" } as never));
+      });
+      // The context still carries the expired scope; that is no CLI host with registrations in place.
+      await expect(deferred!()).rejects.toMatchObject({ context: { code: "alpha_denied" } });
+      expect(probe.pmScopeActivations).toEqual(["alpha", "alpha"]);
+      // With an explicit cwd the activation takes the gate's exclusive slot, as any top-level call does.
+      await runWithActiveExtensions({ path: pmPath }, async () => {
+        deferred = AsyncLocalStorage.bind(() => host.run("update", { cwd: process.cwd(), id, options: { sprint: "refused-by-alpha" } }));
+      });
+      await expect(deferred!()).rejects.toMatchObject({ context: { code: "alpha_denied" } });
+    });
+  });
+
+  it("judges a host client's direct transaction by its own tracker when another tracker's scope is open", async () => {
+    await withTwoTrackers(async (first, second) => {
+      await installScopeExtension(first.pmPath, "alpha");
+      await installScopeExtension(second.pmPath, "beta");
+      const host = PmClient.forActiveExtensionHost({ pmRoot: first.pmPath, author });
+      await runWithActiveExtensions({ path: second.pmPath }, async () => {
+        await expect(host.commitItemMutations({ transactionId: "host-foreign-scope", mutations: [{ op: "finalize", id: first.id, set: { sprint: "refused-by-alpha" } }] }))
+          .rejects.toMatchObject({ context: { code: "alpha_denied" } });
+        // The open scope's marker is an ordinary value for the host's tracker.
+        await host.commitItemMutations({ transactionId: "host-foreign-scope-ok", mutations: [{ op: "finalize", id: first.id, set: { sprint: "refused-by-beta" } }] });
+      });
     });
   });
 

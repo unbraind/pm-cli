@@ -1798,8 +1798,9 @@ every enclosing scope has settled no longer holds the activation gate. An
 injected extension-host client (`context.sdk.client`) shares its host's
 registrations for the host's tracker only; a call it addresses to another
 tracker is activated and judged like any other nested call, and so is a call
-it makes from work resumed after the nested scope it was captured in has
-settled, because that context no longer carries the host's registrations. An `activate()` or
+it makes from work resumed after the scope it was captured in has settled,
+because that context no longer carries the host's registrations. Its direct
+item transactions take the same decision as its dispatched actions. An `activate()` or
 `deactivate()` callback that runs SDK work for its own tracker inside a nested
 activation is refused with `context.reason = "extension_scope_not_ready"`,
 because that tracker's guards are not all in place. A relative
@@ -4630,9 +4631,10 @@ must be one the bulk selection applies: a declared list option (`assigneeFilter`
 `assignee_filter`), an SDK-only selector (`excludeTerminal`, `lifecycleBucket`,
 `dependencyBlocked`) or a list filter of a runtime schema field. A misspelled
 selector such as `assigneee` is refused by name with the nearest declared key,
-and the intent keys `for` and `tokenBudget` are refused with a `list.limit`
-hint, because they bound a list command's page and not the rows a bulk write
-reaches; both were previously carried unread while the update reached every
+and the options only a list command applies are refused with the bulk
+spelling that does what they name: `for` and `tokenBudget` with a `list.limit`
+hint, `all` with `filterStatus: "all"` (unless the tracker registers a list
+field of that name); all of these were previously carried unread while the update reached every
 row the remaining selectors matched. A `list` or `update` value that is
 no object, a snake_case selector such as `filter_status`, a CLI input-source
 option such as `bodyFile`, and a top-level argument that is neither a runtime

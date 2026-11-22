@@ -66,7 +66,7 @@ function isDeclaredProducerBinding(artifact, source, defaultBranch) {
 
 /** The inventory's artifacts and this attempt's bindings among them, or a refusal of a malformed listing. */
 function producerBindingInventory(pages, source) {
-  if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) => !Array.isArray(page.artifacts))) throw new Error("Invalid release producer binding inventory.");
+  if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) => !Array.isArray(page.artifacts)) || !Number.isSafeInteger(pages[0].total_count)) throw new Error("Invalid release producer binding inventory.");
   const artifacts = pages.flatMap((page) => page.artifacts);
   return { complete: artifacts.length === pages[0].total_count, matching: artifacts.filter((artifact) => artifact.name === `release-producer-binding-${source.run_attempt}`) };
 }

@@ -40,14 +40,14 @@ function assertOptionsRecord(rawOptions: unknown): asserts rawOptions is Record<
 }
 
 /** Refuse each undeclared key that is no runtime schema field option of the command, naming it. */
-async function refuseUndeclaredKeys(action: string, command: "create" | "update" | "update_many" | "list", keys: Iterable<string>, allowed: Set<string>, pmRoot: string | undefined): Promise<void> {
+async function refuseUndeclaredKeys(action: string, command: "create" | "update" | "update_many" | "list", keys: Iterable<string>, allowed: Set<string>, pmRoot: string | undefined, refuse: (key: string, allowed: Set<string>) => never = (key, declared) => refuseKey(action, key, declared)): Promise<void> {
   const unknown = [...keys].filter((key) => !allowed.has(key));
   if (unknown.length === 0) return;
   const registry = resolveRuntimeFieldRegistry((await readSettings(resolvePmRoot(process.cwd(), pmRoot))).schema);
   const fields = registry.command_to_fields.get(command) ?? [];
   for (const field of fields) allowed.add(runtimeFieldOptionTarget(field));
   for (const key of unknown) {
-    if (!fields.some((field) => readRuntimeFieldOptionValue({ [key]: true }, field) === true)) refuseKey(action, key, allowed);
+    if (!fields.some((field) => readRuntimeFieldOptionValue({ [key]: true }, field) === true)) refuse(key, allowed);
   }
 }
 
@@ -73,8 +73,18 @@ const FLAT_SELECTION_KEYS = new Set([...UPDATE_MANY_FLAT_CONTROL_KEYS].filter((k
 
 const camelKey = (key: string): string => key.replace(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
 
-/** Intent keys a list command turns into a row limit; the bulk planner reads rows directly and would apply neither. */
-const LIST_INTENT_KEYS = new Set(["for", "tokenBudget", "token_budget"]);
+/**
+ * List options only a list command applies, each with the bulk spelling that does what it names:
+ * an intent becomes a row limit there, and `all` or `status` a status selection. The bulk planner
+ * reads rows directly, so each would be carried unread while the write reached other rows.
+ */
+const LIST_COMMAND_ONLY_KEYS = new Map([
+  ["for", "Bound the selection with list.limit."],
+  ["tokenBudget", "Bound the selection with list.limit."],
+  ["token_budget", "Bound the selection with list.limit."],
+  ["all", 'State the status selection as filterStatus: "all" beside the list record.'],
+  ["status", "State the status selection as filterStatus beside the list record."],
+]);
 
 /** Selectors of the SDK list contract that have no CLI flag. */
 const SDK_LIST_SELECTOR_KEYS = ["excludeTerminal", "lifecycleBucket", "dependencyBlocked"];
@@ -82,12 +92,12 @@ const SDK_LIST_SELECTOR_KEYS = ["excludeTerminal", "lifecycleBucket", "dependenc
 /**
  * Every key the bulk planner's list read applies from a list record: each declared list flag
  * (a negated flag under its positive key), every alias the list option reader accepts, and the
- * SDK-only selectors; the intent keys are left out, because nothing bounds the write from them.
+ * SDK-only selectors; the options only a list command applies are left out.
  */
 function listRecordKeys(): Set<string> {
   const flagKeys = LIST_FILTER_FLAG_CONTRACTS.map(({ flag }) => flag.replace(/^--(?:no-)?/u, "").replace(/-([a-z])/gu, (_match, letter: string) => letter.toUpperCase()));
   const keys = new Set([...flagKeys, ...LIST_COMMANDER_STRING_OPTION_CONTRACTS.flatMap((contract) => contract.keys), "filterEstimateMissing", ...SDK_LIST_SELECTOR_KEYS]);
-  for (const key of LIST_INTENT_KEYS) keys.delete(key);
+  for (const key of LIST_COMMAND_ONLY_KEYS.keys()) keys.delete(key);
   return keys;
 }
 
@@ -121,20 +131,22 @@ function assertBulkContainers(options: Record<string, unknown>): void {
 }
 
 /**
- * One selection, stated in one place: the plan reads status from filterStatus only, a list record
- * replaces every flat selector, and `id` is a single update's operand. Any other key must be one
+ * One selection, stated in one place: a list record replaces every flat selector, and `id` is a
+ * single update's operand. Any other key must be one
  * the bulk planner's list read applies or a list filter of a runtime schema field; a misspelled
- * selector, or an intent key that bounds only a list command, would otherwise be carried unread
+ * selector, or an option only a list command applies, would otherwise be carried unread
  * and widen the write to every row the remaining selectors match.
  */
 async function assertListRecord(list: Record<string, unknown>, outerKeys: Set<string>, pmRoot: string | undefined): Promise<void> {
   if (Object.hasOwn(list, "id")) refuseKey("update-many list", "id", new Set(["ids"]));
-  if (Object.hasOwn(list, "status")) refuseUnread('update-many "list.status" is not read beside this selection.', "list.status", "State the status selection as filterStatus beside the list record.");
   const flat = [...outerKeys].find((key) => FLAT_SELECTION_KEYS.has(key));
   if (flat !== undefined) refuseUnread(`update-many "${flat}" is not read beside this selection.`, flat, `Put the selection inside list, or drop the list record; a flat "${flat}" beside it is not read.`);
-  const intent = Object.keys(list).find((key) => LIST_INTENT_KEYS.has(key));
-  if (intent !== undefined) refuseUnread(`update-many "list.${intent}" does not bound a bulk selection.`, `list.${intent}`, "Bound the selection with list.limit.");
-  await refuseUndeclaredKeys("update-many list", "list", Object.keys(list), listRecordKeys(), pmRoot);
+  // A runtime schema field that shares one of those names is that tracker's list filter and stays accepted.
+  await refuseUndeclaredKeys("update-many list", "list", Object.keys(list), listRecordKeys(), pmRoot, (key, allowed) => {
+    const required = LIST_COMMAND_ONLY_KEYS.get(key);
+    if (required === undefined) refuseKey("update-many list", key, allowed);
+    refuseUnread(`update-many "list.${key}" is not read beside this selection.`, `list.${key}`, required);
+  });
 }
 
 /** Beside a nested update record an outer key selects rows, controls the run or states its attribution. */

@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: "area:release",auto-release,"gh:1766",reliability
 created_at: "2026-11-22T09:13:16.783Z"
-updated_at: "2026-11-22T11:02:11.421Z"
+updated_at: "2026-11-22T11:39:36.734Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#ab4bb49999c22e44f166c80b"
 author: "harness:claude-code"
@@ -20,9 +20,10 @@ actual_result: "The gate reads the artifact inventory once, sees a partial listi
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-riryrs,related,"2026-11-22T09:13:16.783Z","harness:claude-code","cli:create:dep",detected
   pm-zi34i1,related,"2026-11-22T09:29:05.933Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-22T09:29:04.473Z","harness:claude-code","Implemented in scripts/release/release-tag-provenance.mjs: readProducerBindingInventory reads the run's artifact inventory and reads it again after 1, 2, 4, 8 and 15 s (30 s in total) while the well-formed listing is partial (artifact count below total_count) or does not yet list release-producer-binding-<attempt>. The last inventory read is passed to selectProducerBindingArtifact unchanged, so a duplicate, expired, oversized or mismatched binding is refused without any wait, and a malformed inventory is refused immediately. Evidence for the cause: gh api repos/unbraind/pm-cli/actions/runs/44982029251/artifacts read after the failure lists three artifacts with total_count 3, the binding at 436 bytes, expired false, head_branch main and head_sha 097123a8f. The spec feeds an empty listing, a partial listing and a listing without the binding before the settled one and asserts waits of 1000, 2000 and 4000 ms, plus one run through the real blocking wait.\n"
   "2026-11-22T11:02:11.421Z","harness:claude-code","Second review round on head 38d735f67 (Codex P2). The re-read ran whenever the listing was partial, before the visible entries were judged, so a duplicate, expired, oversized or wrong-run binding seen in a partial listing was waited out and a later listing without it could pass. The inventory is now read again only when it lists no binding for the attempt yet, or lists exactly one valid binding while still partial; any duplicate or invalid binding ends the wait immediately and is refused. The spec asserts zero waits for each defect in both a complete and a partial listing, and the full five waits only for an empty listing.\n"
+  "2026-11-22T11:39:36.733Z","harness:claude-code","Third review round on head 59164549e (Codex P3). An inventory page without a numeric total_count is now refused as malformed without any wait, instead of being treated as partial.\n"
 files[2]{path,scope,note}:
   scripts/release/release-tag-provenance.mjs,project,bounded inventory re-read
   tests/unit/scripts/release/release-tag-provenance.spec.ts,project,trailing inventory spec
