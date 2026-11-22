@@ -65,7 +65,9 @@ describe("update-many typed null transport (pm-w7clh6)", () => {
     await withTempPmPath(async ({ pmPath }) => {
       const { id, updateMany, read } = await seed(pmPath);
       const failure = await updateMany(build(id)).catch((error: unknown) => error);
-      expect(failure).toMatchObject({ message: `update-many "${key}" cannot be null. No changes were made.`, context: { code: "invalid_argument_value", field: key, changed: false } });
+      // Option admission (pm-xp7ldt) names an undeclared or misplaced key before the null rule reads its value.
+      const message = key === "assignee" || key === "customer_tier" ? expect.stringMatching(new RegExp(`^Unknown update-many option "${key}"\\. .* No changes were made\\.$`, "u")) : `update-many "${key}" cannot be null. No changes were made.`;
+      expect(failure).toMatchObject({ message, context: { code: "invalid_argument_value", field: key, changed: false } });
       expect(await read()).toMatchObject({ assignee: "alice", description: "" });
     });
   });

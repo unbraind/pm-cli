@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
 import { chmod, glob, readFile, realpath, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -102,36 +103,68 @@ async function outputExists(filePath) {
   }
 }
 
-/** Compact redundant runtime syntax without changing identifiers, module boundaries, or declarations. */
+/** Build-local record of compacted outputs; excluded from the published package. */
+const RUNTIME_COMPACTION_LEDGER = ".runtime-compaction.json";
+
+/** Read the digests of outputs a previous finalization already compacted; an unreadable ledger means none. */
+async function readCompactionLedger(ledgerPath) {
+  try {
+    const parsed = JSON.parse(await readFile(ledgerPath, "utf8"));
+    return parsed && typeof parsed.files === "object" && parsed.files !== null ? parsed.files : {};
+  } catch {
+    return {};
+  }
+}
+
+async function digestFile(filePath) {
+  return createHash("sha256").update(await readFile(filePath)).digest("hex");
+}
+
+/**
+ * Compact redundant runtime syntax and shorten module-private identifiers, as the CLI bundle already does.
+ * Export names, module boundaries and declarations are unchanged; composed source maps keep the original names.
+ * Renaming is not a fixed point, so outputs an incremental compile left untouched are skipped by digest:
+ * a repeated build keeps their bytes and their source maps exactly as the first pass wrote them.
+ */
 export async function compactRuntimeOutputs(directory) {
+  // esbuild resolves source files through symlinks; use the same physical root
+  // for output paths so composed source maps remain relative and stable.
+  const outputRoot = await realpath(directory);
+  const ledgerPath = path.join(outputRoot, RUNTIME_COMPACTION_LEDGER);
+  const compacted = await readCompactionLedger(ledgerPath);
+  const files = {};
   const entryPoints = [];
   for await (const relative of glob("**/*.js", {
     cwd: directory,
     exclude: ["cli-bundle/**"],
   })) {
-    entryPoints.push(relative);
+    const key = relative.split(path.sep).join("/");
+    const digest = await digestFile(path.join(outputRoot, relative));
+    if (compacted[key] === digest) files[key] = digest;
+    else entryPoints.push(key);
   }
-  if (entryPoints.length === 0) return;
-  // esbuild resolves source files through symlinks; use the same physical root
-  // for output paths so composed source maps remain relative and stable.
-  const outputRoot = await realpath(directory);
-  await build({
-    entryPoints: entryPoints.map((relative) => path.join(outputRoot, relative)),
-    outdir: outputRoot,
-    outbase: outputRoot,
-    allowOverwrite: true,
-    bundle: false,
-    platform: "node",
-    format: "esm",
-    target: "node22",
-    minifyWhitespace: true,
-    minifyIdentifiers: false,
-    minifySyntax: true,
-    sourcemap: true,
-    sourcesContent: true,
-    legalComments: "inline",
-    logLevel: "silent",
-  });
+  if (entryPoints.length > 0) {
+    await build({
+      entryPoints: entryPoints.map((relative) => path.join(outputRoot, relative)),
+      outdir: outputRoot,
+      outbase: outputRoot,
+      allowOverwrite: true,
+      bundle: false,
+      platform: "node",
+      format: "esm",
+      target: "node22",
+      minifyWhitespace: true,
+      minifyIdentifiers: true,
+      minifySyntax: true,
+      sourcemap: true,
+      sourcesContent: true,
+      legalComments: "inline",
+      logLevel: "silent",
+    });
+    for (const key of entryPoints) files[key] = await digestFile(path.join(outputRoot, key));
+  }
+  const sorted = Object.fromEntries(Object.entries(files).sort(([left], [right]) => left.localeCompare(right)));
+  await writeFile(ledgerPath, `${JSON.stringify({ schema_version: 1, files: sorted })}\n`);
 }
 
 /** Finalize executable modes and the semantically identical compact public SDK manifest. */

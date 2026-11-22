@@ -3,6 +3,8 @@
  * Provides the public client and coordinates isolated extension lifecycles.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import { realpathSync } from "node:fs";
+import path from "node:path";
 import { describeUnknownError, createExtensionCommandError } from "./error-runtime.js";
 import { capturePmCommandScope, resolvePmCommandScopeArgs } from "./command-line.js";
 import {
@@ -776,7 +778,10 @@ export class PmClient {
       const settings = await runWithConfigurationOnlySettings(pmRoot, () => readSettings(pmRoot));
       return run({ pmRoot, author: resolveAuthor(this.defaults.author, settings.author_default) });
     };
-    if (this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] === true || activeExtensionScope.getStore() === true) return execute();
+    if (this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] === true) return execute();
+    // An open scope decides by tracker: the same root is reused, another root activates its own extensions.
+    const nested = runUnderOpenExtensionScope(pmRoot, globalOptions({ path: pmRoot, noExtensions: this.defaults.noExtensions }), process.cwd(), execute);
+    if (nested !== undefined) return nested;
     const activate = () => runWithActiveExtensions({ ...this.defaults, path: pmRoot }, execute);
     return configurationOnly ? runWithConfigurationOnlySettings(pmRoot, activate) : activate();
   }
@@ -2660,7 +2665,48 @@ export async function getContracts(
 // activation path, including callers that resolve paths through process.cwd().
 const extensionActivationGate = createAsyncReadWriteGate();
 
-const activeExtensionScope = new AsyncLocalStorage<boolean>();
+/**
+ * The activation cycle the calling async context runs under (pm-zi34i1): the tracker it was
+ * opened for, and the runtime it activated. Nested work for the same tracker reuses it; work
+ * for another tracker must never run under these registrations.
+ */
+interface ActiveExtensionScope {
+  /** Physical tracker root, so two spellings of one tracker share a scope. */
+  root: string;
+  active: ActiveExtensionRuntime | null;
+}
+
+const activeExtensionScope = new AsyncLocalStorage<ActiveExtensionScope>();
+
+/** Identity of a tracker root for scope reuse: its physical path, or the resolved spelling before it exists. */
+function trackerScopeRoot(pmRoot: string): string {
+  try {
+    return realpathSync(pmRoot);
+  } catch {
+    return path.resolve(pmRoot);
+  }
+}
+
+/**
+ * Run nested work under the caller's open scope. The scope is reused when it was opened for
+ * `pmRoot`. For another tracker, that tracker's extensions are activated in fresh request-local
+ * registries under the activation-gate slot the open scope already holds; waiting for a slot of
+ * its own could not finish while the caller's is held. Returns `undefined` when no scope is open.
+ */
+function runUnderOpenExtensionScope<T>(
+  pmRoot: string,
+  global: GlobalOptions,
+  cwd: string,
+  run: (active: ActiveExtensionRuntime | null) => Promise<T>,
+): Promise<T> | undefined {
+  const scope = activeExtensionScope.getStore();
+  if (scope === undefined) return undefined;
+  const root = trackerScopeRoot(pmRoot);
+  if (scope.root === root) return run(scope.active);
+  return runWithIsolatedExtensionRuntime(() =>
+    withActiveExtensionsExclusively(global, cwd, (active) => activeExtensionScope.run({ root, active }, () => run(active))),
+  );
+}
 
 /** Publishes empty active extension registries so built-in fallback actions cannot observe stale or partially published extension state from a failed activation cycle. */
 function resetActiveExtensionRegistries(): void {
@@ -2727,29 +2773,38 @@ export async function runWithActiveExtensions<T>(
   run: () => Promise<T>,
 ): Promise<T> {
   const explicitCwd = options.cwd;
-  if (activeExtensionScope.getStore() === true && explicitCwd === undefined && options.noExtensions === true) {
-    // The caller already owns the activation gate. A nested disabled scope
-    // needs fresh registries, but must not reacquire a reader behind its writer.
-    const pmRoot = resolvePmRoot(process.cwd(), options.path);
-    return runWithIsolatedExtensionRuntime(() => runWithDiscoveredContextIntentContracts({ pmRoot }, run));
-  }
   const resolutionCwd = explicitCwd ?? process.cwd();
+  const pmRoot = resolvePmRoot(resolutionCwd, options.path);
+  const global = globalOptions({ path: options.path, noExtensions: options.noExtensions });
+  if (explicitCwd === undefined) {
+    if (activeExtensionScope.getStore() !== undefined && options.noExtensions === true) {
+      // The caller already owns the activation gate. A nested disabled scope
+      // needs fresh registries, but must not reacquire a reader behind its writer.
+      return runWithIsolatedExtensionRuntime(() =>
+        runWithDiscoveredContextIntentContracts({ pmRoot }, () => activeExtensionScope.run({ root: trackerScopeRoot(pmRoot), active: null }, run)),
+      );
+    }
+    const nested = runUnderOpenExtensionScope(pmRoot, global, resolutionCwd, run);
+    if (nested !== undefined) return nested;
+  }
   return withActiveExtensions(
-    globalOptions({ path: options.path, noExtensions: options.noExtensions }),
+    global,
     explicitCwd,
     resolutionCwd,
-    () => activeExtensionScope.run(true, run),
+    (active) => activeExtensionScope.run({ root: trackerScopeRoot(pmRoot), active }, run),
   );
 }
 
 /**
  * Run direct item-store work with the workspace's extensions active, as a
- * dispatched action would: reuse the caller's scope when one is open, otherwise
- * activate for this call. Guards, hooks and extension fields then judge a
- * store write that bypasses {@link runAction} the same way on every call path.
+ * dispatched action would: reuse the caller's scope when it was opened for this
+ * tracker, otherwise activate this tracker's extensions for the call. Guards,
+ * hooks and extension fields then judge a store write that bypasses
+ * {@link runAction} the same way on every call path, and a write to one tracker
+ * is never judged by the registrations of another.
  */
 export function runInActiveExtensionScope<T>(pmRoot: string, run: () => Promise<T>): Promise<T> {
-  return activeExtensionScope.getStore() === true ? run() : runWithActiveExtensions({ path: pmRoot }, run);
+  return runWithActiveExtensions({ path: pmRoot }, run);
 }
 
 /**
@@ -3042,16 +3097,20 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
         ACTIVE_EXTENSION_HOST_CONTEXT
-      ] === true ||
-      activeExtensionScope.getStore() === true
+      ] === true
     ) {
       return await dispatch(null);
     }
+    const pmRoot = resolvePmRoot(resolutionCwd, global.path);
+    const nested = runUnderOpenExtensionScope(pmRoot, global, resolutionCwd, dispatch);
+    if (nested !== undefined) return await nested;
+    // Publish the scope this dispatch holds, so work the command starts for the same tracker
+    // reuses it instead of waiting for an activation slot behind its own caller.
     return await withActiveExtensions(
       global,
       explicitCwd,
       resolutionCwd,
-      (activeExtensions) => dispatch(activeExtensions),
+      (activeExtensions) => activeExtensionScope.run({ root: trackerScopeRoot(pmRoot), active: activeExtensions }, () => dispatch(activeExtensions)),
     );
   } finally {
     if (invalidateWorkspaceContractsCache) {
@@ -3107,6 +3166,10 @@ async function dispatchAction(
   if (action === "create" || action === "update") {
     const { assertNativeMutationOptions } = await import("./runtime/mutation-admission.js");
     await assertNativeMutationOptions(action, args, options, global.path, HOISTED_ACTION_OPTION_KEYS[action]!);
+  }
+  if (action === "update-many") {
+    const { assertNativeUpdateManyOptions } = await import("./runtime/mutation-admission.js");
+    await assertNativeUpdateManyOptions(args, options, global.path);
   }
   const extensionCommand = handler ? undefined : resolveActiveExtensionActionCommand(action, activeExtensions);
   const readCommand = extensionCommand === undefined ? action : `extension:${extensionCommand}`;

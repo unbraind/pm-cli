@@ -1,0 +1,116 @@
+import { mkdtemp, symlink } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { PmClient, commitItemMutations, runAction, runInActiveExtensionScope, runWithActiveExtensions } from "../../../../src/sdk/index.js";
+import { writeTestExtension } from "../../../helpers/extensions.js";
+import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+
+const author = "scope-test";
+const probe = globalThis as { pmScopeActivations?: string[]; pmScopeNested?: () => Promise<unknown> };
+
+/** Install an extension that records each activation, refuses a marked write and exposes a nesting command. */
+async function installScopeExtension(pmPath: string, name: string): Promise<void> {
+  await writeTestExtension({
+    root: path.join(pmPath, "extensions", name),
+    name,
+    manifestOverrides: { capabilities: ["hooks", "commands"] },
+    entrySource: `export default { activate(api) {
+      (globalThis.pmScopeActivations ??= []).push(${JSON.stringify(name)});
+      api.hooks.beforeMutation((context) => context.after?.metadata.sprint === ${JSON.stringify(`refused-by-${name}`)}
+        ? { allow: false, code: ${JSON.stringify(`${name}_denied`)}, remediation: "Use another sprint." } : { allow: true });
+      api.registerCommand({ name: "scope nest", action: "scope-nest", run: () => globalThis.pmScopeNested() });
+    } };`,
+  });
+}
+
+async function seed(pmPath: string): Promise<string> {
+  return (await new PmClient({ pmRoot: pmPath, noExtensions: true }).create({ title: "Seed", type: "Task" })).item.id;
+}
+
+/** Run with two independent trackers; only the second has the named extension unless `both` is set. */
+async function withTwoTrackers(run: (first: { pmPath: string; id: string }, second: { pmPath: string; id: string }) => Promise<void>): Promise<void> {
+  await withTempPmPath(async ({ pmPath: firstPath }) => {
+    await withTempPmPath(async ({ pmPath: secondPath }) => {
+      await run({ pmPath: firstPath, id: await seed(firstPath) }, { pmPath: secondPath, id: await seed(secondPath) });
+    });
+  });
+}
+
+afterEach(() => {
+  delete probe.pmScopeActivations;
+  delete probe.pmScopeNested;
+});
+
+describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
+  it("judges a nested write to another tracker with that tracker's guards on every direct call path", async () => {
+    await withTwoTrackers(async (first, second) => {
+      await installScopeExtension(first.pmPath, "alpha");
+      await installScopeExtension(second.pmPath, "beta");
+      const finalize = (pmRoot: string, id: string, sprint: string, transactionId: string) =>
+        commitItemMutations({ pmRoot, author, transactionId, mutations: [{ op: "finalize", id, set: { sprint } }] });
+      await runWithActiveExtensions({ path: first.pmPath }, async () => {
+        // Each tracker's own guard refuses; the other tracker's marker is an ordinary value there.
+        await expect(finalize(second.pmPath, second.id, "refused-by-beta", "nested-direct")).rejects.toMatchObject({ context: { code: "beta_denied" } });
+        await expect(new PmClient({ pmRoot: second.pmPath, author }).commitItemMutations({ transactionId: "nested-client", mutations: [{ op: "finalize", id: second.id, set: { sprint: "refused-by-beta" } }] }))
+          .rejects.toMatchObject({ context: { code: "beta_denied" } });
+        await expect(runAction({ action: "update", path: second.pmPath, id: second.id, author, options: { sprint: "refused-by-beta" } })).rejects.toMatchObject({ context: { code: "beta_denied" } });
+        await expect(runInActiveExtensionScope(second.pmPath, () => finalize(second.pmPath, second.id, "refused-by-beta", "nested-scope"))).rejects.toMatchObject({ context: { code: "beta_denied" } });
+        await expect(runWithActiveExtensions({ path: second.pmPath }, () => finalize(second.pmPath, second.id, "refused-by-beta", "nested-open"))).rejects.toMatchObject({ context: { code: "beta_denied" } });
+        await expect(finalize(second.pmPath, second.id, "refused-by-alpha", "nested-foreign-marker")).resolves.toMatchObject({ status: "committed" });
+        // The caller's own registrations are restored after each nested activation.
+        await expect(finalize(first.pmPath, first.id, "refused-by-alpha", "outer-after-nested")).rejects.toMatchObject({ context: { code: "alpha_denied" } });
+        await expect(finalize(first.pmPath, first.id, "refused-by-beta", "outer-foreign-marker")).resolves.toMatchObject({ status: "committed" });
+      });
+      expect(probe.pmScopeActivations?.filter((name) => name === "alpha")).toHaveLength(1);
+      const reader = new PmClient({ pmRoot: second.pmPath, noExtensions: true });
+      expect((await reader.get(second.id)).item).toMatchObject({ sprint: "refused-by-alpha" });
+    });
+  });
+
+  it("reuses the open scope for the same tracker under any spelling, without a second activation", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await installScopeExtension(pmPath, "alpha");
+      const id = await seed(pmPath);
+      const alias = path.join(await mkdtemp(path.join(os.tmpdir(), "pm-scope-alias-")), "tracker");
+      await symlink(pmPath, alias, "junction");
+      await runWithActiveExtensions({ path: pmPath }, async () => {
+        await runAction({ action: "get", path: alias, id });
+        await runInActiveExtensionScope(alias, async () => undefined);
+        await runWithActiveExtensions({ path: alias }, async () => undefined);
+        await new PmClient({ pmRoot: alias, author }).commitItemMutations({ transactionId: "same-root", mutations: [{ op: "finalize", id, set: { sprint: "kept" } }] });
+        // The reused scope carries the activated runtime, so an extension action dispatches inside it.
+        probe.pmScopeNested = async () => "nested";
+        await expect(runAction({ action: "scope-nest", path: alias })).resolves.toBe("nested");
+      });
+      expect(probe.pmScopeActivations).toEqual(["alpha"]);
+    });
+  });
+
+  it("publishes the scope a dispatch holds, so a command with an explicit cwd can nest work for its tracker", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot }) => {
+      await installScopeExtension(pmPath, "alpha");
+      const id = await seed(pmPath);
+      probe.pmScopeNested = async () => {
+        const viaScope = await runInActiveExtensionScope(pmPath, async () => "scope");
+        const viaOpen = await runWithActiveExtensions({ path: pmPath }, async () => "open");
+        const viaAction = (await runAction({ action: "get", path: pmPath, id })) as { item: { id: string } };
+        return [viaScope, viaOpen, viaAction.item.id];
+      };
+      await expect(runAction({ action: "scope-nest", path: pmPath, cwd: tempRoot })).resolves.toEqual(["scope", "open", id]);
+      await expect(runAction({ action: "scope-nest", path: pmPath })).resolves.toEqual(["scope", "open", id]);
+      expect(probe.pmScopeActivations).toEqual(["alpha", "alpha"]);
+    });
+  });
+
+  it("keeps a nested disabled scope bound to the tracker it was opened for", async () => {
+    await withTwoTrackers(async (first, second) => {
+      await installScopeExtension(second.pmPath, "beta");
+      await runWithActiveExtensions({ path: first.pmPath }, () =>
+        runWithActiveExtensions({ path: first.pmPath, noExtensions: true }, async () => {
+          await expect(commitItemMutations({ pmRoot: second.pmPath, author, transactionId: "under-disabled", mutations: [{ op: "finalize", id: second.id, set: { sprint: "refused-by-beta" } }] }))
+            .rejects.toMatchObject({ context: { code: "beta_denied" } });
+        }));
+    });
+  });
+});

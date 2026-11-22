@@ -1,0 +1,33 @@
+id: pm-l6wdvh
+title: "Shorten module-private identifiers in the unbundled runtime modules, restoring 1.76 MB of publication headroom"
+description: "The packed distribution stood at 19,985,525 of 20,000,000 B after PR 1764, so the next SDK change could not ship. Build finalization compacted the 714 tsc-emitted modules outside dist/cli-bundle with identifier shortening off, although the CLI bundle built from the same sources has always shortened them. Turn it on, keep export names, module paths, declarations and source-map names, and keep repeated builds byte-stable."
+type: Task
+status: in_progress
+priority: 2
+tags[4]: "area:release",distribution,packaging,performance
+created_at: "2026-11-22T02:21:01.211Z"
+updated_at: "2026-11-22T02:21:16.427Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#8fcf1176eceedef40be11ce4"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "The packed distribution is at least 1.5 MB below the 20,000,000 B base ceiling on a clean build; Export names, module paths and declarations are unchanged and composed source maps keep original names, proven by the runtime compaction spec; A repeated finalization leaves an unchanged output and its source map byte-identical; The packed npx and bunx smoke passes"
+parent: pm-998juj
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-998juj,implements,"2026-11-22T02:21:01.211Z","harness:claude-code","cli:create:dep",detected
+  pm-fx0rcb,related,"2026-11-22T02:21:01.211Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-22T02:21:01.211Z","harness:claude-code","Duplicate check: pm search for runtime compaction and identifier minification returned the closed whitespace tranche pm-fx0rcb, which deliberately left identifiers alone, and no open item for identifier shortening. Filed as the closeable tranche child of the publication-weight owner."
+files[4]{path,scope}:
+  package.json,project
+  scripts/finalize-build.mjs,project
+  tests/unit/scripts/finalize-build.spec.ts,project
+  tests/unit/scripts/runtime-compaction.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts tests/unit/scripts/finalize-build.spec.ts,project,"harness:claude-code","2026-11-22T02:21:16.350Z",local_mutation,fix/sdk-admission-scope-identity
+docs[2]{path,scope}:
+  docs/RELEASING.md,project
+  docs/REPOSITORY_TESTING.md,project
+body: ""

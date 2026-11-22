@@ -60,6 +60,51 @@ describe("mutation request admission", () => {
     });
   });
 
+  it("refuses an undeclared update-many key by name before any row changes, as a single update does", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--commands", "create,update,update_many", "--json"]).code).toBe(0);
+      expect(context.runCli(["schema", "add-field", "single_only", "--type", "string", "--commands", "create,update", "--json"]).code).toBe(0);
+      const id = createTestItemId(context, { title: "bulk input admission", createMode: "progressive" });
+      const client = new PmClient({ pmRoot: context.pmPath });
+      const before = await capture(context);
+      const single = await client.run("update", { id, options: { asignee: "x", description: "changed" } }).catch((error: unknown) => error as { message: string; context: Record<string, unknown> });
+      for (const options of [
+        { ids: [id], asignee: "x", description: "changed" },
+        { ids: [id], update: { asignee: "x", description: "changed" } },
+        { list: { ids: [id] }, asignee: "x", description: "changed" },
+      ]) {
+        const bulk = await client.run("update-many", { options }).catch((error: unknown) => error as { message: string; context: Record<string, unknown> });
+        // Same key, same nearest name and same typed refusal as the single update.
+        expect(bulk).toMatchObject({ exitCode: 2, code: "invalid_argument_value", context: { reason: "unknown_mutation_option", changed: false, field: "asignee" } });
+        expect((bulk as { message: string }).message).toBe((single as { message: string }).message.replace("Unknown update option", "Unknown update-many option"));
+        expect((bulk as { context: Record<string, unknown> }).context.required).toBe((single as { context: Record<string, unknown> }).context.required);
+        expect(await capture(context)).toEqual(before);
+      }
+      for (const [options, named] of [
+        [{ ids: [id], filterBogus: "open", description: "changed" }, "filterBogus"],
+        [{ ids: [id], update: { description: "changed" }, dryRnu: true }, "dryRnu"],
+        [{ ids: [id], update: { description: "changed" }, priority: 0 }, "update.priority"],
+        // A runtime field the bulk path does not apply is refused instead of dropped.
+        [{ ids: [id], singleOnly: "dropped", description: "changed" }, "singleOnly"],
+        [JSON.parse(`{"ids":["${id}"],"description":"changed","__proto__":{"priority":0}}`), "__proto__"],
+        [{ ids: [id], update: JSON.parse('{"description":"changed","__proto__":{"priority":0}}') }, "__proto__"],
+      ] as const) {
+        await expect(client.run("update-many", { options })).rejects.toMatchObject({ message: expect.stringContaining(named), context: { reason: "unknown_mutation_option", changed: false } });
+        expect(await capture(context)).toEqual(before);
+      }
+      for (const options of [null, [], "ids=x"]) {
+        await expect(client.run("update-many", { options } as never)).rejects.toMatchObject({ code: "invalid_argument_value", context: { changed: false } });
+      }
+      // Declared aliases, run controls, runtime schema fields and both spellings stay accepted.
+      await expect(client.run("update-many", { options: { ids: [id], externalId: "flat", estimatedMinutes: "5", message: "flat", dryRun: true } })).resolves.toMatchObject({ dry_run: true });
+      expect(await capture(context)).toEqual(before);
+      await client.run("update-many", { options: { ids: [id], externalId: "flat", estimate: "5", noCheckpoint: true } });
+      await client.run("update-many", { options: { list: { ids: [id] }, update: { description: "nested", externalId: "nested" }, checkpoint: false, fullChangedFields: true } });
+      expect((await client.get(id, { full: true })).item).toMatchObject({ external_id: "nested", description: "nested", estimated_minutes: 5 });
+      expect(context.runCli(["history", id, "--verify", "--strict-exit", "--json"]).code).toBe(0);
+    });
+  });
+
   it("admits every run directive and effective selection before adding or removing links", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "test option admission", createMode: "progressive" });

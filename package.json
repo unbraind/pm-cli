@@ -90,6 +90,7 @@
   "files": [
     "dist/**",
     "!dist/**/*.map",
+    "!dist/.runtime-compaction.json",
     "!dist/sdk/testing.js",
     "!dist/sdk/index.js",
     "!dist/sdk/compose.js",

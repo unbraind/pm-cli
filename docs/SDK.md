@@ -1772,11 +1772,26 @@ registries across concurrent requests, and is reentrant: SDK primitives called
 inside the callback reuse the active scope instead of attempting a nested
 activation cycle.
 
+A scope belongs to the tracker it was opened for (pm-zi34i1). Nested work for
+the same tracker, under any path spelling that resolves to the same directory,
+reuses the scope without a second activation, including a nested extension
+action. Nested work for another tracker (`runAction`, `runWithActiveExtensions`,
+`runInActiveExtensionScope` and `PmClient` item-transaction methods) activates
+that tracker's extensions in request-local registries for the nested call, so
+its guards and extension fields judge the write and the caller's registrations
+are back afterwards. `runAction` publishes the scope its own dispatch holds: a
+command handler, including one dispatched with an explicit `cwd`, can start
+nested work for its tracker without waiting for a second activation slot. A
+nested `runWithActiveExtensions` that passes its own `cwd` still asks for
+exclusive use of the process working directory and must not be called from
+inside an open scope.
+
 `runInActiveExtensionScope(pmRoot, run)` is the reentrant form for code that
 writes through the item store without dispatching an action: it reuses the
-caller's open scope, and otherwise activates the workspace's extensions for
-that one call. The SDK's own `finalize` step uses it, so guards and extension
-fields judge the write the same way whether or not the caller opened a scope.
+caller's open scope when that scope belongs to `pmRoot`, and otherwise
+activates that tracker's extensions for the one call. The SDK's own `finalize`
+step uses it, so guards and extension fields judge the write the same way
+whether or not the caller opened a scope.
 
 ```ts
 import {
@@ -4578,6 +4593,14 @@ nearest-name hint when available, and `context.changed = false`. Put mutation
 fields under `options` when using `run`; existing declared top-level aliases
 remain accepted. Workspace schema option identities remain available through
 `run`, while typed convenience methods support extension item fields through `field`.
+`runAction("update-many")` applies the same admission before any row changes
+(pm-xp7ldt): an undeclared key in the flat payload or in a nested `update`
+record is refused by name with the same hint, instead of being dropped while
+the remaining fields are applied to every matched row. Beside a nested
+`update` record an outer key must select rows or control the run; an update
+field there is refused with its `update.<key>` placement. A runtime schema
+field is admitted only when it is declared for `update_many`, because the bulk
+path applies no other.
 MCP retains its existing transport-specific admission contract. The no-change
 receipt applies to these preflight refusals; an executed operation's outcome
 and evidence must be assessed separately.

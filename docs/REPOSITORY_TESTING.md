@@ -284,7 +284,8 @@ cannot change the restoration target. Send generated shell scripts through
 stdin (`bash -s`) so their size cannot exceed Windows command-line limits.
 Runtime compaction is tested through a
 real directory alias as well as its physical path, including original source
-mapping and repeated-compaction byte stability. These tests run in the full
+mapping, export-name preservation under identifier shortening and
+repeated-compaction byte stability. These tests run in the full
 suite on the Nightly Validation platform matrix.
 
 CI retains the 30-second per-test timeout and retries one failed attempt. A

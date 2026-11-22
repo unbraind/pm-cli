@@ -557,6 +557,17 @@ and this delimiter-compaction tranche is
 [pm-5aze0q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5aze0q.toon)
 (repository-only tracker records excluded from npm).
 
+Build finalization also shortens module-private identifiers in the emitted
+runtime modules outside `dist/cli-bundle`
+([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon), a repository-only tracker record excluded from npm),
+as the CLI bundle already does for the same sources. Export names, module
+paths and declarations are unchanged, and the composed source maps uploaded for
+symbolication keep the original names; a function's runtime `name` is not part
+of the contract. Renaming is not a fixed point, so `dist/.runtime-compaction.json`
+(build-local, excluded from the package) records the digest of every compacted
+output and a repeated build skips outputs an incremental compile left in place.
+The tranche removed about 1.76 MB from the packed distribution.
+
 The generated error-code catalog ships as compact rows
 ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon), a repository-only tracker record excluded from npm).
 `scripts/generate-error-code-catalog.mjs` omits every derivable field: the

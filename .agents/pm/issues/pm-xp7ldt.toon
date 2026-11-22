@@ -2,11 +2,13 @@ id: pm-xp7ldt
 title: update-many ignores an unknown flat update key where a single update refuses it by name
 description: "Observed while fixing typed null handling in update-many. runAction('update-many', { options: { ids: [id], bogus: 'x', description: 'changed' } }) changes the description and reports one updated row; the unknown key is dropped without a warning. The same payload through runAction('update') refuses with: Unknown update option \"bogus\". Did you mean \"body\"? No changes were made. The GH-1520 admission check covers native create and update only, so a misspelled bulk field (for example asignee) is silently not applied to any matched row."
 type: Issue
-status: open
+status: in_progress
 priority: 3
 tags[4]: admission,"area:sdk",honesty,update-many
 created_at: "2026-11-21T19:34:43.782Z"
-updated_at: "2026-11-21T21:42:48.289Z"
+updated_at: "2026-11-22T02:20:51.169Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#8fcf1176eceedef40be11ce4"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "runAction update-many refuses an undeclared flat update key by name with the nearest declared key before any row changes, in the flat and nested spellings; Declared aliases, runtime schema fields and extension fields stay accepted; MCP update-many keeps its transport contract; A spec proves parity with the single update refusal for the same key"
@@ -18,7 +20,18 @@ actual_result: The unknown key is dropped and the remaining fields are applied t
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fl3phm,related,"2026-11-21T19:34:43.782Z","harness:claude-code","cli:create:dep",detected
   pm-w7clh6,discovered_from,"2026-11-21T19:34:43.782Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-21T19:34:43.782Z","harness:claude-code","Duplicate check: pm search for 'update-many unknown option key silently ignored' returned the closed GH-1520 item (create and update admission, not bulk) and no open item for the bulk path."
   "2026-11-21T21:42:48.288Z","harness:claude-code","Related shape from the third Codex review of PR 1764: a JSON-decoded options bag with an own __proto__ key loses that key when normalization copies it into a plain object, so neither the unknown-key check nor the typed null scan sees it. The admission check should read the caller's own keys before any copy."
+  "2026-11-22T01:53:55.817Z","harness:claude-code","Implemented on branch fix/sdk-admission-scope-identity. dispatchAction now calls assertNativeUpdateManyOptions (src/sdk/runtime/mutation-admission.ts) for a native update-many before the handler runs. It reads the caller's own option keys before any normalization copy, so an own __proto__ key is judged, and refuses an undeclared key with the message, nearest-name hint and typed context a single update gives for the same key. With a nested update record, the record's keys are judged as update options and every outer key must select rows or control the run; an update field left outside is refused with its update.<key> placement instead of being ignored. Finding while writing the spec: the bulk path applies a runtime schema field only when the field is declared for update_many (collectRuntimeUpdateFieldValues in update-many.ts), so a field declared for update alone was also dropped without notice. Admission therefore accepts runtime fields by the update_many declaration, not the update one. MCP transport input returns before the check. Proof: tests/integration/sdk/mutation-admission.integration.spec.ts, case 'refuses an undeclared update-many key by name before any row changes, as a single update does'."
+files[5]{path,scope}:
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime.ts,project
+  src/sdk/runtime/mutation-admission.ts,project
+  tests/integration/sdk/mutation-admission.integration.spec.ts,project
+  tests/unit/sdk/runtime/update-many-null-transport.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk/mutation-admission.integration.spec.ts tests/unit/sdk/runtime/update-many-null-transport.spec.ts,project,"harness:claude-code","2026-11-22T02:20:50.438Z",local_mutation,fix/sdk-admission-scope-identity
+docs[1]{path,scope}:
+  docs/SDK.md,project
 body: ""

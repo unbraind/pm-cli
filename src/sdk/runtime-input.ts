@@ -958,7 +958,7 @@ export function closeManyOptionsFromFlat(
 }
 
 /** Flat update-many parameters that steer batching instead of item fields. */
-const UPDATE_MANY_FLAT_CONTROL_KEYS = new Set([
+export const UPDATE_MANY_FLAT_CONTROL_KEYS = new Set([
   "filterStatus",
   "filterType",
   "filterTag",

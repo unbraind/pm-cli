@@ -2,11 +2,13 @@ id: pm-zi34i1
 title: "A nested SDK dispatch for another tracker reuses the caller's active extension scope, so the second tracker's guards and extension fields never load"
 description: "Reported by the Codex review of PR 1764. The active extension scope is one process-local boolean (activeExtensionScope in src/sdk/runtime.ts). runAction, PmClient item-transaction helpers and runInActiveExtensionScope all skip activation when it is set, without comparing the tracker the scope was opened for. A host that opens runWithActiveExtensions for tracker A and then dispatches a mutation for tracker B inside the callback runs it under A's registrations: a beforeMutation guard installed only in B never judges the write, and B's extension fields are unknown. The same call made outside the scope activates B and is refused. The behaviour predates PR 1764; the new finalize step inherits it through the shared rule."
 type: Issue
-status: open
+status: in_progress
 priority: 3
 tags[4]: "area:sdk",extensions,guards,multi-tracker
 created_at: "2026-11-21T20:18:59.522Z"
-updated_at: "2026-11-21T21:42:47.395Z"
+updated_at: "2026-11-22T02:20:49.482Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#8fcf1176eceedef40be11ce4"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The active extension scope records the resolved tracker root it was opened for; A dispatch or runInActiveExtensionScope call for a different root activates that root's extensions or refuses with a typed error naming both roots, never reusing the other tracker's registrations; A spec installs a refusing guard in tracker B only and proves the nested write is judged; Same-root nesting keeps reusing the scope without a second activation"
@@ -17,7 +19,15 @@ expected_result: A write to tracker B is judged by tracker B's guards whether or
 actual_result: "Inside a scope opened for tracker A, a write to tracker B runs under A's registrations and B's guards are skipped"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1656,discovered_from,"2026-11-21T20:18:59.522Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-21T20:18:59.522Z","harness:claude-code","Duplicate check: pm search for 'extension scope reused for another tracker nested dispatch' returned no item about per-tracker scope identity."
   "2026-11-21T21:42:47.394Z","harness:claude-code","Additional scope from the third Codex review of PR 1764: runAction with an explicit cwd holds the activation gate's write slot while its command runs, but does not mark an active scope. A command that then calls runInActiveExtensionScope, runWithActiveExtensions or a plain nested runAction for the same tracker waits for a read slot that cannot open until the command returns. The fix belongs with scope identity: a dispatch should publish the scope (and its tracker root) it already holds, so nested same-root work reuses it."
+  "2026-11-22T01:53:53.105Z","harness:claude-code","Implemented on branch fix/sdk-admission-scope-identity. The scope store in src/sdk/runtime.ts is now a record of the physical tracker root (realpath, or the resolved spelling before the directory exists) and the activated runtime, instead of a boolean. One helper, runUnderOpenExtensionScope, decides every nested entry: runAction, runWithActiveExtensions without its own cwd, runInActiveExtensionScope and the PmClient item-transaction context. Same root: the scope is reused and the nested call receives the activated runtime, so a nested extension action dispatches (before, a nested dispatch got no runtime and answered 'Unsupported native pm action'). Another root: that tracker's extensions are activated in fresh request-local registries under the gate slot the open scope already holds, and the caller's registrations are back when the nested call returns. runAction now publishes the scope its dispatch holds, which removes the wait described in the second comment: a command dispatched with an explicit cwd can call runInActiveExtensionScope, runWithActiveExtensions and a nested runAction for its tracker. A nested disabled scope is bound to the root it names. Left as documented behaviour: a nested runWithActiveExtensions that passes its own cwd still asks for exclusive use of the process working directory. Proof: tests/unit/sdk/extension/scope-tracker-identity.spec.ts (4 cases); all four fail on the previous runtime, two of them by timing out on the activation gate."
+files[2]{path,scope}:
+  src/sdk/runtime.ts,project
+  tests/unit/sdk/extension/scope-tracker-identity.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension/scope-tracker-identity.spec.ts,project,"harness:claude-code","2026-11-22T02:20:49.430Z",local_mutation,fix/sdk-admission-scope-identity
+docs[1]{path,scope}:
+  docs/SDK.md,project
 body: ""
