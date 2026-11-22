@@ -21,6 +21,9 @@ export async function main(repoRoot = process.cwd()) {
   const requiredOutputs = [
     path.join(repoRoot, "dist", "cli.js"),
     path.join(repoRoot, "dist", "sdk", "index.js"),
+    // Without its ledger the finalizer cannot tell compacted outputs from raw ones; a full
+    // re-emit hands it raw compiler output instead of compacting already shortened modules again.
+    path.join(repoRoot, "dist", ".runtime-compaction.json"),
   ];
 
   const missingOutput = [];

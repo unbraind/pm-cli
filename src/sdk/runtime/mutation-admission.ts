@@ -6,7 +6,8 @@ import { resolvePmRoot } from "../../core/store/paths.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../cli-contracts/commander-mutation-options.js";
-import { CREATE_FLAG_CONTRACTS, UPDATE_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
+import { LIST_COMMANDER_STRING_OPTION_CONTRACTS } from "../cli-contracts/commander-types.js";
+import { CREATE_FLAG_CONTRACTS, LIST_FILTER_FLAG_CONTRACTS, UPDATE_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
 import { isMcpMutationTransportInput, isRuntimeRecord, UPDATE_MANY_FLAT_CONTROL_KEYS } from "../runtime-input.js";
 
 /** Refuse a key with a bounded nearest-name hint and an explicit no-write guarantee. */
@@ -67,12 +68,21 @@ export async function assertNativeMutationOptions(
   await refuseUndeclaredKeys(action, action, new Set([...Object.keys(rawOptions ?? {}), ...Object.keys(options)]), allowed, pmRoot);
 }
 
+/** Option key commander derives from a flag: camelCase, with a negated flag stored under its positive name. */
+function flagOptionKey(flag: string): string {
+  return flag.slice(2).replace(/^no-/u, "").replace(/-([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
+}
+
+const camelKey = (key: string): string => key.replace(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
+
 /**
  * Refuse an undeclared update-many key by name before any row changes (pm-xp7ldt), as a single
  * update refuses it. The caller's own keys are read before normalization copies them, so a key a
- * copy would lose is still judged. A nested `update` record carries every field: beside it, an
- * outer key must select rows or control the run. Only a runtime schema field declared for
- * `update_many` is applied by the bulk path, so only those are admitted. MCP retains its declared transport admission.
+ * copy would lose is still judged. The allowlist is the bulk path's own: `id` selects nothing
+ * there (`ids` does), a nested `list` record may hold list selection keys only, and a nested
+ * `update` record carries every field, so beside it an outer key must select rows, control the
+ * run or state its attribution. Only a runtime schema field declared for `update_many` is applied
+ * by the bulk path, so only those are admitted. MCP retains its declared transport admission.
  */
 export async function assertNativeUpdateManyOptions(
   args: Record<string, unknown>,
@@ -83,11 +93,23 @@ export async function assertNativeUpdateManyOptions(
   const rawOptions = args.options;
   assertOptionsRecord(rawOptions);
   const fields = declaredMutationOptionKeys("update");
+  // A single update's item operand; the bulk path would read no selection from it.
+  fields.delete("id");
+  fields.add("documentAnnotationSnapshot");
   const controls = new Set([...UPDATE_MANY_FLAT_CONTROL_KEYS, "author", "message", "force", "fullChangedFields", "idOnly", ...OUTPUT_KEYS]);
-  const outerKeys = new Set([...Object.keys(rawOptions ?? {}), ...Object.keys(options)]);
+  const everyOption = new Set([...fields, ...controls]);
+  const topLevel = new Set(["action", "options", "path", "cwd", "author", "force", "noExtensions", "no_extensions", "fullChangedFields", "idOnly", ...OUTPUT_KEYS]);
+  for (const key of Object.keys(args)) if (!topLevel.has(key)) refuseKey("update-many", key, everyOption, everyOption.has(key));
+  // A snake_case spelling of a run or output control is normalized before dispatch; item fields keep their declared spellings.
+  const outerKeys = new Set([...Object.keys(rawOptions ?? {}), ...Object.keys(options)].map((key) => (controls.has(camelKey(key)) ? camelKey(key) : key)));
+  const list = isRuntimeRecord(options.list) ? options.list : undefined;
+  if (list !== undefined) {
+    const selection = new Set([...LIST_COMMANDER_STRING_OPTION_CONTRACTS.flatMap(({ target, keys }) => [target, ...keys]), ...LIST_FILTER_FLAG_CONTRACTS.map(({ flag }) => flagOptionKey(flag)), "ids"]);
+    for (const key of Object.keys(list)) if (!selection.has(key)) refuseKey("update-many list", key, selection);
+  }
   const nested = isRuntimeRecord(options.update) ? options.update : undefined;
   if (nested === undefined) {
-    await refuseUndeclaredKeys("update-many", "update_many", outerKeys, new Set([...fields, ...controls]), pmRoot);
+    await refuseUndeclaredKeys("update-many", "update_many", outerKeys, everyOption, pmRoot);
     return;
   }
   for (const key of outerKeys) {

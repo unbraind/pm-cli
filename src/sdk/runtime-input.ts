@@ -1093,6 +1093,20 @@ function carryUpdateManyNulls(
   }
 }
 
+/** Run-wide attribution a caller may state once beside a nested update record. */
+const UPDATE_MANY_OUTER_ATTRIBUTION_KEYS = ["author", "message", "force"] as const;
+
+/**
+ * Carry outer `author`, `message` and `force` into a nested update record, which
+ * is otherwise the only source of per-row options; the record's own value wins.
+ */
+function withOuterAttribution(options: Record<string, unknown>, update: Record<string, unknown>): Record<string, unknown> {
+  const carried = Object.fromEntries(UPDATE_MANY_OUTER_ATTRIBUTION_KEYS
+    .filter((key) => options[key] !== undefined && options[key] !== null && update[key] === undefined)
+    .map((key) => [key, options[key]]));
+  return Object.keys(carried).length === 0 ? update : transferMutationStdinTokenPolicy(update, { ...carried, ...update });
+}
+
 /**
  * Build update-many command options from one flat or nested action payload.
  * `typedNulls` is set for a typed SDK dispatch, where a `null` is a decision
@@ -1104,7 +1118,7 @@ export function updateManyOptionsFromFlat(
 ): UpdateManyCommandOptions {
   if (isRuntimeRecord(options.list) || isRuntimeRecord(options.update)) {
     const updateSource = isRuntimeRecord(options.update)
-      ? options.update
+      ? withOuterAttribution(options, options.update)
       : updateManyUpdateOptionsFromFlat(options);
     const normalizedUpdate = preserveTransportLiteralOptions(
       options,

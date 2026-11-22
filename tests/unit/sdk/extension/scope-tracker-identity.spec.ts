@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { mkdtemp, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -100,6 +101,60 @@ describe("active extension scope is bound to its tracker (pm-zi34i1)", () => {
       await expect(runAction({ action: "scope-nest", path: pmPath, cwd: tempRoot })).resolves.toEqual(["scope", "open", id]);
       await expect(runAction({ action: "scope-nest", path: pmPath })).resolves.toEqual(["scope", "open", id]);
       expect(probe.pmScopeActivations).toEqual(["alpha", "alpha"]);
+    });
+  });
+
+  it("gives a nested call that disables extensions empty registries, and refuses a nested cwd change", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot }) => {
+      await installScopeExtension(pmPath, "alpha");
+      const id = await seed(pmPath);
+      const marked = { sprint: "refused-by-alpha" };
+      probe.pmScopeNested = async () => {
+        await expect(runAction({ action: "update", path: pmPath, id, author, options: marked })).rejects.toMatchObject({ context: { code: "alpha_denied" } });
+        // The per-call override is honored under the caller's live scope.
+        await runAction({ action: "update", path: pmPath, id, author, noExtensions: true, options: marked });
+        await expect(runAction({ action: "scope-nest", path: pmPath, noExtensions: true })).rejects.toThrow("Unsupported native pm action");
+        // A cwd naming the current directory is a no-op; another directory cannot be entered from inside the scope.
+        await runAction({ action: "get", path: pmPath, id, cwd: process.cwd() });
+        await expect(runAction({ action: "get", path: pmPath, id, cwd: tempRoot })).rejects.toMatchObject({ context: { reason: "nested_cwd_unavailable", field: "cwd" } });
+        await expect(runWithActiveExtensions({ path: pmPath, cwd: tempRoot }, async () => undefined)).rejects.toMatchObject({ context: { reason: "nested_cwd_unavailable" } });
+        return "done";
+      };
+      await expect(runAction({ action: "scope-nest", path: pmPath })).resolves.toBe("done");
+      expect((await new PmClient({ pmRoot: pmPath, noExtensions: true }).get(id)).item).toMatchObject(marked);
+    });
+  });
+
+  it("expires a scope when its callback settles, so deferred work activates for itself", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await installScopeExtension(pmPath, "alpha");
+      let deferred: (() => Promise<unknown>) | undefined;
+      await runWithActiveExtensions({ path: pmPath }, async () => {
+        // Captured inside the scope: the async context still carries the scope record after it ends.
+        deferred = AsyncLocalStorage.bind(() => runWithActiveExtensions({ path: pmPath }, async () => "late"));
+      });
+      await expect(deferred!()).resolves.toBe("late");
+      expect(probe.pmScopeActivations).toEqual(["alpha", "alpha"]);
+    });
+  });
+
+  it("records the tracker a relative cwd and path actually activate", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot }) => {
+      await installScopeExtension(pmPath, "alpha");
+      const id = await seed(pmPath);
+      const previous = process.cwd();
+      process.chdir(path.dirname(tempRoot));
+      try {
+        const relativeCwd = path.basename(tempRoot);
+        await runWithActiveExtensions({ cwd: relativeCwd, path: path.relative(tempRoot, pmPath) }, async () => {
+          probe.pmScopeNested = async () => "same tracker";
+          await expect(runAction({ action: "scope-nest", path: pmPath })).resolves.toBe("same tracker");
+          await expect(runAction({ action: "update", path: pmPath, id, author, options: { sprint: "refused-by-alpha" } })).rejects.toMatchObject({ context: { code: "alpha_denied" } });
+        });
+      } finally {
+        process.chdir(previous);
+      }
+      expect(probe.pmScopeActivations).toEqual(["alpha"]);
     });
   });
 

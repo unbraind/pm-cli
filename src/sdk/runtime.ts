@@ -780,9 +780,9 @@ export class PmClient {
     };
     if (this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] === true) return execute();
     // An open scope decides by tracker: the same root is reused, another root activates its own extensions.
-    const nested = runUnderOpenExtensionScope(pmRoot, globalOptions({ path: pmRoot, noExtensions: this.defaults.noExtensions }), process.cwd(), execute);
-    if (nested !== undefined) return nested;
-    const activate = () => runWithActiveExtensions({ ...this.defaults, path: pmRoot }, execute);
+    // The root is already resolved; inside an open scope the client's cwd cannot be applied to the process again.
+    const cwd = openExtensionScope() === undefined ? this.defaults.cwd : undefined;
+    const activate = () => runWithActiveExtensions({ ...this.defaults, cwd, path: pmRoot }, execute);
     return configurationOnly ? runWithConfigurationOnlySettings(pmRoot, activate) : activate();
   }
 
@@ -2674,6 +2674,8 @@ interface ActiveExtensionScope {
   /** Physical tracker root, so two spellings of one tracker share a scope. */
   root: string;
   active: ActiveExtensionRuntime | null;
+  /** False once the scope's callback settled: work it left behind no longer holds the activation gate. */
+  live: boolean;
 }
 
 const activeExtensionScope = new AsyncLocalStorage<ActiveExtensionScope>();
@@ -2687,11 +2689,41 @@ function trackerScopeRoot(pmRoot: string): string {
   }
 }
 
+/** The scope the calling context still holds; a scope whose callback settled is treated as absent. */
+function openExtensionScope(): ActiveExtensionScope | undefined {
+  const scope = activeExtensionScope.getStore();
+  return scope?.live === true ? scope : undefined;
+}
+
+/** Publish a scope for `run` and expire it when `run` settles, so deferred work cannot reuse a released gate slot. */
+async function runAsExtensionScope<T>(pmRoot: string, active: ActiveExtensionRuntime | null, run: () => Promise<T>): Promise<T> {
+  const scope: ActiveExtensionScope = { root: trackerScopeRoot(pmRoot), active, live: true };
+  try {
+    return await activeExtensionScope.run(scope, run);
+  } finally {
+    scope.live = false;
+  }
+}
+
+/**
+ * A nested call cannot change the process working directory: that needs exclusive use of the
+ * activation gate, which its own caller holds. A `cwd` naming the current directory is a no-op;
+ * any other is refused before dispatch instead of being ignored or waiting forever.
+ */
+function assertNestedCwdIsCurrent(explicitCwd: string | undefined): void {
+  if (explicitCwd === undefined || trackerScopeRoot(explicitCwd) === trackerScopeRoot(process.cwd())) return;
+  const required = "Omit cwd inside an open extension scope and address the tracker with path, or make the call outside the scope.";
+  throw new PmCliError(`A nested SDK call cannot change the working directory to "${explicitCwd}" while its caller's extension scope is open. ${required}`, EXIT_CODE.USAGE, {
+    code: "invalid_argument_value", reason: "nested_cwd_unavailable", changed: false, field: "cwd", required, nextSteps: [required],
+  });
+}
+
 /**
  * Run nested work under the caller's open scope. The scope is reused when it was opened for
- * `pmRoot`. For another tracker, that tracker's extensions are activated in fresh request-local
- * registries under the activation-gate slot the open scope already holds; waiting for a slot of
- * its own could not finish while the caller's is held. Returns `undefined` when no scope is open.
+ * `pmRoot` and the call does not disable extensions. Otherwise (another tracker, or
+ * `noExtensions`) the call gets fresh request-local registries, activated for its own tracker
+ * under the activation-gate slot the open scope already holds; waiting for a slot of its own
+ * could not finish while the caller's is held. Returns `undefined` when no scope is open.
  */
 function runUnderOpenExtensionScope<T>(
   pmRoot: string,
@@ -2699,12 +2731,11 @@ function runUnderOpenExtensionScope<T>(
   cwd: string,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> | undefined {
-  const scope = activeExtensionScope.getStore();
+  const scope = openExtensionScope();
   if (scope === undefined) return undefined;
-  const root = trackerScopeRoot(pmRoot);
-  if (scope.root === root) return run(scope.active);
+  if (scope.root === trackerScopeRoot(pmRoot) && global.noExtensions !== true) return run(scope.active);
   return runWithIsolatedExtensionRuntime(() =>
-    withActiveExtensionsExclusively(global, cwd, (active) => activeExtensionScope.run({ root, active }, () => run(active))),
+    withActiveExtensionsExclusively(global, cwd, (active) => runAsExtensionScope(pmRoot, active, () => run(active))),
   );
 }
 
@@ -2773,25 +2804,18 @@ export async function runWithActiveExtensions<T>(
   run: () => Promise<T>,
 ): Promise<T> {
   const explicitCwd = options.cwd;
-  const resolutionCwd = explicitCwd ?? process.cwd();
+  // Resolve once, before any chdir: activation after the chdir must name the same tracker the scope records.
+  const resolutionCwd = explicitCwd === undefined ? process.cwd() : path.resolve(explicitCwd);
   const pmRoot = resolvePmRoot(resolutionCwd, options.path);
-  const global = globalOptions({ path: options.path, noExtensions: options.noExtensions });
-  if (explicitCwd === undefined) {
-    if (activeExtensionScope.getStore() !== undefined && options.noExtensions === true) {
-      // The caller already owns the activation gate. A nested disabled scope
-      // needs fresh registries, but must not reacquire a reader behind its writer.
-      return runWithIsolatedExtensionRuntime(() =>
-        runWithDiscoveredContextIntentContracts({ pmRoot }, () => activeExtensionScope.run({ root: trackerScopeRoot(pmRoot), active: null }, run)),
-      );
-    }
-    const nested = runUnderOpenExtensionScope(pmRoot, global, resolutionCwd, run);
-    if (nested !== undefined) return nested;
-  }
+  const global = globalOptions({ path: pmRoot, noExtensions: options.noExtensions });
+  if (openExtensionScope() !== undefined) assertNestedCwdIsCurrent(explicitCwd);
+  const nested = runUnderOpenExtensionScope(pmRoot, global, resolutionCwd, () => run());
+  if (nested !== undefined) return nested;
   return withActiveExtensions(
     global,
     explicitCwd,
     resolutionCwd,
-    (active) => activeExtensionScope.run({ root: trackerScopeRoot(pmRoot), active }, run),
+    (active) => runAsExtensionScope(pmRoot, active, run),
   );
 }
 
@@ -3051,7 +3075,7 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   // process.cwd() might hold by the time the task runs. Only an explicit cwd additionally
   // pins process.cwd() (inside the serialized slot) for the built-in handler.
   const explicitCwd = readString(resolved.args, "cwd");
-  const resolutionCwd = explicitCwd ?? process.cwd();
+  const resolutionCwd = explicitCwd === undefined ? process.cwd() : path.resolve(explicitCwd);
   if (resolved.action === "init") {
     (global as GlobalOptions & { [key: symbol]: unknown })[
       INIT_INVOCATION_CWD
@@ -3102,6 +3126,7 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       return await dispatch(null);
     }
     const pmRoot = resolvePmRoot(resolutionCwd, global.path);
+    if (openExtensionScope() !== undefined) assertNestedCwdIsCurrent(explicitCwd);
     const nested = runUnderOpenExtensionScope(pmRoot, global, resolutionCwd, dispatch);
     if (nested !== undefined) return await nested;
     // Publish the scope this dispatch holds, so work the command starts for the same tracker
@@ -3110,7 +3135,7 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       global,
       explicitCwd,
       resolutionCwd,
-      (activeExtensions) => activeExtensionScope.run({ root: trackerScopeRoot(pmRoot), active: activeExtensions }, () => dispatch(activeExtensions)),
+      (activeExtensions) => runAsExtensionScope(pmRoot, activeExtensions, () => dispatch(activeExtensions)),
     );
   } finally {
     if (invalidateWorkspaceContractsCache) {

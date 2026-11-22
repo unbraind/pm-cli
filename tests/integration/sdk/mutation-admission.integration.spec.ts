@@ -84,6 +84,10 @@ describe("mutation request admission", () => {
         [{ ids: [id], filterBogus: "open", description: "changed" }, "filterBogus"],
         [{ ids: [id], update: { description: "changed" }, dryRnu: true }, "dryRnu"],
         [{ ids: [id], update: { description: "changed" }, priority: 0 }, "update.priority"],
+        // A single update's operand selects nothing in bulk: without the refusal every matching row would change.
+        [{ id, description: "changed" }, '"ids"'],
+        [{ list: { id }, update: { description: "changed" } }, 'update-many list option "id"'],
+        [{ list: { ids: [id], asignee: "x" }, update: { description: "changed" } }, "asignee"],
         // A runtime field the bulk path does not apply is refused instead of dropped.
         [{ ids: [id], singleOnly: "dropped", description: "changed" }, "singleOnly"],
         [JSON.parse(`{"ids":["${id}"],"description":"changed","__proto__":{"priority":0}}`), "__proto__"],
@@ -92,6 +96,12 @@ describe("mutation request admission", () => {
         await expect(client.run("update-many", { options })).rejects.toMatchObject({ message: expect.stringContaining(named), context: { reason: "unknown_mutation_option", changed: false } });
         expect(await capture(context)).toEqual(before);
       }
+      // A request with no options at all is judged by the bulk command itself, after admission.
+      await expect(client.run("update-many", {})).rejects.toMatchObject({ exitCode: 2 });
+      // The action envelope is judged too: a misplaced field names its options placement.
+      await expect(client.run("update-many", { asignee: "x", options: { ids: [id], description: "changed" } })).rejects.toMatchObject({ context: { reason: "unknown_mutation_option", field: "asignee", changed: false } });
+      await expect(client.run("update-many", { description: "changed", options: { ids: [id] } })).rejects.toThrow("options.description");
+      expect(await capture(context)).toEqual(before);
       for (const options of [null, [], "ids=x"]) {
         await expect(client.run("update-many", { options } as never)).rejects.toMatchObject({ code: "invalid_argument_value", context: { changed: false } });
       }
@@ -101,6 +111,15 @@ describe("mutation request admission", () => {
       await client.run("update-many", { options: { ids: [id], externalId: "flat", estimate: "5", noCheckpoint: true } });
       await client.run("update-many", { options: { list: { ids: [id] }, update: { description: "nested", externalId: "nested" }, checkpoint: false, fullChangedFields: true } });
       expect((await client.get(id, { full: true })).item).toMatchObject({ external_id: "nested", description: "nested", estimated_minutes: 5 });
+      // Spellings the dispatch consumes stay accepted: a snake_case output control and the annotation snapshot guard.
+      await expect(client.run("update-many", { options: { ids: [id], description: "snake", output_format: "json", dry_run: true } })).resolves.toMatchObject({ dry_run: true });
+      await expect(client.run("update-many", { options: { ids: [id], description: "guarded", documentAnnotationSnapshot: { comments: [], notes: [], learnings: [] } } })).resolves.toBeDefined();
+      // Attribution stated once beside a nested update record reaches every row; the record's own value wins.
+      await client.run("update-many", { options: { ids: [id], update: { description: "attributed" }, author: "outer-author", message: "outer message", noCheckpoint: true } });
+      await client.run("update-many", { options: { ids: [id], update: { description: "inner wins", author: "inner-author" }, author: "outer-author", noCheckpoint: true } });
+      const history = (await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8")).trim().split("\n").map((line) => JSON.parse(line) as { author: string; message?: string });
+      expect(history.at(-2)).toMatchObject({ author: "outer-author", message: "outer message" });
+      expect(history.at(-1)).toMatchObject({ author: "inner-author" });
       expect(context.runCli(["history", id, "--verify", "--strict-exit", "--json"]).code).toBe(0);
     });
   });

@@ -566,6 +566,8 @@ symbolication keep the original names; a function's runtime `name` is not part
 of the contract. Renaming is not a fixed point, so `dist/.runtime-compaction.json`
 (build-local, excluded from the package) records the digest of every compacted
 output and a repeated build skips outputs an incremental compile left in place.
+When the ledger is missing, `scripts/prepare-build-cache.mjs` drops the
+TypeScript build cache so the compiler re-emits raw output for the finalizer.
 The tranche removed about 1.76 MB from the packed distribution.
 
 The generated error-code catalog ships as compact rows

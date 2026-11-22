@@ -1781,10 +1781,19 @@ that tracker's extensions in request-local registries for the nested call, so
 its guards and extension fields judge the write and the caller's registrations
 are back afterwards. `runAction` publishes the scope its own dispatch holds: a
 command handler, including one dispatched with an explicit `cwd`, can start
-nested work for its tracker without waiting for a second activation slot. A
-nested `runWithActiveExtensions` that passes its own `cwd` still asks for
-exclusive use of the process working directory and must not be called from
-inside an open scope.
+nested work for its tracker without waiting for a second activation slot.
+
+Three rules bound that reuse. A nested call that passes `noExtensions: true`
+runs in empty registries even for the scope's own tracker, so the per-call
+override holds under a caller's live scope. A nested call cannot change the
+process working directory, which needs exclusive use of the activation gate
+its caller holds: a `cwd` naming the current directory is accepted, any other
+is refused before dispatch with `context.reason = "nested_cwd_unavailable"`;
+address the tracker with `path` instead. A scope ends when its callback
+settles: a timer or promise it left behind activates for itself through the
+gate instead of reusing registrations that were already torn down. A relative
+`cwd` is resolved once, before activation, so the scope records the tracker
+that was activated.
 
 `runInActiveExtensionScope(pmRoot, run)` is the reentrant form for code that
 writes through the item store without dispatching an action: it reuses the
@@ -4598,9 +4607,14 @@ remain accepted. Workspace schema option identities remain available through
 record is refused by name with the same hint, instead of being dropped while
 the remaining fields are applied to every matched row. Beside a nested
 `update` record an outer key must select rows or control the run; an update
-field there is refused with its `update.<key>` placement. A runtime schema
-field is admitted only when it is declared for `update_many`, because the bulk
-path applies no other.
+field there is refused with its `update.<key>` placement, while outer `author`,
+`message` and `force` are carried into every row unless the record states its
+own. The single-update operand `id` is refused with an `ids` hint, a nested
+`list` record admits list selection keys only, and a top-level argument that
+is neither a runtime argument nor an output control is refused with its
+`options.<key>` placement: each of these was previously read as no selection
+or no field at all. A runtime schema field is admitted only when it is declared
+for `update_many`, because the bulk path applies no other.
 MCP retains its existing transport-specific admission contract. The no-change
 receipt applies to these preflight refusals; an executed operation's outcome
 and evidence must be assessed separately.

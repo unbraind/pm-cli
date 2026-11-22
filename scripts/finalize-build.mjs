@@ -163,7 +163,7 @@ export async function compactRuntimeOutputs(directory) {
     });
     for (const key of entryPoints) files[key] = await digestFile(path.join(outputRoot, key));
   }
-  const sorted = Object.fromEntries(Object.entries(files).sort(([left], [right]) => left.localeCompare(right)));
+  const sorted = Object.fromEntries(Object.keys(files).sort().map((key) => [key, files[key]]));
   await writeFile(ledgerPath, `${JSON.stringify({ schema_version: 1, files: sorted })}\n`);
 }
 
