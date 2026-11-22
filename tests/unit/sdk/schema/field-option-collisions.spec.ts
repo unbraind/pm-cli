@@ -106,6 +106,15 @@ describe("custom field registration", () => {
     });
   });
 
+  it("judges a key's default flag as registration spells it", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      // no_json registers --no-json, which the parser reads as a negation of the built-in --json.
+      await expect(new PmClient({ pmRoot: pmPath, noExtensions: true }).schemaAddField("no_json", { type: "string", commands: ["create"] })).rejects.toMatchObject({
+        context: { code: "schema_field_option_collision", field: "no_json", flag: "--json" },
+      });
+    });
+  });
+
   it("offers the accepted command name in the narrower registration", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const refusal = await new PmClient({ pmRoot: pmPath, noExtensions: true }).schemaAddField("full", { type: "string", commands: ["list", "update_many"] }).then(() => null, (error: unknown) => error);
@@ -132,6 +141,12 @@ describe("custom field registration", () => {
       await expect(client.schemaRenameField("review_owner", "full", { dryRun: true })).rejects.toMatchObject({ context: { code: "schema_field_option_collision" } });
       await writeSettings(pmPath, settings);
       await expect(client.schemaRenameField("review_owner", "review_lead", {})).resolves.toBeDefined();
+      // The stored entry that staging copies is judged too: a duplicate key whose first entry carries a shadowing alias.
+      const fieldsPath = path.join(pmPath, "schema", "fields.json");
+      const file = JSON.parse(await readFile(fieldsPath, "utf8")) as { fields: Array<Record<string, unknown>> };
+      const lead = file.fields.find((entry) => entry.key === "review_lead")!;
+      await writeFile(fieldsPath, JSON.stringify({ fields: [{ ...lead, commands: ["list"], cli_aliases: ["limit"] }, lead] }));
+      await expect(client.schemaRenameField("review_lead", "review_head", {})).rejects.toMatchObject({ context: { code: "schema_field_option_collision", field: "review_head", flag: "--limit" } });
       // A rename of a field that does not exist keeps its own diagnostic.
       await expect(client.schemaRenameField("absent_field", "full", {})).rejects.not.toMatchObject({ context: { code: "schema_field_option_collision" } });
     });

@@ -339,7 +339,10 @@ function mutateFieldDefinition(
     if (targetIndex >= 0) return serializeFieldsFile(file);
     if (sourceIndex < 0)
       throw new TypeError(`Unknown custom field "${request.from}".`);
-    file.fields.push(renamedFieldDefinition(file.fields[sourceIndex], request.to));
+    const target = renamedFieldDefinition(file.fields[sourceIndex], request.to);
+    // The stored entry is what gets copied, so it is judged again here: a duplicate key in the file can differ from the hydrated one.
+    assertFieldDefinitionOptionsAvailable(target);
+    file.fields.push(target);
   } else if (sourceIndex >= 0) {
     file.fields.splice(sourceIndex, 1);
   }

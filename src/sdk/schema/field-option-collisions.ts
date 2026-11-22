@@ -120,7 +120,8 @@ export function resolveFieldOptionCollisions(fields: readonly FieldOptionSource[
 export function resolveAddFieldOptionCollisions(field: NormalizedAddFieldInput): FieldOptionCollision[] {
   return resolveFieldOptionCollisions([{
     key: field.key,
-    cli_flag: field.cliFlag ?? field.key,
+    // Registration spells a key's default flag with hyphens, so no_json becomes --no-json, a negation of --json.
+    cli_flag: field.cliFlag ?? field.key.replaceAll("_", "-"),
     cli_aliases: field.cliAliases,
     commands: field.commands,
   }]);
