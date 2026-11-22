@@ -444,6 +444,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "Backfill the missing acceptance criteria on the reported item(s).",
   },
   {
+    code: "validate_schema_field_option_collision",
+    command: "pm schema rename-field <key> --to <new-key>",
+    summary:
+      "A custom field shadows a built-in option of a command it is registered for; rename it (item values move with it), or re-register the same key with another flag or a narrower --commands list.",
+  },
+  {
     code: "validate_metadata_missing_estimate",
     command: 'pm update <id> --estimate "<estimate>"',
     summary: "Backfill the missing estimate on the reported item(s).",

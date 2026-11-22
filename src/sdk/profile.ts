@@ -37,7 +37,8 @@ import {
   serializeItemTypesFile,
 } from "../core/schema/item-types-file.js";
 import { serializeStatusDefsFile } from "../core/schema/status-defs-file.js";
-import { serializeFieldsFile } from "../core/schema/fields-file.js";
+import { normalizeAddFieldInput, serializeFieldsFile } from "../core/schema/fields-file.js";
+import { assertFieldOptionsAvailable } from "./schema/field-option-collisions.js";
 import {
   resolveNestedSettingDescriptor,
   writeNestedSettingValue,
@@ -503,6 +504,14 @@ export async function runProfileApply(
   const resolvedProfile = resolveProfileForCommand(name);
   const profile = resolvedProfile.profile;
   const mergeWarnings = resolvedProfile.warnings;
+
+  // A profile stores its fields without schema add-field, so it takes the same refusal, preview included (pm-pta8um).
+  for (const field of profile.fields) {
+    let normalized;
+    // An invalid field keeps the planner's own diagnostic.
+    try { normalized = normalizeAddFieldInput(field); } catch { continue; }
+    assertFieldOptionsAvailable(normalized);
+  }
 
   const dryRun = options.dryRun === true;
   const settings = await readSettings(pmRoot);

@@ -6,6 +6,7 @@
 import { throwFirstItemRevisionConflict } from "../lifecycle/item-revision.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { applyClosureTimestampFix, scanClosureTimestamps } from "./closure-timestamps.js";
+import { scanFieldOptionCollisions } from "../schema/field-option-collisions.js";
 import { readWorkflowCompletenessCheck } from "./workflow-completeness.js";
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
@@ -3336,14 +3337,18 @@ async function executeRequestedValidateChecks(params: {
     );
     state.closeReasonBackfillRows = built.closeReasonBackfillRows;
     state.estimateBackfillRows = built.estimateBackfillRows;
+    const diagnosticLimit = fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
     const timestamps = await scanClosureTimestamps(
       params.pmRoot, params.items, params.statusRegistry,
       params.options.autoFix === true || fixHintsEnabled,
-      fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT,
+      diagnosticLimit,
     );
     state.closureTimestampFixes = timestamps.fixes;
     Object.assign(built.check.details, timestamps.details);
     built.warnings.push(...timestamps.warnings);
+    const optionCollisions = scanFieldOptionCollisions(params.settings.schema, diagnosticLimit);
+    Object.assign(built.check.details, optionCollisions.details);
+    built.warnings.push(...optionCollisions.warnings);
     built.check.ok = built.warnings.length === 0;
     built.check.status = built.check.ok ? "ok" : "warn";
     recordValidateCheck(state, built, fixHintsEnabled);

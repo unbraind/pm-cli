@@ -655,6 +655,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/profile/profile-lint.ts"],
   },
   {
+    code: "field_option_collision",
+    exit_code: 1,
+    sources: ["core/profile/profile-lint.ts"],
+  },
+  {
     code: "finalization_invalid_document",
     exit_code: 2,
     sources: ["sdk/transactions/item-finalization.ts"],

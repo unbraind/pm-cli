@@ -1998,7 +1998,7 @@ describe("schema custom field commands (GH-vhbf)", () => {
           commands: ["create", "update", "list"],
           description: "Bug severity",
           cliFlag: "--sev",
-          alias: ["severity"],
+          alias: ["severity-class"],
           required: true,
           requiredOnCreate: true,
           allowUnset: false,
@@ -2016,7 +2016,7 @@ describe("schema custom field commands (GH-vhbf)", () => {
       // Idempotent re-run reports replaced; supplying the same flags keeps them.
       const again = await schema.runSchemaAddField(
         "severity_level",
-        { type: "string", cliFlag: "--sev", alias: ["severity"] },
+        { type: "string", cliFlag: "--sev", alias: ["severity-class"] },
         { path: context.pmPath },
       );
       expect(again.replaced).toBe(true);
@@ -2029,7 +2029,7 @@ describe("schema custom field commands (GH-vhbf)", () => {
         type: "string",
         cli_flag: "--sev",
       });
-      expect(listed.fields[0].cli_aliases).toContain("--severity");
+      expect(listed.fields[0].cli_aliases).toContain("--severity-class");
 
       // list also surfaces the fields section.
       const fullList = await schema.runSchemaList({ path: context.pmPath });
@@ -2066,12 +2066,16 @@ describe("schema custom field commands (GH-vhbf)", () => {
       const schema = await import("../../../../src/cli/commands/workspace/schema.js");
       const collision = await schema.runSchemaAddField(
         "allow_missing_parent",
-        { type: "boolean" },
+        { type: "boolean", commands: ["list"] },
         { path: context.pmPath },
       );
       expect(collision.warnings).toContain(
         "custom_field_mcp_input_collision:allow_missing_parent:allowMissingParent:mcp_tool_input:use=options.allowMissingParent",
       );
+      // On create and update the same name is a built-in CLI option, which is a refusal and not a warning (pm-pta8um).
+      await expect(schema.runSchemaAddField("allow_missing_parent", { type: "boolean" }, { path: context.pmPath })).rejects.toMatchObject({
+        context: { code: "schema_field_option_collision", flag: "--allow-missing-parent" },
+      });
     });
   });
 

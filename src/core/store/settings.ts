@@ -75,7 +75,9 @@ const configurationOnlySettingsRoots = new AsyncLocalStorage<readonly Configurat
  * optional-schema hydration, schema scaffolding or hydrated-cache access.
  * Nested source scopes compose; staged and unrelated trackers keep normal
  * settings behavior. Async context is restored when the callback returns or
- * throws, including concurrent invocations outside this scope.
+ * throws, including concurrent invocations outside this scope. The layer
+ * also expires when the callback settles, so a continuation that captured
+ * this async context and runs later is no longer bound by it.
  * The optional predicate is evaluated for each matching read. Disabling this
  * layer restores normal reads unless an enabled ancestor layer protects the
  * same root; hosts can settle conservative parser decisions without changing
@@ -85,7 +87,14 @@ export async function runWithConfigurationOnlySettings<T>(pmRoot: string, run: (
   const roots = new Set([path.resolve(pmRoot)]);
   try { roots.add(await realpath(pmRoot)); }
   catch { /* Missing trackers retain their normal command diagnostics. */ }
-  return configurationOnlySettingsRoots.run([...(configurationOnlySettingsRoots.getStore() ?? []), [roots, isEnabled]], run);
+  // The layer ends with its callback: work captured inside and run after it settles reads the tracker normally (pm-fyg1hl).
+  let settled = false;
+  const layer: ConfigurationOnlySettingsLayer = [roots, () => !settled && isEnabled()];
+  try {
+    return await configurationOnlySettingsRoots.run([...(configurationOnlySettingsRoots.getStore() ?? []), layer], run);
+  } finally {
+    settled = true;
+  }
 }
 
 /** Report whether this tracker belongs to the current configuration-only source preparation scope. */

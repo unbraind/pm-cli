@@ -1,5 +1,5 @@
 /** The reseed baseline is appended to verified bytes or creates the stream exclusively (pm-3os5p6). */
-import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { link, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -40,8 +40,17 @@ describe("appendRecordToVerifiedStream", () => {
 
   it("passes other creation failures through", async () => {
     await withDir(async (dir) => {
+      // The errno for an over-long name is the platform's (ENAMETOOLONG on POSIX, ENOENT on Windows), so the
+      // expectation is what the same hard-link publish reports when made directly (pm-gh1767).
       const file = path.join(dir, `${"x".repeat(300)}.jsonl`);
-      await expect(appendRecordToVerifiedStream("pm-a", file, null, record)).rejects.toMatchObject({ code: "ENAMETOOLONG" });
+      const source = path.join(dir, "source");
+      await writeFile(source, "");
+      const direct = await link(source, file).then(() => null, (error: NodeJS.ErrnoException) => error);
+      expect(direct?.code).toEqual(expect.any(String));
+      expect(direct?.code).not.toBe("EEXIST");
+      const propagated = await appendRecordToVerifiedStream("pm-a", file, null, record).then(() => null, (error: unknown) => error);
+      expect(propagated).toMatchObject({ code: direct?.code, syscall: "link" });
+      expect(propagated).not.toHaveProperty("context.reason");
     });
   });
 

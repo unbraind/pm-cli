@@ -9,6 +9,9 @@
 
 ### Fixed
 
+- GH-1767: Windows nightly history append test asserts a POSIX name-length errno ([pm-gh1767](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1767.toon))
+- A configuration-only settings scope does not expire for work captured inside it, so a deferred SDK read keeps seeing no file-backed schema fields ([pm-fyg1hl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fyg1hl.toon))
+- A runtime schema field may take the name of a built-in read option (full, fields, compact), after which that option stops working for the command ([pm-pta8um](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pta8um.toon))
 - The context-intent calibration gate measures a tracker written moments earlier, so its orientation bytes depend on how many history streams sit inside the summary's racy window ([pm-3kdt1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3kdt1d.toon))
 - Release publication reads the producer-binding artifact inventory once, within a second of the upload, and blocks the daily cut when the listing trails it ([pm-jvb9pk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jvb9pk.toon))
 

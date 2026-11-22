@@ -6,6 +6,7 @@
  * primitives so every applied item keeps its normal lock, history, and index
  * guarantees.
  */
+import { assertFieldDefinitionOptionsAvailable } from "./schema/field-option-collisions.js";
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
@@ -49,7 +50,7 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { toErrorMessage } from "../core/shared/primitives.js";
-import type { ItemMetadata, PmSettings } from "../types/index.js";
+import type { ItemMetadata, PmSettings, RuntimeFieldDefinition } from "../types/index.js";
 import {
   readItemMetadataDerivedIndexState,
   queryItemMetadataIndex,
@@ -304,6 +305,24 @@ function mutateTypeDefinition(
   return serializeItemTypesFile(file);
 }
 
+/** The definition a rename stores for its target key. */
+function renamedFieldDefinition(source: RuntimeFieldDefinition, to: string): RuntimeFieldDefinition {
+  return { ...source, key: to, metadata_key: to, front_matter_key: to, cli_flag: to.replaceAll("_", "-") };
+}
+
+/**
+ * A rename writes a field definition without schema add-field, so its target
+ * takes the same built-in option refusal before a plan is stored or previewed
+ * (pm-pta8um). A migration with a stored plan is being resumed and is not
+ * judged again; a same-named definition elsewhere (inline settings beside
+ * the fields file) does not make a new rename a resume.
+ */
+function assertRenameTargetOptionsAvailable(settings: PmSettings, request: SchemaEvolutionMigrationRequest, resumed: boolean): void {
+  if (request.kind !== "rename-field" || resumed) return;
+  const source = settings.schema.fields.find((definition) => normalizeStatusToken(definition.key) === request.from);
+  if (source !== undefined) assertFieldDefinitionOptionsAvailable(renamedFieldDefinition(source, request.to));
+}
+
 function mutateFieldDefinition(
   raw: string,
   request: Extract<SchemaEvolutionMigrationRequest, { kind: "rename-field" }>,
@@ -320,14 +339,10 @@ function mutateFieldDefinition(
     if (targetIndex >= 0) return serializeFieldsFile(file);
     if (sourceIndex < 0)
       throw new TypeError(`Unknown custom field "${request.from}".`);
-    const source = file.fields[sourceIndex];
-    file.fields.push({
-      ...source,
-      key: request.to,
-      metadata_key: request.to,
-      front_matter_key: request.to,
-      cli_flag: request.to.replaceAll("_", "-"),
-    });
+    const target = renamedFieldDefinition(file.fields[sourceIndex], request.to);
+    // The stored entry is what gets copied, so it is judged again here: a duplicate key in the file can differ from the hydrated one.
+    assertFieldDefinitionOptionsAvailable(target);
+    file.fields.push(target);
   } else if (sourceIndex >= 0) {
     file.fields.splice(sourceIndex, 1);
   }
@@ -1184,6 +1199,7 @@ export async function runSchemaEvolutionMigration(
     migrationId,
     request,
   });
+  assertRenameTargetOptionsAvailable(settings, request, resolvedPlan.stored);
   const plan = resolvedPlan.plan;
   if (options.dryRun === true) {
     return {

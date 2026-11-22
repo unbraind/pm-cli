@@ -23327,6 +23327,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "field_option_collision",
+      "class": "generic_failure",
+      "code": "field_option_collision",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Field option collision condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "finalization_invalid_document",
       "class": "usage",
       "code": "finalization_invalid_document",
@@ -27122,6 +27139,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "schema_field_option_collision",
+      "class": "usage",
+      "code": "schema_field_option_collision",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Schema field option collision condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/schema/field-option-collisions.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "schema_migration_input_required",
       "class": "usage",
       "code": "schema_migration_input_required",
@@ -29344,6 +29378,23 @@
         "core/diagnostics/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "validate_schema_field_option_collision",
+      "class": "generic_failure",
+      "code": "validate_schema_field_option_collision",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Validate schema field option collision condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],

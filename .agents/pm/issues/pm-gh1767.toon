@@ -1,0 +1,39 @@
+id: pm-gh1767
+title: "GH-1767: Windows nightly history append test asserts a POSIX name-length errno"
+description: "Nightly Validation run 45021851394 (windows-latest, Node 24, shard 3/4) failed on both attempts in tests/unit/sdk/history/reseed-append.spec.ts, case passes other creation failures through. The fixture creates a stream under a 300-character file name and asserts the errno ENAMETOOLONG. The Windows runner reports ENOENT for the same over-long name. The product contract under test is unchanged and correct: appendRecordToVerifiedStream propagates a non-collision creation failure unchanged. Only the expectation is platform-specific. This is the same class as pm-v3umtp (GH-1112)."
+type: Issue
+status: closed
+priority: 1
+tags[5]: ci,"gh:1767",nightly,tests,windows
+created_at: "2026-11-22T18:43:04.907Z"
+updated_at: "2026-11-22T21:04:43.533Z"
+closed_at: "2026-11-22T21:04:41.260Z"
+completed_at: "2026-11-22T21:04:41.260Z"
+author: "harness:claude-code"
+estimated_minutes: 30
+acceptance_criteria: "The case asserts that the propagated error carries the same code the filesystem reports for a direct exclusive create of the same path, with no errno literal; The case still proves a non-collision creation failure is not converted into a stream_changed refusal; The spec passes on Linux locally and the Windows nightly leg is green on the next scheduled run"
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: "The over-long name case compares the propagated error with the error a direct hard link to the same path reports, instead of the literal ENAMETOOLONG. Product code is unchanged."
+expected_result: The spec passes on Linux and on the Windows Node 24 nightly leg without an errno literal
+actual_result: 6 cases pass locally on Linux and dispatched Nightly Validation run 45067374000 on the fix branch passed all four Windows Node 24 shards
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-11-22T18:43:04.907Z","harness:claude-code","cli:create:dep",detected
+  pm-v3umtp,related,"2026-11-22T18:43:04.907Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-22T21:04:40.167Z","harness:claude-code","Verification: Nightly Validation run 45067374000, dispatched on the fix branch at commit 0219306fd, completed with every Windows Node 24 shard green, including shard 3/4 where the case failed on main. The spec also passes on Linux locally (6 cases). The case now compares the propagated error with the one a direct hard link to the same path reports and asserts the link syscall, so no errno literal remains and a non-collision failure is still shown to pass through unchanged."
+files[1]{path,scope}:
+  tests/unit/sdk/history/reseed-append.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history/reseed-append.spec.ts,project,"harness:claude-code","2026-11-22T18:57:36.062Z",local_mutation,fix/sdk-field-option-collisions-settings-scope-expiry
+close_reason: The history append spec no longer asserts a POSIX errno and the Windows nightly leg passes
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1767
+  gate_id: nightly-windows-history-append
+  negative_control: tests/unit/sdk/history/reseed-append.spec.ts asserts the propagated creation error equals the error of a direct hard link to the same over-long path; with the previous ENAMETOOLONG literal the Windows Node 24 shard 3/4 leg fails as in run 45021851394
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/history/reseed-append.spec.ts
+  hosted_checks[2]: "Nightly (windows-latest, Node 24, shard 3/4)",Gates (coverage)
+body: ""

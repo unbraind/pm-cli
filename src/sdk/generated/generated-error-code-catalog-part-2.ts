@@ -495,6 +495,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/agent/refusal-closure.ts", "sdk/agent/tracker-preflight-contracts.ts"],
   },
   {
+    code: "schema_field_option_collision",
+    exit_code: 2,
+    sources: ["sdk/schema/field-option-collisions.ts"],
+  },
+  {
     code: "schema_migration_input_required",
     exit_code: 2,
     stable: true,
@@ -1244,6 +1249,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     code: "validate_resolution_missing_fields",
     exit_code: 1,
     stable: true,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
+    code: "validate_schema_field_option_collision",
+    exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],
   },
   {

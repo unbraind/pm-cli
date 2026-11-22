@@ -1563,7 +1563,7 @@ describe("MCP protocol handshake", () => {
             fieldType: "string",
             commands: ["create", "update"],
             cliFlag: "--sev",
-            alias: ["severity"],
+            alias: ["severity-class"],
             required: true,
             requiredOnCreate: true,
             allowUnset: false,
