@@ -354,10 +354,15 @@ one linear lexical pass over the text: a quote opens a string of its kind
 when none is open and closes the open string of its kind, a quote of the
 other kind inside a string is data, a quote right after a letter, digit or
 underscore never opens one (a prose apostrophe such as `customer's`, or a
-unit mark), a backslash escapes the next character, and a line break ends
-every string. When that string's closing quote lies
-inside the captured value or directly after it, and a word end as above
-follows the quote, the value ends there. So `","` and the next member are
+unit mark), a backslash escapes the next character, and a line feed or
+carriage return ends every string (U+2028 and U+2029 are data inside a JSON
+string). When that string's closing quote lies inside the captured value,
+after its first character, or directly after it, and a word end as above
+follows the quote, the value ends there. After a closing quote, the end of an
+XML tag (`"/>`, `">`) and an unquoted YAML flow key (`{title: "…", updated:
+ok}`) are word ends too, and blanks after its structure are padding however
+many there are. A quote at the value's first character is never a cut point,
+because after a stray apostrophe it may be the value's own opening quote. So `","` and the next member are
 never read as quoted pieces concatenated to the value, however long the next
 member is, and the scan resumes at the closing quote, so keys in the later
 members are still scanned. The bare reference is then judged as a whole value
@@ -572,14 +577,21 @@ combine:
   fields) or the word rule (free text). Before the word rule runs, a URL
   whose userinfo holds whitespace is joined into one word
   ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
-  tracker record excluded from npm). A word opens one when its first `:` is
-  followed by authority slashes (any number) and an authority with no path,
-  no quote, backtick or angle bracket (which end a quoted URL) and no
-  bracketed IPv6 host, and that authority, up to a query or fragment, either
-  holds a `:` and is no dotted or `localhost` `host:port` (`https://user:pass`,
-  `https://ci:123456`, `https://ci:pa%40ss`), or holds no `:`, `@` or `%`
-  (`https://service`, `https://jane.doe`: a spaced username, whose
-  `user:password` colon must come in a later word with text after it). The
+  tracker record excluded from npm). A word opens one at the first `:` that
+  authority slashes (any number) follow, so a compact JSON field name before
+  the URL is skipped. When a quote, backtick or angle bracket directly
+  precedes the scheme, its closing delimiter ends the URL; any other quote is
+  data. The authority after the slashes must hold no path, no closing
+  delimiter and no bracketed IPv6 host, and, up to a query or fragment, it
+  either holds a `:` and is no dotted or `localhost` `host:port`
+  (`https://user:pass`, `https://ci:123456`, `https://ci:pa%40ss`), or holds no
+  `:`, `@` or `%40` (`https://service`, `https://jane.doe`: a spaced username,
+  whose password colon must come in a later word, with text after it or a tab
+  or line break after it, and never as a clock time such as `09:30`; a colon
+  that a space follows counts only when the separator's host goes on into a
+  path, as a URL's does and an email address's never does). A word
+  that ends with its slashes continues into the next word, since URL parsers
+  drop a tab or line break there. The
   opening word is joined, across any whitespace, through the later word that
   holds the last `@` or `%40` starting within 16 words and 512 characters, as a
   parser takes the authority's last `@`; a word that starts another URL before

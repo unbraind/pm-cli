@@ -332,40 +332,62 @@ export function invocationCarriesUrlCredentials(): boolean {
 const SPACED_USERINFO_MAX_WORDS = 16;
 /** Code units after the opening word within which the separator of a whitespace-bearing userinfo must start. */
 const SPACED_USERINFO_MAX_LENGTH = 512;
-/** A `host:port` authority of a dotted host or `localhost`, never userinfo. */
+/** A `host:port` authority of a dotted host or `localhost`, never userinfo; read only for a DNS-length head. */
 const HOST_PORT = /^(?:(?:[A-Za-z0-9-]+\.)+[A-Za-z0-9-]+|localhost):\d+$/iu;
-/** Characters that delimit a URL in prose: quotes, a backtick and angle brackets. */
-const URL_DELIMITER = /["'`<>]/u;
+/** Longest head judged as a host and port: a DNS name, a colon and a port. */
+const HOST_PORT_MAX_LENGTH = 260;
+/** The delimiter that closes a URL a quote, backtick or angle bracket opened in prose. */
+const URL_CLOSERS: Readonly<Record<string, string>> = { "\"": "\"", "'": "'", "`": "`", "<": ">" };
+
+/** An opening of a whitespace-bearing userinfo: its kind and the delimiter that closes its URL, if one opened it. */
+interface SpacedOpening {
+  kind: "user" | "label" | "pending";
+  closer: string | undefined;
+}
 
 /**
  * How a word opens a URL authority whose userinfo may go on past whitespace
- * (GH-1773), or undefined. The word's first `:` must be followed by authority
- * slashes (any number, as special schemes normalize them), and the authority
- * after them must hold no path, no prose delimiter (a quote, a backtick or an
- * angle bracket, which end a quoted URL) and be no bracketed IPv6 host. It
- * opens with `user` when the authority, up to a query or fragment, holds a
- * `:` and is no dotted `host:port` (`https://user:pass`, `https://ci:123456`,
- * or a word that already holds a separator, `https://ci:pa%40ss`). It opens
- * with `label` when that part holds no `:`, `@` or `%` (`https://service`,
- * `https://jane.doe`): a spaced username, whose `user:password` colon must then
- * come in a later word. A colon only inside a query (`https://example.com?t=12:30`)
- * never makes a `user` opening. A word that ends with its authority slashes
- * is `pending`: its authority starts in the next word (`https://` then a tab).
+ * (GH-1773), or undefined. The scheme separator is the first `:` that
+ * authority slashes follow (any number, as special schemes normalize them),
+ * so a compact JSON field name before it (`{"url":"https://…`) is skipped.
+ * When a quote, backtick or angle bracket directly precedes the scheme, its
+ * closing delimiter ends the URL; any other quote is data
+ * (`https://ci:O'Brian Pass@host`). The authority after the slashes must hold
+ * no path, no closing delimiter and be no bracketed IPv6 host. It opens with
+ * `user` when the authority, up to a query or fragment, holds a `:` and is no
+ * dotted or `localhost` `host:port` (`https://user:pass`, `https://ci:123456`,
+ * `https://ci:pa%40ss`). It opens with `label` when that part holds no `:`,
+ * `@` or `%40` (`https://service`, `https://jane.doe`, `https://build%2Dteam`):
+ * a spaced username, whose password colon must come in a later word. A colon
+ * only inside a query (`https://example.com?t=12:30`) never makes a `user`
+ * opening, and a word that ends with its slashes is `pending`: its authority
+ * starts in the next word (`https://` then a tab).
  */
-function spacedUserinfoOpening(word: string): "user" | "label" | "pending" | undefined {
-  const colon = word.indexOf(":");
+function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
+  const colon = word.search(/:[/\\]/u);
   if (colon < 0) return undefined;
+  const closer = urlCloserBefore(word, colon);
   let start = colon + 1;
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
-  if (start === colon + 1) return undefined;
-  // The authority may start in the next word: URL parsers drop a tab or line break after the slashes.
-  if (start === word.length) return "pending";
+  if (start === word.length) return { kind: "pending", closer };
   const authority = word.slice(start);
-  if (authority.startsWith("[") || /[/\\]/u.test(authority) || URL_DELIMITER.test(authority)) return undefined;
-  const head = authority.split(/[?#]/u, 1)[0]!;
+  if (authority.startsWith("[") || /[/\\]/u.test(authority) || (closer !== undefined && authority.includes(closer))) return undefined;
+  const kind = authorityOpening(authority.split(/[?#]/u, 1)[0]!);
+  return kind === undefined ? undefined : { kind, closer };
+}
+
+/** The delimiter that closes a URL whose scheme, ending at `colon`, a quote, backtick or angle bracket directly precedes. */
+function urlCloserBefore(word: string, colon: number): string | undefined {
+  let schemeStart = colon;
+  while (schemeStart > 0 && /[A-Za-z0-9+.-]/u.test(word[schemeStart - 1]!)) schemeStart -= 1;
+  return URL_CLOSERS[word[schemeStart - 1] ?? ""];
+}
+
+/** How an authority head (before any query or fragment) opens a whitespace-bearing userinfo. */
+function authorityOpening(head: string): "user" | "label" | undefined {
   if (head === "") return undefined;
-  if (head.includes(":")) return HOST_PORT.test(head) ? undefined : "user";
-  return /[@%]/u.test(head) ? undefined : "label";
+  if (head.includes(":")) return head.length <= HOST_PORT_MAX_LENGTH && HOST_PORT.test(head) ? undefined : "user";
+  return /@|%40/iu.test(head) ? undefined : "label";
 }
 
 /**
@@ -374,24 +396,34 @@ function spacedUserinfoOpening(word: string): "user" | "label" | "pending" | und
  * -1 when none does. The search reads words across any whitespace (URL
  * parsers drop tabs and line breaks), takes the last separator that starts
  * within the word and length bounds, as a parser takes the authority's last
- * `@`, and stops at a word that starts another URL or holds a path delimiter
- * before any separator, which ends the authority. A `label` opening also needs
- * a `:` before its separator. The word that holds the separator may run past
- * the length bound (a long query), and each opening reads at most that word
- * and the bounded span before it.
+ * `@`, and stops at a word that starts another URL or holds a path delimiter,
+ * or the opening's closing delimiter, before any separator, which ends the
+ * authority. A `label` opening also needs a password colon before its
+ * separator: a `:` with text after it in the same word, or one that a tab or
+ * line break follows, and never a clock time (`09:30`); a `:` that a space
+ * follows counts only when the separator's host goes on into a path
+ * (`account: secret@host/x`, never `support: ops@example.org`). The word that holds the
+ * separator may run past the length bound (a long query), and each opening
+ * reads at most that word and the bounded span before it.
  */
-function spacedUserinfoEnd(text: string, from: number, opening: "user" | "label"): number {
+function spacedUserinfoEnd(text: string, from: number, opening: SpacedOpening): number {
   const limit = Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH);
   let index = from;
   let end = -1;
-  let colonSeen = opening === "user";
+  let colonSeen = opening.kind === "user";
+  // A colon that a space follows (`account: secret`) is weaker evidence, because prose writes `support: me@x`.
+  let spacedColonSeen = false;
   for (let words = 0; words < SPACED_USERINFO_MAX_WORDS && index < limit; words += 1) {
     const bounds = nextWord(text, index, limit);
     if (bounds === undefined) break;
-    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit)));
+    // Two code units past the bound complete a `%40` that starts inside it.
+    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit + 2)), limit - bounds[0], opening.closer);
     if (read.startsUrl) break;
-    if (read.separator && (colonSeen || read.colonBeforeSeparator)) end = bounds[1];
-    colonSeen ||= read.colon;
+    // A spaced colon counts only when the separator's host goes on into a path, as a URL's does and an email's never does.
+    if (read.separator && (colonSeen || read.colonBeforeSeparator || (spacedColonSeen && read.hasPath))) end = bounds[1];
+    const dropped = /[\t\r\n]/u.test(text[bounds[1]] ?? "");
+    colonSeen ||= read.colon || (read.trailingColon && dropped);
+    spacedColonSeen ||= read.trailingColon;
     if (read.endsAuthority) break;
     index = bounds[1];
   }
@@ -409,32 +441,46 @@ function nextWord(text: string, index: number, limit: number): readonly [start: 
 }
 
 /**
- * How one later word reads inside an authority, up to its first path delimiter
- * or prose delimiter, either of which ends the authority. The word starts
- * another URL when the text before its first path delimiter ends with a
- * scheme and its `:` (`https://…`), read back from that `:` so a long word
- * costs one pass. Only a `:` with text after it in the same word can separate
- * a spaced username from its password (`account:pass`), so prose such as
- * `support: ops@example.org` never does.
+ * Whether text holds a `:` that can separate a username from its password:
+ * the first `:` has text after it and is no clock time's (`09:30`), so prose
+ * such as `support: ops@example.org` or `at 09:30` never holds one.
  */
-function readAuthorityWord(word: string): {
+function hasPasswordColon(text: string): boolean {
+  const colon = text.indexOf(":");
+  return colon >= 0 && colon < text.length - 1 && !/^\d+$/u.test(text.slice(0, colon));
+}
+
+/**
+ * How one later word reads inside an authority, up to its first path delimiter
+ * or the opening's closing delimiter, either of which ends the authority. Its
+ * separator is the last `@` or `%40` that starts before `maxStart`. The word
+ * starts another URL when the text before its first path delimiter ends with
+ * a scheme and its `:` (`https://…`), read back from that `:` so a long word
+ * costs one pass.
+ */
+function readAuthorityWord(word: string, maxStart: number, closer: string | undefined): {
   startsUrl: boolean;
   separator: boolean;
   colonBeforeSeparator: boolean;
   colon: boolean;
+  trailingColon: boolean;
+  hasPath: boolean;
   endsAuthority: boolean;
 } {
   const delimiter = word.search(/[/\\]/u);
   const beforePath = delimiter < 0 ? word : word.slice(0, delimiter);
-  const quote = beforePath.search(URL_DELIMITER);
-  const authority = quote < 0 ? beforePath : beforePath.slice(0, quote);
-  const separator = Math.max(authority.lastIndexOf("@"), authority.toLowerCase().lastIndexOf("%40"));
+  const closed = closer === undefined ? -1 : beforePath.indexOf(closer);
+  const authority = closed < 0 ? beforePath : beforePath.slice(0, closed);
+  const last = Math.min(authority.length, maxStart) - 1;
+  const separator = last < 0 ? -1 : Math.max(authority.lastIndexOf("@", last), authority.toLowerCase().lastIndexOf("%40", last));
   return {
-    startsUrl: delimiter >= 0 && quote < 0 && endsWithScheme(beforePath),
+    startsUrl: delimiter >= 0 && closed < 0 && endsWithScheme(beforePath),
     separator: separator >= 0,
-    colonBeforeSeparator: separator > 0 && /:(?!$)/u.test(authority.slice(0, separator)),
-    colon: /:(?!$)/u.test(authority),
-    endsAuthority: delimiter >= 0 || quote >= 0,
+    colonBeforeSeparator: separator > 0 && hasPasswordColon(authority.slice(0, separator)),
+    colon: hasPasswordColon(authority),
+    trailingColon: authority.endsWith(":"),
+    hasPath: delimiter >= 0 && closed < 0,
+    endsAuthority: delimiter >= 0 || closed >= 0,
   };
 }
 
@@ -461,14 +507,14 @@ function redactSpacedUserinfo(text: string): string {
   for (let match = word.exec(text); match !== null; match = word.exec(text)) {
     let opening = spacedUserinfoOpening(match[0]);
     let from = match.index + match[0].length;
-    if (opening === "pending") {
+    if (opening?.kind === "pending") {
       // Judge the authority that starts in the next word as if the blank between them were dropped.
       const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
       if (next === undefined) continue;
       opening = spacedUserinfoOpening(`${match[0]}${text.slice(next[0], next[1])}`);
       from = next[1];
     }
-    if (opening === undefined || opening === "pending") continue;
+    if (opening === undefined || opening.kind === "pending") continue;
     const end = spacedUserinfoEnd(text, from, opening);
     if (end === -1) continue;
     result += `${text.slice(cursor, match.index)}${redactUrlCredentialsInToken(text.slice(match.index, end))}`;

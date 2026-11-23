@@ -118,6 +118,15 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`${passwordKey}: ${D}${literal}"`)).toEqual(["password_assignment"]);
   });
 
+  it("ends a value at a sibling only when its string is a member or element of a container (CodeRabbit)", () => {
+    // A string a command word opened is a shell word: `","<literal>` after its closing quote is more of it.
+    expect(rulesOf(`echo "api_key=${D}{EMPTY}","${literal}"`)).toEqual(["credential_key_assignment"]);
+    expect(rulesOf(`Use "api_key: ${D}{EMPTY}","${literal}" in config`)).toEqual(["credential_key_assignment"]);
+    // The same text as a JSON element or member value ends at the string's closing quote.
+    expect(rulesOf(`["api_key=${D}{EMPTY}","${literal}"]`)).toEqual([]);
+    expect(rulesOf(`{"cmd": "api_key=${D}{EMPTY}", "note": "${literal}"}`)).toEqual([]);
+  });
+
   it("continues the word when another quote or a word follows the closing quote", () => {
     // `"…${EMPTY}""…"` and `"…${EMPTY}"…` concatenate in a shell, so the literal is judged.
     expect(rulesOf(`echo "api_key=${D}{EMPTY}""${literal}"`)).toEqual(["credential_key_assignment"]);
@@ -144,6 +153,19 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`note: the customer's ${passwordKey}='  correct horse battery staple'`)).toEqual(["password_assignment"]);
     expect(rulesOf(`the students' ${passwordKey}='  correct horse battery staple'`)).toEqual(["password_assignment"]);
     expect(rulesOf(`a 5" screen, ${passwordKey}="  correct horse battery staple"`)).toEqual(["password_assignment"]);
+  });
+
+  it("keeps a value whose first character the lexical pass reads as a closing quote (Codex round 3)", () => {
+    // A YAML flow apostrophe opens a false string; the password's own opening quote is never a cut point.
+    expect(rulesOf(`- {note: Unexpected token ' in header, ${passwordKey}: ' correct horse battery staple'}`)).toEqual(["password_assignment"]);
+  });
+
+  it("reads JSON line separators, YAML flow keys, XML tag ends and long padding after a closing quote", () => {
+    expect(rulesOf(JSON.stringify({ title: `Deploy notes\u2028${passwordKey}: ${D}DB_PASSWORD`, updated: "ok" }))).toEqual([]);
+    expect(rulesOf(`{title: "${passwordKey}: ${D}DB_PASSWORD", updated: ok}`)).toEqual([]);
+    expect(rulesOf(`<setting value="${passwordKey}=${D}DB_PASSWORD"/>`)).toEqual([]);
+    expect(rulesOf(`<setting value="${passwordKey}=${D}DB_PASSWORD">`)).toEqual([]);
+    expect(rulesOf(`["${passwordKey}: ${D}DB_PASSWORD",${" ".repeat(80)}"ok"]`)).toEqual([]);
   });
 
   it("stays linear over many assignments in one long string", () => {

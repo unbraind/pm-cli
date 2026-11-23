@@ -160,6 +160,18 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // Greptile review round 1: URL parsers drop a tab after the authority slashes.
     ["a tab before the username", "https://\tu:pass words@host/x", "https://[redacted]@host/x"],
     ["a line break before a spaced username", "https://\nservice account:pass@host/x", "https://[redacted]@host/x"],
+    // Codex review round 3.
+    ["a compact JSON field before the URL", '{"url":"https://ci:demo pass@example.invalid"}', '{"url":[redacted]@example.invalid"}'],
+    ["an apostrophe inside the password", "https://ci:O'Brian Pass@example.invalid", "https://[redacted]@example.invalid"],
+    ["an apostrophe in a later password word", "https://ci:old pass'word@example.invalid", "https://[redacted]@example.invalid"],
+    ["a percent escape in the first username word", "https://build%2Dteam\taccount:demo pass@example.invalid", "https://[redacted]@example.invalid"],
+    ["a password colon before a tab", "https://service\taccount:\tDemoPass7@example.invalid", "https://[redacted]@example.invalid"],
+    ["an encoded at sign that starts inside the bound", `https://x:demo ${"a".repeat(510)}%40host`, "https://[redacted]%40host"],
+    // CodeRabbit: the escape at offsets 510 and 511 after the opening word starts inside the bound.
+    ["an encoded at sign at offset 510", `https://x:demo ${"a".repeat(509)}%40host`, "https://[redacted]%40host"],
+    // Greptile review round 2.
+    ["an apostrophe in the first password word", "https://u:pa'ss words@host/x", "https://[redacted]@host/x"],
+    ["a spaced colon before a host with a path", "https://service account: secret@host/x", "https://[redacted]@host/x"],
   ])("removes URL userinfo that holds whitespace across words: %s", (_case, text, expected) => {
     expect(redactUrlCredentialsInText(text)).toBe(expected);
     expect(redactUrlCredentialsInText(expected)).toBe(expected);
@@ -187,6 +199,12 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a bare scheme ending the text", "x https://"],
     ["a bare scheme before more slashes", "https:// // x@y"],
     ["a bare scheme before a host and port", "https://\texample.com:8080 ping @bob"],
+    ["a clock time in prose", "See https://example.com at 09:30 and ping @oncall"],
+    ["a colon that a space follows", "https://service account: ping @oncall"],
+    ["a trailing colon ending the text", "https://service account:"],
+    ["a spaced colon before an email address", "https://service and email support: ops@example.org"],
+    ["an encoded at sign at offset 512, past the bound", `https://x:demo ${"a".repeat(511)}%40host`],
+    ["an encoded at sign that starts past the bound", `https://x:demo ${"a".repeat(512)}%40host`],
   ])("leaves text alone when no whitespace-bearing userinfo opens: %s", (_case, text) => {
     expect(redactUrlCredentialsInText(text)).toBe(text);
   });
@@ -196,6 +214,11 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     const joined = redactUrlCredentialsInText("https://ci:fake words@example.invalid/npm/@scope/pkg");
     expect(joined).toBe(redactUrlCredentialsInToken("https://ci:fakewords@example.invalid/npm/@scope/pkg"));
     expect(joined).not.toContain("fake");
+  });
+
+  it("judges a huge dotted host without exhausting the regex stack", () => {
+    const text = `https://${"a.".repeat(4_000_000)}a:443 note @alice`;
+    expect(() => redactUrlCredentialsInText(text)).not.toThrow();
   });
 
   it("stays linear over many opening words before a later at sign", () => {
