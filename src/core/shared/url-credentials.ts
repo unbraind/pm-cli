@@ -336,8 +336,8 @@ const SPACED_USERINFO_MAX_LENGTH = 512;
 const HOST_PORT = /^(?:(?:[A-Za-z0-9-]+\.)+[A-Za-z0-9-]+|localhost):\d+$/iu;
 /** Longest head judged as a host and port: a DNS name, a colon and a port. */
 const HOST_PORT_MAX_LENGTH = 260;
-/** The delimiter that closes a URL a quote, backtick or angle bracket opened in prose. */
-const URL_CLOSERS: Readonly<Record<string, string>> = { "\"": "\"", "'": "'", "`": "`", "<": ">" };
+/** The delimiter that closes a URL a quote, backtick, angle bracket, parenthesis or square bracket opened in prose. */
+const URL_CLOSERS: Readonly<Record<string, string>> = { "\"": "\"", "'": "'", "`": "`", "<": ">", "(": ")", "[": "]" };
 
 /** An opening of a whitespace-bearing userinfo: its kind and the delimiter that closes its URL, if one opened it. */
 interface SpacedOpening {
@@ -347,11 +347,13 @@ interface SpacedOpening {
 
 /**
  * How a word opens a URL authority whose userinfo may go on past whitespace
- * (GH-1773), or undefined. The scheme separator is the first `:` that
+ * (GH-1773), or undefined. The scheme separator is the last `:` that
  * authority slashes follow (any number, as special schemes normalize them),
- * so a compact JSON field name before it (`{"url":"https://…`) is skipped.
- * When a quote, backtick or angle bracket directly precedes the scheme, its
- * closing delimiter ends the URL; any other quote is data
+ * so a compact JSON field name before it (`{"url":"https://…`) is skipped and
+ * a URL nested in another one's query is the one judged. When a quote,
+ * backtick, angle bracket, parenthesis or square bracket directly precedes the
+ * scheme (a Markdown link destination), its closing delimiter ends the URL;
+ * any other quote is data
  * (`https://ci:O'Brian Pass@host`). The authority after the slashes must hold
  * no path, no closing delimiter and be no bracketed IPv6 host. It opens with
  * `user` when the authority, up to a query or fragment, holds a `:` and is no
@@ -364,7 +366,8 @@ interface SpacedOpening {
  * starts in the next word (`https://` then a tab).
  */
 function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
-  const colon = word.search(/:[/\\]/u);
+  // The last scheme in the word, so a URL nested in another one's query (`…?next=https://u:p`) is judged.
+  const colon = lastSchemeSeparator(word);
   if (colon < 0) return undefined;
   const schemeStart = schemeStartBefore(word, colon);
   // A one-letter scheme is a Windows drive (`C:/Temp`), never a URL.
@@ -377,6 +380,14 @@ function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   if (authority.startsWith("[") || /[/\\]/u.test(authority) || (closer !== undefined && authority.includes(closer))) return undefined;
   const kind = authorityOpening(authority.split(/[?#]/u, 1)[0]!);
   return kind === undefined ? undefined : { kind, closer };
+}
+
+/** Where the last `:` that an authority slash or backslash follows stands in a word, or -1. */
+function lastSchemeSeparator(word: string): number {
+  for (let index = word.length - 2; index >= 0; index -= 1) {
+    if (word[index] === ":" && (word[index + 1] === "/" || word[index + 1] === "\\")) return index;
+  }
+  return -1;
 }
 
 /** Where the scheme that ends at `colon` starts, read back over scheme characters. */

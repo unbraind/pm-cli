@@ -170,6 +170,9 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // Codex review round 4.
     ["a redirect query without a path", "https://ci:demo words@registry.example.invalid?next=https://docs.example.invalid", "https://[redacted]@registry.example.invalid?next=https://docs.example.invalid"],
     ["a quoted pathless URL with a spaced password colon", '"https://Build Team: demo-pass@registry.example.invalid"', '"https://[redacted]@registry.example.invalid"'],
+    // Codex review round 5.
+    ["a credential URL nested in a public URL's query", "https://public.invalid/login?next=https://build:demo pass@private.invalid/repo", "https://[redacted]@private.invalid/repo"],
+    ["a URL in parentheses", "See (https://ci:demo pass@host.invalid/x) now", "See (https://[redacted]@host.invalid/x) now"],
     // CodeRabbit: the escape at offsets 510 and 511 after the opening word starts inside the bound.
     ["an encoded at sign at offset 510", `https://x:demo ${"a".repeat(509)}%40host`, "https://[redacted]%40host"],
     // Greptile review round 2.
@@ -201,9 +204,13 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a bare scheme before prose", "See https:// for details, email me@example.org"],
     ["a bare scheme ending the text", "x https://"],
     ["a bare scheme before more slashes", "https:// // x@y"],
+    ["a bare scheme ending text that holds an earlier at sign", "mail me@example.org at https://"],
+    ["an authority that starts with a query", "https://?q=1 user x:y me@example.org"],
+    ["a path word before the at sign", "https://ci:pa ss /x@y"],
     ["a bare scheme before a host and port", "https://\texample.com:8080 ping @bob"],
     ["a clock time in prose", "See https://example.com at 09:30 and ping @oncall"],
     ["a Windows drive path before an error code and a mention", "Log output C:/Temp (code:ENOENT), fix and notify @admin"],
+    ["a Markdown link before prose with a colon and a mention", "See [docs](https://example.invalid) status:404 then ping @oncall."],
     ["a later public URL in parentheses", "Compare https://ci:1234-beta with (https://example.org/package/@scope/name)"],
     ["a colon that a space follows", "https://service account: ping @oncall"],
     ["a trailing colon ending the text", "https://service account:"],
@@ -212,6 +219,11 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["an encoded at sign that starts past the bound", `https://x:demo ${"a".repeat(512)}%40host`],
   ])("leaves text alone when no whitespace-bearing userinfo opens: %s", (_case, text) => {
     expect(redactUrlCredentialsInText(text)).toBe(text);
+  });
+
+  it("leaves a username at sign in the opening word to the word rule", () => {
+    // A first word with an at sign but no colon opens no join; the word rule masks its bare userinfo.
+    expect(redactUrlCredentialsInText("https://user@host and email x:y me@example.org")).toBe("https://[redacted]@host and email x:y me@example.org");
   });
 
   it("redacts a joined URL exactly as the same URL without blanks", () => {

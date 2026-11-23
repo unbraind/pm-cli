@@ -358,9 +358,10 @@ unit mark), a backslash escapes the next character, and a line feed or
 carriage return ends every string (U+2028 and U+2029 are data inside a JSON
 string). When that string's closing quote lies inside the captured value,
 after its first character, or directly after it, and a word end as above
-follows the quote, the value ends there. After a closing quote, the end of an
-XML tag (`"/>`, `">`) and an unquoted YAML flow key (`{title: "…", updated:
-ok}`) are word ends too, and blanks after its structure are padding however
+follows the quote, the value ends there. After a closing quote, an unquoted
+YAML flow key (`{title: "…", updated: ok}`) is a word end too, and so is the
+end of an XML tag (`"/>`, `">`) when the string is an attribute value (its
+quote follows `=`), and blanks after its structure are padding however
 many there are. A quote at the value's first character is never a cut point,
 because after a stray apostrophe it may be the value's own opening quote, and
 neither is a quote inside the capture that a blank follows, which can only be
@@ -579,12 +580,13 @@ combine:
   fields) or the word rule (free text). Before the word rule runs, a URL
   whose userinfo holds whitespace is joined into one word
   ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
-  tracker record excluded from npm). A word opens one at the first `:` that
+  tracker record excluded from npm). A word opens one at the last `:` that
   authority slashes (any number) follow, so a compact JSON field name before
-  the URL is skipped; a one-letter scheme is a Windows drive (`C:/Temp`), never
-  a URL. When a quote, backtick or angle bracket directly
-  precedes the scheme, its closing delimiter ends the URL; any other quote is
-  data. The authority after the slashes must hold no path, no closing
+  the URL is skipped and a URL nested in another one's query is judged; a
+  one-letter scheme is a Windows drive (`C:/Temp`), never a URL. When a quote,
+  backtick, angle bracket, parenthesis or square bracket directly precedes the
+  scheme (a Markdown link destination), its closing delimiter ends the URL;
+  any other quote is data. The authority after the slashes must hold no path, no closing
   delimiter and no bracketed IPv6 host, and, up to a query or fragment, it
   either holds a `:` and is no dotted or `localhost` `host:port`
   (`https://user:pass`, `https://ci:123456`, `https://ci:pa%40ss`), or holds no

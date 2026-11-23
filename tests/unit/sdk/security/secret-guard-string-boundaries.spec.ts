@@ -167,6 +167,22 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`docker run --env "${passwordKey}=${D}{PW:-" correct horse battery staple"}" demo`)).toEqual(["password_assignment"]);
   });
 
+  it("ends a lexical string at a line break, and never escapes one with a backslash", () => {
+    // A string that a line break ends never closes, so the variable is judged as the word the blank ends.
+    expect(rulesOf(`"${passwordKey}: ${D}API_KEY\nnext"`)).toEqual([]);
+    // A backslash before a line break escapes nothing, so the next line starts outside every string.
+    expect(rulesOf(`continued \\\n["${passwordKey}: ${D}API_KEY", "x"]`)).toEqual([]);
+    expect(rulesOf(`trailing backslash \\`)).toEqual([]);
+  });
+
+  it("ends a string at a tag end only when it is an attribute value (Codex round 5)", () => {
+    // `>` after a quote inside a real password, or inside a quoted default, never ends the value.
+    expect(rulesOf(`- {note: Expected apostrophe ' in the header, ${passwordKey}: "v7'>>cV9uM2a!"}`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`"api_key=${D}{PW:-">abcD7!q2"}"`)).toEqual(["credential_key_assignment"]);
+    // A percent reference before a JSON escape keeps the reference-free grammar's placeholder reading.
+    expect(rulesOf(`{"title":"api_key=%DEPLOY_KEY%\\nmode=prod","updated":"ok"}`)).toEqual([]);
+  });
+
   it("reads a JSON member value that starts on the next line", () => {
     expect(rulesOf(`{"title":\n  "${passwordKey}=${D}DB_PASSWORD","other":"ok"}`)).toEqual([]);
   });

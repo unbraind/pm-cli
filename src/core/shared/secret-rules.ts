@@ -301,7 +301,7 @@ const EXCLUSION_REPEAT_BOUND = 4096;
 // millions of characters overflowed the stack and the guard failed open.
 const CREDENTIAL_OPEN = String.raw`"(?=[^"\s]{8}[^"\s]*")|'(?=[^'\s]{8}[^'\s]*')|(?!["'])`;
 const CREDENTIAL_PLAIN =
-  String.raw`(?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%(?=$|[\s"',;)}\]<>&|])|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8}[^\s"]*|(?<=')[^\s']{8}[^\s']*|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})`;
+  String.raw`(?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%(?=$|[\s"',;)}\]<>&|\\])|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8}[^\s"]*|(?<=')[^\s']{8}[^\s']*|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})`;
 // The grammar a reference-free value is judged by. A referenced value's literal
 // is judged by it too, read as one double-quoted literal (literalValue).
 const CREDENTIAL_LITERAL_VALUE = new RegExp(`(?:${CREDENTIAL_OPEN})(${CREDENTIAL_PLAIN})`, "iy");
@@ -622,15 +622,15 @@ function* flatMatches(rule: SecretRule, content: string): Generator<SecretRuleMa
   // A scanner for keys inside rejected values, created on first use; every scan owns its own cursor.
   let inner: RegExp | undefined;
   // Only a rule with a literal minimum reads quoted pieces after a value, so only it ends
-  // a value at the string it sits in (GH-1775); the states are computed on first use.
-  let states: StringStates | undefined;
+  // a value at the string it sits in (GH-1775); the lexer is created on first use.
+  let lexer: StringLexer | undefined;
   for (let found = regex.exec(content); found !== null; found = regex.exec(content)) {
     let match = found;
     if (rule.minimumLiteralLength !== undefined) {
-      states ??= stringStates(content);
+      lexer ??= createStringLexer(content);
       const end = found.index + found[0].length;
       const valueStart = end - found[1]!.length;
-      const close = enclosingStringClose(states, content, valueStart, end);
+      const close = enclosingStringClose(lexer, valueStart, end);
       // A value is never cut at its own first character: a quote there may be the value's own
       // opening quote after a stray apostrophe, so the grammar's reading is kept.
       if (close > valueStart) {
@@ -993,9 +993,8 @@ const PERCENT_REFERENCE = /^(["']?)%[A-Za-z_]\w*%\1$/u;
  * spells no literal (GH-1775). `cmd.exe` reads `set NAME=value` to the end of
  * the line, so an unquoted text value is whole only when nothing but blanks
  * follows it on its line, or when it ends at the string it sits in (see
- * enclosingStringClose); a decoded literal, a quoted value the grammar read
- * nothing after, and a quoted body that closes right after the capture are
- * whole by construction. A percent reference that more words follow on its
+ * enclosingStringClose); a decoded literal and a quoted value the grammar
+ * read nothing after are whole by construction. A percent reference that more words follow on its
  * `set` line therefore keeps its literal reading.
  */
 function isWholePercentReference(match: RegExpMatchArray, text: string): boolean {
@@ -1004,8 +1003,6 @@ function isWholePercentReference(match: RegExpMatchArray, text: string): boolean
   if (DECODED_DATA_MATCHES.has(match) || isQuote(text[0])) return true;
   const input = match.input!;
   const end = match.index! + match[0].length;
-  const opener = captureOpener(match);
-  if (isQuote(opener)) return input[end] === opener;
   if (ENCLOSING_STRING_CLOSE.get(match) === end) return true;
   let index = end;
   while (index < input.length && (input[index] === " " || input[index] === "\t")) index += 1;
@@ -1128,7 +1125,7 @@ const NO_STRING = 0;
 const DOUBLE_STRING = 1;
 const SINGLE_STRING = 2;
 
-/** A letter, digit or underscore, after which a quote never opens a string (see stringStates). */
+/** A letter, digit or underscore, after which a quote never opens a string (see StringLexer). */
 const WORD_CHARACTER = /[\p{L}\p{N}_]/u;
 
 /** Whether a UTF-16 code unit is a line feed or carriage return, which end every string in the lexical pass. */
@@ -1137,77 +1134,85 @@ function isNewlineCode(code: number): boolean {
 }
 
 /**
- * The string state just before each position of `content`, from one linear
- * lexical pass (GH-1775). A quote opens a string of its kind when none is
- * open and closes the open string of its kind; a quote of the other kind
- * inside a string is data; a quote right after a letter, digit or underscore
- * never opens one; a backslash escapes the next character; and a line feed
- * or carriage return ends every string, as JSON, Python and shell strings on
- * one line read (U+2028 and U+2029 are data inside a JSON string).
- * The entry at `content.length` holds the state at the end.
+ * A forward-only lexical string scanner over one content string (GH-1775). A
+ * quote opens a string of its kind when none is open and closes the open
+ * string of its kind; a quote of the other kind inside a string is data; a
+ * quote right after a letter, digit or underscore never opens one (in prose it
+ * is an apostrophe such as `customer's` or a unit mark, and a code prefix such
+ * as `f"…"` just keeps main's reading); a backslash escapes the next
+ * character; and a line feed or carriage return ends every string, as JSON,
+ * Python and shell strings on one line read (U+2028 and U+2029 are data inside
+ * a JSON string). Each flat scan owns one lexer and only ever moves it
+ * forward, to the start of each value it judges and through a value that sits
+ * in a string, so a scan reads each character at most once more.
  */
-function stringStates(content: string): StringStates {
-  const states = new Uint8Array(content.length + 1);
-  const openers: number[] = [];
-  let state = NO_STRING;
-  for (let index = 0; index < content.length; index += 1) {
-    states[index] = state;
-    const code = content.charCodeAt(index);
-    if (isNewlineCode(code)) {
-      state = NO_STRING;
-    } else if (code === 0x5c && index + 1 < content.length && !isNewlineCode(content.charCodeAt(index + 1))) {
-      index += 1;
-      states[index] = state;
-    } else if (code === 0x22 || code === 0x27) {
-      const kind = code === 0x22 ? DOUBLE_STRING : SINGLE_STRING;
-      // A quote right after a letter, digit or underscore never opens a string: in prose it is an
-      // apostrophe (`customer's`) or a unit (`5"`), and a code prefix (`f"…"`) just keeps main's reading.
-      if (state === NO_STRING && !(index > 0 && WORD_CHARACTER.test(content[index - 1]!))) {
-        state = kind;
-        openers.push(index);
-      } else if (state === kind) {
-        state = NO_STRING;
-      }
-    }
-  }
-  states[content.length] = state;
-  return { states, openers };
+interface StringLexer {
+  readonly content: string;
+  /** Next position to read. */
+  index: number;
+  /** The string state before `index`. */
+  state: number;
+  /** Where the open string's opening quote stands, when one is open. */
+  opener: number;
 }
 
-/** The lexical string states of one content string, and the ascending positions of the quotes that opened its strings. */
-interface StringStates {
-  states: Uint8Array;
-  openers: number[];
+function createStringLexer(content: string): StringLexer {
+  return { content, index: 0, state: NO_STRING, opener: -1 };
 }
 
-/** The opening quote of the string open at `position`: the last opener before it, found by binary search. */
-function openerBefore(openers: readonly number[], position: number): number {
-  let low = 0;
-  let high = openers.length - 1;
-  let found = -1;
-  while (low <= high) {
-    const middle = (low + high) >> 1;
-    if (openers[middle]! < position) {
-      found = openers[middle]!;
-      low = middle + 1;
-    } else {
-      high = middle - 1;
-    }
+/** Read one character (two for an escape); returns the position of a quote that closed the open string, or -1. */
+function lexStep(lexer: StringLexer): number {
+  const { content } = lexer;
+  const index = lexer.index;
+  const code = content.charCodeAt(index);
+  lexer.index = index + 1;
+  if (isNewlineCode(code)) {
+    lexer.state = NO_STRING;
+    return -1;
   }
-  return found;
+  if (code === 0x5c) {
+    if (index + 1 < content.length && !isNewlineCode(content.charCodeAt(index + 1))) lexer.index = index + 2;
+    return -1;
+  }
+  if (code !== 0x22 && code !== 0x27) return -1;
+  const kind = code === 0x22 ? DOUBLE_STRING : SINGLE_STRING;
+  if (lexer.state === kind) {
+    lexer.state = NO_STRING;
+    return index;
+  }
+  if (lexer.state === NO_STRING && !(index > 0 && WORD_CHARACTER.test(content[index - 1]!))) {
+    lexer.state = kind;
+    lexer.opener = index;
+  }
+  return -1;
+}
+
+/** Move the lexer to `position`; an escape that straddles it leaves the same state, since an escaped character never changes it. */
+function advanceLexer(lexer: StringLexer, position: number): void {
+  while (lexer.index < position) lexStep(lexer);
+}
+
+/** Where the string a value sits in opened: as a container member or element, or as an attribute value. */
+interface StringOpening {
+  inContainer: boolean;
+  attribute: boolean;
 }
 
 /**
- * Whether the string that opened at `opener` is a member or element of a
- * container: its quote follows `[`, `{`, `,` or `:` and optional whitespace, as in
- * JSON, YAML flow or a Python repr. A string a command word or prose opened
- * (`echo "…"`, `Use "…"`) is a shell word or a quotation instead.
+ * How the string that opened at `opener` sits. It is a member or element of a
+ * container when its quote follows `[`, `{`, `,` or `:` and optional
+ * whitespace, as in JSON, YAML flow or a Python repr; a string a command word
+ * or prose opened (`echo "…"`, `Use "…"`) is a shell word or a quotation
+ * instead. It is an attribute value when its quote directly follows `=`
+ * (`<setting value="…"/>`), so only then does `>` after its closing quote end
+ * it.
  */
-function opensInContainer(content: string, opener: number): boolean {
+function stringOpening(content: string, opener: number): StringOpening {
+  const attribute = content[opener - 1] === "=";
   let index = opener - 1;
   // JSON allows any whitespace, line breaks included, between a separator and a value.
   while (index >= 0 && /\s/u.test(content[index]!)) index -= 1;
-  return index >= 0 && /[[{,:]/u.test(content[index]!);
+  return { inContainer: index >= 0 && /[[{,:]/u.test(content[index]!), attribute };
 }
 
 /** Structure that may follow a closing quote before the next member, element or statement. */
@@ -1218,15 +1223,13 @@ const STRUCTURE_AFTER_STRING = /[,:;)}\]]/u;
  * end of the text follows it, or a bounded run of structure, optional blanks
  * and then a line break, the end of the text, or the next member or element
  * (`","x"`, `"},{"y"`, `"], "z"`, `");`, an unquoted YAML flow key) when the
- * string is a member or element of a container (see opensInContainer), or the
- * end of an XML tag (`"/>`, `">`). Any other text after the quote,
+ * string is a member or element of a container, or the end of an XML tag
+ * (`"/>`, `">`) when the string is an attribute value (see stringOpening). Any other text after the quote,
  * such as another quote (`""…`) or a word (`"…`), continues a shell word.
  */
-function endsWordAfterQuote(content: string, at: number, inContainer: boolean): boolean {
+function endsWordAfterQuote(content: string, at: number, opening: StringOpening): boolean {
   let index = at + 1;
-  if (index === content.length || /\s/u.test(content[index]!)) return true;
-  // An XML attribute value ends its tag (`value="…"/>`, `value="…">`).
-  if (content[index] === ">" || content.startsWith("/>", index)) return true;
+  if (endsRightAfterQuote(content, index, opening)) return true;
   const structureEnd = Math.min(content.length, index + WORD_END_BOUND);
   while (index < structureEnd && STRUCTURE_AFTER_STRING.test(content[index]!)) index += 1;
   if (index === at + 1) return false;
@@ -1235,9 +1238,16 @@ function endsWordAfterQuote(content: string, at: number, inContainer: boolean): 
   if (index === content.length || LINE_BREAK.test(content[index]!)) return true;
   // The next member or element after the structure ends the word only for a string in a container;
   // after a shell word's closing quote, `,"…"` is more of the same word (`echo "…${EMPTY}","…"`).
-  if (!inContainer) return false;
+  if (!opening.inContainer) return false;
   const next = content.slice(index, index + 40);
   return NEXT_MEMBER.test(next) || BARE_SCALAR_MEMBER.test(next) || YAML_FLOW_KEY.test(next);
+}
+
+/** Whether the text at `index`, right after a closing quote, ends the word: whitespace, the end, or an attribute value's tag end. */
+function endsRightAfterQuote(content: string, index: number, opening: StringOpening): boolean {
+  if (index === content.length || /\s/u.test(content[index]!)) return true;
+  // An XML attribute value (`value="…"`) ends its tag (`"/>`, `">`).
+  return opening.attribute && (content[index] === ">" || content.startsWith("/>", index));
 }
 
 /** An unquoted YAML flow key and its separator, the next member of `{title: "…", updated: ok}`. */
@@ -1254,21 +1264,24 @@ const YAML_FLOW_KEY = /^[A-Za-z_][\w.-]{0,32}:(?:\s|$)/u;
  * quote that another quote or a word follows (`"…${EMPTY}""…"`) continues the
  * shell word, as before. Each scan reads the value once.
  */
-function enclosingStringClose(lexical: StringStates, content: string, valueStart: number, end: number): number {
-  const { states } = lexical;
-  const kind = states[valueStart]!;
+function enclosingStringClose(lexer: StringLexer, valueStart: number, end: number): number {
+  advanceLexer(lexer, valueStart);
+  const kind = lexer.state;
   if (kind === NO_STRING) return -1;
-  const quote = kind === DOUBLE_STRING ? "\"" : "'";
+  const { content } = lexer;
+  const opener = lexer.opener;
   const last = Math.min(end, content.length - 1);
-  for (let index = valueStart; index <= last; index += 1) {
-    if (content[index] === quote && states[index] === kind && states[index + 1] === NO_STRING) {
+  while (lexer.index <= last) {
+    const closed = lexStep(lexer);
+    if (closed !== -1) {
       // Inside the capture, a quote that a blank follows can only be data of the value's own quoted
-      // text (the grammar never reads a blank otherwise), so the string the lexical pass saw open
-      // there was a stray apostrophe's, and the grammar's reading is kept.
-      if (index < end && /\s/u.test(content[index + 1] ?? "")) return -1;
-      const inContainer = opensInContainer(content, openerBefore(lexical.openers, valueStart));
-      return endsWordAfterQuote(content, index, inContainer) ? index : -1;
+      // text (the grammar never reads a blank otherwise), so the string the lexer saw open there
+      // was a stray apostrophe's, and the grammar's reading is kept.
+      if (closed < end && /\s/u.test(content.charAt(closed + 1))) return -1;
+      return endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
     }
+    // A line break ended the string before any closing quote.
+    if (lexer.state !== kind) return -1;
   }
   return -1;
 }
