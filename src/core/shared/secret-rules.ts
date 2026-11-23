@@ -258,22 +258,7 @@ const PASSWORD_PIECE = String.raw`${PASSWORD_REFERENCE}|<[^<>\r\n]*>|${maximalRu
 // (`"$(op read "item")"` captures `"$(op read "`); a reference that opens the
 // piece and is cut there contributes nothing (see literalAfterReferences).
 const PASSWORD_QUOTED = String.raw`"[^"]*"|'[^']*'`;
-// GH-1775: a quote, a run of JSON structure only, a quote, and a string that
-// closes on the same line (`","updated"`, `":"x"`, `"},{"c"`, `','u'` in a
-// Python repr) is the closing quote of the string a value sits in, its
-// separators and the next string, never a quoted piece concatenated to the
-// value. Serialized JSON text holds `{"title":"api_key: ${API_KEY}","updated":…}`,
-// where reading `","` as a piece judged the next member's key and value as
-// the reference's literal. A run that no closed string follows
-// (`${EMPTY}","<literal>` ending the text) is still a piece. Each run ends at
-// the next quote, and both the run and the string read after it are bounded,
-// so the look-ahead stays linear.
-const JSON_STRUCTURE_RUN = String.raw`[,:{}[\]]{1,64}`;
-const notStringBoundary = (quote: "\"" | "'"): string =>
-  String.raw`(?!${JSON_STRUCTURE_RUN}${quote}[^${quote}\r\n]{0,${PASSWORD_REPEAT_BOUND}}${quote})`;
-/** One whitespace-free quoted piece that is not a string boundary (see JSON_STRUCTURE_RUN). */
-const QUOTED_PIECE_OPEN = String.raw`"${notStringBoundary("\"")}[^"\s]*"|'${notStringBoundary("'")}[^'\s]*'`;
-const PASSWORD_QUOTED_PIECE = String.raw`(?:${QUOTED_PIECE_OPEN})(?:${PASSWORD_PIECE}){0,${PASSWORD_REPEAT_BOUND}}`;
+const PASSWORD_QUOTED_PIECE = String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${PASSWORD_PIECE}){0,${PASSWORD_REPEAT_BOUND}}`;
 const PASSWORD_VALUE = new RegExp(
   String.raw`(?!config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))`
     + `((?:${PASSWORD_PIECE}){1,${PASSWORD_REPEAT_BOUND}}(?:${PASSWORD_QUOTED_PIECE}){0,${PASSWORD_QUOTED_PIECES}}`
@@ -351,7 +336,7 @@ const CREDENTIAL_REFERENCE = String.raw`\$\{(?:${maximalRun(String.raw`[^{}$'"\\
   + String.raw`|<[^<>\s]*>|\$[A-Za-z_]\w*(?!\w)`;
 const credentialPiece = (run: string): string => String.raw`${CREDENTIAL_REFERENCE}|${maximalRun(run)}|${CREDENTIAL_AMPERSAND}|\$(?![{(A-Za-z_])`;
 const credentialQuotedPiece = (run: string): string =>
-  String.raw`(?:${QUOTED_PIECE_OPEN})(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}`;
+  String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}`;
 const credentialReferenced = (run: string): string =>
   String.raw`(?:(?:${run}|${CREDENTIAL_AMPERSAND}){1,${CREDENTIAL_LEADING_LITERAL}}(?=[$<]))?(?:${CREDENTIAL_REFERENCE})`
   + String.raw`(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}(?:${credentialQuotedPiece(run)}){0,${PASSWORD_QUOTED_PIECES}}`;
@@ -365,7 +350,7 @@ const credentialUnquoted = (build: (run: string) => string): string => String.ra
 // code (`"<literal>".trim()`, `"${KEY}".toUpperCase()`, `"${KEY}"!.length`,
 // `"${KEY}"^mask`, `"Bearer"+value`) and stays a quoted value.
 const CREDENTIAL_CONCATENATION_CONTINUES = String.raw`(?:[\w@#~]|!(?![.+\-*/%=^!(]))`;
-const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:${QUOTED_PIECE_OPEN})[$<"']`
+const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:"[^"\s]*"|'[^'\s]*')[$<"']`
   + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"${CREDENTIAL_CONCATENATION_CONTINUES}|'(?=[^'\s]*[$<])[^'\s]*'${CREDENTIAL_CONCATENATION_CONTINUES})`;
 // A quoted body that holds a reference opener is captured whole up to its closing quote.
 const CREDENTIAL_QUOTED_REFERENCED = String.raw`(?<=")(?=[^"\s]*[$<])[^"\s]+|(?<=')(?=[^'\s]*[$<])[^'\s]+`;
@@ -621,6 +606,8 @@ function insideQuotedRange(span: ReferenceSpan, position: number): boolean {
 
 /** A reference or placeholder opener inside a captured value. */
 const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
+/** For a flat match whose value sits in a string, where that string's closing quote ends it (see enclosingStringClose). */
+const ENCLOSING_STRING_CLOSE = new WeakMap<RegExpMatchArray, number>();
 
 /**
  * Flat matches of one reading. A rule with a literal minimum also judges the
@@ -629,12 +616,29 @@ const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
  * rescanDepth for how far it reaches while staying linear.
  */
 function* flatMatches(rule: SecretRule, content: string): Generator<SecretRuleMatch> {
-  const regex = rule.regex;
-  regex.lastIndex = 0;
+  // Every scan owns its cursor, so a scan suspended at a yield never moves another one's.
+  const regex = new RegExp(rule.regex);
   const rescan = rescanDepth(rule);
   // A scanner for keys inside rejected values, created on first use; every scan owns its own cursor.
   let inner: RegExp | undefined;
-  for (const match of content.matchAll(regex)) {
+  // Only a rule with a literal minimum reads quoted pieces after a value, so only it ends
+  // a value at the string it sits in (GH-1775); the states are computed on first use.
+  let states: Uint8Array | undefined;
+  for (let found = regex.exec(content); found !== null; found = regex.exec(content)) {
+    let match = found;
+    if (rule.minimumLiteralLength !== undefined) {
+      states ??= stringStates(content);
+      const end = found.index + found[0].length;
+      const close = enclosingStringClose(states, content, end - found[1]!.length, end);
+      if (close !== -1) {
+        if (close < end) {
+          match = truncateMatch(found, close);
+          // Resume at the closing quote, so keys in the members the grammar read past are still scanned.
+          regex.lastIndex = close;
+        }
+        ENCLOSING_STRING_CLOSE.set(match, close);
+      }
+    }
     if (acceptsSecretMatch(rule, match)) {
       yield { index: match.index! };
     } else if (rescan !== undefined && VALUE_REFERENCE.test(match[1])) {
@@ -1006,9 +1010,10 @@ const STRUCTURE_RUN = /^[;,)}\]]{0,64}/u;
  * comes after it. Any other text after the match (`$PW:literal`, `$PW[literal`,
  * `$PW,"literal"`, `"$PW""literal"`) is part of the same word. So is a quote
  * after an unquoted value, which may open a concatenated piece
- * (`$PW" spaced literal"`) as well as close an enclosing string, unless what
- * follows it shows that it closes that string (see closesEnclosingString). In
- * either case the value is not known to be a bare or leading variable, and its
+ * (`$PW" spaced literal"`) as well as close an enclosing string, unless the
+ * lexical string states show that it closes the string the value sits in and
+ * a word end follows (see enclosingStringClose). In either case the value is
+ * not known to be a bare or leading variable, and its
  * `$NAME` text stays literal. The look-ahead is bounded, so judging stays
  * linear.
  */
@@ -1020,15 +1025,8 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
-  // Inside a rejected reference value, the closer of the reference the match
-  // sat in ends its word whatever follows (`"$(get --password=$PW)${SUFFIX}"`).
-  // Any other parenthesis or brace, and one at the top level, is literal data
-  // (`${A:?password=$PW)literal}`).
-  if (INNER_CLOSE_AT.get(match) === start) return true;
-  // Inside a command substitution, shell control operators and redirections end a word too (`--password=$PW|filter`, `$PW>/dev/null`).
-  // (The end of the input has already returned above, so a character stands at `start`.)
-  if (INNER_SHELL_MATCHES.has(match) && /[|&;<>]/u.test(input[start]!)) return true;
-  if (closed === -1) return closesEnclosingString(input, end);
+  if (endsAtRecordedCloser(match, start, end)) return true;
+  if (closed === -1) return false;
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
   // comma and a quoted piece continue the shell word (`password="$PW","…"`).
@@ -1040,6 +1038,23 @@ function wordComplete(match: RegExpMatchArray): boolean {
   // After a closing brace or bracket the value's container has closed, so a bare scalar is the parent's next element.
   const closedContainer = /[}\]]/u.test(input.slice(start, after));
   return context !== undefined && (NEXT_MEMBER.test(next) || ((context === "element" || closedContainer) && BARE_SCALAR_MEMBER.test(next)));
+}
+
+/**
+ * Whether a match's word ends at a closer the scan recorded for it. Inside a
+ * rejected reference value, the closer of the reference the match sat in ends
+ * its word whatever follows (`"$(get --password=$PW)${SUFFIX}"`); any other
+ * parenthesis or brace, and one at the top level, is literal data
+ * (`${A:?password=$PW)literal}`). Inside a command substitution, shell control
+ * operators and redirections end a word too (`--password=$PW|filter`,
+ * `$PW>/dev/null`); the caller has already handled the end of the input, so a
+ * character stands at `start`. And the quote that closes the string a flat
+ * match's value sits in ends its word (see enclosingStringClose).
+ */
+function endsAtRecordedCloser(match: RegExpMatchArray, start: number, end: number): boolean {
+  if (INNER_CLOSE_AT.get(match) === start) return true;
+  if (INNER_SHELL_MATCHES.has(match) && /[|&;<>]/u.test(match.input![start]!)) return true;
+  return ENCLOSING_STRING_CLOSE.get(match) === end;
 }
 
 /**
@@ -1075,31 +1090,97 @@ const BARE_SCALAR_MEMBER = /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;
-/** One character of a JSON structure run (see JSON_STRUCTURE_RUN). */
-const JSON_STRUCTURE = /[,:{}[\]]/u;
+/** The lexical string states: no string open, a double-quoted one, a single-quoted one. */
+const NO_STRING = 0;
+const DOUBLE_STRING = 1;
+const SINGLE_STRING = 2;
+
+/** Whether a UTF-16 code unit breaks a line. */
+function isLineBreakCode(code: number): boolean {
+  return code === 0x0a || code === 0x0d || code === 0x2028 || code === 0x2029;
+}
 
 /**
- * Whether the quote at `at`, directly after an unquoted value, closes the
- * string the value sits in (GH-1775). It does when only blanks and then a line
- * break or the end of the text follow it (the last member of pretty-printed
- * JSON, or a quoted assignment ending the text), or when a bounded run of JSON
- * structure, optional blanks and then the next member or element follow
- * (`$PW","x"`, `$PW"},{"y"`, `$PW', 'x'` in a Python repr): the value grammar
- * never reads that boundary as a quoted piece. Any other text after the quote,
- * including another quote (`$PW""literal`) or a space and a word
- * (`$PW" spaced literal"`), may still continue the word.
+ * The string state just before each position of `content`, from one linear
+ * lexical pass (GH-1775). A quote opens a string of its kind when none is
+ * open and closes the open string of its kind; a quote of the other kind
+ * inside a string is data; a backslash escapes the next character; and a line
+ * break ends every string, as JSON, Python and shell strings on one line read.
+ * The entry at `content.length` holds the state at the end.
  */
-function closesEnclosingString(input: string, at: number): boolean {
-  if (!isQuote(input[at])) return false;
-  const structureEnd = Math.min(input.length, at + 1 + WORD_END_BOUND);
+function stringStates(content: string): Uint8Array {
+  const states = new Uint8Array(content.length + 1);
+  let state = NO_STRING;
+  for (let index = 0; index < content.length; index += 1) {
+    states[index] = state;
+    const code = content.charCodeAt(index);
+    if (isLineBreakCode(code)) {
+      state = NO_STRING;
+    } else if (code === 0x5c && index + 1 < content.length && !isLineBreakCode(content.charCodeAt(index + 1))) {
+      index += 1;
+      states[index] = state;
+    } else if (code === 0x22 || code === 0x27) {
+      const kind = code === 0x22 ? DOUBLE_STRING : SINGLE_STRING;
+      if (state === NO_STRING) state = kind;
+      else if (state === kind) state = NO_STRING;
+    }
+  }
+  states[content.length] = state;
+  return states;
+}
+
+/** Structure that may follow a closing quote before the next member, element or statement. */
+const STRUCTURE_AFTER_STRING = /[,:;)}\]]/u;
+
+/**
+ * Whether the word a closing quote at `at` ends is complete: whitespace or the
+ * end of the text follows it, or a bounded run of structure, optional blanks
+ * and then a line break, the end of the text, or the next member or element
+ * (`","x"`, `"},{"y"`, `"], "z"`, `");`). Any other text after the quote,
+ * such as another quote (`""…`) or a word (`"…`), continues a shell word.
+ */
+function endsWordAfterQuote(content: string, at: number): boolean {
   let index = at + 1;
-  while (index < structureEnd && JSON_STRUCTURE.test(input[index]!)) index += 1;
-  const structured = index > at + 1;
-  const blanksEnd = Math.min(input.length, index + WORD_END_BOUND);
-  while (index < blanksEnd && (input[index] === " " || input[index] === "\t")) index += 1;
-  if (index === input.length || LINE_BREAK.test(input[index]!)) return true;
-  const next = input.slice(index, index + 40);
-  return structured && (NEXT_MEMBER.test(next) || BARE_SCALAR_MEMBER.test(next));
+  if (index === content.length || /\s/u.test(content[index]!)) return true;
+  const structureEnd = Math.min(content.length, index + WORD_END_BOUND);
+  while (index < structureEnd && STRUCTURE_AFTER_STRING.test(content[index]!)) index += 1;
+  if (index === at + 1) return false;
+  const blanksEnd = Math.min(content.length, index + WORD_END_BOUND);
+  while (index < blanksEnd && (content[index] === " " || content[index] === "\t")) index += 1;
+  if (index === content.length || LINE_BREAK.test(content[index]!)) return true;
+  const next = content.slice(index, index + 40);
+  return NEXT_MEMBER.test(next) || BARE_SCALAR_MEMBER.test(next);
+}
+
+/**
+ * Where the string that a value starting at `valueStart` sits in closes, when
+ * its closing quote lies inside the captured value or directly after it
+ * (`end`) and ends the word there; -1 otherwise (GH-1775). In serialized JSON
+ * text such as `{"title":"api_key: ${API_KEY}","updated":…}` the value sits in
+ * the title string, whose closing quote ends it, so `","` and the next member
+ * are never read as quoted pieces concatenated to it. A value outside every
+ * string keeps its own quoted pieces (`password="$PW","…"`), and a closing
+ * quote that another quote or a word follows (`"…${EMPTY}""…"`) continues the
+ * shell word, as before. Each scan reads the value once.
+ */
+function enclosingStringClose(states: Uint8Array, content: string, valueStart: number, end: number): number {
+  const kind = states[valueStart]!;
+  if (kind === NO_STRING) return -1;
+  const quote = kind === DOUBLE_STRING ? "\"" : "'";
+  const last = Math.min(end, content.length - 1);
+  for (let index = valueStart; index <= last; index += 1) {
+    if (content[index] === quote && states[index] === kind && states[index + 1] === NO_STRING) {
+      return endsWordAfterQuote(content, index) ? index : -1;
+    }
+  }
+  return -1;
+}
+
+/** A copy of a flat match whose value ends at `end`, as if the grammar had stopped there. */
+function truncateMatch(match: RegExpExecArray, end: number): RegExpExecArray {
+  const valueStart = match.index + match[0].length - match[1]!.length;
+  const captures: [string, string] = [match.input.slice(match.index, end), match.input.slice(valueStart, end)];
+  return Object.assign(captures, { index: match.index, input: match.input, groups: undefined });
 }
 
 /** A call's opening parenthesis, after at most a short run of whitespace (`getToken ()`). */
@@ -1497,15 +1578,6 @@ const CONSTANT_NAME = /^_*[A-Z][A-Z0-9_]*$/u;
 const BARE_VARIABLE = /^\$[A-Za-z_]\w*$/u;
 /** A text value that is one `$name` reference inside one pair of quote delimiters. */
 const QUOTED_BARE_VARIABLE = /^(["'])\$[A-Za-z_]\w*\1$/u;
-/**
- * A value that is one Windows `%NAME%` reference and nothing else, bare or
- * inside one pair of quote delimiters (GH-1775). The credential-key grammar
- * never reads one as a value; every other key-named rule judges it a
- * placeholder through this check, so a password key whose whole value is a
- * percent-delimited variable name is clean.
- */
-const BARE_PERCENT_VARIABLE = /^%[A-Za-z_]\w*%$/u;
-const QUOTED_BARE_PERCENT_VARIABLE = /^(["'])%[A-Za-z_]\w*%\1$/u;
 
 /**
  * Consume a `$NAME` reference at `index`; returns the next index, or -1 when
@@ -1660,7 +1732,6 @@ function expandWords(text: string, rootQuotesAreSyntax: boolean, variables: bool
   // A bare `$name` is a reference whatever its case, because it is the whole
   // value; judged on the source, so a concatenation never reads as one name.
   if (variables && (BARE_VARIABLE.test(text) || (rootQuotesAreSyntax && QUOTED_BARE_VARIABLE.test(text)))) return "";
-  if (variables && (BARE_PERCENT_VARIABLE.test(text) || (rootQuotesAreSyntax && QUOTED_BARE_PERCENT_VARIABLE.test(text)))) return "";
   const root: ReferenceFrame = { close: "}", keep: true, raw: "", literal: "" };
   const frames: ReferenceFrame[] = [root];
   for (let index = 0; index < text.length; ) index = expandStep(text, index, frames, rootQuotesAreSyntax, variables);

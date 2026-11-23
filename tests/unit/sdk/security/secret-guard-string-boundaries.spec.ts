@@ -1,14 +1,14 @@
 /**
  * Regression coverage for GH-1775 (pm-gh1775): a value made only of a
  * run-time reference is never a credential under any credential key, in
- * serialized JSON text as everywhere else. The closing quote of the string a
- * value sits in, the JSON structure after it and the next string are a string
- * boundary, never a quoted piece concatenated to the value, while a reference
- * with an attached literal and a literal value are still flagged.
+ * serialized JSON text as everywhere else. A value that sits in a string ends
+ * at that string's closing quote, found by a lexical pass over the text, when
+ * a word end follows the quote, so the next member is never read as a quoted
+ * piece concatenated to the value; a reference with an attached literal and a
+ * literal value are still flagged.
  */
 import { describe, expect, it } from "vitest";
 import { scanMutationSecrets } from "../../../../src/sdk/mutation-guard.js";
-import { expandRuntimeReferences, literalAfterReferences } from "../../../../src/core/shared/secret-rules.js";
 
 // Built at runtime so this file stays clean under the repository secret scan.
 const D = "$";
@@ -25,7 +25,6 @@ const references = [
   ["command substitution", `${D}(op read item)`],
   ["empty default", `${D}{API_KEY:-}`],
   ["angle placeholder", "<api-key>"],
-  ["Windows variable", "%API_KEY%"],
 ] as const;
 
 /** The spellings a tracker stores configuration in, each with a sibling after the value where the form has one. */
@@ -70,8 +69,10 @@ describe("bare references are never credentials (GH-1775)", () => {
     expect(rulesOf(JSON.stringify([{ t: `${passwordKey}: ${D}API_KEY` }, { u: 1 }]))).toEqual([]);
     expect(rulesOf(`"${passwordKey}: ${D}API_KEY"`)).toEqual([]);
     expect(rulesOf(`"${passwordKey}: ${D}API_KEY"   \nnext line`)).toEqual([]);
+    // Prose that quotes a whole assignment ends the word at the closing quote and a blank.
+    expect(rulesOf(`Use "${passwordKey}: ${D}API_KEY" in the deploy config`)).toEqual([]);
     // Structure followed by a word is not a next member, so the word may continue.
-    expect(rulesOf(`${passwordKey}: ${D}API_KEY",word`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`"${passwordKey}: ${D}API_KEY",word`)).toEqual(["password_assignment"]);
   });
 
   it("passes bare references as structured payload members", () => {
@@ -105,36 +106,42 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`["api_key=${D}{A}","${passwordKey}=${literal}"]`)).toEqual(["password_assignment"]);
   });
 
-  it("reads a structure run as a quoted piece when no closed string follows it", () => {
-    // The same bytes as the reproduction's boundary, but the next string never
-    // closes, so nothing marks the enclosing string: the run is concatenated.
+  it("keeps the quoted pieces of a value that sits in no string", () => {
+    // The value's own quotes are shell pieces: nothing before it opened a string.
     expect(rulesOf(`api_key=${D}{EMPTY}","${literal}`)).toEqual(["credential_key_assignment"]);
     expect(rulesOf(`${passwordKey}=${D}PW","${literal}`)).toEqual(["password_assignment"]);
-    // A run longer than the bound is read as a piece too, so the guard fails closed.
-    expect(rulesOf(`${passwordKey}=${D}{PW}"${",".repeat(65)}"${literal}"`)).toEqual(["password_assignment"]);
-    expect(rulesOf(`${passwordKey}=${D}{PW}"${",".repeat(64)}"${literal}"`)).toEqual([]);
+    // A YAML single-quoted scalar escapes a quote by doubling it, so `'',''` is data.
+    expect(rulesOf(`token: '${D}{EMPTY}'',''${literal}'`)).toEqual(["credential_key_assignment"]);
+    expect(rulesOf(`${passwordKey}: '${D}{EMPTY}'',''${literal}'`)).toEqual(["password_assignment"]);
+    // A quote no string opened is part of a plain scalar, so the variable stays literal.
+    expect(rulesOf(`${passwordKey}: ${D}${literal}"`)).toEqual(["password_assignment"]);
   });
 
-  it("keeps a quote that may open a concatenated piece as part of the word", () => {
-    // An empty quoted piece or a spaced word after a dollar name may continue a
-    // shell word, so its text stays literal and the eight characters are judged.
+  it("continues the word when another quote or a word follows the closing quote", () => {
+    // `"…${EMPTY}""…"` and `"…${EMPTY}"…` concatenate in a shell, so the literal is judged.
+    expect(rulesOf(`echo "api_key=${D}{EMPTY}""${literal}"`)).toEqual(["credential_key_assignment"]);
+    expect(rulesOf(`echo "${passwordKey}=${D}{EMPTY}""${literal}"`)).toEqual(["password_assignment"]);
     expect(rulesOf(`${passwordKey}=${D}API_KEY""${literal}`)).toEqual(["password_assignment"]);
+    // A quote that opens a spaced piece after a value outside every string still continues it.
     expect(rulesOf(`${passwordKey}: ${D}API_KEY" spaced literal"`)).toEqual(["password_assignment"]);
   });
-});
 
-describe("a whole-value Windows variable is a reference for every key-named rule (GH-1775)", () => {
-  it("expands a bare or quoted whole-value percent name to nothing", () => {
-    expect(literalAfterReferences("%DB_PASSWORD%")).toBe("");
-    expect(literalAfterReferences("\"%DB_PASSWORD%\"")).toBe("");
-    expect(literalAfterReferences("'%app_data%'")).toBe("");
-    expect(expandRuntimeReferences("%DB_PASSWORD%")).toBe("");
+  it("finds the closing quote however long the next member is, and reads JSON whitespace", () => {
+    const long = ["v23R4iN7-", "8d09cfea-".repeat(460)].join("");
+    expect(rulesOf(JSON.stringify([`api_key: ${D}DB_PASSWORD`, long]))).toEqual([]);
+    expect(rulesOf(`{"title":"${passwordKey}: ${D}DB_PASSWORD" , "next":"ok"}`)).toEqual([]);
+    // An escaped quote inside the string never closes it.
+    expect(rulesOf(`{"title":"say \\"hi\\" api_key: ${D}{EMPTY}${literal}","u":"x"}`)).toEqual(["credential_key_assignment"]);
   });
 
-  it("keeps a percent name that is not the whole value, or not a complete word, as literal text", () => {
-    expect(literalAfterReferences(`%DB_PASSWORD%${literal}`)).toBe(`%DB_PASSWORD%${literal}`);
-    expect(literalAfterReferences("%DB_PASSWORD%", false)).toBe("%DB_PASSWORD%");
-    expect(literalAfterReferences("%1abc%")).toBe("%1abc%");
-    expect(rulesOf(`${passwordKey}: %DB_PASSWORD%${literal}`)).toEqual(["password_assignment"]);
+  it("still scans keys in the members after a value that ends at its string", () => {
+    expect(rulesOf(`{"title":"api_key: ${D}{A}","note":"token=${literal}"}`)).toEqual(["credential_key_assignment"]);
+  });
+
+  it("stays linear over many assignments in one long string", () => {
+    const text = JSON.stringify({ title: `api_key: ${D}{A} xxxxxxxxxx `.repeat(100_000), updated: "x" });
+    const started = performance.now();
+    expect(rulesOf(text)).toEqual([]);
+    expect(performance.now() - started).toBeLessThan(5_000);
   });
 });

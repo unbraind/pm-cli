@@ -143,6 +143,14 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a line break, which URL parsers drop", "https://user:pass\nword@host", "https://[redacted]@host"],
     ["a non-special scheme", "git+ssh://u:p w%40h:repo", "git+ssh://[redacted]%40h:repo"],
     ["two URLs in one text", "https://u:p w%40h/x https://a:b c@d", "https://[redacted]%40h/x https://[redacted]@d"],
+    // Codex review round 1 on the GH-1773 change.
+    ["an encoded at sign inside the password", "https://ci:pa%40ss words@example.invalid", "https://[redacted]@example.invalid"],
+    ["an at sign inside a later word of the password", "https://ci:pa word@ss rest@example.invalid", "https://[redacted]@example.invalid"],
+    ["a long query after the host", `https://ci:some words@example.invalid/download?state=${"a".repeat(600)}`, `https://[redacted]@example.invalid/download?state=${"a".repeat(600)}`],
+    ["a password holding a colon and digits", "https://ci:pincode:1234 suffix@example.invalid", "https://[redacted]@example.invalid"],
+    ["a spaced username", "https://service account:pass phrase@example.invalid", "https://[redacted]@example.invalid"],
+    ["a spaced username whose password word holds the at sign", "https://service account:pass@example.invalid", "https://[redacted]@example.invalid"],
+    ["extra authority slashes", "https:///ci:pass words@example.invalid", "https://[redacted]@example.invalid"],
   ])("removes URL userinfo that holds whitespace across words: %s", (_case, text, expected) => {
     expect(redactUrlCredentialsInText(text)).toBe(expected);
     expect(redactUrlCredentialsInText(expected)).toBe(expected);
@@ -159,6 +167,10 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a span longer than the bound", `https://u:p ${"a".repeat(600)}@h`],
     ["a blank run longer than the bound", `https://u:p ${" ".repeat(600)}x@h`],
     ["slashes not at the scheme separator", "user:pass words@host"],
+    ["a colon only in a public URL's query", "See https://example.com?time=12:30Z or email ops@example.org"],
+    ["a later public URL holding an at sign", "Compare https://ci:1234-beta with https://example.org/package/@scope/name"],
+    ["a single-label host before prose", "https://localhost and ping @bob"],
+    ["a single-label host before prose with a colon after the at sign", "https://intranet ping @bob: now"],
   ])("leaves text alone when no whitespace-bearing userinfo opens: %s", (_case, text) => {
     expect(redactUrlCredentialsInText(text)).toBe(text);
   });

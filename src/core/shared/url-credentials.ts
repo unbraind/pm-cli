@@ -330,57 +330,91 @@ export function invocationCarriesUrlCredentials(): boolean {
 
 /** Most words after the opening word that one whitespace-bearing userinfo may span. */
 const SPACED_USERINFO_MAX_WORDS = 16;
-/** Most code units one whitespace-bearing userinfo span may cover after its opening word. */
+/** Code units after the opening word within which the separator of a whitespace-bearing userinfo must start. */
 const SPACED_USERINFO_MAX_LENGTH = 512;
+/** A `host:port` authority: one label run, a colon and port digits, never userinfo. */
+const HOST_PORT = /^[A-Za-z0-9.-]+:\d+$/u;
+/** A word that starts another URL: a scheme and its separator. */
+const URL_START = /[A-Za-z][A-Za-z0-9+.-]*:[/\\]/u;
 
 /**
- * Whether a word opens a URL authority whose userinfo may go on past
- * whitespace (GH-1773): it holds no `@` or `%40` (the word rule judges such a
- * word whole), its first `:` is followed by one or two authority slashes, and
- * the authority after them holds no path, is no bracketed IPv6 host, and holds
- * a `:` that port digits alone never follow (`user:pass`, `user:`), as in
- * `https://user:pass words@host`, which URL parsers read as userinfo with a
- * spaced password. A `host:port` authority and a plain host never open one, so
- * prose such as `https://example.com and ping @bob` is left alone.
+ * How a word opens a URL authority whose userinfo may go on past whitespace
+ * (GH-1773), or undefined. The word's first `:` must be followed by authority
+ * slashes (any number, as special schemes normalize them), and the authority
+ * after them must hold no path and be no bracketed IPv6 host. It opens with
+ * `user` when the authority, up to a query or fragment, holds a `:` and is no
+ * `host:port` (`https://user:pass`, `https://ci:pincode:1234`, or a word that
+ * already holds a separator, `https://ci:pa%40ss`). It opens with `label` when
+ * the authority is one dotless label (`https://service`): a spaced username,
+ * whose `user:password` colon must then come in a later word. A dotted host
+ * (`https://example.com`), a `host:port` and a colon only inside a query
+ * (`https://example.com?t=12:30`) never open one, so such prose stays intact.
  */
-function opensSpacedUserinfo(word: string): boolean {
-  if (/@|%40/iu.test(word)) return false;
+function spacedUserinfoOpening(word: string): "user" | "label" | undefined {
   const colon = word.indexOf(":");
-  if (colon < 0) return false;
+  if (colon < 0) return undefined;
   let start = colon + 1;
-  while (start < word.length && start < colon + 3 && (word[start] === "/" || word[start] === "\\")) start += 1;
-  if (start === colon + 1) return false;
+  while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
+  if (start === colon + 1) return undefined;
   const authority = word.slice(start);
-  if (authority.startsWith("[") || /[/\\]/u.test(authority)) return false;
-  const separator = authority.lastIndexOf(":");
-  return separator >= 0 && !/^\d+$/u.test(authority.slice(separator + 1));
+  if (authority.startsWith("[") || /[/\\]/u.test(authority)) return undefined;
+  const head = authority.split(/[?#]/u, 1)[0]!;
+  if (head.includes(":")) return HOST_PORT.test(head) ? undefined : "user";
+  return head !== "" && !/[.@%]/u.test(head) ? "label" : undefined;
 }
 
 /**
  * Where a whitespace-bearing userinfo opened by the word ending at `from`
- * ends: after the first later word that holds an `@` or `%40`, or -1 when
- * none does before another URL, the end of the text or the word and length
- * bounds. Line breaks and tabs count as blanks here, because URL parsers drop
- * them (`https://user:pass` then `word@host` on the next line still parses as
- * userinfo).
+ * ends: after the later word that holds its last `@` or `%40` separator, or
+ * -1 when none does. The search reads words across any whitespace (URL
+ * parsers drop tabs and line breaks), takes the last separator that starts
+ * within the word and length bounds, as a parser takes the authority's last
+ * `@`, and stops at a word that starts another URL or holds a path delimiter
+ * before any separator, which ends the authority. A `label` opening also needs
+ * a `:` before its separator. The word that holds the separator may run past
+ * the length bound (a long query), and each opening reads at most that word
+ * and the bounded span before it.
  */
-function spacedUserinfoEnd(text: string, from: number): number {
-  // Every scan stops at the length bound, so one opening word costs at most that many steps.
+function spacedUserinfoEnd(text: string, from: number, opening: "user" | "label"): number {
   const limit = Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH);
   let index = from;
-  for (let words = 0; words < SPACED_USERINFO_MAX_WORDS; words += 1) {
-    let start = index;
-    while (start < limit && /\s/u.test(text[start]!)) start += 1;
-    let end = start;
-    while (end < limit && !/\s/u.test(text[end]!)) end += 1;
-    // A word the bound cuts, or no word at all, ends the search.
-    if (end === start || (end === limit && limit < text.length)) return -1;
-    const word = text.slice(start, end);
-    if (/@|%40/iu.test(word)) return end;
-    if (/:[/\\]/u.test(word)) return -1;
-    index = end;
+  let end = -1;
+  let colonSeen = opening === "user";
+  for (let words = 0; words < SPACED_USERINFO_MAX_WORDS && index < limit; words += 1) {
+    const bounds = nextWord(text, index, limit);
+    if (bounds === undefined) break;
+    const word = text.slice(bounds[0], Math.min(bounds[1], limit));
+    if (URL_START.test(word)) break;
+    const read = readAuthorityWord(word);
+    if (read.separator && (colonSeen || read.colonBeforeSeparator)) end = bounds[1];
+    colonSeen ||= read.colon;
+    if (read.endsAuthority) break;
+    index = bounds[1];
   }
-  return -1;
+  return end;
+}
+
+/** The next word that starts at or after `index` and before `limit`, as its start and end, or undefined. */
+function nextWord(text: string, index: number, limit: number): readonly [start: number, end: number] | undefined {
+  let start = index;
+  while (start < limit && /\s/u.test(text[start]!)) start += 1;
+  if (start === limit) return undefined;
+  let end = start;
+  while (end < text.length && !/\s/u.test(text[end]!)) end += 1;
+  return [start, end];
+}
+
+/** How one later word reads inside an authority: up to its first path delimiter, which ends the authority. */
+function readAuthorityWord(word: string): { separator: boolean; colonBeforeSeparator: boolean; colon: boolean; endsAuthority: boolean } {
+  const delimiter = word.search(/[/\\]/u);
+  const authority = delimiter < 0 ? word : word.slice(0, delimiter);
+  const separator = Math.max(authority.lastIndexOf("@"), authority.toLowerCase().lastIndexOf("%40"));
+  return {
+    separator: separator >= 0,
+    colonBeforeSeparator: separator > 0 && authority.slice(0, separator).includes(":"),
+    colon: authority.includes(":"),
+    endsAuthority: delimiter >= 0,
+  };
 }
 
 /**
@@ -396,8 +430,9 @@ function redactSpacedUserinfo(text: string): string {
   let result = "";
   let cursor = 0;
   for (let match = word.exec(text); match !== null; match = word.exec(text)) {
-    if (!opensSpacedUserinfo(match[0])) continue;
-    const end = spacedUserinfoEnd(text, match.index + match[0].length);
+    const opening = spacedUserinfoOpening(match[0]);
+    if (opening === undefined) continue;
+    const end = spacedUserinfoEnd(text, match.index + match[0].length, opening);
     if (end === -1) continue;
     result += `${text.slice(cursor, match.index)}${redactUrlCredentialsInToken(text.slice(match.index, end))}`;
     cursor = end;

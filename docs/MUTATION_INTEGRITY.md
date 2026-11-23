@@ -334,32 +334,38 @@ quoted text those characters are data, and any other parenthesis or brace is
 literal data. A quoted value under a quoted key did as well when structure
 and then the next member or element follows, as in compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
 `[{"password":"$DB_PASSWORD"},{"other":…}]`). An unquoted value did too when
-the quote after it closes the string the value sits in: only blanks and then
-a line break or the end of the text follow that quote, or JSON structure,
-optional blanks and the next member or element do (`…$DB_PASSWORD","other":…`,
-`…$DB_PASSWORD"},{…`, `…$DB_PASSWORD', '…` in a Python repr), as in serialized
-JSON text whose string holds a whole assignment. Any other text after it
-(`$PW:…`, `$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so
-does any other quote after an unquoted value, which may open a concatenated
-piece (`$PW""…`, `$PW" spaced literal"`). In those cases the value keeps its
-`$NAME` text literal.
+the quote after it closes the string the value sits in and a word end follows
+that quote: whitespace, the end of the text, or structure, optional blanks
+and then a line break, the end of the text, or the next member or element
+(`{"cmd":"password=$DB_PASSWORD"}`, `["password=$DB_PASSWORD"], "next"`,
+`Use "password: $DB_PASSWORD" in config`). Any other text after it (`$PW:…`,
+`$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does any
+other quote after an unquoted value, which may open a concatenated piece
+(`$PW""…`, `$PW" spaced literal"`), or a quote no string opened (a YAML plain
+scalar ending in `"`). In those cases the value keeps its `$NAME` text
+literal.
 
-Serialized JSON text is read with its string boundaries
+A value that sits in a string ends at that string's closing quote
 ([pm-gh1775](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1775.toon);
-tracker record excluded from npm). In a payload string such as
-`{"title":"api_key: ${API_KEY}","updated":"…"}`, the quote after the
-reference closes the title string, so the two key-named rules never read
-`","` as a quoted piece concatenated to the value. A quote, a run of at most
-64 JSON structure characters (`,` `:` `{` `}` `[` `]`), a quote and a string
-that closes on the same line form such a boundary (`","x"`, `":"x"`,
-`"},{"x"`, `','x'`), and the value ends before it. The bare reference is then
-judged as a whole value and stays clean under every credential key, while a
-literal attached to it inside the string (`${EMPTY}…`, `${KEY:-…}`) and a
-credential member next to it are still reported. A structure run that no
-closed string follows (`api_key=${EMPTY}","…` ending the text) is still a
-quoted piece. A whole-value Windows variable (`%DB_PASSWORD%`, quoted or
-not) is a placeholder for every key-named rule, as it already was for
-credential keys; a literal around it is still judged.
+tracker record excluded from npm). A payload string such as
+`{"title":"api_key: ${API_KEY}","updated":"…"}` holds an assignment inside the
+title string. The two key-named rules find the string a value sits in with
+one linear lexical pass over the text: a quote opens a string of its kind
+when none is open and closes the open string of its kind, a quote of the
+other kind inside a string is data, a backslash escapes the next character,
+and a line break ends every string. When that string's closing quote lies
+inside the captured value or directly after it, and a word end as above
+follows the quote, the value ends there. So `","` and the next member are
+never read as quoted pieces concatenated to the value, however long the next
+member is, and the scan resumes at the closing quote, so keys in the later
+members are still scanned. The bare reference is then judged as a whole value
+and stays clean under every credential key, while a literal attached to it
+inside the string (`${EMPTY}…`, `${KEY:-…}`) and a credential member next to it
+are still reported. A value that sits in no string keeps its own quoted
+pieces (`password="$PW","…"`, a YAML single-quoted scalar whose doubled
+quotes are data), and a closing quote that another quote or a word follows
+(`echo "api_key=${EMPTY}""…"`) continues the shell word, as before.
+
 A credential-key value led by a lowercase `$name` keeps the reference-free
 reading, in which a `$`-led literal is a placeholder. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
@@ -556,14 +562,19 @@ combine:
   fields) or the word rule (free text). Before the word rule runs, a URL
   whose userinfo holds whitespace is joined into one word
   ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
-  tracker record excluded from npm): a word with no `@` that opens a URL
-  authority with a `user:` prefix (a scheme, one or two slashes, and a `:`
-  that port digits alone never follow) is joined, across any whitespace, with
-  the later words up to the first one that holds an `@` or `%40`, within 16
-  words and 512 characters and before another URL starts. So stored text a
-  refusal echoes, such as a blocker title holding
-  `https://user:pass words%40host/path`, loses its whole userinfo, while
-  `https://host:8080 … @bob` and `https://host and ping @bob` stay intact. A
+  tracker record excluded from npm). A word opens one when its first `:` is
+  followed by authority slashes (any number) and an authority with no path
+  and no bracketed IPv6 host, and that authority, up to a query or fragment,
+  either holds a `:` and is no `host:port` (`https://user:pass`,
+  `https://ci:pa%40ss`), or is one dotless label (`https://service`, a spaced
+  username whose `:` must come in a later word). The opening word is joined,
+  across any whitespace, through the later word that holds the last `@` or
+  `%40` starting within 16 words and 512 characters, as a parser takes the
+  authority's last `@`; a word that starts another URL or holds a path
+  delimiter before any separator ends the search. So stored text a refusal
+  echoes, such as a blocker title holding `https://user:pass words%40host/path`,
+  loses its whole userinfo, while `https://host:8080 … @bob`,
+  `https://host and ping @bob` and `https://host?t=12:30 … me@x` stay intact. A
   producer may also split a value at
   whitespace or a comma, truncate it, re-case it or escape it before echoing
   it. The CLI therefore registers each secret for the running invocation:
