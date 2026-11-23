@@ -72,6 +72,10 @@ describe("settings writers share the custom field admission", () => {
         sdk.mutateWorkspaceSettings({ operationId: "unrelated", mutate: (current) => ({ ...current, author_default: "settings-writer" }) }),
       ).resolves.toMatchObject({ changed: true });
       expect((JSON.parse(await readFile(settingsPath, "utf8")) as { schema: { fields: unknown[] } }).schema.fields).toEqual([legacy, bare, dropped]);
+      // A new alias that normalizes to nothing is judged even though the registry would drop it unseen (CodeRabbit review).
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "empty-alias", dryRun: true, mutate: (current) => withFields(current, current.schema.fields.map((field) => (field.key === "fields" ? { ...field, cli_aliases: ["--"] } : field))) }),
+      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_flag_invalid" }) });
       // Restating a stored definition without its defaults is no change either (Codex review pass 4).
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "restated", mutate: (current) => ({ ...withFields(current, [legacy, bare, dropped] as InlineField[]), author_default: "restating-writer" }) }),

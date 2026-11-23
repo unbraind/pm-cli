@@ -95,7 +95,7 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
   // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
   const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
   if (proposed.length === 0) return;
-  const { resolveRuntimeFieldRegistry } = await import("../core/schema/runtime-schema.js");
+  const { normalizeCliToken, resolveRuntimeFieldRegistry } = await import("../core/schema/runtime-schema.js");
   // Definitions compare as the registry reads them, so a proposal that JSON round-trips the fields or
   // restates a stored definition without its defaults leaves it unchanged. One the registry drops compares
   // as it persists, so only a new or edited one is judged.
@@ -103,11 +103,14 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
   const persisted = (value: unknown): unknown => JSON.parse(JSON.stringify(value)) as unknown;
   // The raw stored entries count too: a proposal may restate a definition exactly as the file holds it.
   const stored = [...current.schema.fields, ...(Array.isArray(rawFields) ? rawFields : [])].map((definition) => ({ resolved: resolved(definition), persisted: persisted(definition) }));
+  // A spelling that normalizes to nothing is dropped by the registry, so only an exact stored copy hides it.
+  const hasEmptySpelling = (definition: PmSettings["schema"]["fields"][number]): boolean =>
+    [definition.cli_flag, ...(Array.isArray(definition.cli_aliases) ? definition.cli_aliases : [])].some((token) => typeof token === "string" && normalizeCliToken(token).length === 0);
   const changed = proposed.filter((definition) => {
     const candidate = resolved(definition);
-    return candidate === undefined
-      ? !stored.some((entry) => stableValueEquals(entry.persisted, persisted(definition)))
-      : !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
+    const storedCopy = stored.some((entry) => stableValueEquals(entry.persisted, persisted(definition)));
+    if (candidate === undefined || hasEmptySpelling(definition)) return !storedCopy;
+    return !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
   });
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");

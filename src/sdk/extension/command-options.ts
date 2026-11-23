@@ -165,7 +165,8 @@ function isUnsafeLooseOptionKey(key: string): boolean {
 
 type LooseOptionCoercionKind = "string" | "number" | "boolean";
 
-function resolveLooseOptionCoercionKind(
+/** The value kind a declared flag coerces to (`bool` and other supported spellings included), or null when untyped. */
+export function resolveLooseOptionCoercionKind(
   definition: LooseCommandFlagDefinition,
 ): LooseOptionCoercionKind | null {
   // `value_type` is the canonical field; the deprecated `type` alias resolves
@@ -1729,7 +1730,9 @@ export function orderArgvRepeatableSwitchOccurrences(
       (spelling) => resolveArgvSpelling(scope, index, spelling, isRepeatableSwitchArgvSpelling) ?? resolveFoldedSwitchSpelling(scope, foldedKeys, spelling),
       (_spelling, entry, value, reader) => {
         if (entry.declared === undefined) return;
-        sequences.set(entry.declared, [...(sequences.get(entry.declared) ?? []), reader === "commander" ? { value } : null]);
+        const sequence = sequences.get(entry.declared) ?? [];
+        sequence.push(reader === "commander" ? { value } : null);
+        sequences.set(entry.declared, sequence);
       },
     );
   }

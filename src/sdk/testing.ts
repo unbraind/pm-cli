@@ -147,6 +147,7 @@ import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
   resolveExtensionFlagOptionKey,
+  resolveLooseOptionCoercionKind,
 } from "./extension/command-options.js";
 import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
 import { formatOutput, projectPrintedResult } from "../core/output/output.js";
@@ -1218,7 +1219,7 @@ function negatedDeclaredBooleanKey(key: string, definitions: ReturnType<typeof c
   if (definitions.some((definition) => handlerKeyOf(definition) === spelled)) return undefined;
   const base = resolveExtensionFlagOptionKey({ long: `--${negated}` });
   const declared = definitions.find((definition) => handlerKeyOf(definition) === base);
-  return declared !== undefined && (declared.value_type === "boolean" || declared.type === "boolean") ? (base as string) : undefined;
+  return declared !== undefined && resolveLooseOptionCoercionKind(declared) === "boolean" ? (base as string) : undefined;
 }
 
 /** A boolean option value or its string token, or `undefined` for anything else. */

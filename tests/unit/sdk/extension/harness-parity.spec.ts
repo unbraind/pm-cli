@@ -170,7 +170,7 @@ describe("extension test harness parity with native dispatch", () => {
       api.registerCommand({ name: "comments", run: () => ({ comments: [] }) });
       api.registerFlags("notes", [{ long: "--add-json", short: "-J", value_type: "string" }, { long: "--stdin", value_type: "boolean" }]);
       // An extension may declare a flag literally spelled --no-add, which is not a negation (Greptile review).
-      api.registerFlags("learnings", [{ long: "--no-add", value_type: "boolean" }]);
+      api.registerFlags("learnings", [{ long: "--no-add", value_type: "boolean" }, { long: "--stdin", value_type: "bool" }]);
       api.registerCommand({ name: "learnings", run: () => ({ learnings: [] }) });
       api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
     });
@@ -194,6 +194,10 @@ describe("extension test harness parity with native dispatch", () => {
         context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
       });
     }
+    // A boolean declared through a supported alias (value_type "bool") is inverted too (Greptile review).
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "learnings", args: ["pm-x"], options: { "--no-stdin": false }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+    });
     // A non-boolean value, a true negation, an undeclared base, and a flag literally declared as --no-add are left alone (Greptile review).
     // A value the negation cannot invert is the normalizer's value error, not a mutation conflict.
     await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": "maybe" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
