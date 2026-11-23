@@ -12,6 +12,10 @@
 
 - A repeatable boolean extension switch mixed in attached and bare forms (--many=false --many) loses its bare occurrences, because Commander never sees the attached form ([pm-g2zzus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g2zzus.toon))
 
+### Security
+
+- CodeFactor reports zizmor dangerous-triggers on release-reliability.yml's workflow_run trigger as a new critical issue on every PR that touches a workflow ([pm-5mstyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5mstyv.toon))
+
 ### Other
 
 - Adopt TruffleHog 3.99.9 from Dependabot PR \#1771 with the matching workflow contract and executed version input ([pm-lulgxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lulgxc.toon))

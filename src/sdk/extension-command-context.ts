@@ -93,7 +93,9 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
  */
 async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings): Promise<void> {
   const stored = current.schema.fields;
-  const changed = next.schema.fields.filter((definition) => !stored.some((entry) => stableValueEquals(entry, definition)));
+  // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
+  const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
+  const changed = proposed.filter((definition) => !stored.some((entry) => stableValueEquals(entry, definition)));
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
   for (const definition of changed) assertFieldDefinitionOptionsAvailable(definition);

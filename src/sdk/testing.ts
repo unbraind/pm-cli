@@ -146,6 +146,7 @@ import { createExtensionCommandSdk } from "./extension-command-context.js";
 import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
+  resolveExtensionFlagOptionKey,
 } from "./extension/command-options.js";
 import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
 import { formatOutput, projectPrintedResult } from "../core/output/output.js";
@@ -1199,6 +1200,21 @@ export async function runRegisteredCommandForTest(
   return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
+/**
+ * The options with every key also under its handler spelling (`--add-json` and
+ * `add-json` as `addJson`), so host admission sees a mutation option however a
+ * harness caller spells it, as native dispatch sees Commander's parsed keys.
+ * Required-flag and value validation still run afterwards, in normalization.
+ */
+function foldOptionSpellings(options: Record<string, unknown>): Record<string, unknown> {
+  const folded: Record<string, unknown> = { ...options };
+  for (const [key, value] of Object.entries(options)) {
+    const handlerKey = resolveExtensionFlagOptionKey({ long: key.startsWith("-") ? key : `--${key}` });
+    if (handlerKey !== null && !Object.hasOwn(folded, handlerKey)) folded[handlerKey] = value;
+  }
+  return folded;
+}
+
 /** The universal output controls a caller can pass through `global`, by their `GlobalOptions` key. */
 const GLOBAL_OUTPUT_CONTROL_KEYS = [
   "outputInclude",
@@ -1238,7 +1254,7 @@ async function admitRegisteredOutputControls(
   await runWithIsolatedExtensionRuntime(async () => {
     // The attached object is the activation's full registration registry.
     setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
-    validateReadOutputOptions(command, { ...options, ...annotationPositionalMutationOptions(command, args), ...globalControls });
+    validateReadOutputOptions(command, { ...foldOptionSpellings(options), ...annotationPositionalMutationOptions(command, args), ...globalControls });
   });
 }
 

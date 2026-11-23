@@ -17,7 +17,7 @@ import { BUILTIN_FIELD_KEYS, type NormalizedAddFieldInput } from "../../core/sch
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { commanderOptionAttribute, resolveCandidateOptionKeys } from "../../core/schema/runtime-field-values.js";
-import { resolveRuntimeFieldRegistry, type RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
+import { normalizeCliToken, resolveRuntimeFieldRegistry, type RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
 import type { RuntimeFieldCommand, RuntimeFieldDefinition, RuntimeSchemaSettings } from "../../types/index.js";
 import { describeFieldFlagSpellingDefect, isShortFieldFlagSpelling as isShortSpelling } from "./field-flag-spelling.js";
 
@@ -232,9 +232,12 @@ export function assertFieldOptionsAvailable(field: NormalizedAddFieldInput): voi
   refuseFieldOptionCollisions(field.key, field.commands, resolveAddFieldOptionCollisions(field));
 }
 
-/** The same refusals for a stored definition a migration is about to write, such as a rename target. */
+/** The same refusals for a stored definition a migration or settings writer is about to write, such as a rename target. */
 export function assertFieldDefinitionOptionsAvailable(definition: RuntimeFieldDefinition): void {
-  // A definition the registry rejects resolves to nothing and so reports nothing here.
+  // A flag or alias that normalizes to nothing would make the registry drop the whole definition or the alias silently.
+  const raw = [definition.cli_flag, ...(Array.isArray(definition.cli_aliases) ? definition.cli_aliases : [])].filter((token): token is string => typeof token === "string");
+  refuseFieldFlagSpellingDefects(definition.key, raw.filter((token) => normalizeCliToken(token).length === 0).map((spelling) => ({ field: definition.key, spelling, reason: "is empty" })));
+  // A definition the registry rejects otherwise resolves to nothing and so reports nothing here.
   const resolved = resolveRuntimeFieldRegistry({ fields: [definition] } as RuntimeSchemaSettings).definitions;
   refuseFieldFlagSpellingDefects(definition.key, resolveFieldFlagSpellingDefects(resolved));
   refuseFieldOptionCollisions(definition.key, resolved.flatMap((entry) => entry.commands), resolveFieldOptionCollisions(resolved));

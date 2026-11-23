@@ -24,6 +24,9 @@ describe("settings writers share the custom field admission", () => {
       for (const [field, code] of [
         [{ key: "full", type: "string", commands: ["create", "list"] }, "schema_field_option_collision"],
         [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: ["full|deep"] }, "schema_field_flag_invalid"],
+        // A spelling that normalizes to nothing would drop the definition or alias silently (CodeRabbit review).
+        [{ key: "review_lead", type: "string", commands: ["list"], cli_flag: "--" }, "schema_field_flag_invalid"],
+        [{ key: "review_head", type: "string", commands: ["list"], cli_aliases: ["  "] }, "schema_field_flag_invalid"],
       ] as const) {
         for (const dryRun of [true, false]) {
           await expect(
@@ -36,6 +39,10 @@ describe("settings writers share the custom field admission", () => {
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "add-free", mutate: (current) => withFields(current, [...current.schema.fields, { key: "review_owner", type: "string", commands: ["create", "list"] } as InlineField]) }),
       ).resolves.toMatchObject({ changed: true });
+      // A JavaScript proposal that omits schema.fields resets the list, as settings validation allows (Codex review round 2).
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "omit-fields", dryRun: true, mutate: (current) => ({ ...current, schema: { ...current.schema, fields: undefined } }) as unknown as PmSettings }),
+      ).resolves.toMatchObject({ dry_run: true });
     });
   });
 

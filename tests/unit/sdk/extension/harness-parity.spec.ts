@@ -168,12 +168,21 @@ describe("extension test harness parity with native dispatch", () => {
       api.registerCommand({ name: "probe-read", read_output: { row_keys: ["rows"] }, run: () => ({ rows: [] }) });
       // An extension that extends a native hybrid surface keeps that surface's mutation refusal.
       api.registerCommand({ name: "comments", run: () => ({ comments: [] }) });
+      api.registerFlags("notes", [{ long: "--add-json", value_type: "string" }]);
+      api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
     });
-    for (const invocation of [{ global: { outputLimit: "1" } }, { options: { output_budget: "5" } }, { global: { outputRowContract: true } }]) {
+    // Dashed host-control spellings are admitted too (CodeRabbit review).
+    for (const invocation of [{ global: { outputLimit: "1" } }, { options: { output_budget: "5" } }, { options: { "--output-limit": "5" } }, { global: { outputRowContract: true } }]) {
       await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-plain", ...invocation })).rejects.toMatchObject({
         exitCode: 2,
         message: "Universal output controls apply only to read commands; probe-plain is not a read surface.",
         context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
+      });
+    }
+    // A mutation option is recognized however the caller spells it (Codex review round 2); an unfoldable key passes through.
+    for (const key of ["--add-json", "add-json"]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { [key]: "{}", "-t": "x" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
       });
     }
     // Host controls are admitted before extension flags, as natively: a missing required flag does not mask the refusal.

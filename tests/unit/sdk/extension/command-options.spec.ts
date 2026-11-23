@@ -640,8 +640,8 @@ describe("argv order of repeatable switch occurrences (pm-g2zzus)", () => {
     const loose = parseLooseCommandOptions(["--label=a"]);
     expect(orderArgvRepeatableSwitchOccurrences(loose, [leaf(["--label=a"])], definitions)).toBe(loose);
     expect(orderArgvRepeatableSwitchOccurrences(loose, [leaf(["--many"])], [{ long: "--label", value_type: "string", list: true }])).toBe(loose);
-    // A source without recorded occurrences (a direct caller's plain options) still gets the scanned ones.
-    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, definitions, orderArgvRepeatableSwitchOccurrences({}, [leaf(["--many=0", "--many"])], definitions), "demo")).toMatchObject({ many: [false, true] });
+    // Loose values come only from the loose parser: when it recorded none for a slot the scan saw, every value it has is kept.
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, definitions, orderArgvRepeatableSwitchOccurrences({}, [leaf(["--many=0", "--many"])], definitions), "demo")).toMatchObject({ many: [true] });
     // Other recorded occurrences survive the reordering.
     const mixed = parseLooseCommandOptions(["--label=a", "--many=false"]);
     const ordered = orderArgvRepeatableSwitchOccurrences(mixed, [leaf(["--label=a", "--many=false", "--many"])], definitions);
@@ -664,9 +664,31 @@ describe("argv order of repeatable switch occurrences (pm-g2zzus)", () => {
     expect(() => coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, strict, orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["--Many=invalid"]), [leaf(["--many", "--Many=invalid"])], strict), "demo")).toThrow(PmCliError);
   });
 
+  it("keeps the loose parser's value, which reads the tokens Commander left (Codex review round 2)", () => {
+    // Commander consumes --from-tracker x, so the loose parser reads --Many false from the leftovers.
+    const tokens = ["--many", "--Many", "--from-tracker", "x", "false"];
+    const loose = parseLooseCommandOptions(["--Many", "false"]);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true], fromTracker: "x" }, definitions, orderArgvRepeatableSwitchOccurrences(loose, [leaf(tokens)], definitions), "demo").many).toEqual([true, false]);
+    // An ancestor never folds a spelling it did not register: only the leaf's loose parser reads it.
+    const parent = leaf(["child", "--Many=false"], { includesLooseFlags: false, optionOf: () => undefined });
+    expect(orderedValues(["--many", "--Many=false"], [parent, leaf(["--many", "--Many=false"])])).toEqual([true, false]);
+  });
+
+  it("leaves a registered short group to Commander instead of folding it (Greptile and CodeRabbit review)", () => {
+    const grouped = [
+      { long: "--many", short: "-m", value_type: "boolean", repeatable: true, list: true },
+      { long: "--mm", value_type: "boolean", repeatable: true, list: true },
+    ];
+    const registered = new Map<string, { arity: "none"; key: string }>([["--many", { arity: "none", key: "many" }], ["-m", { arity: "none", key: "many" }], ["--mm", { arity: "none", key: "mm" }]]);
+    const tokens = ["-mm", "--many=false"];
+    const source = orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["--many=false"]), [leaf(tokens, { optionOf: (spelling) => registered.get(spelling) })], grouped);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true, true] }, grouped, source, "demo")).toMatchObject({ many: [true, true, false] });
+  });
+
   /** The values the reordered occurrences deliver for --many, through the shared coercer. */
   function orderedValues(tokens: string[], scopes: ArgvOptionScope[] = [leaf(tokens)]): unknown {
-    const loose = parseLooseCommandOptions(tokens.filter((token) => token.includes("=")));
+    // The loose parser reads the tokens Commander leaves: here every spelling Commander did not register.
+    const loose = parseLooseCommandOptions(tokens.filter((token) => !REGISTERED.has(token)));
     return coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, definitions, orderArgvRepeatableSwitchOccurrences(loose, scopes, definitions), "demo").many;
   }
 });
