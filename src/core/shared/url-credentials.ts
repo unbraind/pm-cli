@@ -328,13 +328,91 @@ export function invocationCarriesUrlCredentials(): boolean {
   return (invocations.getStore() ?? NO_INVOCATION).carried;
 }
 
+/** Most words after the opening word that one whitespace-bearing userinfo may span. */
+const SPACED_USERINFO_MAX_WORDS = 16;
+/** Most code units one whitespace-bearing userinfo span may cover after its opening word. */
+const SPACED_USERINFO_MAX_LENGTH = 512;
+
+/**
+ * Whether a word opens a URL authority whose userinfo may go on past
+ * whitespace (GH-1773): it holds no `@` or `%40` (the word rule judges such a
+ * word whole), its first `:` is followed by one or two authority slashes, and
+ * the authority after them holds no path, is no bracketed IPv6 host, and holds
+ * a `:` that port digits alone never follow (`user:pass`, `user:`), as in
+ * `https://user:pass words@host`, which URL parsers read as userinfo with a
+ * spaced password. A `host:port` authority and a plain host never open one, so
+ * prose such as `https://example.com and ping @bob` is left alone.
+ */
+function opensSpacedUserinfo(word: string): boolean {
+  if (/@|%40/iu.test(word)) return false;
+  const colon = word.indexOf(":");
+  if (colon < 0) return false;
+  let start = colon + 1;
+  while (start < word.length && start < colon + 3 && (word[start] === "/" || word[start] === "\\")) start += 1;
+  if (start === colon + 1) return false;
+  const authority = word.slice(start);
+  if (authority.startsWith("[") || /[/\\]/u.test(authority)) return false;
+  const separator = authority.lastIndexOf(":");
+  return separator >= 0 && !/^\d+$/u.test(authority.slice(separator + 1));
+}
+
+/**
+ * Where a whitespace-bearing userinfo opened by the word ending at `from`
+ * ends: after the first later word that holds an `@` or `%40`, or -1 when
+ * none does before another URL, the end of the text or the word and length
+ * bounds. Line breaks and tabs count as blanks here, because URL parsers drop
+ * them (`https://user:pass` then `word@host` on the next line still parses as
+ * userinfo).
+ */
+function spacedUserinfoEnd(text: string, from: number): number {
+  // Every scan stops at the length bound, so one opening word costs at most that many steps.
+  const limit = Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH);
+  let index = from;
+  for (let words = 0; words < SPACED_USERINFO_MAX_WORDS; words += 1) {
+    let start = index;
+    while (start < limit && /\s/u.test(text[start]!)) start += 1;
+    let end = start;
+    while (end < limit && !/\s/u.test(text[end]!)) end += 1;
+    // A word the bound cuts, or no word at all, ends the search.
+    if (end === start || (end === limit && limit < text.length)) return -1;
+    const word = text.slice(start, end);
+    if (/@|%40/iu.test(word)) return end;
+    if (/:[/\\]/u.test(word)) return -1;
+    index = end;
+  }
+  return -1;
+}
+
+/**
+ * Join each URL whose userinfo holds blanks into one word before the word
+ * rule runs, so `https://user:pass words%40host/path` loses its whole userinfo
+ * instead of being judged as harmless-looking words (GH-1773). The joined span
+ * is redacted by {@link redactUrlCredentialsInToken}, so the blanks inside it
+ * fall in the removed span, exactly as for a single argv token.
+ */
+function redactSpacedUserinfo(text: string): string {
+  if (!/:[/\\]/u.test(text)) return text;
+  const word = /\S+/gu;
+  let result = "";
+  let cursor = 0;
+  for (let match = word.exec(text); match !== null; match = word.exec(text)) {
+    if (!opensSpacedUserinfo(match[0])) continue;
+    const end = spacedUserinfoEnd(text, match.index + match[0].length);
+    if (end === -1) continue;
+    result += `${text.slice(cursor, match.index)}${redactUrlCredentialsInToken(text.slice(match.index, end))}`;
+    cursor = end;
+    word.lastIndex = end;
+  }
+  return cursor === 0 ? text : `${result}${text.slice(cursor)}`;
+}
+
 /**
  * Apply {@link redactUrlCredentialsInToken} to every whitespace-delimited word
- * of free text, after removing the running invocation's registered
- * fragments.
+ * of free text, after removing the running invocation's registered fragments
+ * and joining each URL userinfo that holds blanks into one word.
  */
 export function redactUrlCredentialsInText(text: string): string {
   const invocation = invocations.getStore() ?? NO_INVOCATION;
   const redacted = invocation.carried ? removeRegisteredFragments(text, invocation) : text;
-  return /@|%40/iu.test(redacted) ? redacted.replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
+  return /@|%40/iu.test(redacted) ? redactSpacedUserinfo(redacted).replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
 }

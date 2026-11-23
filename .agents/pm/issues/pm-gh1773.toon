@@ -1,0 +1,36 @@
+id: pm-gh1773
+title: "GH-1773: refusal envelopes echo URL userinfo when it contains whitespace and a percent-encoded @ separator"
+description: "GH-1773 (filed 2026-11-23 from the pm-rust parity review, reproduced on the pinned pm-cli oracle; native and TS behave the same). A refusal envelope echoes an open blocker's title verbatim. When that title holds a URL whose userinfo contains whitespace and a percent-encoded @ (https://fixture:fake words%40example.invalid/path), the userinfo is not masked: pm start-task sample-one --json refused by that blocker prints 'fixture:fake words'. Expected: credential-shaped URL userinfo is masked in every refusal and diagnostic projection, whitespace-bearing userinfo and an encoded separator included, matching the masking of plain user:pass@host; plain masking unchanged. Duplicate check: searched redaction URL userinfo whitespace percent-encoded separator refusal envelope; pm-gh1707 (closed) fixed public-URL @-in-path over-redaction and claim-refusal echoes, pm-nhauur and pm-5htunt (closed) cover other echo surfaces, none covers whitespace plus encoded separators."
+type: Issue
+status: in_progress
+priority: 2
+tags[5]: agent-ux,"gh:1773",privacy,redaction,security
+created_at: "2026-11-23T17:23:25.235Z"
+updated_at: "2026-11-23T21:44:48.291Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#8236d322061fd32d87fda357"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A redaction corpus case covers whitespace in userinfo with a percent-encoded separator, applied to refusal envelopes, diagnostics and JSON and TOON output; Plain user:pass@host masking and public URLs with @ in the path are unchanged"
+parent: pm-qwoy
+risk: medium
+confidence: high
+reporter: unbraind
+severity: medium
+expected_result: Credential-shaped URL userinfo is masked in refusals and diagnostics whatever whitespace or encoding it carries
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1707,related,"2026-11-23T17:23:25.235Z","harness:claude-code","cli:create:dep",detected
+  pm-5htunt,related,"2026-11-23T17:23:48.238Z","harness:claude-code","cli:update:dep",detected
+  pm-nhauur,related,"2026-11-23T17:23:48.238Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-23T21:44:48.289Z","harness:claude-code","Root cause and fix (2026-11-23): redactUrlCredentialsInText judged each whitespace-delimited word alone, so a stored title holding a URL whose password contains a blank split into a scheme word with a colon but no at sign and a host word with an at sign (or its percent escape) but no colon; neither word matched the token rule. The plain at-sign form leaked the same way, not only the encoded one, and Node's WHATWG URL parser reads that spelling as userinfo with a spaced password. Fix in src/core/shared/url-credentials.ts: before the word rule, a word with no at sign that opens a URL authority with a user-colon prefix (scheme, one or two slashes, a colon that port digits alone never follow, no path, no bracketed IPv6 host) is joined across any whitespace with the later words up to the first that holds an at sign or its escape, within 16 words and 512 code units and before another URL starts, and the joined span goes through redactUrlCredentialsInToken. Line breaks and tabs count as blanks because URL parsers drop them. Host-and-port and plain-host prose before a later at sign stays intact. Every outbound surface (refusal guidance in JSON and text, telemetry sanitizeString, Sentry scrubbing) already routes free text through this one function. Verified end to end in a sandbox: a start-task refusal gated by such a blocker now prints the scheme, the placeholder and the host only, in JSON and TOON output."
+files[3]{path,scope}:
+  src/core/shared/url-credentials.ts,project
+  tests/integration/cli/credential-redaction.integration.spec.ts,project
+  tests/unit/core/shared/url-credentials.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts,project,600,"harness:claude-code","2026-11-23T21:44:37.088Z",local_mutation,fix/secret-guard-string-boundaries-spaced-userinfo
+docs[2]{path,scope}:
+  docs/MUTATION_INTEGRITY.md,project
+  docs/SDK.md,project
+body: ""

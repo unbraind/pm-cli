@@ -134,6 +134,35 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(redactUrlCredentialsInText("one\thttps://t@h/x\ntwo")).toBe("one\thttps://[redacted]@h/x\ntwo");
   });
 
+  it.each([
+    ["an encoded at sign (GH-1773)", "blocked by https://fixture:fake words%40example.invalid/path today", "blocked by https://[redacted]%40example.invalid/path today"],
+    ["a plain at sign", "https://fixture:fake words@example.invalid/path", "https://[redacted]@example.invalid/path"],
+    ["several blanks and words", "https://user:pa ss wo rd@host/x", "https://[redacted]@host/x"],
+    ["a blank right after the separator", "https://user: pass@host", "https://[redacted]@host"],
+    ["a tab", "a https://user:p\tq@host b", "a https://[redacted]@host b"],
+    ["a line break, which URL parsers drop", "https://user:pass\nword@host", "https://[redacted]@host"],
+    ["a non-special scheme", "git+ssh://u:p w%40h:repo", "git+ssh://[redacted]%40h:repo"],
+    ["two URLs in one text", "https://u:p w%40h/x https://a:b c@d", "https://[redacted]%40h/x https://[redacted]@d"],
+  ])("removes URL userinfo that holds whitespace across words: %s", (_case, text, expected) => {
+    expect(redactUrlCredentialsInText(text)).toBe(expected);
+    expect(redactUrlCredentialsInText(expected)).toBe(expected);
+  });
+
+  it.each([
+    ["a host and port before prose", "https://example.com:8080 ping @bob"],
+    ["a plain host before prose", "see https://example.com and ping @bob"],
+    ["a bracketed IPv6 host", "https://[::1] x@y"],
+    ["an authority with a path", "https://user:pass/x more@words"],
+    ["another URL before the at sign", "https://user:pass w https://x/ y@z"],
+    ["no at sign after the opening word", "x https://user:pass word"],
+    ["more words than the bound", `https://u:p ${"a ".repeat(16)}r@h`],
+    ["a span longer than the bound", `https://u:p ${"a".repeat(600)}@h`],
+    ["a blank run longer than the bound", `https://u:p ${" ".repeat(600)}x@h`],
+    ["slashes not at the scheme separator", "user:pass words@host"],
+  ])("leaves text alone when no whitespace-bearing userinfo opens: %s", (_case, text) => {
+    expect(redactUrlCredentialsInText(text)).toBe(text);
+  });
+
   it("removes a registered whitespace-bearing span in any case, layout, shell or JSON escaping", () => {
     const token = 'https://U:my "pass\\$x\tmore@localhost/x';
     runWithUrlCredentialInvocation(["package", "install", token, "https://user@host/x"], () => {

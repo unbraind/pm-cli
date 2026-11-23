@@ -1,0 +1,35 @@
+id: pm-gh1775
+title: "GH-1775: the secret guard flags bare environment-variable references (api_key: ${API_KEY}) as credentials since the #1704 widening"
+description: "GH-1775 (filed 2026-11-23 while moving the extension package pm-memory to 2026.11.23; draft unbraind/pm-memory#96 is blocked on it). Since the credential-key guard widened beyond password (pm-gh1704), scanMutationSecrets reports credential_key_assignment for a value made only of a reference under a credential key: scanMutationSecrets(JSON.stringify({ title: 'api_key: ${API_KEY}', updated: '2026-11-23T00:00:00.000Z' })) returns [] on 2026.11.14 and a credential_key_assignment finding on 2026.11.23. A reference names where a secret lives and holds no secret value, so trackers that document configuration (api_key: ${API_KEY}, token=$GITHUB_TOKEN) have their mutations refused. pm-hw00c2 (closed) made CREDENTIAL_VALUE capture a value that holds a run-time reference whole and judge the literal left after expansion; a bare reference leaves no literal, so whether it should still match is the question this item settles. Expected: a value made only of a reference (${NAME}, $NAME, ${{ secrets.NAME }} and similar) is not a credential under any credential key; a reference with an attached literal or a literal value is still flagged. Duplicate check: searched secret guard environment variable reference credential key bare reference; pm-hw00c2, pm-ycgb5g and pm-gh1704 are closed and own the literal-concatenation and key-widening rules."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: agent-ux,"gh:1775",regression,secret-guard,security
+created_at: "2026-11-23T17:23:32.952Z"
+updated_at: "2026-11-23T21:51:17.775Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#8236d322061fd32d87fda357"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Bare references under api_key, client_secret, token, secret and password produce no finding in JSON, YAML, dotenv, XML and quoted-key forms; Attached literals and literal values are still flagged; A corpus test pins both sides, with the 2026.11.23 behaviour as the negative control"
+parent: pm-qwoy
+risk: medium
+confidence: high
+reporter: unbraind
+severity: high
+expected_result: Reference-only configuration values pass the secret guard while literal credentials stay refused
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1704,related,"2026-11-23T17:23:32.952Z","harness:claude-code","cli:create:dep",detected
+  pm-hw00c2,related,"2026-11-23T17:23:32.952Z","harness:claude-code","cli:create:dep",detected
+  pm-ycgb5g,related,"2026-11-23T17:23:50.377Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-23T21:30:49.227Z","harness:claude-code","Root cause (2026-11-23, reproduced on the 2026.11.23 build and compared with 2026.11.14 in a scratch prefix): the false positive needs a SIBLING member after the string that holds the assignment. With the title alone the scan is clean; with any later member it flags. The flat scan reads the serialized JSON text, and both key-named value grammars (credential_key_assignment and password_assignment) read a quoted piece after a reference as a shell concatenation. So the closing quote of the enclosing JSON string, the comma and the next key's opening quote form a quoted piece whose body is only a comma, and the literal judged after reference expansion becomes comma + next key + colon + next value. A 588-case grid (7 keys x 7 reference spellings x 12 forms) measured 98 false positives on main: braced, defaulted and angle references in compact JSON text, arrays, nested objects and Python-repr text for every key, plus password with a bare dollar-name or command reference in the same forms (wordComplete treats any quote after an unquoted value as a possible concatenation, so the dollar-name stays literal), plus password with a bare Windows percent-name in every form (flagged on 2026.11.14 too; the credential-key rule already treats it as a placeholder). Fix plan: a quoted piece whose body is only JSON structure punctuation is a string boundary, never a concatenated piece, in both grammars; wordComplete treats the same boundary after an unquoted value as the end of its word; a whole-value percent-name is a reference for every key-named rule."
+  "2026-11-23T21:51:17.774Z","harness:claude-code","Decision note (2026-11-23): two pins from the pm-hw00c2 review loop (Codex round 10) are reversed on purpose. They kept a CONSTANT_CASE dollar-name literal whenever any quote followed an unquoted password value, even where that quote closes the enclosing string (a JSON array element followed by a sibling, and a JSON member value ending the object), and a cut-reference linear-time input counted one finding for the same reason. GH-1775 requires those JSON forms to be clean. The new rule (closesEnclosingString) ends the word only when the quote is followed by blanks and a line break or the end of the text, or by JSON structure, optional blanks and the next member or element; the Codex round 10 passphrase case (a quote followed by a space and words) still keeps the variable literal and is still reported. The differential over 3,952 cases against the published 2026.11.23 bundle gained no finding; every lost finding is a bare reference, a whole-value percent name, or the residual (19) shape recorded on pm-jcz7qz."
+files[2]{path,scope}:
+  src/core/shared/secret-rules.ts,project
+  tests/unit/sdk/security/secret-guard-string-boundaries.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security,project,600,"harness:claude-code","2026-11-23T21:44:27.654Z",local_mutation,fix/secret-guard-string-boundaries-spaced-userinfo
+docs[1]{path,scope}:
+  docs/MUTATION_INTEGRITY.md,project
+body: ""

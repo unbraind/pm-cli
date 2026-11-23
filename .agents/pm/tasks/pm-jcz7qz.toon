@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: adversarial,assurance,redaction,secret-guard,security
 created_at: "2026-11-12T14:41:22.089Z"
-updated_at: "2026-11-17T17:45:59.561Z"
+updated_at: "2026-11-23T21:45:34.119Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A declared adversarial corpus with a measured escape rate exists for credential_key_assignment and URL-userinfo redaction; Escaped JSON literals are judged for entropy on their decoded original value; Env-style lines with an all-caps key detect unquoted credentials holding ? : or | without re-flagging code"
@@ -15,14 +15,16 @@ risk: medium
 confidence: medium
 expected_result: "New credential spellings are found by measurement, not by review rounds"
 actual_result: Each review round found a new exotic spelling
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-1l85at,related,"2026-11-12T14:41:22.089Z","harness:claude-code","cli:create:dep",detected
   pm-gh1704,discovered_from,"2026-11-12T14:41:22.089Z","harness:claude-code","cli:create:dep",detected
   pm-gh1707,related,"2026-11-12T14:41:22.089Z","harness:claude-code","cli:create:dep",detected
   pm-3fbj1f,related,"2026-11-17T00:45:03.324Z","harness:claude-code","cli:update:dep",detected
   pm-hw00c2,related,"2026-11-17T00:45:03.324Z","harness:claude-code","cli:update:dep",detected
   pm-ycgb5g,related,"2026-11-17T00:45:03.324Z","harness:claude-code","cli:update:dep",detected
-comments[11]:
+  pm-gh1773,related,"2026-11-23T21:45:32.032Z","harness:claude-code","cli:update:dep",detected
+  pm-gh1775,related,"2026-11-23T21:45:32.032Z","harness:claude-code","cli:update:dep",detected
+comments[12]:
   - created_at: "2026-11-17T00:41:32.325Z"
     author: "harness:claude-code"
     text: "Residuals for the adversarial corpus, from the pm-ycgb5g and pm-3fbj1f review loop (Codex rounds 1 to 3, 2026-11-17). (1) password_assignment follows references nested one level in an unquoted value. A literal default nested three or more levels deep (password=${A:-${B:-${C:-<literal>}}}), or a literal after such a reference, is missed in the flat and quoted-key spellings, while quoted values and elements follow any depth through expandRuntimeReferences. Closing it needs a code tokenizer in place of the declared regex value grammar. (2) An unquoted password value may hold at most four whitespace-free quoted pieces; a literal spread over more pieces is missed. That bound keeps each structured scan to a few later keys. (3) A bare $VAR is still read as literal text by password_assignment and as a reference by credential_key_assignment; pm-hw00c2 owns aligning the two.\n"
@@ -57,4 +59,7 @@ comments[11]:
   - created_at: "2026-11-17T17:45:59.560Z"
     author: "harness:claude-code"
     text: "Residual (16), from Codex review round 34 on PR 1746: some credential-key exclusion patterns (hyphenated words, paths, unquoted member chains) still exhaust the regex stack on values of millions of characters, as they already did in 2026.11.17. Since PR 1746 such a value fails closed for itself (reported under the rule with normalization_incomplete) instead of failing the whole scan open. Making those exclusions stack-safe, for example by scanning them in code, would remove the review noise for such values."
+  - created_at: "2026-11-23T21:45:30.751Z"
+    author: "harness:claude-code"
+    text: "Residuals (17) to (20), from the pm-gh1775 and pm-gh1773 work (2026-11-23); main behaves the same or worse in each. (17) In serialized JSON text, a credential-key literal attached to a dollar-name reference behind an ESCAPED quote (the JSON spelling of a shell concatenation inside a string value) is not judged: the flat grammar reads raw text, where the backslash ends the value, and the structured pass judges only quoted-key values. The 2026.11.23 build misses it too. (18) Prose that quotes a whole password assignment ending in a CONSTANT_CASE dollar-name, followed by a space and more prose, is still reported by password_assignment, because a quote then a spaced word may open a shell piece holding a passphrase; only a quote followed by a line break, the end of the text, or JSON structure and the next member ends the word. Flagged on 2026.11.14 as well. (19) A structure-only quoted piece (comma, colon, braces, brackets) followed by a string that closes on the same line is now a string boundary in both key-named grammars, so a deliberate shell concatenation of a reference, a quoted comma and a quoted literal is not reported; the same text without the closing quote still is. (20) URL userinfo that holds whitespace is joined across words only when the opening word carries a user-colon prefix (a colon that port digits alone never follow) and the at sign or its escape follows within 16 words and 512 code units; a whitespace-bearing bare token and a numeric password that looks like a port are still split."
 body: ""

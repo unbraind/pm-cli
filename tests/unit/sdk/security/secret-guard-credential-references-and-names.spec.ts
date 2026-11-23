@@ -428,10 +428,13 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // Greptile: structure followed by more word text is still one shell word.
     expect(textRules(`${passwordKey}="$PW_PREFIX"],${literal}`)).toEqual(["password_assignment"]);
     // Codex round 10: a quote after an unquoted value may open a concatenated piece, so
-    // the variable keeps main's literal reading, even where the quote closes a string.
+    // the variable keeps main's literal reading when a spaced word follows the quote.
     expect(textRules(`${passwordKey}=$DB_PASSWORD" correct horse battery staple"`)).toEqual(["password_assignment"]);
-    expect(textRules(`["${passwordKey}=$DB_PASSWORD"], "next"`)).toEqual(["password_assignment"]);
-    expect(textRules(`{"cmd": "${passwordKey}=$DB_PASSWORD"}`)).toEqual(["password_assignment"]);
+    // GH-1775: a quote that JSON structure and the next member, or the end of the
+    // text, follow closes the string the assignment sits in, so the bare variable is
+    // the whole value.
+    expect(textRules(`["${passwordKey}=$DB_PASSWORD"], "next"`)).toEqual([]);
+    expect(textRules(`{"cmd": "${passwordKey}=$DB_PASSWORD"}`)).toEqual([]);
     // Codex round 8: literal punctuation after the variable is part of its word.
     expect(await gateRules(`${passwordKey}=$DB_PASSWORD/++//++/`)).toEqual(["password-assignment"]);
     expect(textRules(`${passwordKey}=$DB_PASSWORD/++//++/`)).toEqual(["password_assignment"]);
@@ -504,8 +507,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // The repeated default word is one concatenated value; in the last input a
     // variable after literal text stays literal, so each `"a"$X"token"` spells eight characters.
     // The long angle-name and literal-type inputs are placeholders followed by a credential. In the
-    // cut-reference input no opener ever closes, so the inner variable keeps main's literal reading.
-    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999, 1, 1, 1]);
+    // cut-reference input no opener ever closes; the inner variable ends at the quote that closes the
+    // text (GH-1775), so it is a bare reference and nothing is reported.
+    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999, 1, 1, 0]);
   });
 });
 

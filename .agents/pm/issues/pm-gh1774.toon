@@ -1,0 +1,22 @@
+id: pm-gh1774
+title: "GH-1774: parity review findings: cmd.exe-unsafe recovery commands, a claim with unreadable history reported as active, and a release after a force-claim clears the replacement holder"
+description: "GH-1774 (filed 2026-11-23 from the pm-rust parity review; the Rust port reproduces each byte for byte and waits for pm-cli's decision). (1) A Windows recovery command for a tracker path containing %TRACKER% (pm --pm-path \"C:\\repo\\%TRACKER%\\pm\" get item-1) is not safe to paste into cmd.exe, which expands %VAR% inside double quotes, so a pasted recovery can target another tracker; expected: escape % for cmd.exe or state that the command is for PowerShell only. pm-kjoudp (open) owns the PowerShell side of the same paste-safety contract. (2) Claiming an item whose holder's history is unreadable reports the holder as 'active under mutation_guard.stale_in_progress_hours=72' although activity could not be judged; expected: a distinct activity-unknown holder state. (3) After close, a force-claim by a second holder, then a release by the original holder clears the replacement holder (warn policy, with ownership_warning:assignee_conflict; strict policy with --force); expected: a release that ends a close releases only the holder that close ended. Duplicate check: searched cmd.exe recovery percent expansion, claim unreadable history activity unknown, release after force claim replacement holder; only pm-kjoudp overlaps (PowerShell quoting)."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,concurrency,"gh:1774",recovery,windows
+created_at: "2026-11-23T17:23:27.678Z"
+updated_at: "2026-11-23T17:23:27.678Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Windows recovery commands are paste-safe in cmd.exe (percent expansion neutralized) or explicitly declared PowerShell-only, with a rendering test for a %VAR% path; A holder whose activity cannot be judged is reported with a distinct activity-unknown state in claim refusals; Releasing as the holder a close ended never clears a replacement holder under either ownership policy"
+parent: pm-dj98
+risk: medium
+confidence: medium
+reporter: unbraind
+severity: medium
+expected_result: "Recovery commands, holder activity and release ownership each behave as the parity review expects"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1706,related,"2026-11-23T17:23:27.678Z","harness:claude-code","cli:create:dep",detected
+  pm-kjoudp,related,"2026-11-23T17:23:27.678Z","harness:claude-code","cli:create:dep",detected
+body: ""

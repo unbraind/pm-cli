@@ -258,7 +258,22 @@ const PASSWORD_PIECE = String.raw`${PASSWORD_REFERENCE}|<[^<>\r\n]*>|${maximalRu
 // (`"$(op read "item")"` captures `"$(op read "`); a reference that opens the
 // piece and is cut there contributes nothing (see literalAfterReferences).
 const PASSWORD_QUOTED = String.raw`"[^"]*"|'[^']*'`;
-const PASSWORD_QUOTED_PIECE = String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${PASSWORD_PIECE}){0,${PASSWORD_REPEAT_BOUND}}`;
+// GH-1775: a quote, a run of JSON structure only, a quote, and a string that
+// closes on the same line (`","updated"`, `":"x"`, `"},{"c"`, `','u'` in a
+// Python repr) is the closing quote of the string a value sits in, its
+// separators and the next string, never a quoted piece concatenated to the
+// value. Serialized JSON text holds `{"title":"api_key: ${API_KEY}","updated":…}`,
+// where reading `","` as a piece judged the next member's key and value as
+// the reference's literal. A run that no closed string follows
+// (`${EMPTY}","<literal>` ending the text) is still a piece. Each run ends at
+// the next quote, and both the run and the string read after it are bounded,
+// so the look-ahead stays linear.
+const JSON_STRUCTURE_RUN = String.raw`[,:{}[\]]{1,64}`;
+const notStringBoundary = (quote: "\"" | "'"): string =>
+  String.raw`(?!${JSON_STRUCTURE_RUN}${quote}[^${quote}\r\n]{0,${PASSWORD_REPEAT_BOUND}}${quote})`;
+/** One whitespace-free quoted piece that is not a string boundary (see JSON_STRUCTURE_RUN). */
+const QUOTED_PIECE_OPEN = String.raw`"${notStringBoundary("\"")}[^"\s]*"|'${notStringBoundary("'")}[^'\s]*'`;
+const PASSWORD_QUOTED_PIECE = String.raw`(?:${QUOTED_PIECE_OPEN})(?:${PASSWORD_PIECE}){0,${PASSWORD_REPEAT_BOUND}}`;
 const PASSWORD_VALUE = new RegExp(
   String.raw`(?!config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))`
     + `((?:${PASSWORD_PIECE}){1,${PASSWORD_REPEAT_BOUND}}(?:${PASSWORD_QUOTED_PIECE}){0,${PASSWORD_QUOTED_PIECES}}`
@@ -336,7 +351,7 @@ const CREDENTIAL_REFERENCE = String.raw`\$\{(?:${maximalRun(String.raw`[^{}$'"\\
   + String.raw`|<[^<>\s]*>|\$[A-Za-z_]\w*(?!\w)`;
 const credentialPiece = (run: string): string => String.raw`${CREDENTIAL_REFERENCE}|${maximalRun(run)}|${CREDENTIAL_AMPERSAND}|\$(?![{(A-Za-z_])`;
 const credentialQuotedPiece = (run: string): string =>
-  String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}`;
+  String.raw`(?:${QUOTED_PIECE_OPEN})(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}`;
 const credentialReferenced = (run: string): string =>
   String.raw`(?:(?:${run}|${CREDENTIAL_AMPERSAND}){1,${CREDENTIAL_LEADING_LITERAL}}(?=[$<]))?(?:${CREDENTIAL_REFERENCE})`
   + String.raw`(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}(?:${credentialQuotedPiece(run)}){0,${PASSWORD_QUOTED_PIECES}}`;
@@ -350,7 +365,7 @@ const credentialUnquoted = (build: (run: string) => string): string => String.ra
 // code (`"<literal>".trim()`, `"${KEY}".toUpperCase()`, `"${KEY}"!.length`,
 // `"${KEY}"^mask`, `"Bearer"+value`) and stays a quoted value.
 const CREDENTIAL_CONCATENATION_CONTINUES = String.raw`(?:[\w@#~]|!(?![.+\-*/%=^!(]))`;
-const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:"[^"\s]*"|'[^'\s]*')[$<"']`
+const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:${QUOTED_PIECE_OPEN})[$<"']`
   + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"${CREDENTIAL_CONCATENATION_CONTINUES}|'(?=[^'\s]*[$<])[^'\s]*'${CREDENTIAL_CONCATENATION_CONTINUES})`;
 // A quoted body that holds a reference opener is captured whole up to its closing quote.
 const CREDENTIAL_QUOTED_REFERENCED = String.raw`(?<=")(?=[^"\s]*[$<])[^"\s]+|(?<=')(?=[^'\s]*[$<])[^'\s]+`;
@@ -991,8 +1006,9 @@ const STRUCTURE_RUN = /^[;,)}\]]{0,64}/u;
  * comes after it. Any other text after the match (`$PW:literal`, `$PW[literal`,
  * `$PW,"literal"`, `"$PW""literal"`) is part of the same word. So is a quote
  * after an unquoted value, which may open a concatenated piece
- * (`$PW" spaced literal"`) as well as close an enclosing string. In either
- * case the value is not known to be a bare or leading variable, and its
+ * (`$PW" spaced literal"`) as well as close an enclosing string, unless what
+ * follows it shows that it closes that string (see closesEnclosingString). In
+ * either case the value is not known to be a bare or leading variable, and its
  * `$NAME` text stays literal. The look-ahead is bounded, so judging stays
  * linear.
  */
@@ -1012,7 +1028,7 @@ function wordComplete(match: RegExpMatchArray): boolean {
   // Inside a command substitution, shell control operators and redirections end a word too (`--password=$PW|filter`, `$PW>/dev/null`).
   // (The end of the input has already returned above, so a character stands at `start`.)
   if (INNER_SHELL_MATCHES.has(match) && /[|&;<>]/u.test(input[start]!)) return true;
-  if (closed === -1) return false;
+  if (closed === -1) return closesEnclosingString(input, end);
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
   // comma and a quoted piece continue the shell word (`password="$PW","…"`).
@@ -1059,6 +1075,32 @@ const BARE_SCALAR_MEMBER = /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;
+/** One character of a JSON structure run (see JSON_STRUCTURE_RUN). */
+const JSON_STRUCTURE = /[,:{}[\]]/u;
+
+/**
+ * Whether the quote at `at`, directly after an unquoted value, closes the
+ * string the value sits in (GH-1775). It does when only blanks and then a line
+ * break or the end of the text follow it (the last member of pretty-printed
+ * JSON, or a quoted assignment ending the text), or when a bounded run of JSON
+ * structure, optional blanks and then the next member or element follow
+ * (`$PW","x"`, `$PW"},{"y"`, `$PW', 'x'` in a Python repr): the value grammar
+ * never reads that boundary as a quoted piece. Any other text after the quote,
+ * including another quote (`$PW""literal`) or a space and a word
+ * (`$PW" spaced literal"`), may still continue the word.
+ */
+function closesEnclosingString(input: string, at: number): boolean {
+  if (!isQuote(input[at])) return false;
+  const structureEnd = Math.min(input.length, at + 1 + WORD_END_BOUND);
+  let index = at + 1;
+  while (index < structureEnd && JSON_STRUCTURE.test(input[index]!)) index += 1;
+  const structured = index > at + 1;
+  const blanksEnd = Math.min(input.length, index + WORD_END_BOUND);
+  while (index < blanksEnd && (input[index] === " " || input[index] === "\t")) index += 1;
+  if (index === input.length || LINE_BREAK.test(input[index]!)) return true;
+  const next = input.slice(index, index + 40);
+  return structured && (NEXT_MEMBER.test(next) || BARE_SCALAR_MEMBER.test(next));
+}
 
 /** A call's opening parenthesis, after at most a short run of whitespace (`getToken ()`). */
 const CALL_AFTER = /^\s{0,16}\(/u;
@@ -1455,6 +1497,15 @@ const CONSTANT_NAME = /^_*[A-Z][A-Z0-9_]*$/u;
 const BARE_VARIABLE = /^\$[A-Za-z_]\w*$/u;
 /** A text value that is one `$name` reference inside one pair of quote delimiters. */
 const QUOTED_BARE_VARIABLE = /^(["'])\$[A-Za-z_]\w*\1$/u;
+/**
+ * A value that is one Windows `%NAME%` reference and nothing else, bare or
+ * inside one pair of quote delimiters (GH-1775). The credential-key grammar
+ * never reads one as a value; every other key-named rule judges it a
+ * placeholder through this check, so a password key whose whole value is a
+ * percent-delimited variable name is clean.
+ */
+const BARE_PERCENT_VARIABLE = /^%[A-Za-z_]\w*%$/u;
+const QUOTED_BARE_PERCENT_VARIABLE = /^(["'])%[A-Za-z_]\w*%\1$/u;
 
 /**
  * Consume a `$NAME` reference at `index`; returns the next index, or -1 when
@@ -1609,6 +1660,7 @@ function expandWords(text: string, rootQuotesAreSyntax: boolean, variables: bool
   // A bare `$name` is a reference whatever its case, because it is the whole
   // value; judged on the source, so a concatenation never reads as one name.
   if (variables && (BARE_VARIABLE.test(text) || (rootQuotesAreSyntax && QUOTED_BARE_VARIABLE.test(text)))) return "";
+  if (variables && (BARE_PERCENT_VARIABLE.test(text) || (rootQuotesAreSyntax && QUOTED_BARE_PERCENT_VARIABLE.test(text)))) return "";
   const root: ReferenceFrame = { close: "}", keep: true, raw: "", literal: "" };
   const frames: ReferenceFrame[] = [root];
   for (let index = 0; index < text.length; ) index = expandStep(text, index, frames, rootQuotesAreSyntax, variables);

@@ -281,3 +281,26 @@ it("keeps public URLs with an at sign in the path intact in refusals and retries
     expect(recovery.suggested_retry).toContain(publicUrl);
   });
 }, 120_000);
+
+it("masks whitespace-bearing userinfo with an encoded at sign in stored text a refusal echoes (GH-1773)", async () => {
+  await withTempPmPath(async (context) => {
+    const spaced = `https://fixture:${SECRET} words`;
+    const idOf = (json: unknown) => (json as { id?: string; item?: { id?: string } }).id ?? (json as { item: { id: string } }).item.id;
+    const blocker = context.runCli(["create", "--type", "Task", "--title", `${spaced}%40example.invalid/path`, "--json"], { expectJson: true });
+    const blocked = context.runCli(["create", "--type", "Task", "--title", "sample one", "--dep", `id=${idOf(blocker.json)},kind=blocked_by`, "--json"], { expectJson: true });
+    for (const format of [["--json"], []]) {
+      const refused = context.runCli(["start-task", idOf(blocked.json), ...format]);
+      expect(refused.code, refused.stderr).toBe(4);
+      const output = `${refused.stdout}${refused.stderr}`;
+      expect(output).not.toContain(SECRET);
+      expect(output).not.toContain("fixture:");
+      expect(output).toContain("https://[redacted]%40example.invalid/path");
+    }
+    // A plain user:pass@host userinfo in stored text is masked as before.
+    const plain = context.runCli(["create", "--type", "Task", "--title", `https://u:${SECRET}@example.invalid/x`, "--json"], { expectJson: true });
+    const gated = context.runCli(["create", "--type", "Task", "--title", "sample two", "--dep", `id=${idOf(plain.json)},kind=blocked_by`, "--json"], { expectJson: true });
+    const refused = context.runCli(["start-task", idOf(gated.json), "--json"]);
+    expect(refused.stderr).not.toContain(SECRET);
+    expect(refused.stderr).toContain("https://[redacted]@example.invalid/x");
+  });
+}, 120_000);

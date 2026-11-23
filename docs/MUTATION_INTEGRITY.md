@@ -333,13 +333,33 @@ its quoted text, at a shell control operator or redirection (`|`, `&`, `;`,
 quoted text those characters are data, and any other parenthesis or brace is
 literal data. A quoted value under a quoted key did as well when structure
 and then the next member or element follows, as in compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
-`[{"password":"$DB_PASSWORD"},{"other":…}]`). Any other text after it (`$PW:…`,
-`$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does a quote
-after an unquoted value, which may open a concatenated piece
-(`$PW" spaced literal"`) as well as close an enclosing string. In those cases
-the value keeps its `$NAME` text literal, so a bare variable directly before
-the closing quote of a string that holds a whole assignment is judged as
-before.
+`[{"password":"$DB_PASSWORD"},{"other":…}]`). An unquoted value did too when
+the quote after it closes the string the value sits in: only blanks and then
+a line break or the end of the text follow that quote, or JSON structure,
+optional blanks and the next member or element do (`…$DB_PASSWORD","other":…`,
+`…$DB_PASSWORD"},{…`, `…$DB_PASSWORD', '…` in a Python repr), as in serialized
+JSON text whose string holds a whole assignment. Any other text after it
+(`$PW:…`, `$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so
+does any other quote after an unquoted value, which may open a concatenated
+piece (`$PW""…`, `$PW" spaced literal"`). In those cases the value keeps its
+`$NAME` text literal.
+
+Serialized JSON text is read with its string boundaries
+([pm-gh1775](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1775.toon);
+tracker record excluded from npm). In a payload string such as
+`{"title":"api_key: ${API_KEY}","updated":"…"}`, the quote after the
+reference closes the title string, so the two key-named rules never read
+`","` as a quoted piece concatenated to the value. A quote, a run of at most
+64 JSON structure characters (`,` `:` `{` `}` `[` `]`), a quote and a string
+that closes on the same line form such a boundary (`","x"`, `":"x"`,
+`"},{"x"`, `','x'`), and the value ends before it. The bare reference is then
+judged as a whole value and stays clean under every credential key, while a
+literal attached to it inside the string (`${EMPTY}…`, `${KEY:-…}`) and a
+credential member next to it are still reported. A structure run that no
+closed string follows (`api_key=${EMPTY}","…` ending the text) is still a
+quoted piece. A whole-value Windows variable (`%DB_PASSWORD%`, quoted or
+not) is a placeholder for every key-named rule, as it already was for
+credential keys; a literal around it is still judged.
 A credential-key value led by a lowercase `$name` keeps the reference-free
 reading, in which a `$`-led literal is a placeholder. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
@@ -533,7 +553,18 @@ combine:
   object is redacted before its envelope, its diagnostic budget and its
   output accounting exist, so receipts measure the delivered bytes. Values a
   producer echoed from the raw invocation pass the token rule (argv-token
-  fields) or the word rule (free text). A producer may also split a value at
+  fields) or the word rule (free text). Before the word rule runs, a URL
+  whose userinfo holds whitespace is joined into one word
+  ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
+  tracker record excluded from npm): a word with no `@` that opens a URL
+  authority with a `user:` prefix (a scheme, one or two slashes, and a `:`
+  that port digits alone never follow) is joined, across any whitespace, with
+  the later words up to the first one that holds an `@` or `%40`, within 16
+  words and 512 characters and before another URL starts. So stored text a
+  refusal echoes, such as a blocker title holding
+  `https://user:pass words%40host/path`, loses its whole userinfo, while
+  `https://host:8080 … @bob` and `https://host and ping @bob` stay intact. A
+  producer may also split a value at
   whitespace or a comma, truncate it, re-case it or escape it before echoing
   it. The CLI therefore registers each secret for the running invocation:
   the password, or the whole userinfo of a bare token. The registration also
