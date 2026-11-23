@@ -1704,8 +1704,9 @@ function isRepeatableSwitchArgvSpelling(declared: DeclaredArgvSpelling): boolean
  * a switch move, so another declaration's key (`--s` beside a switch aliased
  * `-S`) keeps its occurrences. When the scan and the loose parser disagree on
  * how many loose occurrences there are, every value is kept, loose ones first.
- * Returns `occurrenceSource` unchanged when Commander consumed no repeatable
- * switch occurrence.
+ * A switch with no loose occurrence keeps Commander's accumulated value, which
+ * a preflight override may have rewritten. Returns `occurrenceSource`
+ * unchanged when Commander consumed no repeatable switch occurrence.
  */
 export function orderArgvRepeatableSwitchOccurrences(
   occurrenceSource: Record<string, unknown>,
@@ -1738,6 +1739,9 @@ export function orderArgvRepeatableSwitchOccurrences(
   for (const [declared, sequence] of reordered) {
     const keys = new Set(keysOf(declared));
     const loose = occurrences.filter(({ key }) => keys.has(key));
+    // Without a loose occurrence Commander's accumulated value is already complete and ordered, and it is the
+    // value a preflight override may have rewritten, so it stays the source.
+    if (loose.length === 0) continue;
     const commander = (slot: { value: unknown }): ParsedLooseOptionToken => ({ consumed: 0, key: declared.handlerKey, value: slot.value });
     let next = 0;
     const merged = sequence.filter((slot) => slot === null).length === loose.length

@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: "area:sdk",extensions,schema,testing
 created_at: "2026-11-23T13:39:32.121Z"
-updated_at: "2026-11-23T13:39:32.121Z"
+updated_at: "2026-11-23T13:57:18.043Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "A proposal that removes the winning duplicate inline definition is judged against the definition that becomes effective, with a spec seeding two definitions for one key; The harness refuses a negated spelling of a declared mutation flag combined with output controls exactly as native dispatch does, with a parity spec"
@@ -17,4 +17,6 @@ expected_result: Neither a duplicate inline definition nor a negated mutation sp
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-3s4jwl,discovered_from,"2026-11-23T13:39:32.121Z","harness:claude-code","cli:create:dep",detected
   pm-gh1769,discovered_from,"2026-11-23T13:39:32.121Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-23T13:57:18.042Z","harness:claude-code","Scope addition from the sixth Codex pass on PR #1772 (2026-11-23, P3, not reproduced here): schema add-field treats an explicit cliFlag that normalizes to nothing ('--') as omitted and silently drops a whitespace-only alias (normalizeAddFieldInput in src/core/schema/fields-file.ts), so the command succeeds with the default flag or without the requested alias, while the inline settings writer refuses the same spelling with schema_field_flag_invalid. Decide whether add-field should refuse an explicitly supplied empty spelling the same way; the same pass raised the duplicate inline definition and negated mutation flag cases again, both already in this item.\n"
 body: ""

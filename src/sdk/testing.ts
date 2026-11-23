@@ -1265,12 +1265,13 @@ async function admitRegisteredOutputControls(
 
 /**
  * Admitted controls in the string form native host flags deliver on `context.global`: a numeric limit becomes its
- * decimal string and a list of selectors its comma-separated form, as `--output-limit 1 --output-include rows` parse.
+ * decimal string, a list of selectors its comma-separated form and a session-state object its JSON text, as
+ * `--output-limit 1 --output-include rows --output-session <json>` parse.
  */
 function toGlobalOutputControls(controls: Partial<GlobalOptions>): Partial<GlobalOptions> {
   return Object.fromEntries(Object.entries(controls).map(([key, value]: [string, unknown]) => [
     key,
-    typeof value === "number" ? String(value) : Array.isArray(value) ? value.join(",") : value,
+    typeof value === "number" ? String(value) : Array.isArray(value) ? value.join(",") : typeof value === "object" ? JSON.stringify(value) : value,
   ]));
 }
 

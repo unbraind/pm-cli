@@ -689,6 +689,15 @@ describe("argv order of repeatable switch occurrences (pm-g2zzus)", () => {
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, longOnly, unowned, "demo")).toMatchObject({ many: [true, false] });
   });
 
+  it("keeps Commander's value for a bare-only switch, which a preflight override may have rewritten (Codex review pass 6)", () => {
+    const loose = parseLooseCommandOptions([]);
+    const source = orderArgvRepeatableSwitchOccurrences(loose, [leaf(["--many"])], definitions);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [false] }, definitions, source, "demo").many).toEqual([false]);
+    // When the loose parser holds an occurrence the scan has no slot for, every value is kept, loose ones first.
+    const unmatched = orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["--many=false"]), [leaf(["--many"])], definitions);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, definitions, unmatched, "demo").many).toEqual([false, true]);
+  });
+
   /** The values the reordered occurrences deliver for --many, through the shared coercer. */
   function orderedValues(tokens: string[], scopes: ArgvOptionScope[] = [leaf(tokens)]): unknown {
     // The loose parser reads the tokens Commander leaves: here every spelling Commander did not register.

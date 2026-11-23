@@ -211,6 +211,14 @@ describe("extension test harness parity with native dispatch", () => {
     });
     await runRegisteredCommandForTest(lister.commands, { command: "probe-include", options: { outputInclude: ["rows", "id"] } });
     expect(included).toEqual(["rows,id"]);
+    // A session-state object reaches context.global as the JSON text the CLI supplies (Codex review pass 6).
+    const sessions: unknown[] = [];
+    const sessionReader = await activate((api) => {
+      api.registerCommand({ name: "probe-session", read_output: { row_keys: ["rows"] }, run: (context) => (sessions.push(context.global.outputSession), { rows: [] }) });
+    });
+    const session = { version: 1, id: "harness", token_budget: 4000, spent_tokens: 0, seen_item_ids: [] };
+    await runRegisteredCommandForTest(sessionReader.commands, { command: "probe-session", options: { outputSession: session } });
+    expect(sessions).toEqual([JSON.stringify(session)]);
     await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-plain", options: { outputBudget: undefined, "--output-budget": "1" } })).rejects.toMatchObject({
       context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
     });
