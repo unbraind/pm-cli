@@ -1,0 +1,29 @@
+id: pm-lulgxc
+title: Adopt TruffleHog 3.99.9 from Dependabot PR #1771 with the matching workflow contract and executed version input
+description: "Dependabot GH PR #1771 moves trufflesecurity/trufflehog in .github/workflows/security.yml from v3.99.8 (ea68ca03c865) to v3.99.9 (3bd2b5887eb0) but leaves the executed version input at 3.99.8 and does not move the exact-pin assertions in tests/integration/ci-workflow-contract.spec.ts, so its Coverage shard 1/4 fails 'keeps security workflow downloads pinned and hash-verified'. v3.99.9 was published 2026-11-12, past the seven-day age floor, and its tag dereferences to 3bd2b5887eb0efb8fa18bfd1d296032924e4ffdc. Duplicate check: searched trufflehog pin bump dependabot workflow contract; pm-ey1zh7 (3.99.7) and earlier adoptions are closed."
+type: Chore
+status: closed
+priority: 2
+tags[3]: "area:ci",dependencies,supply-chain
+created_at: "2026-11-23T08:23:53.801Z"
+updated_at: "2026-11-23T09:40:11.171Z"
+closed_at: "2026-11-23T09:40:07.170Z"
+completed_at: "2026-11-23T09:40:07.170Z"
+author: "harness:claude-code"
+estimated_minutes: 15
+acceptance_criteria: "security.yml pins trufflesecurity/trufflehog to 3bd2b5887eb0efb8fa18bfd1d296032924e4ffdc (v3.99.9), verified against the dereferenced release tag, and the executed version input is 3.99.9; tests/integration/ci-workflow-contract.spec.ts pins the new SHA and version and passes; GH PR #1771 is closed with a comment linking this item and the implementing PR"
+parent: pm-ogzvx6
+risk: low
+confidence: high
+resolution: "security.yml pins trufflesecurity/trufflehog to 3bd2b5887eb0efb8fa18bfd1d296032924e4ffdc (v3.99.9, verified against the dereferenced tag, published 2026-11-12) with version input 3.99.9; ci-workflow-contract.spec.ts moved its exact SHA and version assertions. Supersedes Dependabot GH PR #1771."
+expected_result: The security workflow runs TruffleHog 3.99.9 from an exact pin that the workflow contract asserts
+actual_result: ci-workflow-contract.spec.ts passes 24/24 with the new pins
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ey1zh7,related,"2026-11-23T08:23:53.801Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope}:
+  .github/workflows/security.yml,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,"harness:claude-code","2026-11-23T08:45:50.437Z",local_mutation,fix/extension-harness-admission-parity
+close_reason: Security workflow runs TruffleHog 3.99.9 from an exact pin the workflow contract asserts
+body: ""

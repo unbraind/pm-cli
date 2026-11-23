@@ -1,0 +1,22 @@
+id: pm-dhlij3
+title: "An installed extension whose registerItemFields names a reserved item key makes every pm create and pm update fail with untyped command_failed, and package doctor does not name the cause"
+description: "Measured 2026-11-23 on the 2026.11.23 build while closing pm-3s4jwl. A project extension that calls api.registerItemFields([{ name: 'priority', type: 'string' }]) activates without a refusal. Afterwards every pm create (with or without --field) and every pm update (pm update <id> --title t2) exits 2 with code command_failed and the detail 'Extension item field \"priority\" collides with built-in item metadata \"priority\"; rename the extension field...'. Reads keep working (pm list returns items). pm package doctor reports only extension_custom_field_mcp_input_collision for the field, and pm health --check-only says nothing about it, so the operator sees a tracker whose writes all fail with an untyped code and no diagnostic that names the package. pm-ghf1 (closed) added the reserved-key check to SDK lint, preflight and the test harness, so a package author is warned, but an already published or hand-written package still disables all writes for every user of the tracker. Duplicate check: searched 'extension item field collides with built-in item metadata reserved create fails'; pm-ghf1 owns authoring-time detection only, pm-3s4jwl owns built-in option collisions."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:sdk",extensions,schema,ux
+created_at: "2026-11-23T08:45:02.256Z"
+updated_at: "2026-11-23T08:45:02.256Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Activation refuses only the reserved field registration with a typed code that names the package, the field and the reserved key, and pm create and pm update keep working for every other field; pm package doctor and pm health report the refused registration with the package name and a rename hint; A regression spec installs such an extension and drives create and update on the built CLI, with a negative control showing the pre-fix refusal"
+parent: pm-ugqx
+risk: medium
+confidence: high
+severity: medium
+expected_result: One package's reserved field name cannot disable writes for the whole tracker; the refusal is typed and diagnosable
+actual_result: Every create and update exits 2 with command_failed while the extension is active; doctor names only the MCP input collision
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3s4jwl,discovered_from,"2026-11-23T08:45:02.256Z","harness:claude-code","cli:create:dep",detected
+  pm-ghf1,related,"2026-11-23T08:45:02.256Z","harness:claude-code","cli:create:dep",detected
+body: ""

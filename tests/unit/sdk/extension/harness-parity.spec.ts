@@ -1,6 +1,6 @@
 /**
- * pm-gh1727 / pm-gh1729 (Codex review round 1): the extension test harness
- * admits what native dispatch admits. An extension that extends a native
+ * pm-gh1727 / pm-gh1729 (Codex review round 1) / pm-gh1769: the extension test
+ * harness admits what native dispatch admits. An extension that extends a native
  * command still receives the native command's options, and read-output
  * admission judges the result after a registered command-result override.
  */
@@ -160,6 +160,106 @@ describe("extension test harness parity with native dispatch", () => {
     }
   });
 
+  it("refuses universal output controls before dispatch as native dispatch does (pm-gh1769)", async () => {
+    let runs = 0;
+    const activation = await activate((api) => {
+      api.registerCommand({ name: "probe-plain", run: () => ({ runs: ++runs }) });
+      api.registerCommand({ name: "probe-required", flags: [{ long: "--target", value_type: "string", required: true }], run: () => ({ runs: ++runs }) });
+      api.registerCommand({ name: "probe-read", read_output: { row_keys: ["rows"] }, run: () => ({ rows: [] }) });
+      // An extension that extends a native hybrid surface keeps that surface's mutation refusal.
+      api.registerCommand({ name: "comments", run: () => ({ comments: [] }) });
+      api.registerFlags("notes", [{ long: "--add-json", short: "-J", value_type: "string" }, { long: "--stdin", value_type: "boolean" }]);
+      // An extension may declare a flag literally spelled --no-add, which is not a negation (Greptile review).
+      api.registerFlags("learnings", [{ long: "--no-add", value_type: "boolean" }, { long: "--stdin", value_type: "bool" }]);
+      api.registerCommand({ name: "learnings", run: () => ({ learnings: [] }) });
+      api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
+    });
+    // Dashed host-control spellings are admitted too (CodeRabbit review).
+    for (const invocation of [{ global: { outputLimit: "1" } }, { options: { output_budget: "5" } }, { options: { "--output-limit": "5" } }, { global: { outputRowContract: true } }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-plain", ...invocation })).rejects.toMatchObject({
+        exitCode: 2,
+        message: "Universal output controls apply only to read commands; probe-plain is not a read surface.",
+        context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
+      });
+    }
+    // A mutation option is recognized however the caller spells it (Codex review round 2); an unfoldable key passes through.
+    for (const key of ["--add-json", "add-json", "-J", "J"]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { [key]: "{}", "-t": "x" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+      });
+    }
+    // A negated spelling of a declared boolean mutation option is a mutation too (CodeRabbit review).
+    for (const options of [{ "--no-stdin": false }, { "no-stdin": "false" }, { "--no-stdin": true, stdin: true }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options, global: { outputLimit: "1" } })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+      });
+    }
+    // A boolean declared through a supported alias (value_type "bool") is inverted too (Greptile review).
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "learnings", args: ["pm-x"], options: { "--no-stdin": false }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+    });
+    // A non-boolean value, a true negation, an undeclared base, and a flag literally declared as --no-add are left alone (Greptile review).
+    // A value the negation cannot invert is the normalizer's value error, not a mutation conflict.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": "maybe" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "extension_flag_value_invalid" }),
+    });
+    for (const [command, options] of [["notes", { "--no-stdin": true }], ["comments", { "--no-add": false }], ["learnings", { noAdd: false }], ["learnings", { "--no-add": false }], ["notes", { "--no-add-json": false }]] as const) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command, args: ["pm-x"], options, global: { outputLimit: "1" } }), `${command} ${JSON.stringify(options)}`).resolves.toMatchObject({ handled: true });
+    }
+    // Host controls are admitted before extension flags, as natively: a missing required flag does not mask the refusal.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-required", global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
+    });
+    expect(runs).toBe(0);
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-read", global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
+    // A control passed through options reaches the handler's context.global, as a native host flag does (Codex review pass 4).
+    const seen: unknown[] = [];
+    const reader = await activate((api) => {
+      api.registerCommand({ name: "probe-global", read_output: { row_keys: ["rows"] }, run: (context) => (seen.push(context.global.outputLimit), { rows: [] }) });
+    });
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { "--output-limit": "2" } });
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: "2" }, global: { outputLimit: "3" } });
+    // A snake-case spelling is carried too, and an explicit undefined global never erases an admitted control (CodeRabbit review).
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { output_limit: "4" } });
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: "5" }, global: { outputLimit: undefined } });
+    // An undefined canonical key does not mask a dashed spelling, and SDK-form values reach context.global as strings (Codex review pass 5).
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: undefined, "--output-limit": "6" } });
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: 7 } });
+    expect(seen).toEqual(["2", "3", "4", "5", "6", "7"]);
+    // The SDK factory sees the same controls as the handler, and never runs for a refused invocation (CodeRabbit review).
+    const factoryLimits: unknown[] = [];
+    const sdkFactory = ({ global }: { global: { outputLimit?: string } }) => (factoryLimits.push(global.outputLimit), undefined as never);
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { "--output-limit": "8" }, sdkFactory });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-plain", options: { outputLimit: "1" }, sdkFactory })).rejects.toThrow();
+    expect(factoryLimits).toEqual(["8"]);
+    const included: unknown[] = [];
+    const lister = await activate((api) => {
+      api.registerCommand({ name: "probe-include", read_output: { row_keys: ["rows"] }, run: (context) => (included.push(context.global.outputInclude), { rows: [] }) });
+    });
+    await runRegisteredCommandForTest(lister.commands, { command: "probe-include", options: { outputInclude: ["rows", "id"] } });
+    expect(included).toEqual(["rows,id"]);
+    // A session-state object reaches context.global as the JSON text the CLI supplies (Codex review pass 6).
+    const sessions: unknown[] = [];
+    const sessionReader = await activate((api) => {
+      api.registerCommand({ name: "probe-session", read_output: { row_keys: ["rows"] }, run: (context) => (sessions.push(context.global.outputSession), { rows: [] }) });
+    });
+    const session = { version: 1, id: "harness", token_budget: 4000, spent_tokens: 0, seen_item_ids: [] };
+    await runRegisteredCommandForTest(sessionReader.commands, { command: "probe-session", options: { outputSession: session } });
+    expect(sessions).toEqual([JSON.stringify(session)]);
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-plain", options: { outputBudget: undefined, "--output-budget": "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
+    });
+    // Positional annotation text is a mutation too, as native dispatch maps it (Codex review).
+    for (const invocation of [{ args: ["pm-x"], options: { add: "text" } }, { args: ["pm-x", "text"] }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", ...invocation, global: { outputLimit: "1" } })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+      });
+    }
+    // A hand-built registry carries no declarations to judge, so it is not checked.
+    const handBuilt = { handlers: [{ command: "probe-plain", run: () => ({ ok: true }) }], overrides: [] } as unknown as Parameters<typeof runRegisteredCommandForTest>[0];
+    await expect(runRegisteredCommandForTest(handBuilt, { command: "probe-plain", global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
+  });
+
   it("formats with the activation's renderers and never leaks the process exit code (Codex review round 10)", async () => {
     const activation = await activate((api) => {
       api.registerFlags("probe-big", [{ long: "--note", value_type: "string" }]);
@@ -174,10 +274,13 @@ describe("extension test harness parity with native dispatch", () => {
     // (CodeRabbit review) and never leaks the exit code (Codex review round 10).
     for (const before of [undefined, 1]) {
       process.exitCode = before;
-      await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge", options: { outputBudget: "400" } })).rejects.toMatchObject({
-        exitCode: 2,
-        context: expect.objectContaining({ code: "output_budget_exceeded" }),
-      });
+      // A dashed spelling of the control shapes the delivered output too (Codex review round 3).
+      for (const options of [{ outputBudget: "400" }, { "--output-budget": "400" }]) {
+        await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge", options })).rejects.toMatchObject({
+          exitCode: 2,
+          context: expect.objectContaining({ code: "output_budget_exceeded" }),
+        });
+      }
       expect(process.exitCode).toBe(before);
     }
     process.exitCode = undefined;

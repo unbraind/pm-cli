@@ -23293,6 +23293,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "field_flag_invalid",
+      "class": "usage",
+      "code": "field_flag_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Field flag invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "field_invalid",
       "class": "usage",
       "code": "field_invalid",
@@ -26832,6 +26849,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "read_output_surface_unsupported",
+      "class": "usage",
+      "code": "read_output_surface_unsupported",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Read output surface unsupported condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/read-output-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "recovery_kind_mismatch",
       "class": "generic_failure",
       "code": "recovery_kind_mismatch",
@@ -27134,6 +27168,23 @@
       "sources": [
         "sdk/agent/refusal-closure.ts",
         "sdk/agent/tracker-preflight-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "schema_field_flag_invalid",
+      "class": "usage",
+      "code": "schema_field_flag_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Schema field flag invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/schema/field-option-collisions.ts"
       ],
       "stability": "provisional"
     },

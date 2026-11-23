@@ -35,6 +35,7 @@ import {
   resolveExtensionFlagOptionKey,
   parseLooseCommandOptions,
   refuseConflictingArgvOptionSpellings,
+  orderArgvRepeatableSwitchOccurrences,
   validateLooseCommandOptionsWithFlagDefinitions
 } from "../../sdk/extension/command-options.js";
 import {
@@ -210,7 +211,9 @@ function extractCommandScopedOptions(
     }
 
     validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, [...coreFlagDefinitions, ...extensionFlagDefinitions], getCommandPath(command), refusalListing);
-    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions, getCommandPath(command));
+    // A repeatable switch's bare and attached occurrences reach the handler in argv order (pm-g2zzus).
+    const occurrenceSource = orderArgvRepeatableSwitchOccurrences(looseOptions, collectCommandOptionScopes(command), extensionFlagDefinitions);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, occurrenceSource, getCommandPath(command));
     copyReadOutputInvocationProvenance(scoped, coerced);
     return coerced;
   }
@@ -348,18 +351,13 @@ function resolveCommandOptionStop(command: Command): Pick<ArgvOptionScope, "stop
 }
 
 /**
- * Refuse two spellings of one declared extension flag with different values.
- * Every command between the root and the leaf is a scope, because Commander
- * lets a command consume its own options anywhere after its name, so a value
- * an ancestor consumed never reaches the leaf's tokens. The root only holds
- * host flags, which no extension can declare.
+ * The option scopes on a command's dispatch path, each with the tokens its own
+ * parser received. Every command between the root and the leaf is a scope,
+ * because Commander lets a command consume its own options anywhere after its
+ * name, so a value an ancestor consumed never reaches the leaf's tokens. The
+ * root only holds host flags, which no extension can declare.
  */
-function refuseConflictingCommandOptionSpellings(
-  command: Command,
-  definitions: readonly LooseCommandFlagDefinition[],
-  commandPath: string,
-): void {
-  if (definitions.length === 0) return;
+function collectCommandOptionScopes(command: Command): ArgvOptionScope[] {
   const path: Command[] = [];
   for (let scope: Command | null = command; scope?.parent; scope = scope.parent) path.unshift(scope);
   const scopes: ArgvOptionScope[] = [];
@@ -378,7 +376,17 @@ function refuseConflictingCommandOptionSpellings(
       ...resolveCommandOptionStop(scope),
     });
   }
-  refuseConflictingArgvOptionSpellings(scopes, definitions, commandPath);
+  return scopes;
+}
+
+/** Refuse two spellings of one declared extension flag with different values, across every scope on the dispatch path. */
+function refuseConflictingCommandOptionSpellings(
+  command: Command,
+  definitions: readonly LooseCommandFlagDefinition[],
+  commandPath: string,
+): void {
+  if (definitions.length === 0) return;
+  refuseConflictingArgvOptionSpellings(collectCommandOptionScopes(command), definitions, commandPath);
 }
 
 /** Reject missing required or excess positional arguments before invoking a contributed handler. */

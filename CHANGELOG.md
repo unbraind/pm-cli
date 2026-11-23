@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- Fields an extension registers through registerItemFields are not checked against built-in options of the commands they reach: A settings proposal could add or change an inline custom field whose option shadows a built-in option or whose flag the parser splits; only the settings shape was validated → Each added or changed inline field definition takes the schema add-field admission before anything is written, dry run included; a definition left exactly as stored is not judged. Migrate: Rename a proposed field that shadows a built-in option, or register it only for commands where its option is free; pass one spelling per alias ([pm-3s4jwl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3s4jwl.toon))
+- schema add-field accepts flag spellings the option parser splits or already owns implicitly, which can stop a command from starting: A flag or alias holding a pipe, comma, whitespace, = or brackets, a malformed short flag, a short flag a command already owns (-p) and -h or help were stored; a stored pipe alias made the commands it reached fail during registration and -h made help demand a value → They are refused with schema_field_flag_invalid or schema_field_option_collision, profile lint reports field_flag_invalid, validate --check-metadata reports stored spellings as validate_schema_field_flag_invalid, and the CLI skips such a stored spelling when it registers field options. Migrate: Pass one spelling per --alias and pick a short flag the command does not own; re-register a stored field the validate warning names with pm schema add-field <key\> --cli-flag <flag\> --alias <alias\> ([pm-8patuh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8patuh.toon))
+- GH-1769: the extension test harness accepts universal output controls on non-read commands that the native CLI refuses before dispatch: The harness ran a command without read_output given outputBudget, outputLimit, outputInclude, outputCursor or another universal output control and returned handled: true, while the native CLI and PmClient.run refused it with the untyped code command_failed → The harness refuses those invocations before the handler runs, with the native message and exit 2; the refusal everywhere carries the stable code read_output_surface_unsupported with details.output_option_keys, and READ_OUTPUT_SURFACE_UNSUPPORTED_CODE is exported. Migrate: Drop universal output controls from harness calls of commands that do not declare read_output, or declare read_output on a read command; callers that matched command_failed for this refusal match read_output_surface_unsupported ([pm-gh1769](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1769.toon))
+
+### Fixed
+
+- A repeatable boolean extension switch mixed in attached and bare forms (--many=false --many) loses its bare occurrences, because Commander never sees the attached form ([pm-g2zzus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g2zzus.toon))
+
+### Security
+
+- CodeFactor reports zizmor dangerous-triggers on release-reliability.yml's workflow_run trigger as a new critical issue on every PR that touches a workflow ([pm-5mstyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5mstyv.toon))
+
+### Other
+
+- Adopt TruffleHog 3.99.9 from Dependabot PR \#1771 with the matching workflow contract and executed version input ([pm-lulgxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lulgxc.toon))
+
 ## 2026.11.23 - 2026-11-23
 
 ### Changed (SDK contract)

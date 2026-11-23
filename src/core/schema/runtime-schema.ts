@@ -347,7 +347,8 @@ function stripFlagPrefix(value: string): string {
   return value.startsWith("--") ? value.slice(2) : value;
 }
 
-function normalizeCliToken(value: unknown): string {
+/** Normalize a stored field flag token as the registry reads it: trimmed, lower-cased, separators as hyphens, leading dashes removed. */
+export function normalizeCliToken(value: unknown): string {
   return typeof value === "string"
     ? stripFlagPrefix(
         value

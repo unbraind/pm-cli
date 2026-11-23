@@ -83,6 +83,40 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
   return stableValueEquals(persisted, JSON.parse(raw)) ? raw : `${JSON.stringify(persisted, null, 2)}\n`;
 }
 
+/**
+ * A settings writer shares the `schema add-field` admission for every inline
+ * field definition it adds or changes (pm-3s4jwl): a flag the parser would
+ * split, or an option that shadows a built-in option, is refused before
+ * anything is written. A definition the proposal leaves exactly as stored is
+ * not judged again, so an unrelated write can still preserve a legacy
+ * definition, which validate keeps reporting.
+ */
+async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown): Promise<void> {
+  // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
+  const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
+  if (proposed.length === 0) return;
+  const { normalizeCliToken, resolveRuntimeFieldRegistry } = await import("../core/schema/runtime-schema.js");
+  // Definitions compare as the registry reads them, so a proposal that JSON round-trips the fields or
+  // restates a stored definition without its defaults leaves it unchanged. One the registry drops compares
+  // as it persists, so only a new or edited one is judged.
+  const resolved = (definition: unknown): unknown => resolveRuntimeFieldRegistry({ fields: [definition] } as PmSettings["schema"]).definitions[0];
+  const persisted = (value: unknown): unknown => JSON.parse(JSON.stringify(value)) as unknown;
+  // The raw stored entries count too: a proposal may restate a definition exactly as the file holds it.
+  const stored = [...current.schema.fields, ...(Array.isArray(rawFields) ? rawFields : [])].map((definition) => ({ resolved: resolved(definition), persisted: persisted(definition) }));
+  // A spelling that normalizes to nothing is dropped by the registry, so only an exact stored copy hides it.
+  const hasEmptySpelling = (definition: PmSettings["schema"]["fields"][number]): boolean =>
+    [definition.cli_flag, ...(Array.isArray(definition.cli_aliases) ? definition.cli_aliases : [])].some((token) => typeof token === "string" && normalizeCliToken(token).length === 0);
+  const changed = proposed.filter((definition) => {
+    const candidate = resolved(definition);
+    const storedCopy = stored.some((entry) => stableValueEquals(entry.persisted, persisted(definition)));
+    if (candidate === undefined || hasEmptySpelling(definition)) return !storedCopy;
+    return !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
+  });
+  if (changed.length === 0) return;
+  const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
+  for (const definition of changed) assertFieldDefinitionOptionsAvailable(definition);
+}
+
 /** Bind public SDK services to one tracker and one caller-owned client. */
 export function createExtensionCommandSdk(
   pmRoot: string,
@@ -171,6 +205,7 @@ export function createExtensionCommandSdk(
                 EXIT_CODE.USAGE,
               );
             }
+            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields);
             let raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!
               : serializeSettings(next, { source: { raw: current, validated: validatedCurrent.data } });

@@ -249,11 +249,9 @@ export function normalizeAddFieldInput(
       ? cliFlagToken
       : undefined;
   const effectiveFlag = cliFlag ?? keyToDefaultCliFlag(key);
+  // A flag or alias that is not one option spelling (a comma among them) is refused by the typed
+  // schema_field_flag_invalid check every writer runs after normalizing (pm-8patuh).
   const cliAliases = dedupeCliTokens(raw.aliases ?? [], effectiveFlag);
-  const commaFlag = [effectiveFlag, ...cliAliases].find((flag) => flag.includes(","));
-  if (commaFlag !== undefined) {
-    throw new Error(`Field flag "${commaFlag}" must not contain commas.`);
-  }
 
   const description = raw.description?.trim();
   return {

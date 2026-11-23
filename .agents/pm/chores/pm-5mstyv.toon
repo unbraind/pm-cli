@@ -1,0 +1,36 @@
+id: pm-5mstyv
+title: CodeFactor reports zizmor dangerous-triggers on release-reliability.yml's workflow_run trigger as a new critical issue on every PR that touches a workflow
+description: "CodeFactor's check on PR #1772 (and on Dependabot PR #1771) failed with one critical issue: zizmor rule dangerous-triggers at .github/workflows/release-reliability.yml line 4, 'workflow_run is almost always used insecurely'. Neither PR changed that file; CodeFactor re-runs zizmor over the workflow set whenever a PR touches any workflow, so every Actions pin update hits it. The trigger is deliberate and already hardened: the job runs only for runs on the default branch (head_branch guard), checks out the default branch rather than the triggering run's code, keeps persist-credentials false, grants only contents/actions/issues read, and downloads no artifact from the triggering run. Fix: record that justification beside the trigger with zizmor's inline suppression so the finding is closed at its source with the reason, instead of being re-reported on unrelated PRs. Duplicate check: searched CodeFactor workflow security finding hosted analysis workflow trigger; pm-92if owns CodeFactor code findings, nothing owns this workflow rule."
+type: Chore
+status: closed
+priority: 2
+tags[4]: "area:ci",codefactor,security,supply-chain
+created_at: "2026-11-23T10:04:05.325Z"
+updated_at: "2026-11-23T11:57:34.303Z"
+closed_at: "2026-11-23T10:55:49.538Z"
+completed_at: "2026-11-23T10:55:49.538Z"
+author: "harness:claude-code"
+estimated_minutes: 15
+acceptance_criteria: release-reliability.yml carries a zizmor dangerous-triggers suppression on the workflow_run trigger with the hardening rationale beside it; CodeFactor reports no new issue for PR #1772's final head
+parent: pm-92if
+risk: low
+confidence: medium
+resolution: "release-reliability.yml carries '# zizmor: ignore[dangerous-triggers]' on its workflow_run trigger, with the hardening rationale (default-branch runs only, default-branch checkout, unpersisted credentials, read-only permissions, no triggering-run artifacts) in a comment beside it."
+expected_result: CodeFactor reports no new issue for PR #1772
+actual_result: "CodeFactor failed on 79ae15305 with the dangerous-triggers finding and succeeded on c7d07d1e1, the first head with the suppression; release-reliability.spec.ts and collect-nightly-reliability.spec.ts still parse the workflow (69 tests pass)"
+comments[1]{created_at,author,text}:
+  "2026-11-23T11:57:34.303Z","harness:claude-code","Correction (CodeRabbit review round 3, 2026-11-23): the rationale recorded at close said the job downloads no artifact from the triggering run. collect-release-reliability.mjs does download the release-observation artifact of completed Auto Release runs, which can include the triggering run, and parses it as JSON data; no downloaded file is imported or executed. The workflow comment now states that trust boundary precisely; the suppression and its other reasons are unchanged.\n"
+files[1]{path,scope}:
+  .github/workflows/release-reliability.yml,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts,project,"harness:claude-code","2026-11-23T10:16:10.041Z",local_mutation,fix/extension-harness-admission-parity
+close_reason: A PR that touches a workflow no longer fails CodeFactor on the hardened workflow_run trigger
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_added
+  owner: pm-5mstyv
+  gate_id: codefactor-zizmor-dangerous-triggers
+  negative_control: CodeFactor failed on 79ae15305 (PR #1772) and on Dependabot PR #1771 with the dangerous-triggers finding before the suppression existed
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts
+  hosted_checks[2]: CodeFactor,Gates (static)
+body: ""

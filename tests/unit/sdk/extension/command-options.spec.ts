@@ -7,6 +7,8 @@ import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
+  orderArgvRepeatableSwitchOccurrences,
+  parseLooseCommandOptions,
   type ArgvOptionScope,
   refuseConflictingArgvOptionSpellings,
   resolveExtensionFlagOptionKey,
@@ -584,3 +586,124 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
   });
 });
 
+
+describe("argv order of repeatable switch occurrences (pm-g2zzus)", () => {
+  // The loader expands repeatable into list, as CLI dispatch receives the declarations.
+  const definitions = [
+    { long: "--many", short: "-m", value_type: "boolean", repeatable: true, list: true },
+    { long: "--from-tracker", value_type: "string" },
+    { long: "--label", value_type: "string", list: true },
+  ];
+  const REGISTERED = new Map<string, { arity: "required" | "optional" | "none"; key: string }>([
+    ["--many", { arity: "none", key: "many" }],
+    ["-m", { arity: "none", key: "many" }],
+    ["--from-tracker", { arity: "required", key: "fromTracker" }],
+    ["--label", { arity: "required", key: "label" }],
+  ]);
+  const leaf = (tokens: string[], overrides: Partial<ArgvOptionScope> = {}): ArgvOptionScope => ({
+    tokens,
+    optionOf: (spelling) => REGISTERED.get(spelling),
+    includesLooseFlags: true,
+    negativeNumbersAreValues: true,
+    ...overrides,
+  });
+  /** What the handler receives: Commander's bare accumulator in `scoped`, the loose parser's attached occurrences in `loose`. */
+  const deliver = (tokens: string[], scopes: ArgvOptionScope[] = [leaf(tokens)]) => {
+    const loose = parseLooseCommandOptions(tokens.filter((token) => token.includes("=")));
+    const bare = tokens.filter((token) => token === "--many" || token === "-m").map(() => true);
+    const scoped = { ...(bare.length > 0 ? { many: bare } : {}), ...Object.fromEntries(Object.entries(loose).filter(([key]) => key !== "many" || bare.length === 0)) };
+    const withOrder = coerceLooseCommandOptionsWithFlagDefinitions(scoped, definitions, orderArgvRepeatableSwitchOccurrences(loose, scopes, definitions), "demo");
+    const withoutOrder = coerceLooseCommandOptionsWithFlagDefinitions(scoped, definitions, loose, "demo");
+    return { many: withOrder.many, unordered: withoutOrder.many };
+  };
+
+  it("delivers bare and attached occurrences in argv order, where the loose occurrences alone dropped the bare ones", () => {
+    expect(deliver(["--many=false", "--many"])).toEqual({ many: [false, true], unordered: [false] });
+    expect(deliver(["--many", "--many=false"])).toEqual({ many: [true, false], unordered: [false] });
+    expect(deliver(["-m", "--many=false", "--many"])).toEqual({ many: [true, false, true], unordered: [false] });
+    // Bare-only and attached-only forms were already right, and stay so.
+    expect(deliver(["--many", "-m"])).toEqual({ many: [true, true], unordered: [true, true] });
+    expect(deliver(["--many=true", "--many=0"])).toEqual({ many: [true, false], unordered: [true, false] });
+  });
+
+  it("never counts a token another option consumed, and reads ancestors' scopes as Commander does", () => {
+    // --from-tracker takes "--many" as its value, so only the first --many is a switch occurrence.
+    expect(orderedValues(["--many", "--from-tracker", "--many"])).toEqual([true]);
+    // With a genuine loose occurrence the reordering runs, and the consumed token still does not count (CodeRabbit review).
+    expect(orderedValues(["--many", "--from-tracker", "--many", "--many=false"])).toEqual([true, false]);
+    // An ancestor's own tokens count; its unparsed `--many=false` belongs to the leaf, which records it.
+    const parent = leaf(["child", "--many"], { includesLooseFlags: false });
+    expect(orderedValues(["--many=false"], [parent, leaf(["--many=false"])])).toEqual([true, false]);
+    // `--no-many` reaches a registered switch as false.
+    expect(orderedValues(["--many", "--no-many"])).toEqual([true, false]);
+  });
+
+  it("returns the occurrence source unchanged when nothing needs reordering", () => {
+    const loose = parseLooseCommandOptions(["--label=a"]);
+    expect(orderArgvRepeatableSwitchOccurrences(loose, [leaf(["--label=a"])], definitions)).toBe(loose);
+    expect(orderArgvRepeatableSwitchOccurrences(loose, [leaf(["--many"])], [{ long: "--label", value_type: "string", list: true }])).toBe(loose);
+    // Loose values come only from the loose parser: when it recorded none for a slot the scan saw, every value it has is kept.
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, definitions, orderArgvRepeatableSwitchOccurrences({}, [leaf(["--many=0", "--many"])], definitions), "demo")).toMatchObject({ many: [true] });
+    // Other recorded occurrences survive the reordering.
+    const mixed = parseLooseCommandOptions(["--label=a", "--many=false"]);
+    const ordered = orderArgvRepeatableSwitchOccurrences(mixed, [leaf(["--label=a", "--many=false", "--many"])], definitions);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ label: ["a"], many: [true] }, definitions, ordered, "demo")).toMatchObject({ label: ["a"], many: [false, true] });
+  });
+
+  it("keeps another declaration's key and folds an unregistered spelling as the loose parser does (Codex review)", () => {
+    // -S aliases --many, but --s is its own strict boolean: its loose occurrence keeps strict validation.
+    const owned = [
+      { long: "--many", short: "-S", value_type: "boolean", repeatable: true, list: true },
+      { long: "--s", value_type: "boolean", value_validation: "strict" },
+    ];
+    const ownedLeaf = (tokens: string[]) => leaf(tokens, { optionOf: (spelling) => (spelling === "--many" || spelling === "-S" ? { arity: "none", key: "many" } : undefined) });
+    const tokens = ["--many", "--s=invalid"];
+    const loose = parseLooseCommandOptions(["--s=invalid"]);
+    expect(() => coerceLooseCommandOptionsWithFlagDefinitions({ many: [true], s: "invalid" }, owned, orderArgvRepeatableSwitchOccurrences(loose, [ownedLeaf(tokens)], owned), "demo")).toThrow(PmCliError);
+    // --Many=false reaches the loose parser as many; it keeps its place, and a strict switch still judges its value.
+    expect(orderedValues(["--many", "--Many=false"])).toEqual([true, false]);
+    const strict = [{ long: "--many", value_type: "boolean", value_validation: "strict", repeatable: true, list: true }];
+    expect(() => coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, strict, orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["--Many=invalid"]), [leaf(["--many", "--Many=invalid"])], strict), "demo")).toThrow(PmCliError);
+  });
+
+  it("keeps the loose parser's value, which reads the tokens Commander left (Codex review round 2)", () => {
+    // Commander consumes --from-tracker x, so the loose parser reads --Many false from the leftovers.
+    const tokens = ["--many", "--Many", "--from-tracker", "x", "false"];
+    const loose = parseLooseCommandOptions(["--Many", "false"]);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true], fromTracker: "x" }, definitions, orderArgvRepeatableSwitchOccurrences(loose, [leaf(tokens)], definitions), "demo").many).toEqual([true, false]);
+    // An ancestor never folds a spelling it did not register: only the leaf's loose parser reads it.
+    const parent = leaf(["child", "--Many=false"], { includesLooseFlags: false, optionOf: () => undefined });
+    expect(orderedValues(["--many", "--Many=false"], [parent, leaf(["--many", "--Many=false"])])).toEqual([true, false]);
+  });
+
+  it("leaves a registered short group to Commander instead of folding it (Greptile and CodeRabbit review)", () => {
+    const grouped = [
+      { long: "--many", short: "-m", value_type: "boolean", repeatable: true, list: true },
+      { long: "--mm", value_type: "boolean", repeatable: true, list: true },
+    ];
+    const registered = new Map<string, { arity: "none"; key: string }>([["--many", { arity: "none", key: "many" }], ["-m", { arity: "none", key: "many" }], ["--mm", { arity: "none", key: "mm" }]]);
+    const tokens = ["-mm", "--many=false"];
+    const source = orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["--many=false"]), [leaf(tokens, { optionOf: (spelling) => registered.get(spelling) })], grouped);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true, true] }, grouped, source, "demo")).toMatchObject({ many: [true, true, false] });
+    // Without a registered short option owning it, a single-dash spelling is a loose occurrence (CodeRabbit review).
+    const longOnly = [{ long: "--many", value_type: "boolean", repeatable: true, list: true }];
+    const unowned = orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["-many=false"]), [leaf(["--many", "-many=false"], { optionOf: (spelling) => (spelling === "--many" ? { arity: "none", key: "many" } : undefined) })], longOnly);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, longOnly, unowned, "demo")).toMatchObject({ many: [true, false] });
+  });
+
+  it("keeps Commander's value for a bare-only switch, which a preflight override may have rewritten (Codex review pass 6)", () => {
+    const loose = parseLooseCommandOptions([]);
+    const source = orderArgvRepeatableSwitchOccurrences(loose, [leaf(["--many"])], definitions);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [false] }, definitions, source, "demo").many).toEqual([false]);
+    // When the loose parser holds an occurrence the scan has no slot for, every value is kept, loose ones first.
+    const unmatched = orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["--many=false"]), [leaf(["--many"])], definitions);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, definitions, unmatched, "demo").many).toEqual([false, true]);
+  });
+
+  /** The values the reordered occurrences deliver for --many, through the shared coercer. */
+  function orderedValues(tokens: string[], scopes: ArgvOptionScope[] = [leaf(tokens)]): unknown {
+    // The loose parser reads the tokens Commander leaves: here every spelling Commander did not register.
+    const loose = parseLooseCommandOptions(tokens.filter((token) => !REGISTERED.has(token)));
+    return coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, definitions, orderArgvRepeatableSwitchOccurrences(loose, scopes, definitions), "demo").many;
+  }
+});

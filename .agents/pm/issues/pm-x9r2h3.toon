@@ -1,0 +1,19 @@
+id: pm-x9r2h3
+title: "pm validate reports nothing for a stored custom field definition the runtime registry drops, such as cli_flag '--' or a blank alias"
+description: "Raised by the Codex review of PR #1772 (2026-11-23, third pass). The runtime field registry (normalizeRuntimeFieldDefinition in src/core/schema/runtime-schema.ts) returns null for a definition whose cli_flag normalizes to an empty token, an invalid value_schema or an empty key, and drops a blank alias. pm validate --check-metadata scans the resolved registry (scanFieldOptionCollisions in src/sdk/schema/field-option-collisions.ts), so such a stored definition is invisible: the field silently stops working and nothing tells the operator. PR #1772 closes the write paths (add-field, profile apply, rename-field and mutateWorkspaceSettings refuse an empty spelling with schema_field_flag_invalid), but definitions already stored inline or in schema/fields.json stay unreported. Duplicate check: searched validate dropped field definition empty cli_flag registry; pm-8patuh (closed) owns spelling refusals at write time."
+type: Issue
+status: open
+priority: 3
+tags[3]: "area:schema",diagnostics,validation
+created_at: "2026-11-23T11:55:14.460Z"
+updated_at: "2026-11-23T11:55:14.460Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "validate --check-metadata reports every stored field definition the registry drops, with the key, the source (inline settings or schema/fields.json) and the reason; A blank or empty-normalizing alias is reported even though the definition itself resolves; A spec seeds each dropped shape and asserts the validate rows, with a negative control on the current release"
+parent: pm-8jdc
+risk: low
+confidence: high
+expected_result: A stored definition that the registry drops or truncates is named by validate with a repair hint
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8patuh,discovered_from,"2026-11-23T11:55:14.460Z","harness:claude-code","cli:create:dep",detected
+body: ""

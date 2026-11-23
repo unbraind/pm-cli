@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2169,
+    "covered_symbols": 2171,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2170
+    "required_symbols": 2172
   },
   "breaking_acknowledgements": [
     {
@@ -3570,6 +3570,14 @@
       ],
       "package_version": "2026.11.22",
       "reason": "PROFILE_LINT_CODES gains field_option_collision (pm-pta8um); the tuple is additive, existing codes are unchanged"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PROFILE_LINT_CODES",
+        "signature ./sdk/authoring:PROFILE_LINT_CODES"
+      ],
+      "package_version": "2026.11.23",
+      "reason": "PROFILE_LINT_CODES gains the additive field_flag_invalid code (pm-8patuh); no code is removed or renamed"
     }
   ],
   "entrypoints": {
@@ -4205,6 +4213,12 @@
           "kind": "interface",
           "name": "AnnotationOmissionReceipt",
           "signature": "export interface AnnotationOmissionReceipt { has_omissions: boolean; omitted_field_group_count: number; omitted_field_groups: Array<{ name: string; restore_with: AnnotationHistoryRestoration; }>; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "annotationPositionalMutationOptions",
+          "signature": "(commandPath: string, processedArgs: readonly unknown[]) => { add?: string; } | calls: (commandPath: string, processedArgs: readonly unknown[]) => { add?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -8159,6 +8173,12 @@
           "kind": "function",
           "name": "describeExtensionBlueprint",
           "signature": "(blueprint: ExtensionBlueprint) => ExtensionActivationSummary | calls: (blueprint: ExtensionBlueprint) => ExtensionActivationSummary"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "describeFieldFlagSpellingDefect",
+          "signature": "(token: string) => string | undefined | calls: (token: string) => string | undefined"
         },
         {
           "classification": "advanced_export",
@@ -17164,7 +17184,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PROFILE_LINT_CODES",
-          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"field_option_collision\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
+          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"field_option_collision\", \"field_flag_invalid\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
         },
         {
           "classification": "supported",
@@ -17705,6 +17725,12 @@
           "kind": "value",
           "name": "READ_OUTPUT_SHAPING_CONTROL_FLAGS",
           "signature": "readonly string[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "READ_OUTPUT_SURFACE_UNSUPPORTED_CODE",
+          "signature": "\"read_output_surface_unsupported\""
         },
         {
           "classification": "advanced_export",
@@ -25702,7 +25728,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PROFILE_LINT_CODES",
-          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"field_option_collision\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
+          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"field_option_collision\", \"field_flag_invalid\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
         },
         {
           "classification": "supported",
@@ -26219,6 +26245,12 @@
           "kind": "function",
           "name": "analyzeSdkCliParameterCompleteness",
           "signature": "(source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[] | calls: (source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "annotationPositionalMutationOptions",
+          "signature": "(commandPath: string, processedArgs: readonly unknown[]) => { add?: string; } | calls: (commandPath: string, processedArgs: readonly unknown[]) => { add?: string; }"
         },
         {
           "classification": "contract_data",
@@ -28235,6 +28267,12 @@
           "kind": "value",
           "name": "READ_OUTPUT_SHAPING_CONTROL_FLAGS",
           "signature": "readonly string[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "READ_OUTPUT_SURFACE_UNSUPPORTED_CODE",
+          "signature": "\"read_output_surface_unsupported\""
         },
         {
           "classification": "contract_data",
@@ -41121,6 +41159,7 @@
     "extension_update_health_partial_coverage",
     "extensions_unreadable",
     "field_duplicate",
+    "field_flag_invalid",
     "field_invalid",
     "field_mcp_input_collision",
     "field_option_collision",
@@ -41323,6 +41362,7 @@
     "read_output_cursor_invalid",
     "read_output_cursor_stale",
     "read_output_mutation_conflict",
+    "read_output_surface_unsupported",
     "recovery_kind_mismatch",
     "redundant_edge",
     "refusal_allowed_values_mismatch",
@@ -41341,6 +41381,7 @@
     "reported_zero_tests",
     "reserved_item_field",
     "retry_failed",
+    "schema_field_flag_invalid",
     "schema_field_option_collision",
     "schema_migration_input_required",
     "semantic_spelling_collision",
@@ -41511,8 +41552,8 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1353,
-      "checked_values": 401,
+      "checked_functions": 1355,
+      "checked_values": 402,
       "exempt_test_seams": 15,
       "referenced_types": 1061
     },
@@ -41523,8 +41564,8 @@
       "referenced_types": 60
     },
     "./sdk/contracts": {
-      "checked_functions": 102,
-      "checked_values": 187,
+      "checked_functions": 103,
+      "checked_values": 188,
       "exempt_test_seams": 1,
       "referenced_types": 72
     },

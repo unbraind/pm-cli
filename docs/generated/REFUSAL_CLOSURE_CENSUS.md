@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 490
+- Catalog error codes: 493
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 471
-- Coverage fraction: 0.038776
+- Uncovered error codes: 474
+- Coverage fraction: 0.038540
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -126,6 +126,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `extension_update_health_partial_coverage` | `extension_update_health_partial_coverage` | uncovered | none | 0 |
 | `extensions_unreadable` | `extensions_unreadable` | uncovered | none | 0 |
 | `field_duplicate` | `field_duplicate` | uncovered | none | 0 |
+| `field_flag_invalid` | `field_flag_invalid` | uncovered | none | 0 |
 | `field_invalid` | `field_invalid` | uncovered | none | 0 |
 | `field_mcp_input_collision` | `field_mcp_input_collision` | uncovered | none | 0 |
 | `field_option_collision` | `field_option_collision` | uncovered | none | 0 |
@@ -328,6 +329,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `read_output_cursor_invalid` | `read_output_cursor_invalid` | uncovered | none | 0 |
 | `read_output_cursor_stale` | `read_output_cursor_stale` | uncovered | none | 0 |
 | `read_output_mutation_conflict` | `read_output_mutation_conflict` | uncovered | none | 0 |
+| `read_output_surface_unsupported` | `read_output_surface_unsupported` | uncovered | none | 0 |
 | `recovery_kind_mismatch` | `recovery_kind_mismatch` | uncovered | none | 0 |
 | `redundant_edge` | `redundant_edge` | uncovered | none | 0 |
 | `refusal_allowed_values_mismatch` | `refusal_allowed_values_mismatch` | uncovered | none | 0 |
@@ -346,6 +348,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `reported_zero_tests` | `reported_zero_tests` | uncovered | none | 0 |
 | `reserved_item_field` | `reserved_item_field` | uncovered | none | 0 |
 | `retry_failed` | `retry_failed` | uncovered | none | 0 |
+| `schema_field_flag_invalid` | `schema_field_flag_invalid` | uncovered | none | 0 |
 | `schema_field_option_collision` | `schema_field_option_collision` | uncovered | none | 0 |
 | `schema_migration_input_required` | `schema_migration_input_required` | uncovered | none | 0 |
 | `semantic_spelling_collision` | `semantic_spelling_collision` | uncovered | none | 0 |

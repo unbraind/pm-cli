@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { annotationPositionalMutationOptions } from "../../../src/cli/register-annotations.js";
+import { annotationPositionalMutationOptions } from "../../../src/sdk/read-output-contracts.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 

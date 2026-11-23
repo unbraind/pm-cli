@@ -146,9 +146,12 @@ import { createExtensionCommandSdk } from "./extension-command-context.js";
 import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
+  resolveExtensionFlagOptionKey,
+  resolveLooseOptionCoercionKind,
 } from "./extension/command-options.js";
 import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
 import { formatOutput, projectPrintedResult } from "../core/output/output.js";
+import { annotationPositionalMutationOptions, validateReadOutputOptions } from "./read-output-contracts.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
@@ -1164,17 +1167,26 @@ export async function runRegisteredCommandForTest(
   }
   const pmRoot = options.pmRoot ?? "";
   const global = { json: true, quiet: true, noPager: true, ...options.global };
+  const registrations = readActivatedFlagRegistrations(commands);
+  const handlerOptions = options.options ? { ...options.options } : {};
+  const args = options.args ? [...options.args] : [];
+  // Native dispatch admits host output controls before it normalizes extension flags (pm-gh1769), and the same
+  // canonical controls shape the delivered output, however the caller spelled them.
+  const admissionOptions = foldOptionSpellings(handlerOptions, registrations === undefined ? [] : collectExtensionFlagDefinitionsForCommand(registrations, command));
+  await admitRegisteredOutputControls(registrations, command, args, admissionOptions, global);
+  // Controls passed through options reach the handler's context.global as native host flags do; a defined global
+  // value still wins, and an undefined one never erases an admitted control. The SDK is built afterwards, so a
+  // factory sees the same controls and never runs for a refused invocation.
+  Object.assign(global, toGlobalOutputControls(pickOutputControls(admissionOptions)), pickOutputControls(global));
   const sdk =
     options.sdk ??
     options.sdkFactory?.({ pmRoot, global }) ??
     (pmRoot.length > 0
       ? createExtensionCommandSdk(pmRoot, new PmClient({ pmRoot }), undefined, command)
       : undefined);
-  const registrations = readActivatedFlagRegistrations(commands);
-  const handlerOptions = options.options ? { ...options.options } : {};
   const context: CommandHandlerContext = {
     command,
-    args: options.args ? [...options.args] : [],
+    args,
     options:
       registrations === undefined
         ? handlerOptions
@@ -1193,6 +1205,113 @@ export async function runRegisteredCommandForTest(
   };
   const outcome = await runCommandHandler(commands, context);
   return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
+}
+
+/**
+ * The handler key a negated spelling (`--no-stdin` or `no-stdin`) inverts, under the normalizer's own rule: only
+ * when that spelling is not itself declared and its base names a declared boolean flag.
+ */
+function negatedDeclaredBooleanKey(key: string, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): string | undefined {
+  const negated = /^(?:--)?no-(.+)$/u.exec(key)?.[1];
+  if (negated === undefined) return undefined;
+  const handlerKeyOf = (definition: (typeof definitions)[number]): string | null => resolveExtensionFlagOptionKey(definition);
+  const spelled = resolveExtensionFlagOptionKey({ long: `--${key.replace(/^--/u, "")}` });
+  if (definitions.some((definition) => handlerKeyOf(definition) === spelled)) return undefined;
+  const base = resolveExtensionFlagOptionKey({ long: `--${negated}` });
+  const declared = definitions.find((definition) => handlerKeyOf(definition) === base);
+  return declared !== undefined && resolveLooseOptionCoercionKind(declared) === "boolean" ? (base as string) : undefined;
+}
+
+/** A boolean option value or its string token, or `undefined` for anything else. */
+function booleanToken(value: unknown): boolean | undefined {
+  if (value === true || value === "true") return true;
+  return value === false || value === "false" ? false : undefined;
+}
+
+/**
+ * The options with every key also under its handler spelling (`--add-json`,
+ * `add-json` and a declared short alias such as `-J` as `addJson`), so host
+ * admission sees a mutation option however a harness caller spells it, as
+ * native dispatch sees Commander's parsed keys. Required-flag and value
+ * validation still run afterwards, in normalization.
+ */
+function foldOptionSpellings(options: Record<string, unknown>, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): Record<string, unknown> {
+  const folded: Record<string, unknown> = { ...options };
+  for (const [key, value] of Object.entries(options)) {
+    // A negated spelling of a declared boolean (`--no-stdin: false`) sets that flag to the inverse, as the normalizer applies it.
+    const base = negatedDeclaredBooleanKey(key, definitions);
+    const flag = booleanToken(value);
+    if (base !== undefined && flag !== undefined && folded[base] === undefined) folded[base] = !flag;
+    // A declared short alias counts with or without its dash, as the normalizer accepts both (`-J`, `J`).
+    const declared = definitions.find((definition) => definition.short !== undefined && (definition.short === key || definition.short === `-${key}`));
+    const handlerKey = resolveExtensionFlagOptionKey(declared ?? { long: key.startsWith("-") ? key : `--${key}` });
+    if (handlerKey !== null && folded[handlerKey] === undefined) folded[handlerKey] = value;
+  }
+  return folded;
+}
+
+/** The universal output controls a caller can pass through `global`, by their `GlobalOptions` key. */
+const GLOBAL_OUTPUT_CONTROL_KEYS = [
+  "outputInclude",
+  "outputLimit",
+  "outputBudget",
+  "outputFormat",
+  "outputSession",
+  "outputCursor",
+  "outputRowContract",
+] as const satisfies ReadonlyArray<keyof GlobalOptions>;
+
+/**
+ * Refuse universal output controls before the handler runs, as native CLI
+ * dispatch and `PmClient.run` do (pm-gh1769): the shared
+ * `validateReadOutputOptions` admission runs inside an isolated extension
+ * runtime that holds the activation's registrations, so a command without
+ * `read_output` given any control fails with the native "is not a read surface"
+ * refusal (exit 2), a malformed control value is refused, and a hybrid native
+ * surface an extension extends refuses a mutation combined with read controls,
+ * positional annotation text included. It runs before extension flags are
+ * normalized, as native dispatch admits host controls first. Controls are read
+ * from `global` and from `options`, the two places a harness caller can put
+ * them. A hand-built registry carries no declarations to judge, so it is not
+ * checked.
+ */
+async function admitRegisteredOutputControls(
+  registrations: ActivatedCommandRegistrations | undefined,
+  command: string,
+  args: readonly string[],
+  options: Record<string, unknown>,
+  global: Partial<GlobalOptions>,
+): Promise<void> {
+  if (registrations === undefined) return;
+  await runWithIsolatedExtensionRuntime(async () => {
+    // The attached object is the activation's full registration registry.
+    setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
+    validateReadOutputOptions(command, { ...options, ...annotationPositionalMutationOptions(command, args), ...pickOutputControls(global) });
+  });
+}
+
+/**
+ * Admitted controls in the string form native host flags deliver on `context.global`: a numeric limit becomes its
+ * decimal string, a list of selectors its comma-separated form and a session-state object its JSON text, as
+ * `--output-limit 1 --output-include rows --output-session <json>` parse.
+ */
+function toGlobalOutputControls(controls: Partial<GlobalOptions>): Partial<GlobalOptions> {
+  return Object.fromEntries(Object.entries(controls).map(([key, value]: [string, unknown]) => [
+    key,
+    typeof value === "number" ? String(value) : Array.isArray(value) ? value.join(",") : typeof value === "object" ? JSON.stringify(value) : value,
+  ]));
+}
+
+/**
+ * The universal output controls set in an options object, by their `GlobalOptions` key, each read under its
+ * camel-case key first and its snake-case spelling (`output_budget`) otherwise, as the read-output contracts read them.
+ */
+function pickOutputControls(options: Partial<GlobalOptions> | Record<string, unknown>): Partial<GlobalOptions> {
+  const source = options as Record<string, unknown>;
+  return Object.fromEntries(GLOBAL_OUTPUT_CONTROL_KEYS.flatMap((key) => {
+    const value = source[key] ?? source[key.replaceAll(/[A-Z]/gu, (letter) => `_${letter.toLowerCase()}`)];
+    return value === undefined ? [] : [[key, value]];
+  }));
 }
 
 /** Guard-test options whose context is a journal-proven transaction rollback (pm-wb6ktl). */

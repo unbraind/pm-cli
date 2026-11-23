@@ -18,13 +18,14 @@ import { redactRefusalArgv } from "./runtime/refusal-credential-redaction.js";
 import { redactUrlCredentialsInText, runWithUrlCredentialInvocation } from "../sdk/command-line.js";
 import { isTrackerRevisionGuarded } from "../sdk/lifecycle/item-revision.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
+import { isRegistrableFieldFlagSpelling } from "../sdk/schema/field-flag-spelling.js";
 import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
-import { annotationPositionalMutationOptions } from "./register-annotations.js";
 import { CLOSE_FIELDS_REFUSAL_CODE, repairCloseFieldsRecovery } from "./runtime/close-fields-retry.js";
 import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
+  annotationPositionalMutationOptions,
   validateReadOutputOptions
 } from "../sdk/read-output-contracts.js";
 import { runWithReproducibleProcessEnvironment } from "../sdk/reproducibility/process.js";
@@ -717,7 +718,9 @@ function commandHasShortOption(command: Command, shortFlag: string): boolean {
 
 function addRuntimeFieldOption(command: Command, flagToken: string, description: string, repeatable: boolean): void {
   const normalizedToken = flagToken.trim();
-  if (!normalizedToken) {
+  // A stored spelling the parser would split, or the implicit help option, must not stop the command from
+  // starting or take over help; validate reports such a definition (pm-8patuh).
+  if (!normalizedToken || !isRegistrableFieldFlagSpelling(normalizedToken)) {
     return;
   }
   const helpText = description.length > 0 ? description : `Runtime schema field (${flagToken})`;

@@ -8,11 +8,6 @@ import type { PmErrorCodeCatalogRow } from "./error-code-catalog-rows.js";
 /** Generated partition 2 of the exhaustive error-code catalog, as compact rows. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
-    code: "merge_driver_configuration_missing",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
     code: "merge_fence_drift",
     exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],
@@ -399,6 +394,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/read-output-contracts.ts"],
   },
   {
+    code: "read_output_surface_unsupported",
+    exit_code: 2,
+    sources: ["sdk/read-output-contracts.ts"],
+  },
+  {
     code: "recovery_kind_mismatch",
     exit_code: 1,
     sources: ["sdk/agent/tracker-preflight-contracts.ts"],
@@ -493,6 +493,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     code: "retry_failed",
     exit_code: 1,
     sources: ["sdk/agent/refusal-closure.ts", "sdk/agent/tracker-preflight-contracts.ts"],
+  },
+  {
+    code: "schema_field_flag_invalid",
+    exit_code: 2,
+    sources: ["sdk/schema/field-option-collisions.ts"],
   },
   {
     code: "schema_field_option_collision",
