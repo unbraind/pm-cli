@@ -362,7 +362,9 @@ follows the quote, the value ends there. After a closing quote, the end of an
 XML tag (`"/>`, `">`) and an unquoted YAML flow key (`{title: "…", updated:
 ok}`) are word ends too, and blanks after its structure are padding however
 many there are. A quote at the value's first character is never a cut point,
-because after a stray apostrophe it may be the value's own opening quote. So `","` and the next member are
+because after a stray apostrophe it may be the value's own opening quote, and
+neither is a quote inside the capture that a blank follows, which can only be
+data of the value's own quoted text (`"devs' portal"`, `${PW:-" … "}`). So `","` and the next member are
 never read as quoted pieces concatenated to the value, however long the next
 member is, and the scan resumes at the closing quote, so keys in the later
 members are still scanned. The bare reference is then judged as a whole value
@@ -579,7 +581,8 @@ combine:
   ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
   tracker record excluded from npm). A word opens one at the first `:` that
   authority slashes (any number) follow, so a compact JSON field name before
-  the URL is skipped. When a quote, backtick or angle bracket directly
+  the URL is skipped; a one-letter scheme is a Windows drive (`C:/Temp`), never
+  a URL. When a quote, backtick or angle bracket directly
   precedes the scheme, its closing delimiter ends the URL; any other quote is
   data. The authority after the slashes must hold no path, no closing
   delimiter and no bracketed IPv6 host, and, up to a query or fragment, it
@@ -589,14 +592,16 @@ combine:
   whose password colon must come in a later word, with text after it or a tab
   or line break after it, and never as a clock time such as `09:30`; a colon
   that a space follows counts only when the separator's host goes on into a
-  path, as a URL's does and an email address's never does). A word
+  path, as a URL's does and an email address's never does, or when the quote
+  that opened the URL closes it there). A word
   that ends with its slashes continues into the next word, since URL parsers
   drop a tab or line break there. The
   opening word is joined, across any whitespace, through the later word that
   holds the last `@` or `%40` starting within 16 words and 512 characters, as a
-  parser takes the authority's last `@`; a word that starts another URL before
-  its first path delimiter, or holds a path or prose delimiter before any
-  separator, ends the search. The joined span is redacted exactly as the same
+  parser takes the authority's last `@`; a word that starts another URL (its
+  scheme opens the word, so a redirect inside a query does not), or holds a
+  path delimiter or the URL's closing delimiter before any separator, ends the
+  search. The joined span is redacted exactly as the same
   URL without blanks. So stored text a refusal echoes, such as a blocker title
   holding `https://user:pass words%40host/path`, loses its whole userinfo,
   while `https://host.example:8080 … @bob`, `https://host and ping @bob`,

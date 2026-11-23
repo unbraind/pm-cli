@@ -366,7 +366,10 @@ interface SpacedOpening {
 function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   const colon = word.search(/:[/\\]/u);
   if (colon < 0) return undefined;
-  const closer = urlCloserBefore(word, colon);
+  const schemeStart = schemeStartBefore(word, colon);
+  // A one-letter scheme is a Windows drive (`C:/Temp`), never a URL.
+  if (colon - schemeStart < 2) return undefined;
+  const closer = URL_CLOSERS[word[schemeStart - 1] ?? ""];
   let start = colon + 1;
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
   if (start === word.length) return { kind: "pending", closer };
@@ -376,11 +379,11 @@ function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   return kind === undefined ? undefined : { kind, closer };
 }
 
-/** The delimiter that closes a URL whose scheme, ending at `colon`, a quote, backtick or angle bracket directly precedes. */
-function urlCloserBefore(word: string, colon: number): string | undefined {
-  let schemeStart = colon;
-  while (schemeStart > 0 && /[A-Za-z0-9+.-]/u.test(word[schemeStart - 1]!)) schemeStart -= 1;
-  return URL_CLOSERS[word[schemeStart - 1] ?? ""];
+/** Where the scheme that ends at `colon` starts, read back over scheme characters. */
+function schemeStartBefore(word: string, colon: number): number {
+  let start = colon;
+  while (start > 0 && /[A-Za-z0-9+.-]/u.test(word[start - 1]!)) start -= 1;
+  return start;
 }
 
 /** How an authority head (before any query or fragment) opens a whitespace-bearing userinfo. */
@@ -419,8 +422,7 @@ function spacedUserinfoEnd(text: string, from: number, opening: SpacedOpening): 
     // Two code units past the bound complete a `%40` that starts inside it.
     const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit + 2)), limit - bounds[0], opening.closer);
     if (read.startsUrl) break;
-    // A spaced colon counts only when the separator's host goes on into a path, as a URL's does and an email's never does.
-    if (read.separator && (colonSeen || read.colonBeforeSeparator || (spacedColonSeen && read.hasPath))) end = bounds[1];
+    if (endsUserinfo(read, colonSeen, spacedColonSeen)) end = bounds[1];
     const dropped = /[\t\r\n]/u.test(text[bounds[1]] ?? "");
     colonSeen ||= read.colon || (read.trailingColon && dropped);
     spacedColonSeen ||= read.trailingColon;
@@ -428,6 +430,17 @@ function spacedUserinfoEnd(text: string, from: number, opening: SpacedOpening): 
     index = bounds[1];
   }
   return end;
+}
+
+/**
+ * Whether a later word's separator ends the userinfo: a password colon came
+ * before it, or a colon that a space follows did and the separator's host goes
+ * on into a path, as a URL's does and an email's never does, or the delimiter
+ * that opened the URL closes it there.
+ */
+function endsUserinfo(read: ReturnType<typeof readAuthorityWord>, colonSeen: boolean, spacedColonSeen: boolean): boolean {
+  if (!read.separator) return false;
+  return colonSeen || read.colonBeforeSeparator || (spacedColonSeen && (read.hasPath || read.closedByOpener));
 }
 
 /** The next word that starts at or after `index` and before `limit`, as its start and end, or undefined. */
@@ -465,6 +478,7 @@ function readAuthorityWord(word: string, maxStart: number, closer: string | unde
   colon: boolean;
   trailingColon: boolean;
   hasPath: boolean;
+  closedByOpener: boolean;
   endsAuthority: boolean;
 } {
   const delimiter = word.search(/[/\\]/u);
@@ -474,22 +488,28 @@ function readAuthorityWord(word: string, maxStart: number, closer: string | unde
   const last = Math.min(authority.length, maxStart) - 1;
   const separator = last < 0 ? -1 : Math.max(authority.lastIndexOf("@", last), authority.toLowerCase().lastIndexOf("%40", last));
   return {
-    startsUrl: delimiter >= 0 && closed < 0 && endsWithScheme(beforePath),
+    startsUrl: delimiter >= 0 && closed < 0 && startsWithScheme(beforePath),
     separator: separator >= 0,
     colonBeforeSeparator: separator > 0 && hasPasswordColon(authority.slice(0, separator)),
     colon: hasPasswordColon(authority),
     trailingColon: authority.endsWith(":"),
     hasPath: delimiter >= 0 && closed < 0,
+    closedByOpener: closed >= 0,
     endsAuthority: delimiter >= 0 || closed >= 0,
   };
 }
 
-/** Whether text ends with a URL scheme and its `:`, read back from the end. */
-function endsWithScheme(text: string): boolean {
+/**
+ * Whether text is a URL scheme and its `:`, optionally after one opening
+ * quote, backtick, parenthesis or bracket: the start of another URL
+ * (`https://…`, `(https://…`). A scheme inside a query (`…?next=https://…`)
+ * is part of the current URL, not a new one. Read back from the end, so a
+ * long word costs one pass.
+ */
+function startsWithScheme(text: string): boolean {
   if (!text.endsWith(":")) return false;
-  let start = text.length - 1;
-  while (start > 0 && /[A-Za-z0-9+.-]/u.test(text[start - 1]!)) start -= 1;
-  return start < text.length - 1 && /[A-Za-z]/u.test(text[start]!);
+  const start = schemeStartBefore(text, text.length - 1);
+  return start < text.length - 1 && /[A-Za-z]/u.test(text[start]!) && (start === 0 || (start === 1 && /["'`(<[]/u.test(text[0]!)));
 }
 
 /**

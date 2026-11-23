@@ -160,6 +160,17 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`- {note: Unexpected token ' in header, ${passwordKey}: ' correct horse battery staple'}`)).toEqual(["password_assignment"]);
   });
 
+  it("never cuts a value at a quote inside its own quoted text (Codex round 4)", () => {
+    // A stray apostrophe opens a false string; the apostrophe inside the real password is data.
+    expect(rulesOf(`- {note: Unexpected token ' in header, ${passwordKey}: "devs' portal 2026"}`)).toEqual(["password_assignment"]);
+    // A quoted default inside a reference is data of the value, not the outer string's closer.
+    expect(rulesOf(`docker run --env "${passwordKey}=${D}{PW:-" correct horse battery staple"}" demo`)).toEqual(["password_assignment"]);
+  });
+
+  it("reads a JSON member value that starts on the next line", () => {
+    expect(rulesOf(`{"title":\n  "${passwordKey}=${D}DB_PASSWORD","other":"ok"}`)).toEqual([]);
+  });
+
   it("reads JSON line separators, YAML flow keys, XML tag ends and long padding after a closing quote", () => {
     expect(rulesOf(JSON.stringify({ title: `Deploy notes\u2028${passwordKey}: ${D}DB_PASSWORD`, updated: "ok" }))).toEqual([]);
     expect(rulesOf(`{title: "${passwordKey}: ${D}DB_PASSWORD", updated: ok}`)).toEqual([]);

@@ -167,6 +167,9 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a percent escape in the first username word", "https://build%2Dteam\taccount:demo pass@example.invalid", "https://[redacted]@example.invalid"],
     ["a password colon before a tab", "https://service\taccount:\tDemoPass7@example.invalid", "https://[redacted]@example.invalid"],
     ["an encoded at sign that starts inside the bound", `https://x:demo ${"a".repeat(510)}%40host`, "https://[redacted]%40host"],
+    // Codex review round 4.
+    ["a redirect query without a path", "https://ci:demo words@registry.example.invalid?next=https://docs.example.invalid", "https://[redacted]@registry.example.invalid?next=https://docs.example.invalid"],
+    ["a quoted pathless URL with a spaced password colon", '"https://Build Team: demo-pass@registry.example.invalid"', '"https://[redacted]@registry.example.invalid"'],
     // CodeRabbit: the escape at offsets 510 and 511 after the opening word starts inside the bound.
     ["an encoded at sign at offset 510", `https://x:demo ${"a".repeat(509)}%40host`, "https://[redacted]%40host"],
     // Greptile review round 2.
@@ -200,6 +203,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a bare scheme before more slashes", "https:// // x@y"],
     ["a bare scheme before a host and port", "https://\texample.com:8080 ping @bob"],
     ["a clock time in prose", "See https://example.com at 09:30 and ping @oncall"],
+    ["a Windows drive path before an error code and a mention", "Log output C:/Temp (code:ENOENT), fix and notify @admin"],
+    ["a later public URL in parentheses", "Compare https://ci:1234-beta with (https://example.org/package/@scope/name)"],
     ["a colon that a space follows", "https://service account: ping @oncall"],
     ["a trailing colon ending the text", "https://service account:"],
     ["a spaced colon before an email address", "https://service and email support: ops@example.org"],

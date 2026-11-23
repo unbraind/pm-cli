@@ -1199,13 +1199,14 @@ function openerBefore(openers: readonly number[], position: number): number {
 
 /**
  * Whether the string that opened at `opener` is a member or element of a
- * container: its quote follows `[`, `{`, `,` or `:` and optional blanks, as in
+ * container: its quote follows `[`, `{`, `,` or `:` and optional whitespace, as in
  * JSON, YAML flow or a Python repr. A string a command word or prose opened
  * (`echo "…"`, `Use "…"`) is a shell word or a quotation instead.
  */
 function opensInContainer(content: string, opener: number): boolean {
   let index = opener - 1;
-  while (index >= 0 && (content[index] === " " || content[index] === "\t")) index -= 1;
+  // JSON allows any whitespace, line breaks included, between a separator and a value.
+  while (index >= 0 && /\s/u.test(content[index]!)) index -= 1;
   return index >= 0 && /[[{,:]/u.test(content[index]!);
 }
 
@@ -1261,6 +1262,10 @@ function enclosingStringClose(lexical: StringStates, content: string, valueStart
   const last = Math.min(end, content.length - 1);
   for (let index = valueStart; index <= last; index += 1) {
     if (content[index] === quote && states[index] === kind && states[index + 1] === NO_STRING) {
+      // Inside the capture, a quote that a blank follows can only be data of the value's own quoted
+      // text (the grammar never reads a blank otherwise), so the string the lexical pass saw open
+      // there was a stray apostrophe's, and the grammar's reading is kept.
+      if (index < end && /\s/u.test(content[index + 1] ?? "")) return -1;
       const inContainer = opensInContainer(content, openerBefore(lexical.openers, valueStart));
       return endsWordAfterQuote(content, index, inContainer) ? index : -1;
     }
