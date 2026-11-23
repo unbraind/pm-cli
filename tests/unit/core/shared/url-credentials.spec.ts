@@ -157,6 +157,9 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a dotted spaced username", "https://jane.doe account:fake words@example.invalid/private", "https://[redacted]@example.invalid/private"],
     ["a password that starts with digits", "https://ci:123456 words@example.invalid/private", "https://[redacted]@example.invalid/private"],
     ["a quoted URL", '"https://ci:pa ss@host"', '"https://[redacted]@host"'],
+    // Greptile review round 1: URL parsers drop a tab after the authority slashes.
+    ["a tab before the username", "https://\tu:pass words@host/x", "https://[redacted]@host/x"],
+    ["a line break before a spaced username", "https://\nservice account:pass@host/x", "https://[redacted]@host/x"],
   ])("removes URL userinfo that holds whitespace across words: %s", (_case, text, expected) => {
     expect(redactUrlCredentialsInText(text)).toBe(expected);
     expect(redactUrlCredentialsInText(expected)).toBe(expected);
@@ -180,6 +183,10 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a quoted URL before prose with a colon", 'See "https://intranet" and email support: ops@example.org.'],
     ["a dotted host before prose with a colon", "Visit https://example.com and email support: ops@example.org"],
     ["a localhost port before prose", "https://localhost:3000 ping @bob"],
+    ["a bare scheme before prose", "See https:// for details, email me@example.org"],
+    ["a bare scheme ending the text", "x https://"],
+    ["a bare scheme before more slashes", "https:// // x@y"],
+    ["a bare scheme before a host and port", "https://\texample.com:8080 ping @bob"],
   ])("leaves text alone when no whitespace-bearing userinfo opens: %s", (_case, text) => {
     expect(redactUrlCredentialsInText(text)).toBe(text);
   });

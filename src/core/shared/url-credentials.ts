@@ -349,14 +349,17 @@ const URL_DELIMITER = /["'`<>]/u;
  * with `label` when that part holds no `:`, `@` or `%` (`https://service`,
  * `https://jane.doe`): a spaced username, whose `user:password` colon must then
  * come in a later word. A colon only inside a query (`https://example.com?t=12:30`)
- * never makes a `user` opening.
+ * never makes a `user` opening. A word that ends with its authority slashes
+ * is `pending`: its authority starts in the next word (`https://` then a tab).
  */
-function spacedUserinfoOpening(word: string): "user" | "label" | undefined {
+function spacedUserinfoOpening(word: string): "user" | "label" | "pending" | undefined {
   const colon = word.indexOf(":");
   if (colon < 0) return undefined;
   let start = colon + 1;
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
   if (start === colon + 1) return undefined;
+  // The authority may start in the next word: URL parsers drop a tab or line break after the slashes.
+  if (start === word.length) return "pending";
   const authority = word.slice(start);
   if (authority.startsWith("[") || /[/\\]/u.test(authority) || URL_DELIMITER.test(authority)) return undefined;
   const head = authority.split(/[?#]/u, 1)[0]!;
@@ -456,9 +459,17 @@ function redactSpacedUserinfo(text: string): string {
   let result = "";
   let cursor = 0;
   for (let match = word.exec(text); match !== null; match = word.exec(text)) {
-    const opening = spacedUserinfoOpening(match[0]);
-    if (opening === undefined) continue;
-    const end = spacedUserinfoEnd(text, match.index + match[0].length, opening);
+    let opening = spacedUserinfoOpening(match[0]);
+    let from = match.index + match[0].length;
+    if (opening === "pending") {
+      // Judge the authority that starts in the next word as if the blank between them were dropped.
+      const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
+      if (next === undefined) continue;
+      opening = spacedUserinfoOpening(`${match[0]}${text.slice(next[0], next[1])}`);
+      from = next[1];
+    }
+    if (opening === undefined || opening === "pending") continue;
+    const end = spacedUserinfoEnd(text, from, opening);
     if (end === -1) continue;
     result += `${text.slice(cursor, match.index)}${redactUrlCredentialsInToken(text.slice(match.index, end))}`;
     cursor = end;
