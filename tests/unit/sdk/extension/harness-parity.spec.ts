@@ -198,7 +198,22 @@ describe("extension test harness parity with native dispatch", () => {
     });
     await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { "--output-limit": "2" } });
     await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: "2" }, global: { outputLimit: "3" } });
-    expect(seen).toEqual(["2", "3"]);
+    // A snake-case spelling is carried too, and an explicit undefined global never erases an admitted control (CodeRabbit review).
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { output_limit: "4" } });
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: "5" }, global: { outputLimit: undefined } });
+    // An undefined canonical key does not mask a dashed spelling, and SDK-form values reach context.global as strings (Codex review pass 5).
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: undefined, "--output-limit": "6" } });
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: 7 } });
+    expect(seen).toEqual(["2", "3", "4", "5", "6", "7"]);
+    const included: unknown[] = [];
+    const lister = await activate((api) => {
+      api.registerCommand({ name: "probe-include", read_output: { row_keys: ["rows"] }, run: (context) => (included.push(context.global.outputInclude), { rows: [] }) });
+    });
+    await runRegisteredCommandForTest(lister.commands, { command: "probe-include", options: { outputInclude: ["rows", "id"] } });
+    expect(included).toEqual(["rows,id"]);
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-plain", options: { outputBudget: undefined, "--output-budget": "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
+    });
     // Positional annotation text is a mutation too, as native dispatch maps it (Codex review).
     for (const invocation of [{ args: ["pm-x"], options: { add: "text" } }, { args: ["pm-x", "text"] }]) {
       await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", ...invocation, global: { outputLimit: "1" } })).rejects.toMatchObject({

@@ -1179,8 +1179,9 @@ export async function runRegisteredCommandForTest(
   // canonical controls shape the delivered output, however the caller spelled them.
   const admissionOptions = foldOptionSpellings(handlerOptions, registrations === undefined ? [] : collectExtensionFlagDefinitionsForCommand(registrations, command));
   await admitRegisteredOutputControls(registrations, command, args, admissionOptions, global);
-  // Controls passed through options reach the handler's context.global as native host flags do; global still wins.
-  Object.assign(global, pickOutputControls(admissionOptions), options.global);
+  // Controls passed through options reach the handler's context.global as native host flags do; a defined global
+  // value still wins, and an undefined one never erases an admitted control.
+  Object.assign(global, toGlobalOutputControls(pickOutputControls(admissionOptions)), pickOutputControls(global));
   const context: CommandHandlerContext = {
     command,
     args,
@@ -1217,7 +1218,7 @@ function foldOptionSpellings(options: Record<string, unknown>, definitions: Retu
     // A declared short alias counts with or without its dash, as the normalizer accepts both (`-J`, `J`).
     const declared = definitions.find((definition) => definition.short !== undefined && (definition.short === key || definition.short === `-${key}`));
     const handlerKey = resolveExtensionFlagOptionKey(declared ?? { long: key.startsWith("-") ? key : `--${key}` });
-    if (handlerKey !== null && !Object.hasOwn(folded, handlerKey)) folded[handlerKey] = value;
+    if (handlerKey !== null && folded[handlerKey] === undefined) folded[handlerKey] = value;
   }
   return folded;
 }
@@ -1262,10 +1263,27 @@ async function admitRegisteredOutputControls(
   });
 }
 
-/** The universal output controls set in an options object, by their `GlobalOptions` key. */
+/**
+ * Admitted controls in the string form native host flags deliver on `context.global`: a numeric limit becomes its
+ * decimal string and a list of selectors its comma-separated form, as `--output-limit 1 --output-include rows` parse.
+ */
+function toGlobalOutputControls(controls: Partial<GlobalOptions>): Partial<GlobalOptions> {
+  return Object.fromEntries(Object.entries(controls).map(([key, value]: [string, unknown]) => [
+    key,
+    typeof value === "number" ? String(value) : Array.isArray(value) ? value.join(",") : value,
+  ]));
+}
+
+/**
+ * The universal output controls set in an options object, by their `GlobalOptions` key, each read under its
+ * camel-case key first and its snake-case spelling (`output_budget`) otherwise, as the read-output contracts read them.
+ */
 function pickOutputControls(options: Partial<GlobalOptions> | Record<string, unknown>): Partial<GlobalOptions> {
   const source = options as Record<string, unknown>;
-  return Object.fromEntries(GLOBAL_OUTPUT_CONTROL_KEYS.flatMap((key) => (source[key] === undefined ? [] : [[key, source[key]]])));
+  return Object.fromEntries(GLOBAL_OUTPUT_CONTROL_KEYS.flatMap((key) => {
+    const value = source[key] ?? source[key.replaceAll(/[A-Z]/gu, (letter) => `_${letter.toLowerCase()}`)];
+    return value === undefined ? [] : [[key, value]];
+  }));
 }
 
 /** Guard-test options whose context is a journal-proven transaction rollback (pm-wb6ktl). */
