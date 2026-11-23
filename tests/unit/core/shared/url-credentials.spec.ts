@@ -173,6 +173,11 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // Codex review round 5.
     ["a credential URL nested in a public URL's query", "https://public.invalid/login?next=https://build:demo pass@private.invalid/repo", "https://[redacted]@private.invalid/repo"],
     ["a URL in parentheses", "See (https://ci:demo pass@host.invalid/x) now", "See (https://[redacted]@host.invalid/x) now"],
+    // Greptile review round 3.
+    ["a numeric username part", "https://service 123:pass words@host/x", "https://[redacted]@host/x"],
+    ["a parenthesis inside a parenthesized URL's password", "(https://ci:pa)ss words@host/x)", "(https://[redacted]@host/x)"],
+    ["a long numeric username part", "https://build 10442:sample pass@host.invalid/repo", "https://[redacted]@host.invalid/repo"],
+    ["an empty password after a spaced username", "https://repo-\tdeploy-token-42:@registry.invalid/v2/", "https://[redacted]@registry.invalid/v2/"],
     // CodeRabbit: the escape at offsets 510 and 511 after the opening word starts inside the bound.
     ["an encoded at sign at offset 510", `https://x:demo ${"a".repeat(509)}%40host`, "https://[redacted]%40host"],
     // Greptile review round 2.
@@ -211,6 +216,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a clock time in prose", "See https://example.com at 09:30 and ping @oncall"],
     ["a Windows drive path before an error code and a mention", "Log output C:/Temp (code:ENOENT), fix and notify @admin"],
     ["a Markdown link before prose with a colon and a mention", "See [docs](https://example.invalid) status:404 then ping @oncall."],
+    ["a Markdown link and a full stop before prose", "See [docs](https://example.invalid). status:404 then ping @oncall."],
+    ["a clock time with a meridiem", "See https://example.com at 9:30pm, ping @oncall"],
     ["a later public URL in parentheses", "Compare https://ci:1234-beta with (https://example.org/package/@scope/name)"],
     ["a colon that a space follows", "https://service account: ping @oncall"],
     ["a trailing colon ending the text", "https://service account:"],

@@ -377,9 +377,27 @@ function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
   if (start === word.length) return { kind: "pending", closer };
   const authority = word.slice(start);
-  if (authority.startsWith("[") || /[/\\]/u.test(authority) || (closer !== undefined && authority.includes(closer))) return undefined;
+  if (authority.startsWith("[") || /[/\\]/u.test(authority) || closingDelimiterAt(authority, closer) >= 0) return undefined;
   const kind = authorityOpening(authority.split(/[?#]/u, 1)[0]!);
   return kind === undefined ? undefined : { kind, closer };
+}
+
+/** Closers that only end a URL at the end of a word, after which only punctuation follows; inside a word they are data (`pa)ss`). */
+const WORD_END_CLOSERS = new Set([")", "]"]);
+
+/**
+ * Where the delimiter that closes a URL stands in text, or -1. A quote,
+ * backtick or angle bracket closes it wherever it stands; a parenthesis or
+ * square bracket only at the end of the text, followed by nothing but
+ * punctuation (`(https://example.invalid).`), so a password that holds one
+ * (`(https://ci:pa)ss words@host)`) is still read.
+ */
+function closingDelimiterAt(text: string, closer: string | undefined): number {
+  if (closer === undefined) return -1;
+  if (!WORD_END_CLOSERS.has(closer)) return text.indexOf(closer);
+  let end = text.length;
+  while (end > 0 && /[.,;:!?]/u.test(text[end - 1]!)) end -= 1;
+  return end > 0 && text[end - 1] === closer ? end - 1 : -1;
 }
 
 /** Where the last `:` that an authority slash or backslash follows stands in a word, or -1. */
@@ -466,13 +484,17 @@ function nextWord(text: string, index: number, limit: number): readonly [start: 
 
 /**
  * Whether text holds a `:` that can separate a username from its password:
- * the first `:` has text after it and is no clock time's (`09:30`), so prose
- * such as `support: ops@example.org` or `at 09:30` never holds one.
+ * the first `:` has text after it and the text is no clock time (`09:30`), so
+ * prose such as `support: ops@example.org` or `at 09:30` never holds one, while
+ * a numeric username part (`123:pass`) does.
  */
 function hasPasswordColon(text: string): boolean {
   const colon = text.indexOf(":");
-  return colon >= 0 && colon < text.length - 1 && !/^\d+$/u.test(text.slice(0, colon));
+  return colon >= 0 && colon < text.length - 1 && !CLOCK_TIME.test(text);
 }
+
+/** A clock time written as one word (`09:30`, `12:30Z`, `9:30pm,`), never a username and password. */
+const CLOCK_TIME = /^\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[AaPp][Mm])?[.,;:!?)]*$/u;
 
 /**
  * How one later word reads inside an authority, up to its first path delimiter
@@ -494,14 +516,15 @@ function readAuthorityWord(word: string, maxStart: number, closer: string | unde
 } {
   const delimiter = word.search(/[/\\]/u);
   const beforePath = delimiter < 0 ? word : word.slice(0, delimiter);
-  const closed = closer === undefined ? -1 : beforePath.indexOf(closer);
+  const closed = closingDelimiterAt(beforePath, closer);
   const authority = closed < 0 ? beforePath : beforePath.slice(0, closed);
   const last = Math.min(authority.length, maxStart) - 1;
   const separator = last < 0 ? -1 : Math.max(authority.lastIndexOf("@", last), authority.toLowerCase().lastIndexOf("%40", last));
   return {
     startsUrl: delimiter >= 0 && closed < 0 && startsWithScheme(beforePath),
     separator: separator >= 0,
-    colonBeforeSeparator: separator > 0 && hasPasswordColon(authority.slice(0, separator)),
+    // A colon right before the separator is an empty password (`deploy-token:@host`).
+    colonBeforeSeparator: separator > 0 && (hasPasswordColon(authority.slice(0, separator)) || authority[separator - 1] === ":"),
     colon: hasPasswordColon(authority),
     trailingColon: authority.endsWith(":"),
     hasPath: delimiter >= 0 && closed < 0,

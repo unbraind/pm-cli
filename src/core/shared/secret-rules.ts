@@ -1203,16 +1203,17 @@ interface StringOpening {
  * container when its quote follows `[`, `{`, `,` or `:` and optional
  * whitespace, as in JSON, YAML flow or a Python repr; a string a command word
  * or prose opened (`echo "…"`, `Use "…"`) is a shell word or a quotation
- * instead. It is an attribute value when its quote directly follows `=`
- * (`<setting value="…"/>`), so only then does `>` after its closing quote end
- * it.
+ * instead. It is an attribute value when its quote follows `=` and optional
+ * whitespace (`<setting value="…"/>`, `value = "…"`), so only then does `>`
+ * after its closing quote end it.
  */
 function stringOpening(content: string, opener: number): StringOpening {
-  const attribute = content[opener - 1] === "=";
   let index = opener - 1;
-  // JSON allows any whitespace, line breaks included, between a separator and a value.
+  // JSON allows any whitespace, line breaks included, between a separator and a value, and XML
+  // allows blanks around an attribute's `=` (`value = "…"`).
   while (index >= 0 && /\s/u.test(content[index]!)) index -= 1;
-  return { inContainer: index >= 0 && /[[{,:]/u.test(content[index]!), attribute };
+  const before = content[index];
+  return { inContainer: before !== undefined && /[[{,:]/u.test(before), attribute: before === "=" };
 }
 
 /** Structure that may follow a closing quote before the next member, element or statement. */

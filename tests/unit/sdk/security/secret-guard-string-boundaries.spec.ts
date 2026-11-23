@@ -185,6 +185,12 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
 
   it("reads a JSON member value that starts on the next line", () => {
     expect(rulesOf(`{"title":\n  "${passwordKey}=${D}DB_PASSWORD","other":"ok"}`)).toEqual([]);
+    // Greptile: an element after an opening bracket on the previous line is a container element too.
+    expect(rulesOf(`[\n  "${passwordKey}: ${D}DB_PASSWORD", "other"]`)).toEqual([]);
+  });
+
+  it("reads an XML attribute value whose equals sign blanks surround (Greptile)", () => {
+    expect(rulesOf(`<setting value = "${passwordKey}=${D}DB_PASSWORD"/>`)).toEqual([]);
   });
 
   it("reads JSON line separators, YAML flow keys, XML tag ends and long padding after a closing quote", () => {

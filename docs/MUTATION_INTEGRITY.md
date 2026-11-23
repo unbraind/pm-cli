@@ -361,7 +361,7 @@ after its first character, or directly after it, and a word end as above
 follows the quote, the value ends there. After a closing quote, an unquoted
 YAML flow key (`{title: "…", updated: ok}`) is a word end too, and so is the
 end of an XML tag (`"/>`, `">`) when the string is an attribute value (its
-quote follows `=`), and blanks after its structure are padding however
+quote follows `=` and optional blanks), and blanks after its structure are padding however
 many there are. A quote at the value's first character is never a cut point,
 because after a stray apostrophe it may be the value's own opening quote, and
 neither is a quote inside the capture that a blank follows, which can only be
@@ -585,14 +585,17 @@ combine:
   the URL is skipped and a URL nested in another one's query is judged; a
   one-letter scheme is a Windows drive (`C:/Temp`), never a URL. When a quote,
   backtick, angle bracket, parenthesis or square bracket directly precedes the
-  scheme (a Markdown link destination), its closing delimiter ends the URL;
-  any other quote is data. The authority after the slashes must hold no path, no closing
+  scheme (a Markdown link destination), its closing delimiter ends the URL (a
+  parenthesis or bracket only at the end of a word, so one inside a password is
+  data); any other quote is data. The authority after the slashes must hold no path, no closing
   delimiter and no bracketed IPv6 host, and, up to a query or fragment, it
   either holds a `:` and is no dotted or `localhost` `host:port`
   (`https://user:pass`, `https://ci:123456`, `https://ci:pa%40ss`), or holds no
   `:`, `@` or `%40` (`https://service`, `https://jane.doe`: a spaced username,
   whose password colon must come in a later word, with text after it or a tab
-  or line break after it, and never as a clock time such as `09:30`; a colon
+  or line break after it, and never as a clock time such as `09:30`, while a
+  numeric username part such as `123:pass` counts; a colon directly before the
+  `@` is an empty password; a colon
   that a space follows counts only when the separator's host goes on into a
   path, as a URL's does and an email address's never does, or when the quote
   that opened the URL closes it there). A word
