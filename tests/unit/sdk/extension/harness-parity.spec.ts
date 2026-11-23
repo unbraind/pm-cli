@@ -168,7 +168,10 @@ describe("extension test harness parity with native dispatch", () => {
       api.registerCommand({ name: "probe-read", read_output: { row_keys: ["rows"] }, run: () => ({ rows: [] }) });
       // An extension that extends a native hybrid surface keeps that surface's mutation refusal.
       api.registerCommand({ name: "comments", run: () => ({ comments: [] }) });
-      api.registerFlags("notes", [{ long: "--add-json", short: "-J", value_type: "string" }]);
+      api.registerFlags("notes", [{ long: "--add-json", short: "-J", value_type: "string" }, { long: "--stdin", value_type: "boolean" }]);
+      // An extension may declare a flag literally spelled --no-add, which is not a negation (Greptile review).
+      api.registerFlags("learnings", [{ long: "--no-add", value_type: "boolean" }]);
+      api.registerCommand({ name: "learnings", run: () => ({ learnings: [] }) });
       api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
     });
     // Dashed host-control spellings are admitted too (CodeRabbit review).
@@ -185,14 +188,19 @@ describe("extension test harness parity with native dispatch", () => {
         context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
       });
     }
-    // A negated spelling of a mutation option is a mutation too (CodeRabbit review); a non-boolean value or an explicit base key is left alone.
-    for (const options of [{ "--no-add": false }, { "no-add": "false" }, { noAdd: false }, { "--no-add": true, add: "text" }]) {
-      await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", args: ["pm-x"], options, global: { outputLimit: "1" } })).rejects.toMatchObject({
+    // A negated spelling of a declared boolean mutation option is a mutation too (CodeRabbit review).
+    for (const options of [{ "--no-stdin": false }, { "no-stdin": "false" }, { "--no-stdin": true, stdin: true }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options, global: { outputLimit: "1" } })).rejects.toMatchObject({
         context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
       });
     }
-    for (const options of [{ "--no-add": "maybe" }, { "--no-add": true }, { noAdd: "true", add: undefined }]) {
-      await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", args: ["pm-x"], options, global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
+    // A non-boolean value, a true negation, an undeclared base, and a flag literally declared as --no-add are left alone (Greptile review).
+    // A value the negation cannot invert is the normalizer's value error, not a mutation conflict.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": "maybe" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "extension_flag_value_invalid" }),
+    });
+    for (const [command, options] of [["notes", { "--no-stdin": true }], ["comments", { "--no-add": false }], ["learnings", { noAdd: false }], ["learnings", { "--no-add": false }], ["notes", { "--no-add-json": false }]] as const) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command, args: ["pm-x"], options, global: { outputLimit: "1" } }), `${command} ${JSON.stringify(options)}`).resolves.toMatchObject({ handled: true });
     }
     // Host controls are admitted before extension flags, as natively: a missing required flag does not mask the refusal.
     await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-required", global: { outputLimit: "1" } })).rejects.toMatchObject({

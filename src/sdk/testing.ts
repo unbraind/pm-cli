@@ -1206,13 +1206,19 @@ export async function runRegisteredCommandForTest(
   return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
-/** The base key of a negated boolean spelling (`--no-add`, `no-add` and `noAdd` are `add`), if the key is one. */
-function negatedBaseKey(key: string): string | undefined {
-  const dashed = /^-{0,2}no-(\w[\w-]*)$/u.exec(key)?.[1];
-  // A dashed name that matched is always a valid long flag, so it always has a handler key.
-  if (dashed !== undefined) return resolveExtensionFlagOptionKey({ long: `--${dashed}` }) as string;
-  const camel = /^no([A-Z]\w*)$/u.exec(key)?.[1];
-  return camel === undefined ? undefined : `${camel.charAt(0).toLowerCase()}${camel.slice(1)}`;
+/**
+ * The handler key a negated spelling (`--no-stdin` or `no-stdin`) inverts, under the normalizer's own rule: only
+ * when that spelling is not itself declared and its base names a declared boolean flag.
+ */
+function negatedDeclaredBooleanKey(key: string, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): string | undefined {
+  const negated = /^(?:--)?no-(.+)$/u.exec(key)?.[1];
+  if (negated === undefined) return undefined;
+  const handlerKeyOf = (definition: (typeof definitions)[number]): string | null => resolveExtensionFlagOptionKey(definition);
+  const spelled = resolveExtensionFlagOptionKey({ long: `--${key.replace(/^--/u, "")}` });
+  if (definitions.some((definition) => handlerKeyOf(definition) === spelled)) return undefined;
+  const base = resolveExtensionFlagOptionKey({ long: `--${negated}` });
+  const declared = definitions.find((definition) => handlerKeyOf(definition) === base);
+  return declared !== undefined && (declared.value_type === "boolean" || declared.type === "boolean") ? (base as string) : undefined;
 }
 
 /** A boolean option value or its string token, or `undefined` for anything else. */
@@ -1231,8 +1237,8 @@ function booleanToken(value: unknown): boolean | undefined {
 function foldOptionSpellings(options: Record<string, unknown>, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): Record<string, unknown> {
   const folded: Record<string, unknown> = { ...options };
   for (const [key, value] of Object.entries(options)) {
-    // A negated boolean spelling (`--no-add: false`) sets its base key to the inverse, as the normalizer applies it.
-    const base = negatedBaseKey(key);
+    // A negated spelling of a declared boolean (`--no-stdin: false`) sets that flag to the inverse, as the normalizer applies it.
+    const base = negatedDeclaredBooleanKey(key, definitions);
     const flag = booleanToken(value);
     if (base !== undefined && flag !== undefined && folded[base] === undefined) folded[base] = !flag;
     // A declared short alias counts with or without its dash, as the normalizer accepts both (`-J`, `J`).
