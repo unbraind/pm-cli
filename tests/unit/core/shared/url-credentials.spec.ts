@@ -151,6 +151,12 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a spaced username", "https://service account:pass phrase@example.invalid", "https://[redacted]@example.invalid"],
     ["a spaced username whose password word holds the at sign", "https://service account:pass@example.invalid", "https://[redacted]@example.invalid"],
     ["extra authority slashes", "https:///ci:pass words@example.invalid", "https://[redacted]@example.invalid"],
+    // Codex review round 2.
+    ["a redirect URL in the query", "https://ci:fake words@example.invalid/download?next=https://docs.example.invalid", "https://[redacted]@example.invalid/download?next=https://docs.example.invalid"],
+    ["a redirect URL after an encoded at sign", "https://ci:fake words%40example.invalid/a?next=https://docs.example.invalid", "https://[redacted]%40example.invalid/a?next=https://docs.example.invalid"],
+    ["a dotted spaced username", "https://jane.doe account:fake words@example.invalid/private", "https://[redacted]@example.invalid/private"],
+    ["a password that starts with digits", "https://ci:123456 words@example.invalid/private", "https://[redacted]@example.invalid/private"],
+    ["a quoted URL", '"https://ci:pa ss@host"', '"https://[redacted]@host"'],
   ])("removes URL userinfo that holds whitespace across words: %s", (_case, text, expected) => {
     expect(redactUrlCredentialsInText(text)).toBe(expected);
     expect(redactUrlCredentialsInText(expected)).toBe(expected);
@@ -171,8 +177,25 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a later public URL holding an at sign", "Compare https://ci:1234-beta with https://example.org/package/@scope/name"],
     ["a single-label host before prose", "https://localhost and ping @bob"],
     ["a single-label host before prose with a colon after the at sign", "https://intranet ping @bob: now"],
+    ["a quoted URL before prose with a colon", 'See "https://intranet" and email support: ops@example.org.'],
+    ["a dotted host before prose with a colon", "Visit https://example.com and email support: ops@example.org"],
+    ["a localhost port before prose", "https://localhost:3000 ping @bob"],
   ])("leaves text alone when no whitespace-bearing userinfo opens: %s", (_case, text) => {
     expect(redactUrlCredentialsInText(text)).toBe(text);
+  });
+
+  it("redacts a joined URL exactly as the same URL without blanks", () => {
+    // The token rule masks through the last at sign by design (GH-1707: a base64 password may hold `/`).
+    const joined = redactUrlCredentialsInText("https://ci:fake words@example.invalid/npm/@scope/pkg");
+    expect(joined).toBe(redactUrlCredentialsInToken("https://ci:fakewords@example.invalid/npm/@scope/pkg"));
+    expect(joined).not.toContain("fake");
+  });
+
+  it("stays linear over many opening words before a later at sign", () => {
+    const text = `${`See https://intranet ${"A".repeat(500)}\n`.repeat(4_000)}Contact ops@example.org`;
+    const started = performance.now();
+    expect(redactUrlCredentialsInText(text)).toBe(text);
+    expect(performance.now() - started).toBeLessThan(2_000);
   });
 
   it("removes a registered whitespace-bearing span in any case, layout, shell or JSON escaping", () => {

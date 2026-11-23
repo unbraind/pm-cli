@@ -301,7 +301,7 @@ const EXCLUSION_REPEAT_BOUND = 4096;
 // millions of characters overflowed the stack and the guard failed open.
 const CREDENTIAL_OPEN = String.raw`"(?=[^"\s]{8}[^"\s]*")|'(?=[^'\s]{8}[^'\s]*')|(?!["'])`;
 const CREDENTIAL_PLAIN =
-  String.raw`(?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8}[^\s"]*|(?<=')[^\s']{8}[^\s']*|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})`;
+  String.raw`(?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%(?=$|[\s"',;)}\]<>&|])|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8}[^\s"]*|(?<=')[^\s']{8}[^\s']*|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})`;
 // The grammar a reference-free value is judged by. A referenced value's literal
 // is judged by it too, read as one double-quoted literal (literalValue).
 const CREDENTIAL_LITERAL_VALUE = new RegExp(`(?:${CREDENTIAL_OPEN})(${CREDENTIAL_PLAIN})`, "iy");
@@ -973,10 +973,40 @@ function judgedLiteral(match: RegExpMatchArray): string {
   // A quoted value's body is data, never shell syntax, so only an unquoted inner value is cut.
   const word = INNER_SHELL_MATCHES.has(match) && !isQuote(captureOpener(match)) ? shellWordPrefix(match[1]) : undefined;
   const text = word ?? match[1];
+  if (word === undefined && isWholePercentReference(match, text)) return "";
   const variables = word !== undefined || wordComplete(match);
   return DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match))
     ? expandRuntimeReferences(text, variables)
     : literalAfterReferences(text, variables);
+}
+
+/** A Windows `%NAME%` reference with nothing around it, as an element body. */
+const BARE_PERCENT_REFERENCE = /^%[A-Za-z_]\w*%$/u;
+/** A Windows `%NAME%` reference, bare or in one pair of quotes, as a whole value. */
+const PERCENT_REFERENCE = /^(["']?)%[A-Za-z_]\w*%\1$/u;
+
+/**
+ * Whether a captured value is one whole Windows `%NAME%` reference, which
+ * spells no literal (GH-1775). `cmd.exe` reads `set NAME=value` to the end of
+ * the line, so an unquoted text value is whole only when nothing but blanks
+ * follows it on its line, or when it ends at the string it sits in (see
+ * enclosingStringClose); a decoded literal, a quoted value the grammar read
+ * nothing after, and a quoted body that closes right after the capture are
+ * whole by construction. A percent reference that more words follow on its
+ * `set` line therefore keeps its literal reading.
+ */
+function isWholePercentReference(match: RegExpMatchArray, text: string): boolean {
+  if (!PERCENT_REFERENCE.test(text)) return false;
+  // A decoded literal, and a quoted value the grammar read nothing after, is the whole value.
+  if (DECODED_DATA_MATCHES.has(match) || isQuote(text[0])) return true;
+  const input = match.input!;
+  const end = match.index! + match[0].length;
+  const opener = captureOpener(match);
+  if (isQuote(opener)) return input[end] === opener;
+  if (ENCLOSING_STRING_CLOSE.get(match) === end) return true;
+  let index = end;
+  while (index < input.length && (input[index] === " " || input[index] === "\t")) index += 1;
+  return index === input.length || LINE_BREAK.test(input[index]!);
 }
 
 /**
@@ -1095,6 +1125,9 @@ const NO_STRING = 0;
 const DOUBLE_STRING = 1;
 const SINGLE_STRING = 2;
 
+/** A letter, digit or underscore, after which a quote never opens a string (see stringStates). */
+const WORD_CHARACTER = /[\p{L}\p{N}_]/u;
+
 /** Whether a UTF-16 code unit breaks a line. */
 function isLineBreakCode(code: number): boolean {
   return code === 0x0a || code === 0x0d || code === 0x2028 || code === 0x2029;
@@ -1104,8 +1137,9 @@ function isLineBreakCode(code: number): boolean {
  * The string state just before each position of `content`, from one linear
  * lexical pass (GH-1775). A quote opens a string of its kind when none is
  * open and closes the open string of its kind; a quote of the other kind
- * inside a string is data; a backslash escapes the next character; and a line
- * break ends every string, as JSON, Python and shell strings on one line read.
+ * inside a string is data; a quote right after a letter, digit or underscore
+ * never opens one; a backslash escapes the next character; and a line break
+ * ends every string, as JSON, Python and shell strings on one line read.
  * The entry at `content.length` holds the state at the end.
  */
 function stringStates(content: string): Uint8Array {
@@ -1121,7 +1155,9 @@ function stringStates(content: string): Uint8Array {
       states[index] = state;
     } else if (code === 0x22 || code === 0x27) {
       const kind = code === 0x22 ? DOUBLE_STRING : SINGLE_STRING;
-      if (state === NO_STRING) state = kind;
+      // A quote right after a letter, digit or underscore never opens a string: in prose it is an
+      // apostrophe (`customer's`) or a unit (`5"`), and a code prefix (`f"…"`) just keeps main's reading.
+      if (state === NO_STRING && !(index > 0 && WORD_CHARACTER.test(content[index - 1]!))) state = kind;
       else if (state === kind) state = NO_STRING;
     }
   }
@@ -1496,7 +1532,8 @@ function elementValueJudge(
     // Element text has no shell quoting: an apostrophe or quote in the body is
     // a literal character, so only references expand.
     const minimum = rule.minimumLiteralLength ?? DEFAULT_ELEMENT_LITERAL_LENGTH;
-    return (value) => expandRuntimeReferences(value).length >= minimum;
+    // A whole Windows `%NAME%` body spells nothing, as in text (GH-1775).
+    return (value) => !BARE_PERCENT_REFERENCE.test(value.trim()) && expandRuntimeReferences(value).length >= minimum;
   }
   // The whole trimmed body must be one value, so element prose never counts. It
   // is judged as a double-quoted literal: an element body has no code to confuse

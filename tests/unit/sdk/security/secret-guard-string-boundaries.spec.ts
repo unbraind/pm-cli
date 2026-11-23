@@ -25,6 +25,7 @@ const references = [
   ["command substitution", `${D}(op read item)`],
   ["empty default", `${D}{API_KEY:-}`],
   ["angle placeholder", "<api-key>"],
+  ["Windows variable", "%API_KEY%"],
 ] as const;
 
 /** The spellings a tracker stores configuration in, each with a sibling after the value where the form has one. */
@@ -138,10 +139,42 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`{"title":"api_key: ${D}{A}","note":"token=${literal}"}`)).toEqual(["credential_key_assignment"]);
   });
 
+  it("never lets a prose apostrophe or unit mark open a string", () => {
+    // `customer's` would otherwise open a string that the value's own quote closes.
+    expect(rulesOf(`note: the customer's ${passwordKey}='  correct horse battery staple'`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`the students' ${passwordKey}='  correct horse battery staple'`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`a 5" screen, ${passwordKey}="  correct horse battery staple"`)).toEqual(["password_assignment"]);
+  });
+
   it("stays linear over many assignments in one long string", () => {
     const text = JSON.stringify({ title: `api_key: ${D}{A} xxxxxxxxxx `.repeat(100_000), updated: "x" });
     const started = performance.now();
     expect(rulesOf(text)).toEqual([]);
     expect(performance.now() - started).toBeLessThan(5_000);
+  });
+});
+
+describe("a whole Windows variable is a placeholder for every key-named rule (GH-1775)", () => {
+  it("passes a whole percent reference as a text, quoted, element or payload value", () => {
+    for (const text of [
+      `${passwordKey}: %DB_PASSWORD%`,
+      `${passwordKey.toUpperCase()}=%DB_PASSWORD%\nNEXT=1`,
+      `${passwordKey}="%DB_PASSWORD%"`,
+      `{"${passwordKey}":"%DB_PASSWORD%"}`,
+      `<${passwordKey}>%DB_PASSWORD%</${passwordKey}>`,
+      `{"title":"${passwordKey}: %DB_PASSWORD%","updated":"ok"}`,
+      "api_key: %API_KEY%",
+    ]) {
+      expect(rulesOf(text), text).toEqual([]);
+    }
+    expect(rulesOf({ config: { [passwordKey]: "%DB_PASSWORD%" } })).toEqual([]);
+  });
+
+  it("judges a percent reference that more of its line follows, or a literal attached to it", () => {
+    // cmd.exe reads `set NAME=value` to the end of the line, so the words after it are part of the value.
+    expect(rulesOf(`${passwordKey.toUpperCase()}=%DB_PASSWORD% staging`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`${passwordKey}: %DB_PASSWORD%${literal}`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`api_key=%API_KEY%${literal}`)).toEqual(["credential_key_assignment"]);
+    expect(rulesOf(`{"api_key":"%API_KEY%${literal}"}`)).toEqual(["credential_key_assignment"]);
   });
 });

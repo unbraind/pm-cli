@@ -352,8 +352,10 @@ tracker record excluded from npm). A payload string such as
 title string. The two key-named rules find the string a value sits in with
 one linear lexical pass over the text: a quote opens a string of its kind
 when none is open and closes the open string of its kind, a quote of the
-other kind inside a string is data, a backslash escapes the next character,
-and a line break ends every string. When that string's closing quote lies
+other kind inside a string is data, a quote right after a letter, digit or
+underscore never opens one (a prose apostrophe such as `customer's`, or a
+unit mark), a backslash escapes the next character, and a line break ends
+every string. When that string's closing quote lies
 inside the captured value or directly after it, and a word end as above
 follows the quote, the value ends there. So `","` and the next member are
 never read as quoted pieces concatenated to the value, however long the next
@@ -365,6 +367,14 @@ are still reported. A value that sits in no string keeps its own quoted
 pieces (`password="$PW","…"`, a YAML single-quoted scalar whose doubled
 quotes are data), and a closing quote that another quote or a word follows
 (`echo "api_key=${EMPTY}""…"`) continues the shell word, as before.
+
+A whole Windows variable (`%DB_PASSWORD%`) is a placeholder for every
+key-named rule. `cmd.exe` reads `set NAME=value` to the end of the line, so an
+unquoted text value is whole only when nothing but blanks follows it on its
+line or when it ends at the string it sits in; a quoted value, a decoded
+literal and an element body are whole by construction. So a dotenv or
+`set` line whose percent reference more words follow, and a literal attached
+to the reference (`%API_KEY%…`, under any credential key), are still reported.
 
 A credential-key value led by a lowercase `$name` keeps the reference-free
 reading, in which a `$`-led literal is a placeholder. Any other `$` text is literal, so a
@@ -563,18 +573,23 @@ combine:
   whose userinfo holds whitespace is joined into one word
   ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
   tracker record excluded from npm). A word opens one when its first `:` is
-  followed by authority slashes (any number) and an authority with no path
-  and no bracketed IPv6 host, and that authority, up to a query or fragment,
-  either holds a `:` and is no `host:port` (`https://user:pass`,
-  `https://ci:pa%40ss`), or is one dotless label (`https://service`, a spaced
-  username whose `:` must come in a later word). The opening word is joined,
-  across any whitespace, through the later word that holds the last `@` or
-  `%40` starting within 16 words and 512 characters, as a parser takes the
-  authority's last `@`; a word that starts another URL or holds a path
-  delimiter before any separator ends the search. So stored text a refusal
-  echoes, such as a blocker title holding `https://user:pass words%40host/path`,
-  loses its whole userinfo, while `https://host:8080 … @bob`,
-  `https://host and ping @bob` and `https://host?t=12:30 … me@x` stay intact. A
+  followed by authority slashes (any number) and an authority with no path,
+  no quote, backtick or angle bracket (which end a quoted URL) and no
+  bracketed IPv6 host, and that authority, up to a query or fragment, either
+  holds a `:` and is no dotted or `localhost` `host:port` (`https://user:pass`,
+  `https://ci:123456`, `https://ci:pa%40ss`), or holds no `:`, `@` or `%`
+  (`https://service`, `https://jane.doe`: a spaced username, whose
+  `user:password` colon must come in a later word with text after it). The
+  opening word is joined, across any whitespace, through the later word that
+  holds the last `@` or `%40` starting within 16 words and 512 characters, as a
+  parser takes the authority's last `@`; a word that starts another URL before
+  its first path delimiter, or holds a path or prose delimiter before any
+  separator, ends the search. The joined span is redacted exactly as the same
+  URL without blanks. So stored text a refusal echoes, such as a blocker title
+  holding `https://user:pass words%40host/path`, loses its whole userinfo,
+  while `https://host.example:8080 … @bob`, `https://host and ping @bob`,
+  `https://host.example?t=12:30 … me@x` and `"https://host" … support: me@x`
+  stay intact. A
   producer may also split a value at
   whitespace or a comma, truncate it, re-case it or escape it before echoing
   it. The CLI therefore registers each secret for the running invocation:

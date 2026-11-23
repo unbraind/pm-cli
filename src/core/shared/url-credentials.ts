@@ -332,23 +332,24 @@ export function invocationCarriesUrlCredentials(): boolean {
 const SPACED_USERINFO_MAX_WORDS = 16;
 /** Code units after the opening word within which the separator of a whitespace-bearing userinfo must start. */
 const SPACED_USERINFO_MAX_LENGTH = 512;
-/** A `host:port` authority: one label run, a colon and port digits, never userinfo. */
-const HOST_PORT = /^[A-Za-z0-9.-]+:\d+$/u;
-/** A word that starts another URL: a scheme and its separator. */
-const URL_START = /[A-Za-z][A-Za-z0-9+.-]*:[/\\]/u;
+/** A `host:port` authority of a dotted host or `localhost`, never userinfo. */
+const HOST_PORT = /^(?:(?:[A-Za-z0-9-]+\.)+[A-Za-z0-9-]+|localhost):\d+$/iu;
+/** Characters that delimit a URL in prose: quotes, a backtick and angle brackets. */
+const URL_DELIMITER = /["'`<>]/u;
 
 /**
  * How a word opens a URL authority whose userinfo may go on past whitespace
  * (GH-1773), or undefined. The word's first `:` must be followed by authority
  * slashes (any number, as special schemes normalize them), and the authority
- * after them must hold no path and be no bracketed IPv6 host. It opens with
- * `user` when the authority, up to a query or fragment, holds a `:` and is no
- * `host:port` (`https://user:pass`, `https://ci:pincode:1234`, or a word that
- * already holds a separator, `https://ci:pa%40ss`). It opens with `label` when
- * the authority is one dotless label (`https://service`): a spaced username,
- * whose `user:password` colon must then come in a later word. A dotted host
- * (`https://example.com`), a `host:port` and a colon only inside a query
- * (`https://example.com?t=12:30`) never open one, so such prose stays intact.
+ * after them must hold no path, no prose delimiter (a quote, a backtick or an
+ * angle bracket, which end a quoted URL) and be no bracketed IPv6 host. It
+ * opens with `user` when the authority, up to a query or fragment, holds a
+ * `:` and is no dotted `host:port` (`https://user:pass`, `https://ci:123456`,
+ * or a word that already holds a separator, `https://ci:pa%40ss`). It opens
+ * with `label` when that part holds no `:`, `@` or `%` (`https://service`,
+ * `https://jane.doe`): a spaced username, whose `user:password` colon must then
+ * come in a later word. A colon only inside a query (`https://example.com?t=12:30`)
+ * never makes a `user` opening.
  */
 function spacedUserinfoOpening(word: string): "user" | "label" | undefined {
   const colon = word.indexOf(":");
@@ -357,10 +358,11 @@ function spacedUserinfoOpening(word: string): "user" | "label" | undefined {
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
   if (start === colon + 1) return undefined;
   const authority = word.slice(start);
-  if (authority.startsWith("[") || /[/\\]/u.test(authority)) return undefined;
+  if (authority.startsWith("[") || /[/\\]/u.test(authority) || URL_DELIMITER.test(authority)) return undefined;
   const head = authority.split(/[?#]/u, 1)[0]!;
+  if (head === "") return undefined;
   if (head.includes(":")) return HOST_PORT.test(head) ? undefined : "user";
-  return head !== "" && !/[.@%]/u.test(head) ? "label" : undefined;
+  return /[@%]/u.test(head) ? undefined : "label";
 }
 
 /**
@@ -383,9 +385,8 @@ function spacedUserinfoEnd(text: string, from: number, opening: "user" | "label"
   for (let words = 0; words < SPACED_USERINFO_MAX_WORDS && index < limit; words += 1) {
     const bounds = nextWord(text, index, limit);
     if (bounds === undefined) break;
-    const word = text.slice(bounds[0], Math.min(bounds[1], limit));
-    if (URL_START.test(word)) break;
-    const read = readAuthorityWord(word);
+    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit)));
+    if (read.startsUrl) break;
     if (read.separator && (colonSeen || read.colonBeforeSeparator)) end = bounds[1];
     colonSeen ||= read.colon;
     if (read.endsAuthority) break;
@@ -404,17 +405,42 @@ function nextWord(text: string, index: number, limit: number): readonly [start: 
   return [start, end];
 }
 
-/** How one later word reads inside an authority: up to its first path delimiter, which ends the authority. */
-function readAuthorityWord(word: string): { separator: boolean; colonBeforeSeparator: boolean; colon: boolean; endsAuthority: boolean } {
+/**
+ * How one later word reads inside an authority, up to its first path delimiter
+ * or prose delimiter, either of which ends the authority. The word starts
+ * another URL when the text before its first path delimiter ends with a
+ * scheme and its `:` (`https://…`), read back from that `:` so a long word
+ * costs one pass. Only a `:` with text after it in the same word can separate
+ * a spaced username from its password (`account:pass`), so prose such as
+ * `support: ops@example.org` never does.
+ */
+function readAuthorityWord(word: string): {
+  startsUrl: boolean;
+  separator: boolean;
+  colonBeforeSeparator: boolean;
+  colon: boolean;
+  endsAuthority: boolean;
+} {
   const delimiter = word.search(/[/\\]/u);
-  const authority = delimiter < 0 ? word : word.slice(0, delimiter);
+  const beforePath = delimiter < 0 ? word : word.slice(0, delimiter);
+  const quote = beforePath.search(URL_DELIMITER);
+  const authority = quote < 0 ? beforePath : beforePath.slice(0, quote);
   const separator = Math.max(authority.lastIndexOf("@"), authority.toLowerCase().lastIndexOf("%40"));
   return {
+    startsUrl: delimiter >= 0 && quote < 0 && endsWithScheme(beforePath),
     separator: separator >= 0,
-    colonBeforeSeparator: separator > 0 && authority.slice(0, separator).includes(":"),
-    colon: authority.includes(":"),
-    endsAuthority: delimiter >= 0,
+    colonBeforeSeparator: separator > 0 && /:(?!$)/u.test(authority.slice(0, separator)),
+    colon: /:(?!$)/u.test(authority),
+    endsAuthority: delimiter >= 0 || quote >= 0,
   };
+}
+
+/** Whether text ends with a URL scheme and its `:`, read back from the end. */
+function endsWithScheme(text: string): boolean {
+  if (!text.endsWith(":")) return false;
+  let start = text.length - 1;
+  while (start > 0 && /[A-Za-z0-9+.-]/u.test(text[start - 1]!)) start -= 1;
+  return start < text.length - 1 && /[A-Za-z]/u.test(text[start]!);
 }
 
 /**
