@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:ci",codefactor,security,supply-chain
 created_at: "2026-11-23T10:04:05.325Z"
-updated_at: "2026-11-23T11:27:13.106Z"
+updated_at: "2026-11-23T11:57:34.303Z"
 closed_at: "2026-11-23T10:55:49.538Z"
 completed_at: "2026-11-23T10:55:49.538Z"
 author: "harness:claude-code"
@@ -18,6 +18,8 @@ confidence: medium
 resolution: "release-reliability.yml carries '# zizmor: ignore[dangerous-triggers]' on its workflow_run trigger, with the hardening rationale (default-branch runs only, default-branch checkout, unpersisted credentials, read-only permissions, no triggering-run artifacts) in a comment beside it."
 expected_result: CodeFactor reports no new issue for PR #1772
 actual_result: "CodeFactor failed on 79ae15305 with the dangerous-triggers finding and succeeded on c7d07d1e1, the first head with the suppression; release-reliability.spec.ts and collect-nightly-reliability.spec.ts still parse the workflow (69 tests pass)"
+comments[1]{created_at,author,text}:
+  "2026-11-23T11:57:34.303Z","harness:claude-code","Correction (CodeRabbit review round 3, 2026-11-23): the rationale recorded at close said the job downloads no artifact from the triggering run. collect-release-reliability.mjs does download the release-observation artifact of completed Auto Release runs, which can include the triggering run, and parses it as JSON data; no downloaded file is imported or executed. The workflow comment now states that trust boundary precisely; the suppression and its other reasons are unchanged.\n"
 files[1]{path,scope}:
   .github/workflows/release-reliability.yml,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:

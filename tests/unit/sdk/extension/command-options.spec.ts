@@ -683,6 +683,10 @@ describe("argv order of repeatable switch occurrences (pm-g2zzus)", () => {
     const tokens = ["-mm", "--many=false"];
     const source = orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["--many=false"]), [leaf(tokens, { optionOf: (spelling) => registered.get(spelling) })], grouped);
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true, true] }, grouped, source, "demo")).toMatchObject({ many: [true, true, false] });
+    // Without a registered short option owning it, a single-dash spelling is a loose occurrence (CodeRabbit review).
+    const longOnly = [{ long: "--many", value_type: "boolean", repeatable: true, list: true }];
+    const unowned = orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["-many=false"]), [leaf(["--many", "-many=false"], { optionOf: (spelling) => (spelling === "--many" ? { arity: "none", key: "many" } : undefined) })], longOnly);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, longOnly, unowned, "demo")).toMatchObject({ many: [true, false] });
   });
 
   /** The values the reordered occurrences deliver for --many, through the shared coercer. */

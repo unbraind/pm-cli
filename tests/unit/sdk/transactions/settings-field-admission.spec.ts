@@ -57,6 +57,10 @@ describe("settings writers share the custom field admission", () => {
         sdk.mutateWorkspaceSettings({ operationId: "unrelated", mutate: (current) => ({ ...current, author_default: "settings-writer" }) }),
       ).resolves.toMatchObject({ changed: true });
       expect((JSON.parse(await readFile(settingsPath, "utf8")) as { schema: { fields: unknown[] } }).schema.fields).toEqual([legacy]);
+      // A callback that JSON round-trips the tree drops undefined properties; the legacy field is still unchanged (Codex review round 3).
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "round-trip", mutate: (current) => ({ ...(JSON.parse(JSON.stringify(current)) as PmSettings), author_default: "round-trip-writer" }) }),
+      ).resolves.toMatchObject({ changed: true });
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "changed", mutate: (current) => withFields(current, current.schema.fields.map((field) => ({ ...field, description: "now changed" }))) }),
       ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_option_collision" }) });

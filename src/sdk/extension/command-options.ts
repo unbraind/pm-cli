@@ -1751,17 +1751,20 @@ export function orderArgvRepeatableSwitchOccurrences(
 }
 
 /**
- * A long leaf spelling Commander did not register that the loose parser folds
- * onto a repeatable switch's key. Registered spellings never reach it: the
- * shared resolver answers them first. A single-dash token stays on the short
- * group path, where Commander splits `-mm` into two `-m` occurrences.
+ * A leaf spelling Commander did not register that the loose parser folds onto
+ * a repeatable switch's key. Registered spellings never reach it: the shared
+ * resolver answers them first. A single-dash token whose first letter is a
+ * registered short option stays on the short group path, where Commander
+ * splits `-mm` into two `-m` occurrences; without one (`-many=false`) it is a
+ * loose occurrence like a long spelling.
  */
 function resolveFoldedSwitchSpelling(
   scope: ArgvOptionScope,
   foldedKeys: ReadonlyMap<string, DeclaredArgvSpelling>,
   spelling: string,
 ): ArgvSpellingEntry | undefined {
-  if (!scope.includesLooseFlags || !spelling.startsWith("--")) return undefined;
+  const shortGroup = !spelling.startsWith("--") && scope.optionOf(spelling.slice(0, 2)) !== undefined;
+  if (!scope.includesLooseFlags || shortGroup) return undefined;
   const declared = foldedKeys.get(toLooseOptionKey(spelling.replace(/^-+/u, "")));
   return declared === undefined ? undefined : { arity: declared.arity, declared, loose: true };
 }

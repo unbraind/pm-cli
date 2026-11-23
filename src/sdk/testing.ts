@@ -299,6 +299,7 @@ async function admitRegisteredReadOutputResult(
   commands: ExtensionCommandRegistry,
   context: CommandHandlerContext,
   outcome: CommandHandlerResult,
+  optionControls: Partial<GlobalOptions> = {},
 ): Promise<CommandHandlerResult> {
   if (registrations === undefined || !outcome.handled) return outcome;
   const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === context.command)?.read_output;
@@ -319,6 +320,7 @@ async function admitRegisteredReadOutputResult(
     process.exitCode = 0;
     try {
       formatOutput(projectPrintedResult(outcome.result, global), {
+        ...optionControls,
         ...global,
         command: context.command,
         commandArgs: context.args,
@@ -1175,8 +1177,10 @@ export async function runRegisteredCommandForTest(
   const registrations = readActivatedFlagRegistrations(commands);
   const handlerOptions = options.options ? { ...options.options } : {};
   const args = options.args ? [...options.args] : [];
-  // Native dispatch admits host output controls before it normalizes extension flags (pm-gh1769).
-  await admitRegisteredOutputControls(registrations, command, args, handlerOptions, global);
+  // Native dispatch admits host output controls before it normalizes extension flags (pm-gh1769), and the same
+  // canonical controls shape the delivered output, however the caller spelled them.
+  const admissionOptions = foldOptionSpellings(handlerOptions, registrations === undefined ? [] : collectExtensionFlagDefinitionsForCommand(registrations, command));
+  await admitRegisteredOutputControls(registrations, command, args, admissionOptions, global);
   const context: CommandHandlerContext = {
     command,
     args,
@@ -1197,19 +1201,21 @@ export async function runRegisteredCommandForTest(
     ...(sdk === undefined ? {} : { sdk }),
   };
   const outcome = await runCommandHandler(commands, context);
-  return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
+  return await admitRegisteredReadOutputResult(registrations, commands, context, outcome, pickOutputControls(admissionOptions));
 }
 
 /**
- * The options with every key also under its handler spelling (`--add-json` and
- * `add-json` as `addJson`), so host admission sees a mutation option however a
- * harness caller spells it, as native dispatch sees Commander's parsed keys.
- * Required-flag and value validation still run afterwards, in normalization.
+ * The options with every key also under its handler spelling (`--add-json`,
+ * `add-json` and a declared short alias such as `-J` as `addJson`), so host
+ * admission sees a mutation option however a harness caller spells it, as
+ * native dispatch sees Commander's parsed keys. Required-flag and value
+ * validation still run afterwards, in normalization.
  */
-function foldOptionSpellings(options: Record<string, unknown>): Record<string, unknown> {
+function foldOptionSpellings(options: Record<string, unknown>, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): Record<string, unknown> {
   const folded: Record<string, unknown> = { ...options };
   for (const [key, value] of Object.entries(options)) {
-    const handlerKey = resolveExtensionFlagOptionKey({ long: key.startsWith("-") ? key : `--${key}` });
+    const declared = definitions.find((definition) => definition.short === key);
+    const handlerKey = resolveExtensionFlagOptionKey(declared ?? { long: key.startsWith("-") ? key : `--${key}` });
     if (handlerKey !== null && !Object.hasOwn(folded, handlerKey)) folded[handlerKey] = value;
   }
   return folded;
@@ -1248,14 +1254,17 @@ async function admitRegisteredOutputControls(
   global: Partial<GlobalOptions>,
 ): Promise<void> {
   if (registrations === undefined) return;
-  const globalControls = Object.fromEntries(
-    GLOBAL_OUTPUT_CONTROL_KEYS.flatMap((key) => (global[key] === undefined ? [] : [[key, global[key]]])),
-  );
   await runWithIsolatedExtensionRuntime(async () => {
     // The attached object is the activation's full registration registry.
     setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
-    validateReadOutputOptions(command, { ...foldOptionSpellings(options), ...annotationPositionalMutationOptions(command, args), ...globalControls });
+    validateReadOutputOptions(command, { ...options, ...annotationPositionalMutationOptions(command, args), ...pickOutputControls(global) });
   });
+}
+
+/** The universal output controls set in an options object, by their `GlobalOptions` key. */
+function pickOutputControls(options: Partial<GlobalOptions> | Record<string, unknown>): Partial<GlobalOptions> {
+  const source = options as Record<string, unknown>;
+  return Object.fromEntries(GLOBAL_OUTPUT_CONTROL_KEYS.flatMap((key) => (source[key] === undefined ? [] : [[key, source[key]]])));
 }
 
 /** Guard-test options whose context is a journal-proven transaction rollback (pm-wb6ktl). */

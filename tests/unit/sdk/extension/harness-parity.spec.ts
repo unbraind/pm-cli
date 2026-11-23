@@ -168,7 +168,7 @@ describe("extension test harness parity with native dispatch", () => {
       api.registerCommand({ name: "probe-read", read_output: { row_keys: ["rows"] }, run: () => ({ rows: [] }) });
       // An extension that extends a native hybrid surface keeps that surface's mutation refusal.
       api.registerCommand({ name: "comments", run: () => ({ comments: [] }) });
-      api.registerFlags("notes", [{ long: "--add-json", value_type: "string" }]);
+      api.registerFlags("notes", [{ long: "--add-json", short: "-J", value_type: "string" }]);
       api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
     });
     // Dashed host-control spellings are admitted too (CodeRabbit review).
@@ -180,7 +180,7 @@ describe("extension test harness parity with native dispatch", () => {
       });
     }
     // A mutation option is recognized however the caller spells it (Codex review round 2); an unfoldable key passes through.
-    for (const key of ["--add-json", "add-json"]) {
+    for (const key of ["--add-json", "add-json", "-J"]) {
       await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { [key]: "{}", "-t": "x" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
         context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
       });
@@ -216,10 +216,13 @@ describe("extension test harness parity with native dispatch", () => {
     // (CodeRabbit review) and never leaks the exit code (Codex review round 10).
     for (const before of [undefined, 1]) {
       process.exitCode = before;
-      await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge", options: { outputBudget: "400" } })).rejects.toMatchObject({
-        exitCode: 2,
-        context: expect.objectContaining({ code: "output_budget_exceeded" }),
-      });
+      // A dashed spelling of the control shapes the delivered output too (Codex review round 3).
+      for (const options of [{ outputBudget: "400" }, { "--output-budget": "400" }]) {
+        await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge", options })).rejects.toMatchObject({
+          exitCode: 2,
+          context: expect.objectContaining({ code: "output_budget_exceeded" }),
+        });
+      }
       expect(process.exitCode).toBe(before);
     }
     process.exitCode = undefined;

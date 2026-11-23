@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: "area:cli","area:sdk",extensions,options
 created_at: "2026-11-23T10:04:47.308Z"
-updated_at: "2026-11-23T10:04:47.308Z"
+updated_at: "2026-11-23T11:55:15.946Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Reproduce with an extension that declares --many on a command and its subcommand, recording the delivered order on the built CLI; Occurrences recorded by every scope are merged by their position in the original argv, so pm parent child --many=false --many delivers [false, true]; An in-process spec covers parent-consumed bare, leaf-only attached and a token consumed as another option's value across scopes"
@@ -16,4 +16,6 @@ confidence: medium
 expected_result: Every occurrence of a repeatable switch reaches the handler in argv order whichever command scope consumed it
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-g2zzus,discovered_from,"2026-11-23T10:04:47.308Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-23T11:55:15.946Z","harness:claude-code","Scope addition from the third Codex pass on PR #1772 (2026-11-23, not reproduced here): when a command declares both --many and --no-many as repeatable switches, --many --no-Many reaches the handler as [false, true] for many instead of [true, false]. Commander leaves the mixed-case token unparsed and the loose parser records it as many=false, but the ordering scan folds --no-Many to the noMany key, so its slot count disagrees and the loose-first fallback applies (no value is lost, the order is). The fix belongs with the position-based merge: assign each loose slot with the loose parser's own negation rule (a --no- prefix inverts the base key) rather than the folded key.\n"
 body: ""

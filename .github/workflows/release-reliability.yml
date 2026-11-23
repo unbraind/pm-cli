@@ -3,8 +3,9 @@ name: Release Reliability
 on:
   # The trigger only reads: the job runs for default-branch runs alone, checks out
   # the default branch (never the triggering run's code), keeps credentials
-  # unpersisted, holds read-only permissions and downloads no artifact from the
-  # triggering run (pm-5mstyv).
+  # unpersisted and holds read-only permissions. Release observation artifacts
+  # of completed runs are parsed as JSON data by that trusted code; no
+  # downloaded file is imported or executed (pm-5mstyv).
   workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: [Auto Release, Nightly Validation]
     types: [completed]
