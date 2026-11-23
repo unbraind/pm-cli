@@ -287,6 +287,7 @@ export type {
   RuntimeFieldDefinition,
   RuntimeFieldValueSchema,
 } from "./schema.js";
+export { describeFieldFlagSpellingDefect } from "./schema/field-flag-spelling.js";
 export {
   runInActiveExtensionScope,
   runWithActiveExtensions,

@@ -1,0 +1,52 @@
+id: pm-gh1769
+title: "GH-1769: the extension test harness accepts universal output controls on non-read commands that the native CLI refuses before dispatch"
+description: "GH-1769 (filed 2026-11-22, reproduced on 2026.11.22). createExtensionTestHarness().runCommand and runRegisteredCommandForTest accept universal output controls (outputBudget, outputLimit, outputInclude, outputCursor, and the other canonical read-output keys) on an extension command that declares no read_output. The native CLI refuses the same invocation before dispatch: pm probe echo --output-budget 1 --json exits 2 with \"Universal output controls apply only to read commands; probe echo is not a read surface.\" The native guard is validateReadOutputOptions (src/sdk/read-output-contracts.ts), called in the CLI preAction hook (src/cli/main.ts) and in PmClient.run dispatchAction (src/sdk/runtime.ts) with the active extension registrations published. The harness (src/sdk/testing.ts runRegisteredCommandForTest) never calls it, so a package test passes for an invocation every real agent sees refused. This is the parity gap GH-1729 (pm-gh1729, closed) set out to close for read-output results; it did not cover pre-dispatch admission of the controls themselves. Duplicate check: searched \"extension test harness universal output controls read surface\"; pm-gh1729 and pm-extension-read-output-controls are closed and own result admission and the read_output opt-in, nothing owns the pre-dispatch control refusal in the harness."
+type: Issue
+status: closed
+priority: 2
+tags[5]: extensions,"gh:1769",read-output,sdk,testing
+created_at: "2026-11-23T08:22:13.674Z"
+updated_at: "2026-11-23T09:42:27.295Z"
+closed_at: "2026-11-23T09:39:58.815Z"
+completed_at: "2026-11-23T09:39:58.815Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A harness call to a non-read extension command with any universal output control fails with the native refusal's exit code and message; A command that declares read_output keeps accepting the controls, and malformed control values are refused as natively; A parity spec runs the same invocation through the harness and the built CLI and compares the refusals"
+parent: pm-ugqx
+risk: low
+confidence: high
+reporter: unbraind
+severity: medium
+resolution: "runRegisteredCommandForTest (src/sdk/testing.ts) runs the shared validateReadOutputOptions admission before the handler inside an isolated runtime holding the activation's registrations, reading controls from global and options; a hand-built registry is not checked. The native refusal is now typed read_output_surface_unsupported (exit 2, same message, details.output_option_keys) and READ_OUTPUT_SURFACE_UNSUPPORTED_CODE is exported. docs/SDK.md and docs/READ_OUTPUT_CONTRACTS.md document both."
+expected_result: "runCommand refuses universal output controls on a non-read extension command with the same code, exit and message as native dispatch, a read_output command keeps accepting them, malformed values are refused"
+actual_result: "The parity spec compares the built CLI and the harness for four controls through global and options (same code, exit 2, message, no handler run), --output-format yaml in both, and probe report accepting --output-limit; harness-parity covers the hybrid comments surface and the hand-built registry skip"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1729,related,"2026-11-23T08:22:13.674Z","harness:claude-code","cli:create:dep",detected
+  pm-extension-read-output-controls,related,"2026-11-23T09:17:05.564Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-23T08:47:01.040Z","harness:claude-code","Implementation evidence (2026-11-23). runRegisteredCommandForTest (src/sdk/testing.ts) now calls the shared validateReadOutputOptions before the handler runs, inside an isolated extension runtime that holds the activation's registrations, so resolveReadOutputSurface sees the command's read_output declaration exactly as CLI preAction and PmClient.run dispatchAction do. Controls are read from both places a harness caller can put them: global (outputInclude, outputLimit, outputBudget, outputFormat, outputSession, outputCursor, outputRowContract) and options (camel or snake keys). A hand-built registry carries no declarations and is not checked, matching admitRegisteredReadOutputResult.\n\nThe native refusal was untyped (command_failed). It now carries the stable code read_output_surface_unsupported (exit 2, same message) with details.output_option_keys, required and why; READ_OUTPUT_SURFACE_UNSUPPORTED_CODE is exported. Probed on the built CLI: pm create Task --title x --output-row-contract refuses with the new code, so output-row-contract reaches the native check through command options and including it in the harness keeps parity.\n\nParity spec (direct-caller-option-contract.integration.spec.ts): for --output-budget, --output-limit, --output-include and --output-cursor the built CLI refuses probe option with read_output_surface_unsupported, and the harness refuses the same invocation through global and through options with the same code, exit 2 and message; the handler's run counter shows no run happened; --output-format yaml is refused with the native message in both; probe report (declares read_output) accepts --output-limit in both. harness-parity.spec.ts adds the extended native hybrid surface (comments with add plus outputLimit refuses read_output_mutation_conflict) and the hand-built registry skip.\n"
+files[4]{path,scope,note}:
+  src/sdk/read-output-contracts.ts,project,typed read_output_surface_unsupported refusal
+  src/sdk/testing.ts,project,pre-dispatch universal output control admission
+  tests/integration/extensions/direct-caller-option-contract.integration.spec.ts,project,harness vs built CLI parity
+  tests/unit/sdk/extension/harness-parity.spec.ts,project,unit parity incl. hand-built registry and hybrid surface
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,"harness:claude-code","2026-11-23T08:45:35.430Z",local_mutation,fix/extension-harness-admission-parity
+docs[2]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+  docs/SDK.md,project
+close_reason: "The extension test harness refuses universal output controls on a non-read command before dispatch, exactly as the native CLI does"
+contract_change:
+  api: runRegisteredCommandForTest and createExtensionTestHarness().runCommand; the native refusal of universal output controls on a non-read command
+  before: "The harness ran a command without read_output given outputBudget, outputLimit, outputInclude, outputCursor or another universal output control and returned handled: true, while the native CLI and PmClient.run refused it with the untyped code command_failed"
+  after: "The harness refuses those invocations before the handler runs, with the native message and exit 2; the refusal everywhere carries the stable code read_output_surface_unsupported with details.output_option_keys, and READ_OUTPUT_SURFACE_UNSUPPORTED_CODE is exported"
+  migrate: "Drop universal output controls from harness calls of commands that do not declare read_output, or declare read_output on a read command; callers that matched command_failed for this refusal match read_output_surface_unsupported"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1769
+  gate_id: harness-read-output-control-admission
+  negative_control: "direct-caller-option-contract.integration.spec.ts runs probe option with --output-budget, --output-limit, --output-include and --output-cursor through the built CLI and the harness; on 2026.11.23 the harness call resolves handled while the CLI exits 2"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

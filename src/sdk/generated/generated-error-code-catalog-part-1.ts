@@ -643,6 +643,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/profile/profile-lint.ts"],
   },
   {
+    code: "field_flag_invalid",
+    exit_code: 2,
+    sources: ["core/profile/profile-lint.ts"],
+  },
+  {
     code: "field_invalid",
     exit_code: 2,
     stable: true,
@@ -1415,6 +1420,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   },
   {
     code: "merge_driver_configuration_drift",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
+    code: "merge_driver_configuration_missing",
     exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],
   },

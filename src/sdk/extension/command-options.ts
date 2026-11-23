@@ -1428,22 +1428,25 @@ function indexDeclaredArgvSpellings(
  * Commander follows Commander's arity and sets the declaration only when the
  * registered option sets the declaration's handler key: a core option that
  * owns a colliding short alias keeps it. A declared flag the command did not
- * register is read from the leaf's tokens only.
+ * register is read from the leaf's tokens only. `tracks` picks the
+ * declarations the caller records: scalar flags for the spelling-conflict
+ * check, repeatable switches for occurrence order (pm-g2zzus).
  */
 function resolveArgvSpelling(
   scope: ArgvOptionScope,
   index: ReadonlyMap<string, DeclaredArgvSpelling>,
   spelling: string,
+  tracks: (declared: DeclaredArgvSpelling) => boolean = isScalarArgvSpelling,
 ): ArgvSpellingEntry | undefined {
   const registered = scope.optionOf(spelling);
   const declared = index.get(spelling);
-  const settable = declared?.scalar === true ? declared : undefined;
+  const settable = declared !== undefined && tracks(declared) ? declared : undefined;
   if (registered !== undefined) {
     const base: ArgvSpellingEntry = { arity: registered.arity, ...(registered.variadic === true ? { variadic: true } : {}) };
     if (settable?.handlerKey === registered.key) return { ...base, declared: settable };
-    // A registered `--no-<flag>` (a core option an extension augments) sets the declared boolean's own attribute.
-    const positive = declared === undefined && spelling.startsWith("--no-") ? index.get(`--${spelling.slice(5)}`) : undefined;
-    return positive?.scalar === true && positive.kind === "boolean" && positive.handlerKey === registered.key ? { ...base, declared: positive, negates: true } : base;
+    if (declared !== undefined) return base;
+    const negated = resolveRegisteredNegation(index, spelling, registered, tracks);
+    return negated === undefined ? base : { ...base, declared: negated, negates: true };
   }
   if (!scope.includesLooseFlags || declared === undefined) return undefined;
   return settable === undefined ? { arity: declared.arity, loose: true } : { arity: declared.arity, declared: settable, loose: true };
@@ -1458,7 +1461,7 @@ function isArgvOptionToken(token: string): boolean {
 const NEGATIVE_NUMBER_ARGV_TOKEN = /^-(\d+|\d*\.\d+)(e[+-]?\d+)?$/u;
 
 /** One recognized option occurrence. */
-type ArgvOccurrenceSink = (spelling: string, entry: ArgvSpellingEntry, value: unknown) => void;
+type ArgvOccurrenceSink = (spelling: string, entry: ArgvSpellingEntry, value: unknown, attached: boolean) => void;
 
 /**
  * Walk one scope's tokens as Commander's parseOptions does: exact spellings
@@ -1524,7 +1527,7 @@ function scanArgvOptionToken(
   // Loose occurrences are unknown options to Commander.
   const loose = readLooseArgvOccurrence(token, next, resolve);
   if (loose !== undefined) {
-    record(loose.spelling, loose.entry, loose.value);
+    record(loose.spelling, loose.entry, loose.value, loose.attached);
     return { consumedByCommander: false, consumed: loose.consumed };
   }
   const exact = resolve(token);
@@ -1533,7 +1536,7 @@ function scanArgvOptionToken(
     const takesNext =
       exact.arity === "required" ||
       (exact.arity === "optional" && next !== undefined && (!isArgvOptionToken(next) || (scope.negativeNumbersAreValues && NEGATIVE_NUMBER_ARGV_TOKEN.test(next))));
-    record(token, exact, exact.negates === true ? false : takesNext ? next : true);
+    record(token, exact, exact.negates === true ? false : takesNext ? next : true, false);
     return { consumedByCommander: true, consumed: takesNext ? 1 : 0, variadic: exact.variadic === true };
   }
   if (token[1] !== "-") return { consumed: 0, ...scanShortGroup(token, resolve, record) };
@@ -1550,18 +1553,18 @@ function readLooseArgvOccurrence(
   token: string,
   next: string | undefined,
   resolve: (spelling: string) => ArgvSpellingEntry | undefined,
-): { spelling: string; entry: ArgvSpellingEntry; value: unknown; consumed: 0 | 1 } | undefined {
+): { spelling: string; entry: ArgvSpellingEntry; value: unknown; consumed: 0 | 1; attached: boolean } | undefined {
   const equals = token.indexOf("=");
   const spelling = equals > 1 ? token.slice(0, equals) : token;
   const entry = resolve(spelling);
   if (entry?.loose === true) {
-    if (equals > 1) return { spelling, entry, value: token.slice(equals + 1), consumed: 0 };
+    if (equals > 1) return { spelling, entry, value: token.slice(equals + 1), consumed: 0, attached: true };
     // The loose parser takes any following token that does not start with `-`, switch or not.
     const takesNext = next !== undefined && !next.startsWith("-");
-    return takesNext ? { spelling, entry, value: next, consumed: 1 } : { spelling, entry, value: true, consumed: 0 };
+    return takesNext ? { spelling, entry, value: next, consumed: 1, attached: false } : { spelling, entry, value: true, consumed: 0, attached: false };
   }
   const negated = equals < 0 && token.startsWith("--no-") ? resolve(`--${token.slice(5)}`) : undefined;
-  return negated?.loose === true && negated.declared?.kind === "boolean" ? { spelling: token, entry: negated, value: false, consumed: 0 } : undefined;
+  return negated?.loose === true && negated.declared?.kind === "boolean" ? { spelling: token, entry: negated, value: false, consumed: 0, attached: false } : undefined;
 }
 
 /** Read a short group's first registered letter; the rest of the group follows a switch. */
@@ -1575,10 +1578,10 @@ function scanShortGroup(
   // The loose parser reads `-vs` as one key, so only a registered letter starts a group.
   if (entry === undefined || entry.loose === true) return { consumedByCommander: false };
   if (entry.arity !== "none") {
-    record(spelling, entry, token.slice(2));
+    record(spelling, entry, token.slice(2), true);
     return { consumedByCommander: true };
   }
-  record(spelling, entry, true);
+  record(spelling, entry, true, false);
   return { consumedByCommander: true, group: `-${token.slice(2)}` };
 }
 
@@ -1601,14 +1604,14 @@ function scanLongToken(
     const spelling = token.slice(0, equals);
     const entry = resolve(spelling);
     if (entry !== undefined && entry.arity !== "none") {
-      record(spelling, entry, token.slice(equals + 1));
+      record(spelling, entry, token.slice(equals + 1), true);
       return true;
     }
-    if (entry?.declared?.kind === "boolean") recordUnparsed(spelling, entry, token.slice(equals + 1));
+    if (entry?.declared?.kind === "boolean") recordUnparsed(spelling, entry, token.slice(equals + 1), true);
     return false;
   }
   const negated = token.startsWith("--no-") ? resolve(`--${token.slice(5)}`) : undefined;
-  if (negated?.declared?.kind === "boolean") recordUnparsed(token, negated, false);
+  if (negated?.declared?.kind === "boolean") recordUnparsed(token, negated, false, false);
   return false;
 }
 
@@ -1658,4 +1661,67 @@ function recordArgvSpellingValue(
   }
   spellings.set(spelling, coerced);
   latest.set(handlerKey, spellings);
+}
+
+/** A registered `--no-<flag>` (a core option an extension augments) that sets a tracked declared boolean's own attribute. */
+function resolveRegisteredNegation(
+  index: ReadonlyMap<string, DeclaredArgvSpelling>,
+  spelling: string,
+  registered: ArgvCommandOption,
+  tracks: (declared: DeclaredArgvSpelling) => boolean,
+): DeclaredArgvSpelling | undefined {
+  const positive = spelling.startsWith("--no-") ? index.get(`--${spelling.slice(5)}`) : undefined;
+  return positive !== undefined && tracks(positive) && positive.kind === "boolean" && positive.handlerKey === registered.key ? positive : undefined;
+}
+
+/** The declarations the spelling-conflict check records: scalar flags. */
+function isScalarArgvSpelling(declared: DeclaredArgvSpelling): boolean {
+  return declared.scalar;
+}
+
+/** A repeatable value-less boolean switch, whose occurrences Commander and the loose parser split between them. */
+function isRepeatableSwitchArgvSpelling(declared: DeclaredArgvSpelling): boolean {
+  return !declared.scalar && declared.kind === "boolean" && declared.arity === "none";
+}
+
+/**
+ * Reorder the recorded occurrences of every declared repeatable boolean switch
+ * into argv order (pm-g2zzus). Commander registers such a switch without a
+ * value, so it accumulates each bare `--many` while `--many=false` and
+ * `--no-many` reach only the loose parser; the coercer used to keep the loose
+ * occurrences alone whenever any existed, dropping the bare ones. The same
+ * scan that resolves spelling conflicts walks each scope's tokens with
+ * Commander's grammar, so a token another option consumed as its value is
+ * never counted. Returns `occurrenceSource` unchanged when no repeatable
+ * switch occurs in argv; otherwise a copy whose recorded occurrences of those
+ * switches are replaced by the scanned ones, every other occurrence kept.
+ */
+export function orderArgvRepeatableSwitchOccurrences(
+  occurrenceSource: Record<string, unknown>,
+  scopes: readonly ArgvOptionScope[],
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+): Record<string, unknown> {
+  const index = indexDeclaredArgvSpellings(definitions);
+  const switches = [...new Set(index.values())].filter(isRepeatableSwitchArgvSpelling);
+  if (switches.length === 0) return occurrenceSource;
+  const scanned: ParsedLooseOptionToken[] = [];
+  for (const scope of scopes) {
+    scanArgvScope(
+      scope,
+      (spelling) => resolveArgvSpelling(scope, index, spelling, isRepeatableSwitchArgvSpelling),
+      (_spelling, entry, value, attached) => {
+        // `attached` marks `--flag=<token>`, which the coercer judges as an explicit value, as the loose parser does.
+        if (entry.declared !== undefined) scanned.push({ consumed: 0, key: entry.declared.handlerKey, value, ...(attached ? { attached: true } : {}) });
+      },
+    );
+  }
+  const reordered = new Set(scanned.map(({ key }) => key));
+  if (reordered.size === 0) return occurrenceSource;
+  const replacedKeys = new Set(
+    switches.filter(({ handlerKey }) => reordered.has(handlerKey)).flatMap(({ definition }) => collectLooseOptionKeys(definition)),
+  );
+  const kept = ((occurrenceSource as LooseOptionsWithOccurrences)[LOOSE_OPTION_OCCURRENCES] ?? []).filter(({ key }) => !replacedKeys.has(key));
+  const ordered = Object.assign(Object.create(null) as LooseOptionsWithOccurrences, occurrenceSource);
+  Object.defineProperty(ordered, LOOSE_OPTION_OCCURRENCES, { value: [...kept, ...scanned] });
+  return ordered;
 }

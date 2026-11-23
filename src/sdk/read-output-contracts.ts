@@ -598,6 +598,9 @@ const READ_OUTPUT_VALUE_VALIDATORS = [
   },
 ] as const;
 
+/** Stable code of the refusal for universal output controls given to a command that is not a read surface (pm-gh1769). */
+export const READ_OUTPUT_SURFACE_UNSUPPORTED_CODE = "read_output_surface_unsupported";
+
 /** Stable code of the refusal for a hybrid read-and-mutate command given universal output controls (pm-rrwh2o). */
 export const READ_OUTPUT_MUTATION_CONFLICT_CODE = "read_output_mutation_conflict";
 
@@ -674,9 +677,16 @@ export function validateReadOutputOptions(
   if (!hasCanonicalReadOutputOptions(options)) return;
   const normalizedCommand = resolveReadOutputSurface(command, options);
   if (!normalizedCommand) {
+    const present = CANONICAL_OPTION_KEYS.filter((key) => options[key] !== undefined);
     throw new PmCliError(
       `Universal output controls apply only to read commands; ${command || "this command"} is not a read surface.`,
       EXIT_CODE.USAGE,
+      {
+        code: "read_output_surface_unsupported",
+        details: { command: command || null, output_option_keys: present },
+        required: "Drop the universal output controls, or run a read command. An extension command accepts them only when it declares read_output.",
+        why: "Universal output controls shape a read's rows; a command that is not a read surface has no rows for them to bound, page or project.",
+      },
     );
   }
   if (Object.hasOwn(HYBRID_READ_MUTATION_KEYS, normalizedCommand)) {

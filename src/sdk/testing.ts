@@ -149,6 +149,7 @@ import {
 } from "./extension/command-options.js";
 import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
 import { formatOutput, projectPrintedResult } from "../core/output/output.js";
+import { validateReadOutputOptions } from "./read-output-contracts.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
@@ -1191,8 +1192,47 @@ export async function runRegisteredCommandForTest(
     ...resolvePortableWorkspaceContext(pmRoot.length > 0 ? pmRoot : undefined),
     ...(sdk === undefined ? {} : { sdk }),
   };
+  await admitRegisteredOutputControls(registrations, context);
   const outcome = await runCommandHandler(commands, context);
   return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
+}
+
+/** The universal output controls a caller can pass through `global`, by their `GlobalOptions` key. */
+const GLOBAL_OUTPUT_CONTROL_KEYS = [
+  "outputInclude",
+  "outputLimit",
+  "outputBudget",
+  "outputFormat",
+  "outputSession",
+  "outputCursor",
+  "outputRowContract",
+] as const satisfies ReadonlyArray<keyof GlobalOptions>;
+
+/**
+ * Refuse universal output controls before the handler runs, as native CLI
+ * dispatch and `PmClient.run` do (pm-gh1769): the shared
+ * `validateReadOutputOptions` admission runs inside an isolated extension
+ * runtime that holds the activation's registrations, so a command without
+ * `read_output` given any control fails with the native "is not a read surface"
+ * refusal (exit 2), a malformed control value is refused, and a hybrid native
+ * surface an extension extends refuses a mutation combined with read controls.
+ * Controls are read from `global` and from `options`, the two places a harness
+ * caller can put them. A hand-built registry carries no declarations to judge,
+ * so it is not checked.
+ */
+async function admitRegisteredOutputControls(
+  registrations: ActivatedCommandRegistrations | undefined,
+  context: CommandHandlerContext,
+): Promise<void> {
+  if (registrations === undefined) return;
+  const globalControls = Object.fromEntries(
+    GLOBAL_OUTPUT_CONTROL_KEYS.flatMap((key) => (context.global[key] === undefined ? [] : [[key, context.global[key]]])),
+  );
+  await runWithIsolatedExtensionRuntime(async () => {
+    // The attached object is the activation's full registration registry.
+    setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
+    validateReadOutputOptions(context.command, { ...context.options, ...globalControls });
+  });
 }
 
 /** Guard-test options whose context is a journal-proven transaction rollback (pm-wb6ktl). */

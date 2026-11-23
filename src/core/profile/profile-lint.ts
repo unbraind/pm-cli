@@ -44,7 +44,7 @@ import { normalizeStatusToken } from "../schema/type-workflows.js";
 import { DEFAULT_RUNTIME_STATUS_DEFINITIONS } from "../schema/runtime-schema.js";
 import { toErrorMessage } from "../shared/primitives.js";
 import { resolvePmToolCustomFieldCollision } from "../../sdk/cli-contracts/tool-schema.js";
-import { describeFieldOptionCollision, resolveAddFieldOptionCollisions } from "../../sdk/schema/field-option-collisions.js";
+import { describeFieldFlagSpellingDefectLine, describeFieldOptionCollision, resolveAddFieldFlagSpellingDefects, resolveAddFieldOptionCollisions } from "../../sdk/schema/field-option-collisions.js";
 import {
   normalizeProfileLookupKey,
   type ProjectProfileDefinition,
@@ -81,6 +81,7 @@ export const PROFILE_LINT_CODES = [
   "field_duplicate",
   "field_mcp_input_collision",
   "field_option_collision",
+  "field_flag_invalid",
   "workflow_type_empty",
   "workflow_type_unknown",
   "workflow_duplicate_type",
@@ -289,7 +290,17 @@ function lintFields(
       continue;
     }
     seen.add(key);
-    // profile apply refuses this field, so the shared lint that package checks consume must say so too (pm-pta8um).
+    // profile apply refuses these fields, so the shared lint that package checks consume must say so too (pm-pta8um, pm-8patuh).
+    const spellingDefects = resolveAddFieldFlagSpellingDefects(normalized);
+    if (spellingDefects.length > 0) {
+      findings.push({
+        severity: "error",
+        code: "field_flag_invalid",
+        dimension: "fields",
+        target: key,
+        message: `Field "${key}" declares a flag that is not one option spelling: ${spellingDefects.map(describeFieldFlagSpellingDefectLine).join("; ")}. Pass one spelling per alias.`,
+      });
+    }
     const optionCollisions = resolveAddFieldOptionCollisions(normalized);
     if (optionCollisions.length > 0) {
       findings.push({

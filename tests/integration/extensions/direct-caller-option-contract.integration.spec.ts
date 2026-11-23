@@ -1,9 +1,11 @@
 /**
- * pm-gh1726 / pm-gh1727 / pm-gh1729: direct callers (`PmClient.run`, the
- * extension test harness) get the refusals CLI argv gets, with the same
- * machine codes, before the handler runs; a bare repeatable boolean switch
- * reaches the handler as `true`; and the harness admits a read-output result
- * exactly as the native CLI does.
+ * pm-gh1726 / pm-gh1727 / pm-gh1729 / pm-gh1769 / pm-g2zzus: direct callers
+ * (`PmClient.run`, the extension test harness) get the refusals CLI argv gets,
+ * with the same machine codes, before the handler runs, including universal
+ * output controls on a command that is not a read surface; a repeatable
+ * boolean switch reaches the handler with every bare and attached occurrence
+ * in argv order; and the harness admits a read-output result exactly as the
+ * native CLI does.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -184,14 +186,21 @@ describe("direct-caller extension option contract", () => {
         expect(mixed.code, mixed.stderr).toBe(0);
         expect((mixed.json as { options: Record<string, unknown> }).options).toMatchObject({ tags: ["a", "b"], enabled: true });
         // Commander hands the accumulator `undefined` for a bare switch; each bare occurrence is `true`.
+        // pm-g2zzus: bare occurrences (Commander's) and attached ones (the loose parser's) mix in argv order.
         for (const [argv, expected] of [
           [["--many"], [true]],
           [["--many", "--many"], [true, true]],
           [["--many=false"], [false]],
+          [["--many=false", "--many"], [false, true]],
+          [["--many", "--many=false"], [true, false]],
+          [["--many", "--many=false", "--many"], [true, false, true]],
+          [["--many=true", "--many=false"], [true, false]],
+          // A token another option consumes as its value is never a switch occurrence.
+          [["--many", "--from-tracker", "--many=false"], [true]],
         ] as const) {
           const result = await context.runCliInProcess(["probe", "option", "--from-tracker", "x", "--tags", "a", ...argv, "--json"], { expectJson: true });
-          expect(result.code, argv.join(" ")).toBe(0);
-          expect((result.json as { options: { many: unknown } }).options.many).toEqual(expected);
+          expect(result.code, `${argv.join(" ")}: ${result.stderr}`).toBe(0);
+          expect((result.json as { options: { many: unknown } }).options.many, argv.join(" ")).toEqual(expected);
         }
       } finally {
         await harness.deactivate();
@@ -229,6 +238,43 @@ describe("direct-caller extension option contract", () => {
           context: expect.objectContaining({ code: "output_budget_exceeded" }),
         });
         await expect(harness.runCommand({ command: "probe report", options: { shape: "huge" } })).resolves.toMatchObject({ handled: true });
+      } finally {
+        await harness.deactivate();
+      }
+    });
+  });
+
+  it("pm-gh1769: the harness refuses universal output controls on a non-read command before dispatch, exactly as the native CLI does", async () => {
+    await withTempPmPath(async (context) => {
+      const entry = await installProbeExtension(context);
+      const harness = await createExtensionTestHarness((await import(entry)).default, { capabilities: CAPABILITIES });
+      const base = { fromTracker: "x", tags: ["a"] };
+      try {
+        for (const [flag, value, key] of [
+          ["--output-budget", "1", "outputBudget"],
+          ["--output-limit", "5", "outputLimit"],
+          ["--output-include", "runs", "outputInclude"],
+          ["--output-cursor", "opaque", "outputCursor"],
+        ] as const) {
+          const native = await cliRefusal(context, ["probe", "option", "--from-tracker", "x", "--tags", "a", flag, value]);
+          expect(native.code, flag).toBe("read_output_surface_unsupported");
+          for (const invocation of [{ global: { [key]: value } }, { options: { ...base, [key]: value } }]) {
+            const direct = await directRefusal(() => harness.runCommand({ command: "probe option", options: base, ...invocation }));
+            expect(direct, flag).toMatchObject({ code: native.code, exitCode: 2 });
+            expect(direct.message).toBe("Universal output controls apply only to read commands; probe option is not a read surface.");
+          }
+        }
+        // The refusal runs before the handler: the first handled run after the refusals is the handler's first run.
+        await expect(harness.runCommand({ command: "probe option", options: base })).resolves.toMatchObject({ handled: true, result: { runs: 1 } });
+        // A malformed encoding is refused natively and in the harness with the same message.
+        const encoding = context.runCli(["probe", "option", "--from-tracker", "x", "--tags", "a", "--output-format", "yaml", "--json"]);
+        expect(encoding.code).toBe(2);
+        expect(encoding.stderr).toContain("--output-format must be toon or json.");
+        await expect(harness.runCommand({ command: "probe option", options: base, global: { outputFormat: "yaml" as "json" } })).rejects.toThrow("--output-format must be toon or json.");
+        // A command that declares read_output keeps accepting the controls.
+        const native = context.runCli(["probe", "report", "--output-limit", "1", "--json"]);
+        expect(native.code, native.stderr).toBe(0);
+        await expect(harness.runCommand({ command: "probe report", global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
       } finally {
         await harness.deactivate();
       }

@@ -1,6 +1,6 @@
 /**
- * pm-gh1727 / pm-gh1729 (Codex review round 1): the extension test harness
- * admits what native dispatch admits. An extension that extends a native
+ * pm-gh1727 / pm-gh1729 (Codex review round 1) / pm-gh1769: the extension test
+ * harness admits what native dispatch admits. An extension that extends a native
  * command still receives the native command's options, and read-output
  * admission judges the result after a registered command-result override.
  */
@@ -158,6 +158,31 @@ describe("extension test harness parity with native dispatch", () => {
         context: expect.objectContaining({ code: "extension_read_output_invalid" }),
       });
     }
+  });
+
+  it("refuses universal output controls before dispatch as native dispatch does (pm-gh1769)", async () => {
+    let runs = 0;
+    const activation = await activate((api) => {
+      api.registerCommand({ name: "probe-plain", run: () => ({ runs: ++runs }) });
+      api.registerCommand({ name: "probe-read", read_output: { row_keys: ["rows"] }, run: () => ({ rows: [] }) });
+      // An extension that extends a native hybrid surface keeps that surface's mutation refusal.
+      api.registerCommand({ name: "comments", run: () => ({ comments: [] }) });
+    });
+    for (const invocation of [{ global: { outputLimit: "1" } }, { options: { output_budget: "5" } }, { global: { outputRowContract: true } }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-plain", ...invocation })).rejects.toMatchObject({
+        exitCode: 2,
+        message: "Universal output controls apply only to read commands; probe-plain is not a read surface.",
+        context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
+      });
+    }
+    expect(runs).toBe(0);
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-read", global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", args: ["pm-x"], options: { add: "text" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+    });
+    // A hand-built registry carries no declarations to judge, so it is not checked.
+    const handBuilt = { handlers: [{ command: "probe-plain", run: () => ({ ok: true }) }], overrides: [] } as unknown as Parameters<typeof runRegisteredCommandForTest>[0];
+    await expect(runRegisteredCommandForTest(handBuilt, { command: "probe-plain", global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
   });
 
   it("formats with the activation's renderers and never leaks the process exit code (Codex review round 10)", async () => {

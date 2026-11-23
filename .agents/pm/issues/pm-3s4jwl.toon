@@ -2,20 +2,50 @@ id: pm-3s4jwl
 title: Fields an extension registers through registerItemFields are not checked against built-in options of the commands they reach
 description: "The option-collision refusal covers schema add-field, profile apply, profile lint and validate. A package that calls registerItemFields with a name equal to a built-in option is not refused at activation, and package doctor reports only the MCP input collision for it. Whether such a field can shadow a CLI option depends on how extension fields are exposed (the repeatable field assignment flag rather than a per-field option), which has not been measured."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: "area:sdk",extensions,schema
 created_at: "2026-11-22T20:02:44.365Z"
-updated_at: "2026-11-22T21:23:54.120Z"
+updated_at: "2026-11-23T09:42:28.850Z"
+closed_at: "2026-11-23T09:40:06.338Z"
+completed_at: "2026-11-23T09:40:06.338Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Measure whether an extension field named like a built-in option changes that option's behaviour on any command; If it does, activation or package doctor reports the collision using the shared collision helper; If it does not, the item records the evidence and the SDK doc states that extension fields are exempt"
 parent: pm-ugqx
 risk: low
 confidence: medium
+resolution: "Measured on the built CLI: extension fields named full, limit and json leave pm list --full, pm list --limit and pm search --full working because they are set through --field name=value; docs/EXTENSIONS.md states the exemption and the --output-include mode overlap. mutateWorkspaceSettings now runs assertFieldDefinitionOptionsAvailable on new or changed inline field definitions before writing (docs/SDK_AUDITED_MUTATIONS.md). Reserved-key bricking filed as pm-dhlij3."
 expected_result: "Either a measured collision is reported at activation or by package doctor, or recorded evidence shows extension fields cannot shadow a built-in option"
+actual_result: "Evidence recorded in a comment; settings-field-admission.spec.ts covers refused collisions and split flags for dry run and apply, an accepted free field, and a legacy definition kept through an unrelated write but refused once changed"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-pta8um,discovered_from,"2026-11-22T20:02:44.365Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-22T21:23:54.120Z","harness:claude-code","Scope addition from the review of PR 1768 (2026-11-22): the extension settings mutation (mutateWorkspaceSettings) can append a field definition to the inline schema fields in settings, and that path only shape-validates the proposal, so a colliding definition can be stored there too. It belongs with this item: decide whether settings writers share the admission check for new or changed definitions while leaving unrelated writes able to preserve legacy definitions. validate already reports such a stored field.\n"
+  "2026-11-23T08:47:06.302Z","harness:claude-code","Measured 2026-11-23 on the 2026.11.23 build. A project extension registering item fields full, limit and json leaves pm list --full (projection mode full), pm list --limit 2 (count 2, applied_limit 2) and pm search --full working as before; extension fields are set through the repeatable --field name=value assignment, not a per-field option, so no CLI option is shadowed and the add-field collision check does not apply. pm list --fields full and pm get <id> --fields full read the value. The one overlap is the projection-mode vocabulary of --output-include: pm get <id> --output-include full,limit reads full as the full projection mode and refuses projection_options_mutually_exclusive, so such a field is selected with --fields. docs/EXTENSIONS.md now states both.\n\nScope addition delivered: mutateWorkspaceSettings (src/sdk/extension-command-context.ts) runs assertFieldDefinitionOptionsAvailable on every inline schema field definition the callback adds or changes, dry run included, before anything is written; a definition left exactly as stored is not judged, so an unrelated write keeps a legacy definition (validate keeps reporting it). Spec: tests/unit/sdk/transactions/settings-field-admission.spec.ts.\n\nSide finding filed as pm-dhlij3: an extension field named priority (reserved) activates and then makes every create and update exit 2 with command_failed, and package doctor names only the MCP collision.\n"
+files[2]:
+  - path: src/sdk/extension-command-context.ts
+    scope: project
+    note: settings writer shares add-field admission for new/changed inline fields
+  - path: tests/unit/sdk/transactions/settings-field-admission.spec.ts
+    scope: project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-field-admission.spec.ts,project,"harness:claude-code","2026-11-23T08:45:47.376Z",local_mutation,fix/extension-harness-admission-parity
+docs[2]{path,scope}:
+  docs/EXTENSIONS.md,project
+  docs/SDK_AUDITED_MUTATIONS.md,project
+close_reason: "Extension item fields cannot shadow a built-in option, which is measured and documented; the settings writer shares the add-field admission"
+contract_change:
+  api: sdk.mutateWorkspaceSettings for inline schema field definitions
+  before: A settings proposal could add or change an inline custom field whose option shadows a built-in option or whose flag the parser splits; only the settings shape was validated
+  after: "Each added or changed inline field definition takes the schema add-field admission before anything is written, dry run included; a definition left exactly as stored is not judged"
+  migrate: "Rename a proposed field that shadows a built-in option, or register it only for commands where its option is free; pass one spelling per alias"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-3s4jwl
+  gate_id: settings-writer-field-admission
+  negative_control: On 2026.11.23 mutateWorkspaceSettings appending an inline field full on create and list is written; settings-field-admission.spec.ts requires schema_field_option_collision with settings.json unchanged
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-field-admission.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

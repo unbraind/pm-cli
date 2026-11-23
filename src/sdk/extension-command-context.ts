@@ -83,6 +83,22 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
   return stableValueEquals(persisted, JSON.parse(raw)) ? raw : `${JSON.stringify(persisted, null, 2)}\n`;
 }
 
+/**
+ * A settings writer shares the `schema add-field` admission for every inline
+ * field definition it adds or changes (pm-3s4jwl): a flag the parser would
+ * split, or an option that shadows a built-in option, is refused before
+ * anything is written. A definition the proposal leaves exactly as stored is
+ * not judged again, so an unrelated write can still preserve a legacy
+ * definition, which validate keeps reporting.
+ */
+async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings): Promise<void> {
+  const stored = current.schema.fields;
+  const changed = next.schema.fields.filter((definition) => !stored.some((entry) => stableValueEquals(entry, definition)));
+  if (changed.length === 0) return;
+  const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
+  for (const definition of changed) assertFieldDefinitionOptionsAvailable(definition);
+}
+
 /** Bind public SDK services to one tracker and one caller-owned client. */
 export function createExtensionCommandSdk(
   pmRoot: string,
@@ -171,6 +187,7 @@ export function createExtensionCommandSdk(
                 EXIT_CODE.USAGE,
               );
             }
+            await assertChangedSchemaFieldsAvailable(currentSettings, next);
             let raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!
               : serializeSettings(next, { source: { raw: current, validated: validatedCurrent.data } });

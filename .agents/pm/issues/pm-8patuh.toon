@@ -2,20 +2,63 @@ id: pm-8patuh
 title: "schema add-field accepts flag spellings the option parser splits or already owns implicitly, which can stop a command from starting"
 description: "Reported by an independent review of the option-collision change and not yet reproduced here. A custom field flag or alias containing a pipe is stored as one spelling, but the option parser splits a flag declaration at a pipe, so a flag such as full|detail registered for list tries to register a second full option and the command fails during registration, before its action runs and whatever flags the user typed. Separately, an alias equal to the short help flag is accepted because help is supplied implicitly and the existing-option test does not see it, after which the short help flag demands a value. Both are flag-spelling validation gaps that predate the collision check."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: "area:cli",schema,validation
 created_at: "2026-11-22T21:23:51.347Z"
-updated_at: "2026-11-22T21:43:15.467Z"
+updated_at: "2026-11-23T09:42:28.044Z"
+closed_at: "2026-11-23T09:40:04.146Z"
+completed_at: "2026-11-23T09:40:04.146Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Reproduce both cases in a scratch tracker and record the observed failure; schema add-field, profile apply and rename-field refuse a flag or alias that is not exactly one option spelling, with a typed refusal naming the spelling; The implicit help flags are reserved for every command a field is registered for; validate reports stored definitions with such spellings"
 parent: pm-8jdc
 risk: medium
 confidence: medium
+resolution: "src/sdk/schema/field-flag-spelling.ts defines one option spelling after Commander's splitOptionFlags grammar; add-field, profile apply and rename-field refuse defects with schema_field_flag_invalid, profile lint reports field_flag_invalid, and validate --check-metadata reports stored defects. Short spellings are compared with the command's short flags and --help/-h are reserved everywhere (schema_field_option_collision). CLI registration skips defective stored spellings and implicit help. describeFieldFlagSpellingDefect is exported from the SDK."
 expected_result: A field flag that the parser would split or that shadows implicit help is refused at registration and reported by validate when already stored
+actual_result: "Scratch reproduction confirmed every case before the fix; field-flag-spellings.spec.ts (7 cases) covers the grammar, short and help reservations, add-field, rename dry run, profile lint, validate rows and working pm list --help and pm search -h beside stored defects"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-pta8um,discovered_from,"2026-11-22T21:23:51.347Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
-  "2026-11-22T21:43:15.467Z","harness:claude-code","Additional cases for this item from the second local review of PR 1768 (2026-11-22), none reproduced here yet:\n\n- rename-field accepts a target containing a comma and writes it as a flag, which the parser then splits; add-field already refuses commas.\n- An explicit short flag or alias equal to a built-in short option (for example the priority short flag) is accepted, after which registration skips it and the field has no usable spelling.\n- With a fields file that holds a duplicate key, a rename preview reads the hydrated definition while execution copies the first stored entry, so a preview can succeed where execution refuses after the plan was saved. The stage step does refuse; the preview should read the same entry.\n- A field whose key equals a global output control but whose flag is different (key json with another flag) is refused although the two flags work independently on the command line; decide whether a bare key should be compared only with options that reach the field reader.\n"
+comments[2]:
+  - created_at: "2026-11-22T21:43:15.467Z"
+    author: "harness:claude-code"
+    text: "Additional cases for this item from the second local review of PR 1768 (2026-11-22), none reproduced here yet:\n\n- rename-field accepts a target containing a comma and writes it as a flag, which the parser then splits; add-field already refuses commas.\n- An explicit short flag or alias equal to a built-in short option (for example the priority short flag) is accepted, after which registration skips it and the field has no usable spelling.\n- With a fields file that holds a duplicate key, a rename preview reads the hydrated definition while execution copies the first stored entry, so a preview can succeed where execution refuses after the plan was saved. The stage step does refuse; the preview should read the same entry.\n- A field whose key equals a global output control but whose flag is different (key json with another flag) is refused although the two flags work independently on the command line; decide whether a bare key should be compared only with options that reach the field reader.\n"
+  - created_at: "2026-11-23T08:47:04.913Z"
+    author: "harness:claude-code"
+    text: "Reproduced 2026-11-23 on 2026.11.23 in a scratch tracker before the fix: schema add-field detaily --commands list --alias 'full|deep' was stored, after which pm list -h failed during registration with \"Cannot add option '--full|deep <value>' to command 'list' due to conflicting flag '--full'\"; schema add-field helpz --commands search --alias=-h was stored and pm search foo -h then failed with 'Invalid command usage' because -h demanded a value; --alias=-p on create was accepted and silently skipped at registration (create -p still set priority); rename-field --to 'a,b' and 'a|b' were accepted.\n\nFix. src/sdk/schema/field-flag-spelling.ts (dependency-free, so CLI registration can consult it without a private core import) defines one option spelling: a long name with no whitespace, pipe, comma, '=', or brackets, or a short flag of one dash and one character, following Commander 15.1's splitOptionFlags grammar. field-option-collisions.ts refuses defective spellings with schema_field_flag_invalid (add-field, profile apply, rename-field pre-plan and stage), compares a short spelling with the command's own short flags from the flag contracts (-p is --priority on create and update, free on list), and reserves the implicit --help/-h on every command. profile lint reports field_flag_invalid; validate --check-metadata reports stored spellings as validate_schema_field_flag_invalid with rows; addRuntimeFieldOption skips a defective stored spelling and the implicit help spellings, so a stored definition can no longer stop a command from starting or take over help (pm list --help and pm search -h now work beside such definitions).\n\nDecision on the comment's last bullet: a bare key equal to a global output control stays refused. The field reader looks the value up under the key as well as the flag, and which global options are stripped from command-scoped options is a separate list (extractCommandScopedOptions); tying the check to that list would let it drift, and the refusal only costs a rename. Not changed here: the rename preview reading the hydrated definition while staging copies the first stored entry of a duplicate key; the stage step already refuses, so execution stays correct."
+    edited_at: "2026-11-23T08:59:48.802Z"
+files[5]:
+  - path: src/cli/main.ts
+    scope: project
+    note: registration skips defective stored spellings and implicit help
+  - path: src/core/profile/profile-lint.ts
+    scope: project
+    note: field_flag_invalid lint code
+  - path: src/sdk/schema/field-flag-spelling.ts
+    scope: project
+    note: dependency-free one-spelling grammar
+  - path: src/sdk/schema/field-option-collisions.ts
+    scope: project
+    note: "spelling defects, short flags, implicit help"
+  - path: tests/unit/sdk/schema/field-flag-spellings.spec.ts
+    scope: project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema/field-flag-spellings.spec.ts tests/unit/sdk/schema/field-option-collisions.spec.ts,project,"harness:claude-code","2026-11-23T08:45:43.135Z",local_mutation,fix/extension-harness-admission-parity
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: "A custom field flag or alias must be one option spelling, and short spellings and implicit help are reserved"
+contract_change:
+  api: "pm schema add-field, pm schema rename-field, pm profile apply and pm profile lint for custom field flags and aliases"
+  before: "A flag or alias holding a pipe, comma, whitespace, = or brackets, a malformed short flag, a short flag a command already owns (-p) and -h or help were stored; a stored pipe alias made the commands it reached fail during registration and -h made help demand a value"
+  after: "They are refused with schema_field_flag_invalid or schema_field_option_collision, profile lint reports field_flag_invalid, validate --check-metadata reports stored spellings as validate_schema_field_flag_invalid, and the CLI skips such a stored spelling when it registers field options"
+  migrate: Pass one spelling per --alias and pick a short flag the command does not own; re-register a stored field the validate warning names with pm schema add-field <key> --cli-flag <flag> --alias <alias>
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-8patuh
+  gate_id: schema-field-flag-spelling
+  negative_control: "On 2026.11.23 schema add-field with --alias full|deep is stored and pm list -h then fails during registration with conflicting flag --full, and --alias=-h makes pm search -h demand a value; field-flag-spellings.spec.ts requires a typed refusal and working help"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/schema/field-flag-spellings.spec.ts tests/unit/sdk/schema/field-option-collisions.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

@@ -3145,6 +3145,15 @@ mutation-receipt projection, command-result overrides, suppressed host
 output, `output_format` services and encoding resolution apply as they do
 natively, so a package test fails exactly where the native CLI would
 ([pm-gh1729](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1729.toon),
+tracker record excluded from npm). Before the handler runs, the harness also
+applies the native admission of universal output controls, read from
+`global` and from `options`: a command without `read_output` given any of them
+is refused with `read_output_surface_unsupported` (exit 2, the native
+message), a malformed value such as `outputFormat: "yaml"` is refused, and a
+native hybrid surface an extension extends refuses a mutation combined with
+them as `read_output_mutation_conflict`. A registry built by hand instead of
+through `activateExtensionForTest` carries no declarations and is not checked
+([pm-gh1769](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1769.toon),
 tracker record excluded from npm). Avoid
 reserved metadata and prototype property names. The declaration promises a
 read-only handler; writers and undeclared commands keep refusing read controls,
@@ -3480,7 +3489,13 @@ directly. An
 extension action also keeps the caller's values as given: the native
 `tags`-to-CSV and `dep`-to-array rewrites of core commands do not apply to it.
 On the CLI, each bare occurrence of a repeatable boolean switch reaches the
-handler as `true` (`--many --many` is `[true, true]`). A direct caller's negated
+handler as `true` (`--many --many` is `[true, true]`), and bare and attached
+occurrences keep their argv order: `--many=false --many` is `[false, true]` and
+`--many --many=false` is `[true, false]`. The order comes from the same argv
+scan that resolves spelling conflicts, so a token another option consumed as
+its value (`--from-tracker --many`) is not a switch occurrence
+([pm-g2zzus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g2zzus.toon),
+tracker record excluded from npm). A direct caller's negated
 spelling of a declared boolean (`no-many`, `--no-many`) inverts token by token
 and is then judged exactly as the canonical spelling: on a `list` boolean,
 `{ "no-many": "true,false" }` is `{ many: [false, true] }`, a blank segment is

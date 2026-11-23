@@ -2,11 +2,13 @@ id: pm-g2zzus
 title: "A repeatable boolean extension switch mixed in attached and bare forms (--many=false --many) loses its bare occurrences, because Commander never sees the attached form"
 description: "Found 2026-11-14 while fixing pm-gh1726 on the built CLI. A flag declared value_type boolean with repeatable: true is a switch (value_arity none), so Commander registers it without a value placeholder: a bare --many reaches the list accumulator, while --many=false is unknown to Commander and is read only by the loose parser from command.args. coerceAccumulatedLooseOption in src/sdk/extension/command-options.ts orders values from the loose occurrences whenever any exist, so the Commander-held bare values are dropped: pm <cmd> --many=false --many delivers [false] instead of [false, true], and --many --many=false delivers [false] instead of [true, false]. All-bare (--many --many, fixed in the same PR to [true, true]) and all-attached forms are unaffected. Fix direction: derive list-switch occurrences in argv order from the captured COMMAND_OPTION_TOKENS with the existing scanArgvScope grammar (refuseConflictingArgvOptionSpellings already resolves each spelling with Commander semantics), instead of mixing Commander's accumulator with the loose occurrence list. Duplicate check: searched repeatable boolean switch attached value order argv; pm-wlxf8f (closed) owns scalar spelling conflicts, pm-853a (closed) value-arity predicates; nothing owns list-switch occurrence order."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: argv,cli,extensions,flags
 created_at: "2026-11-14T16:53:28.191Z"
-updated_at: "2026-11-14T20:34:37.896Z"
+updated_at: "2026-11-23T09:40:08.885Z"
+closed_at: "2026-11-23T09:40:01.315Z"
+completed_at: "2026-11-23T09:40:01.315Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "pm <cmd> --many=false --many delivers [false, true] and --many --many=false delivers [true, false] on the built CLI; Occurrence order for list switches comes from the same argv scanner that resolves spelling conflicts, so a token consumed as another option's value is never counted; An in-process spec drives mixed, bare-only and attached-only forms, with a negative control showing the pre-fix loss"
@@ -14,12 +16,38 @@ parent: pm-ugqx
 risk: low
 confidence: high
 severity: low
-expected_result: Every occurrence of a repeatable switch reaches the handler in argv order
-actual_result: Bare occurrences are dropped when any attached occurrence is present
+resolution: "orderArgvRepeatableSwitchOccurrences (src/sdk/extension/command-options.ts) re-derives repeatable switch occurrences from the captured option tokens with the scanArgvScope walk the spelling-conflict check uses (resolveArgvSpelling gained a tracks selector; the sink reports attached values), and extractCommandScopedOptions passes the reordered source to the shared coercer. collectCommandOptionScopes is shared by both callers."
+expected_result: "pm <cmd> --many=false --many delivers [false, true] and --many --many=false delivers [true, false]; a token another option consumed is never counted"
+actual_result: "Built-CLI cases pass for both mixes, a three-occurrence mix, attached-only and a consumed token (--many --from-tracker --many=false is [true]); unit spec covers short alias, ancestor scope, --no-many and the unchanged-source paths; negative control fails as recorded"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1726,discovered_from,"2026-11-14T16:53:28.191Z","harness:claude-code","cli:create:dep",detected
   pm-wlxf8f,related,"2026-11-14T16:53:28.191Z","harness:claude-code","cli:create:dep",detected
   pm-853a,related,"2026-11-14T20:34:37.444Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-14T20:17:55.068Z","harness:claude-code","Narrowed 2026-11-14 by PR #1732: list flags no longer lose Commander-parsed values when an unrelated flag reaches the loose parser (readOrderedLooseListValues now falls back when no occurrence names the flag). What remains here is only the same-flag mix of attached and bare occurrences of a repeatable switch."
+  "2026-11-23T08:47:02.325Z","harness:claude-code","Implementation evidence (2026-11-23). orderArgvRepeatableSwitchOccurrences (src/sdk/extension/command-options.ts) re-derives the occurrences of every declared repeatable value-less boolean switch from the captured COMMAND_OPTION_TOKENS with the same scanArgvScope walk that refuseConflictingArgvOptionSpellings uses. resolveArgvSpelling gained a tracks selector (scalar flags for the conflict check, repeatable switches for order), and the occurrence sink now receives whether a value was attached with '=', so an attached --many=bogus is still judged as an explicit value by refuseMalformedAttachedSwitchValues while a bare occurrence stays presence. extractCommandScopedOptions (src/cli/runtime/invocation-options.ts) passes the reordered source to the shared coercer; collectCommandOptionScopes is now shared by both callers.\n\nBuilt-CLI cases added to the gh1726 spec: --many=false --many is [false, true], --many --many=false is [true, false], --many --many=false --many is [true, false, true], --many=true --many=false is [true, false], and --many --from-tracker --many=false is [true] because --from-tracker consumes the token after it. Negative control: with the reordering disabled the first mixed case fails with 'expected [ false ] to deeply equal [ false, true ]'. Unit spec covers short alias, ancestor scope, --no-many, the unchanged-source paths and the unordered coercer result beside each ordered one.\n"
+files[4]:
+  - path: src/cli/runtime/invocation-options.ts
+    scope: project
+    note: collectCommandOptionScopes shared by conflict check and occurrence order
+  - path: src/sdk/extension/command-options.ts
+    scope: project
+    note: orderArgvRepeatableSwitchOccurrences + resolveArgvSpelling tracks selector + attached sink
+  - path: tests/integration/extensions/direct-caller-option-contract.integration.spec.ts
+    scope: project
+  - path: tests/unit/sdk/extension/command-options.spec.ts
+    scope: project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension/command-options.spec.ts tests/integration/extensions/direct-caller-option-contract.integration.spec.ts,project,"harness:claude-code","2026-11-23T08:45:39.242Z",local_mutation,fix/extension-harness-admission-parity
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Every occurrence of a repeatable boolean switch reaches the handler in argv order
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-g2zzus
+  gate_id: repeatable-switch-argv-order
+  negative_control: "With orderArgvRepeatableSwitchOccurrences returning the loose source unchanged, the built-CLI case --many=false --many fails with expected [ false ] to deeply equal [ false, true ]"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/extension/command-options.spec.ts tests/integration/extensions/direct-caller-option-contract.integration.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
