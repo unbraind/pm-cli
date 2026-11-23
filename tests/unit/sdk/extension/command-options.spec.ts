@@ -629,6 +629,8 @@ describe("argv order of repeatable switch occurrences (pm-g2zzus)", () => {
   it("never counts a token another option consumed, and reads ancestors' scopes as Commander does", () => {
     // --from-tracker takes "--many" as its value, so only the first --many is a switch occurrence.
     expect(orderedValues(["--many", "--from-tracker", "--many"])).toEqual([true]);
+    // With a genuine loose occurrence the reordering runs, and the consumed token still does not count (CodeRabbit review).
+    expect(orderedValues(["--many", "--from-tracker", "--many", "--many=false"])).toEqual([true, false]);
     // An ancestor's own tokens count; its unparsed `--many=false` belongs to the leaf, which records it.
     const parent = leaf(["child", "--many"], { includesLooseFlags: false });
     expect(orderedValues(["--many=false"], [parent, leaf(["--many=false"])])).toEqual([true, false]);

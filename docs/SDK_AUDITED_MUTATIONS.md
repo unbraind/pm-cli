@@ -77,6 +77,7 @@ a flag or alias the parser would split is refused with
 command the field is registered for with `schema_field_option_collision`. A
 definition left exactly as stored is not judged again, so an unrelated write
 keeps a legacy definition, which `pm validate --check-metadata` keeps reporting
+unless the registry drops it entirely (pm-x9r2h3 tracks reporting those)
 ([pm-3s4jwl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3s4jwl.toon);
 tracker record excluded from npm).
 

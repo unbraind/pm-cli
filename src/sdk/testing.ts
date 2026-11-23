@@ -1166,12 +1166,6 @@ export async function runRegisteredCommandForTest(
   }
   const pmRoot = options.pmRoot ?? "";
   const global = { json: true, quiet: true, noPager: true, ...options.global };
-  const sdk =
-    options.sdk ??
-    options.sdkFactory?.({ pmRoot, global }) ??
-    (pmRoot.length > 0
-      ? createExtensionCommandSdk(pmRoot, new PmClient({ pmRoot }), undefined, command)
-      : undefined);
   const registrations = readActivatedFlagRegistrations(commands);
   const handlerOptions = options.options ? { ...options.options } : {};
   const args = options.args ? [...options.args] : [];
@@ -1180,8 +1174,15 @@ export async function runRegisteredCommandForTest(
   const admissionOptions = foldOptionSpellings(handlerOptions, registrations === undefined ? [] : collectExtensionFlagDefinitionsForCommand(registrations, command));
   await admitRegisteredOutputControls(registrations, command, args, admissionOptions, global);
   // Controls passed through options reach the handler's context.global as native host flags do; a defined global
-  // value still wins, and an undefined one never erases an admitted control.
+  // value still wins, and an undefined one never erases an admitted control. The SDK is built afterwards, so a
+  // factory sees the same controls and never runs for a refused invocation.
   Object.assign(global, toGlobalOutputControls(pickOutputControls(admissionOptions)), pickOutputControls(global));
+  const sdk =
+    options.sdk ??
+    options.sdkFactory?.({ pmRoot, global }) ??
+    (pmRoot.length > 0
+      ? createExtensionCommandSdk(pmRoot, new PmClient({ pmRoot }), undefined, command)
+      : undefined);
   const context: CommandHandlerContext = {
     command,
     args,
@@ -1205,6 +1206,21 @@ export async function runRegisteredCommandForTest(
   return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
+/** The base key of a negated boolean spelling (`--no-add`, `no-add` and `noAdd` are `add`), if the key is one. */
+function negatedBaseKey(key: string): string | undefined {
+  const dashed = /^-{0,2}no-(\w[\w-]*)$/u.exec(key)?.[1];
+  // A dashed name that matched is always a valid long flag, so it always has a handler key.
+  if (dashed !== undefined) return resolveExtensionFlagOptionKey({ long: `--${dashed}` }) as string;
+  const camel = /^no([A-Z]\w*)$/u.exec(key)?.[1];
+  return camel === undefined ? undefined : `${camel.charAt(0).toLowerCase()}${camel.slice(1)}`;
+}
+
+/** A boolean option value or its string token, or `undefined` for anything else. */
+function booleanToken(value: unknown): boolean | undefined {
+  if (value === true || value === "true") return true;
+  return value === false || value === "false" ? false : undefined;
+}
+
 /**
  * The options with every key also under its handler spelling (`--add-json`,
  * `add-json` and a declared short alias such as `-J` as `addJson`), so host
@@ -1215,6 +1231,10 @@ export async function runRegisteredCommandForTest(
 function foldOptionSpellings(options: Record<string, unknown>, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): Record<string, unknown> {
   const folded: Record<string, unknown> = { ...options };
   for (const [key, value] of Object.entries(options)) {
+    // A negated boolean spelling (`--no-add: false`) sets its base key to the inverse, as the normalizer applies it.
+    const base = negatedBaseKey(key);
+    const flag = booleanToken(value);
+    if (base !== undefined && flag !== undefined && folded[base] === undefined) folded[base] = !flag;
     // A declared short alias counts with or without its dash, as the normalizer accepts both (`-J`, `J`).
     const declared = definitions.find((definition) => definition.short !== undefined && (definition.short === key || definition.short === `-${key}`));
     const handlerKey = resolveExtensionFlagOptionKey(declared ?? { long: key.startsWith("-") ? key : `--${key}` });

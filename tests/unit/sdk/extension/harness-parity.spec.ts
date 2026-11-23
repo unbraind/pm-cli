@@ -185,6 +185,15 @@ describe("extension test harness parity with native dispatch", () => {
         context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
       });
     }
+    // A negated spelling of a mutation option is a mutation too (CodeRabbit review); a non-boolean value or an explicit base key is left alone.
+    for (const options of [{ "--no-add": false }, { "no-add": "false" }, { noAdd: false }, { "--no-add": true, add: "text" }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", args: ["pm-x"], options, global: { outputLimit: "1" } })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+      });
+    }
+    for (const options of [{ "--no-add": "maybe" }, { "--no-add": true }, { noAdd: "true", add: undefined }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", args: ["pm-x"], options, global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
+    }
     // Host controls are admitted before extension flags, as natively: a missing required flag does not mask the refusal.
     await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-required", global: { outputLimit: "1" } })).rejects.toMatchObject({
       context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
@@ -205,6 +214,12 @@ describe("extension test harness parity with native dispatch", () => {
     await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: undefined, "--output-limit": "6" } });
     await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: 7 } });
     expect(seen).toEqual(["2", "3", "4", "5", "6", "7"]);
+    // The SDK factory sees the same controls as the handler, and never runs for a refused invocation (CodeRabbit review).
+    const factoryLimits: unknown[] = [];
+    const sdkFactory = ({ global }: { global: { outputLimit?: string } }) => (factoryLimits.push(global.outputLimit), undefined as never);
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { "--output-limit": "8" }, sdkFactory });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-plain", options: { outputLimit: "1" }, sdkFactory })).rejects.toThrow();
+    expect(factoryLimits).toEqual(["8"]);
     const included: unknown[] = [];
     const lister = await activate((api) => {
       api.registerCommand({ name: "probe-include", read_output: { row_keys: ["rows"] }, run: (context) => (included.push(context.global.outputInclude), { rows: [] }) });
