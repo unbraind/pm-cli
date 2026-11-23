@@ -44,7 +44,8 @@ describe("normalizeAddFieldInput", () => {
 
   it("rejects commas in keys and flags because commas separate list-flag values (GH-1633)", () => {
     expect(() => normalizeAddFieldInput({ key: "foo,bar" })).toThrow(/must not contain commas/);
-    expect(() => normalizeAddFieldInput({ key: "owner", cliFlag: "own,er" })).toThrow(/Field flag "own,er" must not contain commas/);
+    // A comma in a flag is left to the typed schema_field_flag_invalid check (pm-8patuh).
+    expect(normalizeAddFieldInput({ key: "owner", cliFlag: "own,er" })).toMatchObject({ cliFlag: "own,er" });
     expect(normalizeAddFieldInput({ key: "owner_team" }).key).toBe("owner_team");
   });
 

@@ -3145,13 +3145,15 @@ mutation-receipt projection, command-result overrides, suppressed host
 output, `output_format` services and encoding resolution apply as they do
 natively, so a package test fails exactly where the native CLI would
 ([pm-gh1729](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1729.toon),
-tracker record excluded from npm). Before the handler runs, the harness also
+tracker record excluded from npm). Before the handler runs, and before
+extension flags are normalized as native dispatch orders it, the harness also
 applies the native admission of universal output controls, read from
 `global` and from `options`: a command without `read_output` given any of them
 is refused with `read_output_surface_unsupported` (exit 2, the native
 message), a malformed value such as `outputFormat: "yaml"` is refused, and a
 native hybrid surface an extension extends refuses a mutation combined with
-them as `read_output_mutation_conflict`. A registry built by hand instead of
+them as `read_output_mutation_conflict`, positional annotation text
+(`args: ["pm-x", "text"]` on `comments`, `notes` or `learnings`) included. A registry built by hand instead of
 through `activateExtensionForTest` carries no declarations and is not checked
 ([pm-gh1769](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1769.toon),
 tracker record excluded from npm). Avoid

@@ -1692,9 +1692,13 @@ function isRepeatableSwitchArgvSpelling(declared: DeclaredArgvSpelling): boolean
  * occurrences alone whenever any existed, dropping the bare ones. The same
  * scan that resolves spelling conflicts walks each scope's tokens with
  * Commander's grammar, so a token another option consumed as its value is
- * never counted. Returns `occurrenceSource` unchanged when no repeatable
- * switch occurs in argv; otherwise a copy whose recorded occurrences of those
- * switches are replaced by the scanned ones, every other occurrence kept.
+ * never counted. A spelling Commander did not register is folded to its key
+ * as the loose parser folds it (`--Many=false` is `many`), and only the keys
+ * the coercer reads for a switch are replaced, so another declaration's key
+ * (`--s` beside a switch aliased `-S`) keeps its own occurrences. Returns
+ * `occurrenceSource` unchanged when no repeatable switch occurs in argv;
+ * otherwise a copy whose recorded occurrences of those switches are replaced
+ * by the scanned ones, every other occurrence kept.
  */
 export function orderArgvRepeatableSwitchOccurrences(
   occurrenceSource: Record<string, unknown>,
@@ -1704,11 +1708,12 @@ export function orderArgvRepeatableSwitchOccurrences(
   const index = indexDeclaredArgvSpellings(definitions);
   const switches = [...new Set(index.values())].filter(isRepeatableSwitchArgvSpelling);
   if (switches.length === 0) return occurrenceSource;
+  const switchKeys = indexRepeatableSwitchLooseKeys(switches, definitions);
   const scanned: ParsedLooseOptionToken[] = [];
   for (const scope of scopes) {
     scanArgvScope(
       scope,
-      (spelling) => resolveArgvSpelling(scope, index, spelling, isRepeatableSwitchArgvSpelling),
+      (spelling) => resolveArgvSpelling(scope, index, spelling, isRepeatableSwitchArgvSpelling) ?? resolveFoldedSwitchSpelling(scope, switchKeys, spelling),
       (_spelling, entry, value, attached) => {
         // `attached` marks `--flag=<token>`, which the coercer judges as an explicit value, as the loose parser does.
         if (entry.declared !== undefined) scanned.push({ consumed: 0, key: entry.declared.handlerKey, value, ...(attached ? { attached: true } : {}) });
@@ -1717,11 +1722,39 @@ export function orderArgvRepeatableSwitchOccurrences(
   }
   const reordered = new Set(scanned.map(({ key }) => key));
   if (reordered.size === 0) return occurrenceSource;
-  const replacedKeys = new Set(
-    switches.filter(({ handlerKey }) => reordered.has(handlerKey)).flatMap(({ definition }) => collectLooseOptionKeys(definition)),
-  );
+  const replacedKeys = new Set([...switchKeys].filter(([, declared]) => reordered.has(declared.handlerKey)).map(([key]) => key));
   const kept = ((occurrenceSource as LooseOptionsWithOccurrences)[LOOSE_OPTION_OCCURRENCES] ?? []).filter(({ key }) => !replacedKeys.has(key));
   const ordered = Object.assign(Object.create(null) as LooseOptionsWithOccurrences, occurrenceSource);
   Object.defineProperty(ordered, LOOSE_OPTION_OCCURRENCES, { value: [...kept, ...scanned] });
   return ordered;
+}
+
+/**
+ * The loose keys each repeatable switch is read under, exactly as the coercer
+ * reads them: its own key and alias keys, minus any key that is another
+ * declaration's canonical key.
+ */
+function indexRepeatableSwitchLooseKeys(
+  switches: readonly DeclaredArgvSpelling[],
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+): Map<string, DeclaredArgvSpelling> {
+  const canonicalKeys = new Set(definitions.map((definition) => resolveCanonicalLooseOptionKey(definition)).filter((key): key is string => key !== null));
+  const keys = new Map<string, DeclaredArgvSpelling>();
+  for (const declared of switches) {
+    for (const key of collectLooseOptionKeys(declared.definition)) {
+      if ((key === declared.handlerKey || !canonicalKeys.has(key)) && !keys.has(key)) keys.set(key, declared);
+    }
+  }
+  return keys;
+}
+
+/** A leaf spelling Commander did not register that the loose parser folds onto a repeatable switch's key. */
+function resolveFoldedSwitchSpelling(
+  scope: ArgvOptionScope,
+  switchKeys: ReadonlyMap<string, DeclaredArgvSpelling>,
+  spelling: string,
+): ArgvSpellingEntry | undefined {
+  if (!scope.includesLooseFlags || scope.optionOf(spelling) !== undefined) return undefined;
+  const declared = switchKeys.get(toLooseOptionKey(spelling.replace(/^-+/u, "")));
+  return declared === undefined ? undefined : { arity: declared.arity, declared, loose: true };
 }

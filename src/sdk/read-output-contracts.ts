@@ -662,6 +662,27 @@ const READ_OUTPUT_MUTATION_RETRY_EXAMPLES: Readonly<Record<HybridReadOutputSurfa
   "package-catalog": ["pm package install <source> --project", "pm package catalog --output-limit 5"],
 };
 
+/** Annotation commands whose second declared positional is the entry text. */
+const ANNOTATION_TEXT_COMMANDS: ReadonlySet<string> = new Set(["comments", "notes", "learnings"]);
+
+/**
+ * Expose positional annotation text as the `add` mutation key that read-output
+ * validation checks, so `pm learnings <id> "text" --output-budget 1` is refused
+ * before it writes, as `--add` already is, instead of appending and then
+ * failing the output budget. CLI dispatch and the extension test harness both
+ * apply it (pm-gh1769), so a package that handles an annotation command sees
+ * the native refusal in its tests.
+ */
+export function annotationPositionalMutationOptions(
+  commandPath: string,
+  processedArgs: readonly unknown[],
+): { add?: string } {
+  const text = processedArgs[1];
+  return ANNOTATION_TEXT_COMMANDS.has(commandPath) && typeof text === "string"
+    ? { add: text }
+    : {};
+}
+
 /** Reject malformed or mutation-scoped universal output controls before command execution. */
 export function validateReadOutputOptions(
   command: string,

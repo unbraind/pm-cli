@@ -32,6 +32,7 @@ export function describeFieldFlagSpellingDefect(token: string): string | undefin
     return spelling.length === 2 && !FLAG_SPELLING_BREAK.test(spelling[1]!) ? undefined : "is not a short flag: a short flag is one dash and one character";
   }
   const name = spelling.replace(/^--/u, "");
+  if (name.length === 0) return "is empty";
   if (name.startsWith("-")) return "starts with three dashes";
   const separator = FLAG_SPELLING_BREAK.exec(name)?.[0];
   if (separator === undefined) return undefined;
@@ -40,3 +41,19 @@ export function describeFieldFlagSpellingDefect(token: string): string | undefin
     : `contains ${JSON.stringify(separator)}, which the option parser reads as ${separator === "|" || separator === "," ? "a break between two flags" : separator === "=" ? "the start of an attached value" : "a value placeholder"}`;
 }
 
+
+/**
+ * Spellings of the help option the parser adds to every command without
+ * listing it among the command's options, as stored without leading dashes.
+ */
+const IMPLICIT_HELP_SPELLINGS: ReadonlySet<string> = new Set(["-h", "help"]);
+
+/**
+ * Whether the CLI registers a stored field flag or alias as an option: it is
+ * one option spelling and not the implicit help option. Registration and
+ * recovery routes share this, so a retry never names a skipped spelling.
+ */
+export function isRegistrableFieldFlagSpelling(token: string): boolean {
+  const spelling = token.trim();
+  return describeFieldFlagSpellingDefect(spelling) === undefined && !IMPLICIT_HELP_SPELLINGS.has(spelling.replace(/^--/u, ""));
+}

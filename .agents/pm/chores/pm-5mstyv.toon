@@ -1,0 +1,23 @@
+id: pm-5mstyv
+title: CodeFactor reports zizmor dangerous-triggers on release-reliability.yml's workflow_run trigger as a new critical issue on every PR that touches a workflow
+description: "CodeFactor's check on PR #1772 (and on Dependabot PR #1771) failed with one critical issue: zizmor rule dangerous-triggers at .github/workflows/release-reliability.yml line 4, 'workflow_run is almost always used insecurely'. Neither PR changed that file; CodeFactor re-runs zizmor over the workflow set whenever a PR touches any workflow, so every Actions pin update hits it. The trigger is deliberate and already hardened: the job runs only for runs on the default branch (head_branch guard), checks out the default branch rather than the triggering run's code, keeps persist-credentials false, grants only contents/actions/issues read, and downloads no artifact from the triggering run. Fix: record that justification beside the trigger with zizmor's inline suppression so the finding is closed at its source with the reason, instead of being re-reported on unrelated PRs. Duplicate check: searched CodeFactor workflow security finding hosted analysis workflow trigger; pm-92if owns CodeFactor code findings, nothing owns this workflow rule."
+type: Chore
+status: in_progress
+priority: 2
+tags[4]: "area:ci",codefactor,security,supply-chain
+created_at: "2026-11-23T10:04:05.325Z"
+updated_at: "2026-11-23T10:16:10.094Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#6fe7ba654eae068ba842efbc"
+author: "harness:claude-code"
+estimated_minutes: 15
+acceptance_criteria: release-reliability.yml carries a zizmor dangerous-triggers suppression on the workflow_run trigger with the hardening rationale beside it; CodeFactor reports no new issue for PR #1772's final head
+parent: pm-92if
+risk: low
+confidence: medium
+expected_result: "A PR that touches a workflow no longer fails CodeFactor on the deliberate, hardened workflow_run trigger"
+files[1]{path,scope}:
+  .github/workflows/release-reliability.yml,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts,project,"harness:claude-code","2026-11-23T10:16:10.041Z",local_mutation,fix/extension-harness-admission-parity
+body: ""

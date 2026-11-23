@@ -8,7 +8,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { describeFieldFlagSpellingDefect } from "../../../../src/sdk/schema/field-flag-spelling.js";
+import { describeFieldFlagSpellingDefect, isRegistrableFieldFlagSpelling } from "../../../../src/sdk/schema/field-flag-spelling.js";
+import { createSchemaFieldRecoveryResolver } from "../../../../src/sdk/lifecycle/core-field-recovery.js";
+import { resolveRuntimeFieldRegistry } from "../../../../src/core/schema/runtime-schema.js";
 import { lintProjectProfile } from "../../../../src/core/profile/profile-lint.js";
 import { PmClient } from "../../../../src/sdk/index.js";
 import {
@@ -37,6 +39,22 @@ describe("describeFieldFlagSpellingDefect", () => {
     for (const spelling of ["a<b>", "a[b]"]) expect(describeFieldFlagSpellingDefect(spelling)).toContain("a value placeholder");
     for (const spelling of ["-xy", "-", "-|"]) expect(describeFieldFlagSpellingDefect(spelling), spelling).toBe("is not a short flag: a short flag is one dash and one character");
     expect(describeFieldFlagSpellingDefect("---x")).toBe("starts with three dashes");
+    // A missing name is not a spelling either (Greptile review).
+    for (const spelling of ["", "   ", "--"]) expect(describeFieldFlagSpellingDefect(spelling), JSON.stringify(spelling)).toBe("is empty");
+  });
+
+  it("registers a spelling only when it is one option spelling and not the implicit help", () => {
+    for (const spelling of ["review-owner", "-x", "--review-owner"]) expect(isRegistrableFieldFlagSpelling(spelling), spelling).toBe(true);
+    for (const spelling of ["full|deep", "-xy", "", "-h", "help", "--help"]) expect(isRegistrableFieldFlagSpelling(spelling), spelling).toBe(false);
+  });
+
+  it("never advertises a spelling the CLI skips as the retry for a refused --field assignment (Codex review)", () => {
+    const registry = resolveRuntimeFieldRegistry({
+      fields: [{ key: "review_owner", type: "string", cli_flag: "owner|detail", cli_aliases: ["review-owner"], commands: ["update"] }],
+    } as never);
+    expect(createSchemaFieldRecoveryResolver(registry, "update")("review_owner")).toMatchObject({ recovery: { suggested_flags: ["--review-owner"] } });
+    const unusable = resolveRuntimeFieldRegistry({ fields: [{ key: "review_owner", type: "string", cli_flag: "owner|detail", commands: ["update"] }] } as never);
+    expect(createSchemaFieldRecoveryResolver(unusable, "update")("review_owner")?.recovery).not.toHaveProperty("suggested_flags");
   });
 
   it("lists every defective flag and alias of each field once", () => {
@@ -71,6 +89,9 @@ describe("custom field registration and stored definitions", () => {
         [{ alias: ["full|deep"] }, "full|deep"],
         [{ cliFlag: "fullx|detail" }, "fullx|detail"],
         [{ alias: ["-xy"] }, "-xy"],
+        // A comma gets the same typed refusal as every other separator (Greptile review).
+        [{ alias: ["a,b"] }, "a,b"],
+        [{ cliFlag: "own,er" }, "own,er"],
       ] as const) {
         await expect(client.schemaAddField("review_owner", { type: "string", commands: ["list"], ...options }), flag).rejects.toMatchObject({
           exitCode: 2,
@@ -90,6 +111,7 @@ describe("custom field registration and stored definitions", () => {
       }
       expect(await readFile(path.join(pmPath, "schema", "fields.json"), "utf8")).toBe(before);
       const profile = { name: "split", title: "Split", summary: "Splits a flag.", types: [], statuses: [], workflows: [], config: [], templates: [], packages: [] };
+      expect(lintProjectProfile({ ...profile, fields: [{ key: "review_lead", aliases: ["a,b"] }] } as never).findings.map((finding) => finding.code)).toEqual(["field_flag_invalid"]);
       expect(lintProjectProfile({ ...profile, fields: [{ key: "review_lead", aliases: ["a|b"] }] } as never)).toMatchObject({
         ok: false,
         findings: expect.arrayContaining([expect.objectContaining({ severity: "error", code: "field_flag_invalid", target: "review_lead", message: expect.stringContaining('"a|b" contains "|"') })]),

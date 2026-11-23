@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2170,
+    "covered_symbols": 2171,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2171
+    "required_symbols": 2172
   },
   "breaking_acknowledgements": [
     {
@@ -4213,6 +4213,12 @@
           "kind": "interface",
           "name": "AnnotationOmissionReceipt",
           "signature": "export interface AnnotationOmissionReceipt { has_omissions: boolean; omitted_field_group_count: number; omitted_field_groups: Array<{ name: string; restore_with: AnnotationHistoryRestoration; }>; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "annotationPositionalMutationOptions",
+          "signature": "(commandPath: string, processedArgs: readonly unknown[]) => { add?: string; } | calls: (commandPath: string, processedArgs: readonly unknown[]) => { add?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -26242,6 +26248,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "annotationPositionalMutationOptions",
+          "signature": "(commandPath: string, processedArgs: readonly unknown[]) => { add?: string; } | calls: (commandPath: string, processedArgs: readonly unknown[]) => { add?: string; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "APPEND_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -41540,7 +41552,7 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1354,
+      "checked_functions": 1355,
       "checked_values": 402,
       "exempt_test_seams": 15,
       "referenced_types": 1061
@@ -41552,7 +41564,7 @@
       "referenced_types": 60
     },
     "./sdk/contracts": {
-      "checked_functions": 102,
+      "checked_functions": 103,
       "checked_values": 188,
       "exempt_test_seams": 1,
       "referenced_types": 72

@@ -648,6 +648,22 @@ describe("argv order of repeatable switch occurrences (pm-g2zzus)", () => {
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ label: ["a"], many: [true] }, definitions, ordered, "demo")).toMatchObject({ label: ["a"], many: [false, true] });
   });
 
+  it("keeps another declaration's key and folds an unregistered spelling as the loose parser does (Codex review)", () => {
+    // -S aliases --many, but --s is its own strict boolean: its loose occurrence keeps strict validation.
+    const owned = [
+      { long: "--many", short: "-S", value_type: "boolean", repeatable: true, list: true },
+      { long: "--s", value_type: "boolean", value_validation: "strict" },
+    ];
+    const ownedLeaf = (tokens: string[]) => leaf(tokens, { optionOf: (spelling) => (spelling === "--many" || spelling === "-S" ? { arity: "none", key: "many" } : undefined) });
+    const tokens = ["--many", "--s=invalid"];
+    const loose = parseLooseCommandOptions(["--s=invalid"]);
+    expect(() => coerceLooseCommandOptionsWithFlagDefinitions({ many: [true], s: "invalid" }, owned, orderArgvRepeatableSwitchOccurrences(loose, [ownedLeaf(tokens)], owned), "demo")).toThrow(PmCliError);
+    // --Many=false reaches the loose parser as many; it keeps its place, and a strict switch still judges its value.
+    expect(orderedValues(["--many", "--Many=false"])).toEqual([true, false]);
+    const strict = [{ long: "--many", value_type: "boolean", value_validation: "strict", repeatable: true, list: true }];
+    expect(() => coerceLooseCommandOptionsWithFlagDefinitions({ many: [true] }, strict, orderArgvRepeatableSwitchOccurrences(parseLooseCommandOptions(["--Many=invalid"]), [leaf(["--many", "--Many=invalid"])], strict), "demo")).toThrow(PmCliError);
+  });
+
   /** The values the reordered occurrences deliver for --many, through the shared coercer. */
   function orderedValues(tokens: string[], scopes: ArgvOptionScope[] = [leaf(tokens)]): unknown {
     const loose = parseLooseCommandOptions(tokens.filter((token) => token.includes("=")));

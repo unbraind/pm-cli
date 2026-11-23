@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:cli",schema,validation
 created_at: "2026-11-22T21:23:51.347Z"
-updated_at: "2026-11-23T09:42:28.044Z"
+updated_at: "2026-11-23T10:16:06.825Z"
 closed_at: "2026-11-23T09:40:04.146Z"
 completed_at: "2026-11-23T09:40:04.146Z"
 author: "harness:claude-code"
@@ -20,7 +20,7 @@ expected_result: A field flag that the parser would split or that shadows implic
 actual_result: "Scratch reproduction confirmed every case before the fix; field-flag-spellings.spec.ts (7 cases) covers the grammar, short and help reservations, add-field, rename dry run, profile lint, validate rows and working pm list --help and pm search -h beside stored defects"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-pta8um,discovered_from,"2026-11-22T21:23:51.347Z","harness:claude-code","cli:create:dep",detected
-comments[2]:
+comments[3]:
   - created_at: "2026-11-22T21:43:15.467Z"
     author: "harness:claude-code"
     text: "Additional cases for this item from the second local review of PR 1768 (2026-11-22), none reproduced here yet:\n\n- rename-field accepts a target containing a comma and writes it as a flag, which the parser then splits; add-field already refuses commas.\n- An explicit short flag or alias equal to a built-in short option (for example the priority short flag) is accepted, after which registration skips it and the field has no usable spelling.\n- With a fields file that holds a duplicate key, a rename preview reads the hydrated definition while execution copies the first stored entry, so a preview can succeed where execution refuses after the plan was saved. The stage step does refuse; the preview should read the same entry.\n- A field whose key equals a global output control but whose flag is different (key json with another flag) is refused although the two flags work independently on the command line; decide whether a bare key should be compared only with options that reach the field reader.\n"
@@ -28,19 +28,29 @@ comments[2]:
     author: "harness:claude-code"
     text: "Reproduced 2026-11-23 on 2026.11.23 in a scratch tracker before the fix: schema add-field detaily --commands list --alias 'full|deep' was stored, after which pm list -h failed during registration with \"Cannot add option '--full|deep <value>' to command 'list' due to conflicting flag '--full'\"; schema add-field helpz --commands search --alias=-h was stored and pm search foo -h then failed with 'Invalid command usage' because -h demanded a value; --alias=-p on create was accepted and silently skipped at registration (create -p still set priority); rename-field --to 'a,b' and 'a|b' were accepted.\n\nFix. src/sdk/schema/field-flag-spelling.ts (dependency-free, so CLI registration can consult it without a private core import) defines one option spelling: a long name with no whitespace, pipe, comma, '=', or brackets, or a short flag of one dash and one character, following Commander 15.1's splitOptionFlags grammar. field-option-collisions.ts refuses defective spellings with schema_field_flag_invalid (add-field, profile apply, rename-field pre-plan and stage), compares a short spelling with the command's own short flags from the flag contracts (-p is --priority on create and update, free on list), and reserves the implicit --help/-h on every command. profile lint reports field_flag_invalid; validate --check-metadata reports stored spellings as validate_schema_field_flag_invalid with rows; addRuntimeFieldOption skips a defective stored spelling and the implicit help spellings, so a stored definition can no longer stop a command from starting or take over help (pm list --help and pm search -h now work beside such definitions).\n\nDecision on the comment's last bullet: a bare key equal to a global output control stays refused. The field reader looks the value up under the key as well as the flag, and which global options are stripped from command-scoped options is a separate list (extractCommandScopedOptions); tying the check to that list would let it drift, and the refusal only costs a rename. Not changed here: the rename preview reading the hydrated definition while staging copies the first stored entry of a duplicate key; the stage step already refuses, so execution stays correct."
     edited_at: "2026-11-23T08:59:48.802Z"
-files[5]:
+  - created_at: "2026-11-23T10:16:02.821Z"
+    author: "harness:claude-code"
+    text: "Review round 1 on PR #1772 (Codex and Greptile, 2026-11-23), three findings fixed. (1) A comma in a flag or alias was refused by normalizeAddFieldInput with a plain Error, so add-field and profile apply surfaced command_failed and profile lint field_invalid; the comma check moved out of normalizeAddFieldInput and the typed schema_field_flag_invalid / field_flag_invalid check every writer runs covers it. (2) describeFieldFlagSpellingDefect accepted an empty name ('', whitespace, '--'); it now returns 'is empty'. (3) createSchemaFieldRecoveryResolver could advertise a stored spelling the CLI now skips (owner|detail) as the retry for a refused --field assignment; runtimeFieldCliFlagRoute now skips any spelling isRegistrableFieldFlagSpelling rejects, the same predicate registration uses, and omits the retry when nothing usable remains. field-flag-spellings.spec.ts and fields-file.spec.ts cover them.\n"
+files[8]:
   - path: src/cli/main.ts
     scope: project
     note: registration skips defective stored spellings and implicit help
   - path: src/core/profile/profile-lint.ts
     scope: project
     note: field_flag_invalid lint code
+  - path: src/core/schema/fields-file.ts
+    scope: project
+  - path: src/core/schema/runtime-field-values.ts
+    scope: project
+    note: recovery route skips unregistrable spellings
   - path: src/sdk/schema/field-flag-spelling.ts
     scope: project
     note: dependency-free one-spelling grammar
   - path: src/sdk/schema/field-option-collisions.ts
     scope: project
     note: "spelling defects, short flags, implicit help"
+  - path: tests/unit/core/schema/fields-file.spec.ts
+    scope: project
   - path: tests/unit/sdk/schema/field-flag-spellings.spec.ts
     scope: project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:

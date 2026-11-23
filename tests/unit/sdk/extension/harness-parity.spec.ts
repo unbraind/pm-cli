@@ -164,6 +164,7 @@ describe("extension test harness parity with native dispatch", () => {
     let runs = 0;
     const activation = await activate((api) => {
       api.registerCommand({ name: "probe-plain", run: () => ({ runs: ++runs }) });
+      api.registerCommand({ name: "probe-required", flags: [{ long: "--target", value_type: "string", required: true }], run: () => ({ runs: ++runs }) });
       api.registerCommand({ name: "probe-read", read_output: { row_keys: ["rows"] }, run: () => ({ rows: [] }) });
       // An extension that extends a native hybrid surface keeps that surface's mutation refusal.
       api.registerCommand({ name: "comments", run: () => ({ comments: [] }) });
@@ -175,11 +176,18 @@ describe("extension test harness parity with native dispatch", () => {
         context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
       });
     }
+    // Host controls are admitted before extension flags, as natively: a missing required flag does not mask the refusal.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-required", global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_surface_unsupported" }),
+    });
     expect(runs).toBe(0);
     await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-read", global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
-    await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", args: ["pm-x"], options: { add: "text" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
-      context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
-    });
+    // Positional annotation text is a mutation too, as native dispatch maps it (Codex review).
+    for (const invocation of [{ args: ["pm-x"], options: { add: "text" } }, { args: ["pm-x", "text"] }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", ...invocation, global: { outputLimit: "1" } })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+      });
+    }
     // A hand-built registry carries no declarations to judge, so it is not checked.
     const handBuilt = { handlers: [{ command: "probe-plain", run: () => ({ ok: true }) }], overrides: [] } as unknown as Parameters<typeof runRegisteredCommandForTest>[0];
     await expect(runRegisteredCommandForTest(handBuilt, { command: "probe-plain", global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });

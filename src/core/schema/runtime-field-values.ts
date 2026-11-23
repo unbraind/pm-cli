@@ -14,6 +14,7 @@ import {
 } from "./runtime-schema.js";
 import type { RuntimeFieldCommand, RuntimeFieldValueSchema } from "../../types/index.js";
 import { assertIdentityFieldsWithoutUrlCredentials } from "../shared/url-credentials.js";
+import { isRegistrableFieldFlagSpelling } from "../../sdk/schema/field-flag-spelling.js";
 
 const MAX_VALUE_SCHEMA_DEPTH = 16;
 
@@ -132,6 +133,8 @@ export function runtimeFieldCliFlagRoute(
   const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options, command);
   const readOrder = resolveCandidateOptionKeys(definition);
   return [definition.cli_flag, ...definition.cli_aliases].find((flag) => {
+    // A spelling the CLI does not register (pm-8patuh) is never a working retry.
+    if (!isRegistrableFieldFlagSpelling(flag)) return false;
     const key = commanderOptionAttribute(flag);
     if (isNegatingFlag(flag) || reserved.flags.has(runtimeFieldFlagToken(flag)) || taken.has(key)) return false;
     return isUnshadowedOptionKey(key, readOrder, taken);

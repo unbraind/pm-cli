@@ -1,0 +1,19 @@
+id: pm-302reu
+title: "A repeatable switch declared on both an extension command and its subcommand reaches the handler in scope order, not argv order, when the parent consumes a bare occurrence"
+description: "Raised by the Codex review of PR #1772 (2026-11-23), not reproduced on the built CLI. orderArgvRepeatableSwitchOccurrences (src/sdk/extension/command-options.ts) scans each command scope on the dispatch path in turn and appends what each records. When an extension registers the same repeatable switch --many on a command and on its subcommand, Commander lets the parent consume a bare --many that appears after the subcommand name, while an attached --many=false is unknown to the parent and reaches only the leaf. For pm parent child --many=false --many the parent scan records true first and the leaf scan appends false, so the handler receives [true, false] instead of [false, true]. Before PR #1772 the same invocation delivered [false] (the bare value was lost), so the change is not a regression, but the order is still wrong. A fix needs each scope's token positions mapped onto the outermost scope's argv: a child's parseOptions receives exactly the parent's unknown tokens, in order, so the scan would report which positions each scope consumed and align the child's tokens to the parent's unconsumed positions from its first unknown option onward. Duplicate check: searched repeatable switch argv order scope parent subcommand; pm-g2zzus (closed by PR #1772) owned the single-scope order."
+type: Issue
+status: open
+priority: 3
+tags[4]: "area:cli","area:sdk",extensions,options
+created_at: "2026-11-23T10:04:47.308Z"
+updated_at: "2026-11-23T10:04:47.308Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Reproduce with an extension that declares --many on a command and its subcommand, recording the delivered order on the built CLI; Occurrences recorded by every scope are merged by their position in the original argv, so pm parent child --many=false --many delivers [false, true]; An in-process spec covers parent-consumed bare, leaf-only attached and a token consumed as another option's value across scopes"
+parent: pm-ugqx
+risk: low
+confidence: medium
+expected_result: Every occurrence of a repeatable switch reaches the handler in argv order whichever command scope consumed it
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-g2zzus,discovered_from,"2026-11-23T10:04:47.308Z","harness:claude-code","cli:create:dep",detected
+body: ""
