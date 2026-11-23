@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:cli",schema,validation
 created_at: "2026-11-22T21:23:51.347Z"
-updated_at: "2026-11-23T10:16:06.825Z"
+updated_at: "2026-11-23T12:46:02.869Z"
 closed_at: "2026-11-23T09:40:04.146Z"
 completed_at: "2026-11-23T09:40:04.146Z"
 author: "harness:claude-code"
@@ -20,7 +20,7 @@ expected_result: A field flag that the parser would split or that shadows implic
 actual_result: "Scratch reproduction confirmed every case before the fix; field-flag-spellings.spec.ts (7 cases) covers the grammar, short and help reservations, add-field, rename dry run, profile lint, validate rows and working pm list --help and pm search -h beside stored defects"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-pta8um,discovered_from,"2026-11-22T21:23:51.347Z","harness:claude-code","cli:create:dep",detected
-comments[3]:
+comments[4]:
   - created_at: "2026-11-22T21:43:15.467Z"
     author: "harness:claude-code"
     text: "Additional cases for this item from the second local review of PR 1768 (2026-11-22), none reproduced here yet:\n\n- rename-field accepts a target containing a comma and writes it as a flag, which the parser then splits; add-field already refuses commas.\n- An explicit short flag or alias equal to a built-in short option (for example the priority short flag) is accepted, after which registration skips it and the field has no usable spelling.\n- With a fields file that holds a duplicate key, a rename preview reads the hydrated definition while execution copies the first stored entry, so a preview can succeed where execution refuses after the plan was saved. The stage step does refuse; the preview should read the same entry.\n- A field whose key equals a global output control but whose flag is different (key json with another flag) is refused although the two flags work independently on the command line; decide whether a bare key should be compared only with options that reach the field reader.\n"
@@ -31,6 +31,9 @@ comments[3]:
   - created_at: "2026-11-23T10:16:02.821Z"
     author: "harness:claude-code"
     text: "Review round 1 on PR #1772 (Codex and Greptile, 2026-11-23), three findings fixed. (1) A comma in a flag or alias was refused by normalizeAddFieldInput with a plain Error, so add-field and profile apply surfaced command_failed and profile lint field_invalid; the comma check moved out of normalizeAddFieldInput and the typed schema_field_flag_invalid / field_flag_invalid check every writer runs covers it. (2) describeFieldFlagSpellingDefect accepted an empty name ('', whitespace, '--'); it now returns 'is empty'. (3) createSchemaFieldRecoveryResolver could advertise a stored spelling the CLI now skips (owner|detail) as the retry for a refused --field assignment; runtimeFieldCliFlagRoute now skips any spelling isRegistrableFieldFlagSpelling rejects, the same predicate registration uses, and omits the retry when nothing usable remains. field-flag-spellings.spec.ts and fields-file.spec.ts cover them.\n"
+  - created_at: "2026-11-23T12:46:02.868Z"
+    author: "harness:claude-code"
+    text: "Review round 4 on PR #1772 (Codex pass 4, 2026-11-23). describeFieldFlagSpellingDefect accepted review- and review--owner, but Commander 15.1 throws a TypeError ('Cannot read properties of undefined (reading toUpperCase)') when it camel-cases a long flag with an empty hyphen segment, so a stored field with such a spelling could again stop a command from starting. Verified with Commander directly (--review- and --review--owner throw, --review-owner and --a.b register). The shared check now reports 'has an empty segment between hyphens', so admission refuses it and registration skips it; field-flag-spellings.spec.ts covers both spellings.\n"
 files[8]:
   - path: src/cli/main.ts
     scope: project

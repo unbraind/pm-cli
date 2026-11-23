@@ -299,7 +299,6 @@ async function admitRegisteredReadOutputResult(
   commands: ExtensionCommandRegistry,
   context: CommandHandlerContext,
   outcome: CommandHandlerResult,
-  optionControls: Partial<GlobalOptions> = {},
 ): Promise<CommandHandlerResult> {
   if (registrations === undefined || !outcome.handled) return outcome;
   const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === context.command)?.read_output;
@@ -320,7 +319,6 @@ async function admitRegisteredReadOutputResult(
     process.exitCode = 0;
     try {
       formatOutput(projectPrintedResult(outcome.result, global), {
-        ...optionControls,
         ...global,
         command: context.command,
         commandArgs: context.args,
@@ -1181,6 +1179,8 @@ export async function runRegisteredCommandForTest(
   // canonical controls shape the delivered output, however the caller spelled them.
   const admissionOptions = foldOptionSpellings(handlerOptions, registrations === undefined ? [] : collectExtensionFlagDefinitionsForCommand(registrations, command));
   await admitRegisteredOutputControls(registrations, command, args, admissionOptions, global);
+  // Controls passed through options reach the handler's context.global as native host flags do; global still wins.
+  Object.assign(global, pickOutputControls(admissionOptions), options.global);
   const context: CommandHandlerContext = {
     command,
     args,
@@ -1201,7 +1201,7 @@ export async function runRegisteredCommandForTest(
     ...(sdk === undefined ? {} : { sdk }),
   };
   const outcome = await runCommandHandler(commands, context);
-  return await admitRegisteredReadOutputResult(registrations, commands, context, outcome, pickOutputControls(admissionOptions));
+  return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
 /**
@@ -1214,7 +1214,8 @@ export async function runRegisteredCommandForTest(
 function foldOptionSpellings(options: Record<string, unknown>, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): Record<string, unknown> {
   const folded: Record<string, unknown> = { ...options };
   for (const [key, value] of Object.entries(options)) {
-    const declared = definitions.find((definition) => definition.short === key);
+    // A declared short alias counts with or without its dash, as the normalizer accepts both (`-J`, `J`).
+    const declared = definitions.find((definition) => definition.short !== undefined && (definition.short === key || definition.short === `-${key}`));
     const handlerKey = resolveExtensionFlagOptionKey(declared ?? { long: key.startsWith("-") ? key : `--${key}` });
     if (handlerKey !== null && !Object.hasOwn(folded, handlerKey)) folded[handlerKey] = value;
   }

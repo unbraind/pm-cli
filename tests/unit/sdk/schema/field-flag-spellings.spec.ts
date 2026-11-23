@@ -39,6 +39,8 @@ describe("describeFieldFlagSpellingDefect", () => {
     for (const spelling of ["a<b>", "a[b]"]) expect(describeFieldFlagSpellingDefect(spelling)).toContain("a value placeholder");
     for (const spelling of ["-xy", "-", "-|"]) expect(describeFieldFlagSpellingDefect(spelling), spelling).toBe("is not a short flag: a short flag is one dash and one character");
     expect(describeFieldFlagSpellingDefect("---x")).toBe("starts with three dashes");
+    // Commander camel-cases across hyphens and throws on an empty segment (Codex review pass 4).
+    for (const spelling of ["review-", "review--owner"]) expect(describeFieldFlagSpellingDefect(spelling), spelling).toContain("empty segment");
     // A missing name is not a spelling either (Greptile review).
     for (const spelling of ["", "   ", "--"]) expect(describeFieldFlagSpellingDefect(spelling), JSON.stringify(spelling)).toBe("is empty");
   });

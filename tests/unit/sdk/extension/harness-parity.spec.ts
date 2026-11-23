@@ -180,7 +180,7 @@ describe("extension test harness parity with native dispatch", () => {
       });
     }
     // A mutation option is recognized however the caller spells it (Codex review round 2); an unfoldable key passes through.
-    for (const key of ["--add-json", "add-json", "-J"]) {
+    for (const key of ["--add-json", "add-json", "-J", "J"]) {
       await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { [key]: "{}", "-t": "x" }, global: { outputLimit: "1" } })).rejects.toMatchObject({
         context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
       });
@@ -191,6 +191,14 @@ describe("extension test harness parity with native dispatch", () => {
     });
     expect(runs).toBe(0);
     await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-read", global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
+    // A control passed through options reaches the handler's context.global, as a native host flag does (Codex review pass 4).
+    const seen: unknown[] = [];
+    const reader = await activate((api) => {
+      api.registerCommand({ name: "probe-global", read_output: { row_keys: ["rows"] }, run: (context) => (seen.push(context.global.outputLimit), { rows: [] }) });
+    });
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { "--output-limit": "2" } });
+    await runRegisteredCommandForTest(reader.commands, { command: "probe-global", options: { outputLimit: "2" }, global: { outputLimit: "3" } });
+    expect(seen).toEqual(["2", "3"]);
     // Positional annotation text is a mutation too, as native dispatch maps it (Codex review).
     for (const invocation of [{ args: ["pm-x"], options: { add: "text" } }, { args: ["pm-x", "text"] }]) {
       await expect(runRegisteredCommandForTest(activation.commands, { command: "comments", ...invocation, global: { outputLimit: "1" } })).rejects.toMatchObject({

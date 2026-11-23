@@ -1,0 +1,19 @@
+id: pm-4cqmtt
+title: "The build lease waits the full 20-minute timeout on a lease directory without an owner record, and its abandoned-lease refusal does not name the path to remove"
+description: "Observed 2026-11-23 while stopping a local coverage run mid-build. scripts/build-lease.mjs treats .cache/build-lease as the lease and .cache/build-lease/owner.json as its owner record. The refusal for a dead owner says to inspect owner.json and 'manually remove the lease'; removing owner.json alone (a plausible reading) leaves the empty directory, and readLeaseOwner then returns undefined, which assertLeaseOwnerPresent treats as an owner still being written, so every later build waits silently until the 1,200,000 ms deadline. The same state arises when an owner dies between mkdir and its owner write. pm-63i8nr (closed) diagnosed a dead recorded owner before the timeout; it did not cover a lease directory with no owner record. Direction: the refusal names the exact directory to remove (rm -r .cache/build-lease) once the producer and its consumers are confirmed stopped, and a lease directory that stays without an owner record past a short grace window (a few seconds, far longer than the mkdir-to-write gap) is diagnosed with the same typed refusal instead of a silent wait. Never steal a live lease by age."
+type: Task
+status: open
+priority: 3
+tags[3]: "area:build",dx,locks
+created_at: "2026-11-23T12:45:45.241Z"
+updated_at: "2026-11-23T12:45:45.241Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "The abandoned-owner refusal names the lease directory path and the removal command; A lease directory without an owner record past a short grace window is refused with a diagnostic instead of waiting for the full timeout, while a live owner is never displaced; tests/unit/scripts cover the empty-directory case with a fake clock and keep the live-owner and dead-owner cases"
+parent: pm-doxj
+risk: low
+confidence: high
+expected_result: An orphaned lease directory is diagnosed within seconds with an exact recovery step
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-63i8nr,related,"2026-11-23T12:45:45.241Z","harness:claude-code","cli:create:dep",detected
+body: ""

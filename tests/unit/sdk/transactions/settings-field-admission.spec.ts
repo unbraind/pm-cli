@@ -46,17 +46,36 @@ describe("settings writers share the custom field admission", () => {
     });
   });
 
+  it("judges a new field on a settings file that stores no schema at all", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const settingsPath = path.join(pmPath, "settings.json");
+      const { schema: _schema, ...rest } = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      await writeFile(settingsPath, `${JSON.stringify(rest, null, 2)}\n`);
+      const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "schema-less", dryRun: true, mutate: (current) => withFields(current, [{ key: "full", type: "string", commands: ["list"] } as InlineField]) }),
+      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_option_collision" }) });
+    });
+  });
+
   it("keeps a legacy definition through an unrelated write and judges it again once it changes", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const settingsPath = path.join(pmPath, "settings.json");
       const legacy = { key: "full", type: "string", commands: ["create", "list"] };
+      // Stored without its defaults, and one the registry drops entirely (an empty flag).
+      const bare = { key: "fields", commands: ["list"] };
+      const dropped = { key: "review_dropped", type: "string", cli_flag: "--", commands: ["list"] };
       const raw = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown> & { schema?: Record<string, unknown> };
-      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [legacy] } }, null, 2)}\n`);
+      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [legacy, bare, dropped] } }, null, 2)}\n`);
       const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "unrelated", mutate: (current) => ({ ...current, author_default: "settings-writer" }) }),
       ).resolves.toMatchObject({ changed: true });
-      expect((JSON.parse(await readFile(settingsPath, "utf8")) as { schema: { fields: unknown[] } }).schema.fields).toEqual([legacy]);
+      expect((JSON.parse(await readFile(settingsPath, "utf8")) as { schema: { fields: unknown[] } }).schema.fields).toEqual([legacy, bare, dropped]);
+      // Restating a stored definition without its defaults is no change either (Codex review pass 4).
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "restated", mutate: (current) => ({ ...withFields(current, [legacy, bare, dropped] as InlineField[]), author_default: "restating-writer" }) }),
+      ).resolves.toMatchObject({ changed: true });
       // A callback that JSON round-trips the tree drops undefined properties; the legacy field is still unchanged (Codex review round 3).
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "round-trip", mutate: (current) => ({ ...(JSON.parse(JSON.stringify(current)) as PmSettings), author_default: "round-trip-writer" }) }),

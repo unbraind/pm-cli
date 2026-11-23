@@ -91,14 +91,24 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
  * not judged again, so an unrelated write can still preserve a legacy
  * definition, which validate keeps reporting.
  */
-async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings): Promise<void> {
-  // Definitions compare as they persist, so a proposal that JSON round-trips the fields (dropping undefined
-  // properties) leaves an unchanged legacy definition unchanged.
-  const persisted = (value: unknown): unknown => JSON.parse(JSON.stringify(value)) as unknown;
-  const stored = current.schema.fields.map(persisted);
+async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown): Promise<void> {
   // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
   const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
-  const changed = proposed.filter((definition) => !stored.some((entry) => stableValueEquals(entry, persisted(definition))));
+  if (proposed.length === 0) return;
+  const { resolveRuntimeFieldRegistry } = await import("../core/schema/runtime-schema.js");
+  // Definitions compare as the registry reads them, so a proposal that JSON round-trips the fields or
+  // restates a stored definition without its defaults leaves it unchanged. One the registry drops compares
+  // as it persists, so only a new or edited one is judged.
+  const resolved = (definition: unknown): unknown => resolveRuntimeFieldRegistry({ fields: [definition] } as PmSettings["schema"]).definitions[0];
+  const persisted = (value: unknown): unknown => JSON.parse(JSON.stringify(value)) as unknown;
+  // The raw stored entries count too: a proposal may restate a definition exactly as the file holds it.
+  const stored = [...current.schema.fields, ...(Array.isArray(rawFields) ? rawFields : [])].map((definition) => ({ resolved: resolved(definition), persisted: persisted(definition) }));
+  const changed = proposed.filter((definition) => {
+    const candidate = resolved(definition);
+    return candidate === undefined
+      ? !stored.some((entry) => stableValueEquals(entry.persisted, persisted(definition)))
+      : !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
+  });
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
   for (const definition of changed) assertFieldDefinitionOptionsAvailable(definition);
@@ -192,7 +202,7 @@ export function createExtensionCommandSdk(
                 EXIT_CODE.USAGE,
               );
             }
-            await assertChangedSchemaFieldsAvailable(currentSettings, next);
+            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields);
             let raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!
               : serializeSettings(next, { source: { raw: current, validated: validatedCurrent.data } });

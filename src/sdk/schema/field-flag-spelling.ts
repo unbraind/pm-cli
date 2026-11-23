@@ -34,6 +34,8 @@ export function describeFieldFlagSpellingDefect(token: string): string | undefin
   const name = spelling.replace(/^--/u, "");
   if (name.length === 0) return "is empty";
   if (name.startsWith("-")) return "starts with three dashes";
+  // The parser camel-cases a long flag across hyphens and fails on an empty segment.
+  if (name.endsWith("-") || name.includes("--")) return "has an empty segment between hyphens, which the option parser cannot turn into an option key";
   const separator = FLAG_SPELLING_BREAK.exec(name)?.[0];
   if (separator === undefined) return undefined;
   return /\s/u.test(separator)
