@@ -189,6 +189,8 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`<a x='y ${passwordKey}: "v7'>cV9uM2a!"/>`)).toEqual(["password_assignment"]);
     // Greptile: an apostrophe inside a placeholder never opens the value's own quote.
     expect(rulesOf(JSON.stringify({ title: `${passwordKey}: <team's-password>`, updated: "ok" }))).toEqual([]);
+    // Greptile round 6: a tag end inside the capture never cuts a value, so a quoted piece after a plain prefix is kept.
+    expect(rulesOf(`x='y ${passwordKey}: a"b'>${literal}"`)).toEqual(["password_assignment"]);
     // A quoted piece the value closes again leaves the enclosing closer free to end the value.
     expect(rulesOf(`{"t":"api_key: ${D}{E}'x'","u":"y"}`)).toEqual([]);
     expect(rulesOf(`{"t":"api_key: ${D}{E}'${literal}'","u":"y"}`)).toEqual(["credential_key_assignment"]);
