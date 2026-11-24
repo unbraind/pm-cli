@@ -1277,26 +1277,55 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   const other = kind === DOUBLE_STRING ? "'" : "\"";
   // Whether the value opened a quoted span of the other kind that is still open: a closer there is
   // that span's data (`password: "v7'>…"` after a stray apostrophe), never the enclosing string's end.
-  let ownQuoteOpen = false;
+  const own: OwnQuoteState = { open: false, closers: [] };
   const last = Math.min(end, content.length - 1);
   while (lexer.index <= last) {
-    if (content[lexer.index] === other) ownQuoteOpen = toggledOwnQuote(content, lexer.index, ownQuoteOpen);
+    trackOwnQuote(own, content, lexer.index, other);
     const closed = lexStep(lexer);
-    if (closed !== -1) return closesValueAt(content, closed, end, ownQuoteOpen) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
+    if (closed !== -1) return closesValueAt(content, closed, end, own.open) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
     // A line break ended the string before any closing quote.
     if (lexer.state !== kind) return -1;
   }
   return -1;
 }
 
+/** The value's own quoted span state while the lexer walks it, and the references and placeholders open around the walk. */
+interface OwnQuoteState {
+  open: boolean;
+  /** Closers of the `${…}`, `$(…)` and `<…>` spans open at the walk, innermost last. */
+  closers: string[];
+}
+
 /**
- * The value's own quote state after a quote of the other kind at `index`. An
- * apostrophe right after a letter, digit or underscore is prose
- * (`<team's-password>`) and never opens a span; a double quote there opens a
- * shell piece (`a"b…"`), and any quote of the kind closes an open one.
+ * Read one character of a value for its own quote state. Quotes inside a
+ * reference or placeholder (`<team-'s-password>`, `${PW:-'x'}`) are that
+ * span's text and never open or close the value's own span; outside them a
+ * quote of the other kind opens or closes it (see opensOwnQuote).
  */
-function toggledOwnQuote(content: string, index: number, open: boolean): boolean {
-  if (open) return false;
+function trackOwnQuote(own: OwnQuoteState, content: string, index: number, other: string): void {
+  const character = content[index];
+  if (own.open) {
+    if (character === other) own.open = false;
+    return;
+  }
+  if (character === own.closers.at(-1)) {
+    own.closers.pop();
+  } else if (character === "<") {
+    own.closers.push(">");
+  } else if (character === "$" && (content[index + 1] === "{" || content[index + 1] === "(")) {
+    own.closers.push(content[index + 1] === "{" ? "}" : ")");
+  } else if (character === other && own.closers.length === 0) {
+    own.open = opensOwnQuote(content, index);
+  }
+}
+
+/**
+ * Whether a quote of the other kind at `index`, outside any open span, opens
+ * the value's own quoted span. An apostrophe right after a letter, digit or
+ * underscore is prose and never opens one; a double quote there opens a shell
+ * piece (`a"b…"`).
+ */
+function opensOwnQuote(content: string, index: number): boolean {
   // A value always follows its key, so a character stands before `index`.
   return content[index] === "\"" || !WORD_CHARACTER.test(content[index - 1]!);
 }

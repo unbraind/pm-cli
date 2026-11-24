@@ -553,7 +553,8 @@ function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpenin
 function startsWithScheme(text: string): boolean {
   // The caller passes the text up to and including a scheme separator's `:`.
   const start = schemeStartBefore(text, text.length - 1);
-  return start < text.length - 1 && /[A-Za-z]/u.test(text[start]!) && (start === 0 || (start === 1 && /["'`(<[]/u.test(text[0]!)));
+  // A one-letter scheme is a Windows drive (`C:/Temp`), never another URL.
+  return start < text.length - 2 && /[A-Za-z]/u.test(text[start]!) && (start === 0 || (start === 1 && /["'`(<[]/u.test(text[0]!)));
 }
 
 /**
