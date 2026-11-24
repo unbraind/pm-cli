@@ -994,7 +994,8 @@ const PERCENT_REFERENCE = /^(["']?)%[A-Za-z_]\w*%\1$/u;
  * the line, so an unquoted text value is whole only when nothing but blanks
  * follows it on its line, or when it ends at the string it sits in (see
  * enclosingStringClose); a decoded literal is whole by construction, and a
- * quoted value is whole when structure follows its closing quote. A percent reference that more words follow on its
+ * quoted structured value (a quoted key's, or an array element) is whole when
+ * structure follows its closing quote. A percent reference that more words follow on its
  * `set` line therefore keeps its literal reading.
  */
 function isWholePercentReference(match: RegExpMatchArray, text: string): boolean {
@@ -1006,9 +1007,20 @@ function isWholePercentReference(match: RegExpMatchArray, text: string): boolean
   let index = end;
   while (index < input.length && (input[index] === " " || input[index] === "\t")) index += 1;
   if (index === input.length || LINE_BREAK.test(input[index]!)) return true;
-  // A quoted value is whole when structure ends it, padded or not (`{"password":"%X%" , …}`),
-  // but a `set` line goes on after its quote with more words.
-  return isQuote(text[0]) && /[,;)}\]]/u.test(input[index]!);
+  // A quoted structured value (a quoted key's, or an array element) is whole when structure ends it,
+  // padded or not (`{"password":"%X%" , …}`); a `set` line keeps whatever follows its quote.
+  return isQuote(text[0]) && /[,;)}\]]/u.test(input[index]!) && isStructuredQuotedValue(match);
+}
+
+/** A quoted key and its separator right before a value, after the text's start, a blank or a bracket; never a quoted shell option (`--'password'=`). */
+const LEADING_QUOTED_KEY_BEFORE = /(?:^|[\s{,[])(["'])[^"'\r\n]{1,256}\1\s*[:=]\s*$/u;
+
+/** Whether a quoted value is structured data: an array element, or a quoted key's value even at the start of the text. */
+function isStructuredQuotedValue(match: RegExpMatchArray): boolean {
+  if (structuredContext(match, false) !== undefined) return true;
+  const input = match.input!;
+  const valueStart = match.index! + match[0].length - match[1].length;
+  return LEADING_QUOTED_KEY_BEFORE.test(input.slice(Math.max(0, valueStart - STRUCTURED_LOOK_BACK), valueStart));
 }
 
 /**

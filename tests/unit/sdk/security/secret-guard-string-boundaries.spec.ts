@@ -258,6 +258,10 @@ describe("a whole Windows variable is a placeholder for every key-named rule (GH
     expect(rulesOf(`{"cfg": {"${passwordKey}":"%DB_PASSWORD%"}, "x": 1}`)).toEqual([]);
     // Greptile round 10: blanks between the closing quote and the structure are padding.
     expect(rulesOf(`{"${passwordKey}":"%DB_PASSWORD%" , "other":1}`)).toEqual([]);
+    expect(rulesOf(`["%DB_PASSWORD%", "${passwordKey}"]`)).toEqual([]);
+    // Greptile round 11: cmd.exe keeps a padded comma and what follows in a set value.
+    expect(rulesOf(`set ${passwordKey.toUpperCase()}="%DB_PASSWORD%" , ${literal}`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`set ${passwordKey.toUpperCase()}="%DB_PASSWORD%",${literal}`)).toEqual(["password_assignment"]);
   });
 
   it("judges a percent reference that more of its line follows, or a literal attached to it", () => {

@@ -380,9 +380,10 @@ A whole Windows variable (`%DB_PASSWORD%`) is a placeholder for every
 key-named rule. `cmd.exe` reads `set NAME=value` to the end of the line, so an
 unquoted text value is whole only when nothing but blanks follows it on its
 line or when it ends at the string it sits in; a decoded literal and an
-element body are whole by construction, and a quoted value is whole when
-structure (`,` `;` `)` `}` `]`) or the end of its line follows its closing
-quote, because a `set` line goes on after it. So a dotenv or
+element body are whole by construction, and a quoted value is whole when the
+end of its line follows its closing quote, or, for a structured value (a
+quoted key's or an array element), structure (`,` `;` `)` `}` `]`) does,
+because a `set` line keeps whatever follows its quote. So a dotenv or
 `set` line whose percent reference more words follow, and a literal attached
 to the reference (`%API_KEY%…`, under any credential key), are still reported.
 
