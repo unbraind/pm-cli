@@ -382,21 +382,22 @@ function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   return kind === undefined ? undefined : { kind, closer };
 }
 
-/** Closers that only end a URL at the end of a word, after which only punctuation follows; inside a word they are data (`pa)ss`). */
+/** Closers that only end a URL at the end of a word, after which only punctuation or emphasis follows; inside a word they are data (`pa)ss`). */
 const WORD_END_CLOSERS = new Set([")", "]"]);
 
 /**
  * Where the delimiter that closes a URL stands in text, or -1. A quote,
  * backtick or angle bracket closes it wherever it stands; a parenthesis or
  * square bracket only at the end of the text, followed by nothing but
- * punctuation (`(https://example.invalid).`), so a password that holds one
+ * punctuation or Markdown emphasis (`(https://example.invalid).`,
+ * `**[docs](https://example.invalid)**`), so a password that holds one
  * (`(https://ci:pa)ss words@host)`) is still read.
  */
 function closingDelimiterAt(text: string, closer: string | undefined): number {
   if (closer === undefined) return -1;
   if (!WORD_END_CLOSERS.has(closer)) return text.indexOf(closer);
   let end = text.length;
-  while (end > 0 && /[.,;:!?]/u.test(text[end - 1]!)) end -= 1;
+  while (end > 0 && /[.,;:!?*_~`]/u.test(text[end - 1]!)) end -= 1;
   return end > 0 && text[end - 1] === closer ? end - 1 : -1;
 }
 

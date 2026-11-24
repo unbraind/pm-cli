@@ -217,6 +217,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a Windows drive path before an error code and a mention", "Log output C:/Temp (code:ENOENT), fix and notify @admin"],
     ["a Markdown link before prose with a colon and a mention", "See [docs](https://example.invalid) status:404 then ping @oncall."],
     ["a Markdown link and a full stop before prose", "See [docs](https://example.invalid). status:404 then ping @oncall."],
+    // Greptile review round 4: Markdown emphasis after a link destination.
+    ["an emphasized Markdown link before prose", "See **[docs](https://example.invalid)** status:404 then ping @oncall."],
     ["a clock time with a meridiem", "See https://example.com at 9:30pm, ping @oncall"],
     ["a later public URL in parentheses", "Compare https://ci:1234-beta with (https://example.org/package/@scope/name)"],
     ["a colon that a space follows", "https://service account: ping @oncall"],

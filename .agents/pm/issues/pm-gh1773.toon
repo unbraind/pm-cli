@@ -2,13 +2,13 @@ id: pm-gh1773
 title: "GH-1773: refusal envelopes echo URL userinfo when it contains whitespace and a percent-encoded @ separator"
 description: "GH-1773 (filed 2026-11-23 from the pm-rust parity review, reproduced on the pinned pm-cli oracle; native and TS behave the same). A refusal envelope echoes an open blocker's title verbatim. When that title holds a URL whose userinfo contains whitespace and a percent-encoded @ (https://fixture:fake words%40example.invalid/path), the userinfo is not masked: pm start-task sample-one --json refused by that blocker prints 'fixture:fake words'. Expected: credential-shaped URL userinfo is masked in every refusal and diagnostic projection, whitespace-bearing userinfo and an encoded separator included, matching the masking of plain user:pass@host; plain masking unchanged. Duplicate check: searched redaction URL userinfo whitespace percent-encoded separator refusal envelope; pm-gh1707 (closed) fixed public-URL @-in-path over-redaction and claim-refusal echoes, pm-nhauur and pm-5htunt (closed) cover other echo surfaces, none covers whitespace plus encoded separators."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1773",privacy,redaction,security
 created_at: "2026-11-23T17:23:25.235Z"
-updated_at: "2026-11-23T23:56:41.186Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#8236d322061fd32d87fda357"
+updated_at: "2026-11-24T00:09:48.947Z"
+closed_at: "2026-11-24T00:09:48.145Z"
+completed_at: "2026-11-24T00:09:48.145Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "A redaction corpus case covers whitespace in userinfo with a percent-encoded separator, applied to refusal envelopes, diagnostics and JSON and TOON output; Plain user:pass@host masking and public URLs with @ in the path are unchanged"
@@ -17,11 +17,14 @@ risk: medium
 confidence: high
 reporter: unbraind
 severity: medium
-expected_result: Credential-shaped URL userinfo is masked in refusals and diagnostics whatever whitespace or encoding it carries
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "redactUrlCredentialsInText now joins a URL whose userinfo holds blanks into one word before the word rule runs: a word opens a join at the last scheme separator that authority slashes follow when its authority holds a non host:port colon, or is a single label whose password colon comes later (never a clock time; a colon that a space follows only before a host with a path or inside a URL its quote closes), or ends with its slashes (a tab follows); it is joined through the later word holding the authority's last at sign or its escape within 16 words and 512 code units, stops at another URL, a path delimiter or the URL's closing delimiter, and the joined span is redacted exactly as the same URL without blanks. Windows drives, Markdown links, quoted URLs and public host-and-port prose stay intact. The start-task refusal from the issue now prints only the scheme, the placeholder and the host in JSON and text output. Review: Codex rounds 1 to 5, Greptile rounds 1 to 4 and CodeRabbit round 1 addressed; residuals recorded on pm-jcz7qz."
+expected_result: "Credential-shaped URL userinfo is masked in every refusal and diagnostic projection whatever whitespace or encoding it carries, and plain user:pass@host masking is unchanged"
+actual_result: "The issue reproduction, the plain at-sign variant and every review-round leak are masked idempotently; plain masking and public URLs with an at sign in the path are unchanged, and prose cases stay intact"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1707,related,"2026-11-23T17:23:25.235Z","harness:claude-code","cli:create:dep",detected
   pm-5htunt,related,"2026-11-23T17:23:48.238Z","harness:claude-code","cli:update:dep",detected
   pm-nhauur,related,"2026-11-23T17:23:48.238Z","harness:claude-code","cli:update:dep",detected
+  pm-jcz7qz,related,"2026-11-24T00:09:26.856Z","harness:claude-code","cli:update:dep",detected
 comments[8]{created_at,author,text}:
   "2026-11-23T21:44:48.289Z","harness:claude-code","Root cause and fix (2026-11-23): redactUrlCredentialsInText judged each whitespace-delimited word alone, so a stored title holding a URL whose password contains a blank split into a scheme word with a colon but no at sign and a host word with an at sign (or its percent escape) but no colon; neither word matched the token rule. The plain at-sign form leaked the same way, not only the encoded one, and Node's WHATWG URL parser reads that spelling as userinfo with a spaced password. Fix in src/core/shared/url-credentials.ts: before the word rule, a word with no at sign that opens a URL authority with a user-colon prefix (scheme, one or two slashes, a colon that port digits alone never follow, no path, no bracketed IPv6 host) is joined across any whitespace with the later words up to the first that holds an at sign or its escape, within 16 words and 512 code units and before another URL starts, and the joined span goes through redactUrlCredentialsInToken. Line breaks and tabs count as blanks because URL parsers drop them. Host-and-port and plain-host prose before a later at sign stays intact. Every outbound surface (refusal guidance in JSON and text, telemetry sanitizeString, Sentry scrubbing) already routes free text through this one function. Verified end to end in a sandbox: a start-task refusal gated by such a blocker now prints the scheme, the placeholder and the host only, in JSON and TOON output."
   "2026-11-23T22:40:06.039Z","harness:claude-code","Rework after Codex review round 1 (2026-11-23, 8 URL findings). The opening word may now hold its own separator (an encoded at sign inside the password), skips any number of authority slashes, ignores a colon that only appears in a query or fragment, exempts only a real host:port head (a label run, a colon and at least one digit), and also opens on a single dotless label when a later word carries the user-password colon (a spaced username). The continuation takes the LAST at sign or its escape that starts within 16 words and 512 code units, as a URL parser takes the authority's last at sign; the word holding it may run past the length bound (a long query), and a word that starts another URL or holds a path delimiter before any separator ends the search. All 8 reproductions are pinned in tests/unit/core/shared/url-credentials.spec.ts, and the earlier prose and bound cases still pass."
@@ -40,4 +43,13 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
 docs[2]{path,scope}:
   docs/MUTATION_INTEGRITY.md,project
   docs/SDK.md,project
+close_reason: "URL userinfo that holds whitespace and a plain or percent-encoded at sign is masked in refusals, diagnostics, telemetry and Sentry text"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1773
+  gate_id: spaced-userinfo-redaction
+  negative_control: "tests/integration/cli/credential-redaction.integration.spec.ts runs pm start-task refused by a blocker whose title holds URL userinfo with whitespace and an encoded at sign, in JSON and text output; on 2026.11.23 the refusal prints the userinfo verbatim, and url-credentials.spec.ts pins every review-round leak and the prose shapes left intact"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
