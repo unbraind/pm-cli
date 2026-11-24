@@ -558,6 +558,27 @@ function startsWithScheme(text: string): boolean {
 }
 
 /**
+ * The opening a word makes for a whitespace-bearing userinfo, where its scan
+ * starts, and the end its own words already reach, or undefined. A `pending`
+ * word's authority starts in the next word, judged as if the blank between them
+ * were dropped; a special scheme's authority there ends at its path, which the
+ * opening judges apart (`https://` then a tab then `token:x@host/repo`). When
+ * that word holds the separator, the join reaches at least its end.
+ */
+function openingAt(text: string, word: string, from: number): { opening: SpacedOpening; from: number; seed: number } | undefined {
+  const opening = spacedUserinfoOpening(word);
+  if (opening?.kind !== "pending") return opening === undefined ? undefined : { opening, from, seed: -1 };
+  const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
+  if (next === undefined) return undefined;
+  const nextText = text.slice(next[0], next[1]);
+  const authorityWord = opening.special ? nextText.split(/[/\\]/u, 1)[0]! : nextText;
+  const joined = spacedUserinfoOpening(`${word}${authorityWord}`);
+  if (joined === undefined || joined.kind === "pending") return undefined;
+  const seed = joined.kind === "user" && /@|%40/iu.test(authorityWord) ? next[1] : -1;
+  return { opening: joined, from: next[1], seed };
+}
+
+/**
  * Join each URL whose userinfo holds blanks into one word before the word
  * rule runs, so `https://user:pass words%40host/path` loses its whole userinfo
  * instead of being judged as harmless-looking words (GH-1773). The joined span
@@ -570,21 +591,9 @@ function redactSpacedUserinfo(text: string): string {
   let result = "";
   let cursor = 0;
   for (let match = word.exec(text); match !== null; match = word.exec(text)) {
-    let opening = spacedUserinfoOpening(match[0]);
-    let from = match.index + match[0].length;
-    let seed = -1;
-    if (opening?.kind === "pending") {
-      // Judge the authority that starts in the next word as if the blank between them were dropped.
-      const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
-      if (next === undefined) continue;
-      const authorityWord = text.slice(next[0], next[1]);
-      opening = spacedUserinfoOpening(`${match[0]}${authorityWord}`);
-      // That word may hold the whole userinfo (`https://` then a tab then `token:x@host`): join it at least.
-      if (opening?.kind === "user" && /@|%40/iu.test(authorityWord)) seed = next[1];
-      from = next[1];
-    }
-    if (opening === undefined || opening.kind === "pending") continue;
-    const end = spacedUserinfoEnd(text, from, opening, seed);
+    const opened = openingAt(text, match[0], match.index + match[0].length);
+    if (opened === undefined) continue;
+    const end = spacedUserinfoEnd(text, opened.from, opened.opening, opened.seed);
     if (end === -1) continue;
     result += `${text.slice(cursor, match.index)}${redactUrlCredentialsInToken(text.slice(match.index, end))}`;
     cursor = end;

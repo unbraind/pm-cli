@@ -183,6 +183,9 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // CodeRabbit review round 2: the word after a tab holds the whole userinfo.
     ["a token username after a tab", "https://\tfixtureToken:x@example.invalid", "https://[redacted]@example.invalid"],
     ["a token username after a tab, then a later at sign", "https://\tfixtureToken:x@example.invalid then pass words@x", "https://[redacted]@x"],
+    // CodeRabbit review round 5: a path after the authority that a tab split from its scheme.
+    ["a token username after a tab before a path", "https://\tfixtureToken:x@example.invalid/repo", "https://[redacted]@example.invalid/repo"],
+    ["a token username after a tab in an SSH URL", "ssh://\tfixtureToken:x@host/repo", "ssh://[redacted]@host/repo"],
     // Greptile review round 3.
     ["a numeric username part", "https://service 123:pass words@host/x", "https://[redacted]@host/x"],
     ["a parenthesis inside a parenthesized URL's password", "(https://ci:pa)ss words@host/x)", "(https://[redacted]@host/x)"],

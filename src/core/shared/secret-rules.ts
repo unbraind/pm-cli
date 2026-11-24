@@ -993,17 +993,18 @@ const PERCENT_REFERENCE = /^(["']?)%[A-Za-z_]\w*%\1$/u;
  * spells no literal (GH-1775). `cmd.exe` reads `set NAME=value` to the end of
  * the line, so an unquoted text value is whole only when nothing but blanks
  * follows it on its line, or when it ends at the string it sits in (see
- * enclosingStringClose); a decoded literal and a quoted value the grammar
- * read nothing after are whole by construction. A percent reference that more words follow on its
+ * enclosingStringClose); a decoded literal is whole by construction, and a
+ * quoted value is whole when structure follows its closing quote. A percent reference that more words follow on its
  * `set` line therefore keeps its literal reading.
  */
 function isWholePercentReference(match: RegExpMatchArray, text: string): boolean {
   if (!PERCENT_REFERENCE.test(text)) return false;
-  // A decoded literal, and a quoted value the grammar read nothing after, is the whole value.
-  if (DECODED_DATA_MATCHES.has(match) || isQuote(text[0])) return true;
+  if (DECODED_DATA_MATCHES.has(match)) return true;
   const input = match.input!;
   const end = match.index! + match[0].length;
   if (ENCLOSING_STRING_CLOSE.get(match) === end) return true;
+  // A quoted value is whole when structure ends it (`{"password":"%X%"}`), but a `set` line goes on after its quote.
+  if (isQuote(text[0]) && /[,;)}\]]/u.test(input[end] ?? "")) return true;
   let index = end;
   while (index < input.length && (input[index] === " " || input[index] === "\t")) index += 1;
   return index === input.length || LINE_BREAK.test(input[index]!);
@@ -1282,7 +1283,7 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   while (lexer.index <= last) {
     trackOwnQuote(own, content, lexer.index, other);
     const closed = lexStep(lexer);
-    if (closed !== -1) return closesValueAt(content, closed, end, own.open) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
+    if (closed !== -1) return closesValueAt(content, closed, end, own.open || own.placeholder) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
     // A line break ended the string before any closing quote.
     if (lexer.state !== kind) return -1;
   }
@@ -1328,12 +1329,13 @@ function opensOwnQuote(content: string, index: number): boolean {
 
 /**
  * Whether the enclosing string's closing quote at `closed` may end the value.
- * Inside the capture, a quote inside the value's own quoted text (another
- * quote kind still open, or a blank after it, which the grammar reads only
- * there) was a stray apostrophe's, so the grammar's reading is kept.
+ * Inside the capture, a quote inside the value's own quoted text or inside an
+ * open angle placeholder (another quote kind or a placeholder still open, or a
+ * blank after it, which the grammar reads only there) was a stray
+ * apostrophe's, so the grammar's reading is kept.
  */
-function closesValueAt(content: string, closed: number, end: number, ownQuoteOpen: boolean): boolean {
-  return closed >= end || !(ownQuoteOpen || /\s/u.test(content.charAt(closed + 1)));
+function closesValueAt(content: string, closed: number, end: number, insideOwnText: boolean): boolean {
+  return closed >= end || !(insideOwnText || /\s/u.test(content.charAt(closed + 1)));
 }
 
 /** A copy of a flat match whose value ends at `end`, as if the grammar had stopped there. */

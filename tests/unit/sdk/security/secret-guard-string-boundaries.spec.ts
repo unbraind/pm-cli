@@ -191,6 +191,8 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(JSON.stringify({ title: `${passwordKey}: <team's-password>`, updated: "ok" }))).toEqual([]);
     // CodeRabbit round 4: a quote inside an angle placeholder is its text, after any character.
     expect(rulesOf(JSON.stringify({ title: `${passwordKey}: <team-'s-password>`, updated: "ok" }))).toEqual([]);
+    // CodeRabbit round 5: a quote inside an angle placeholder is never a cut point.
+    expect(rulesOf(`{note: x='bad, ${passwordKey}: <a'b>${literal}}`)).toEqual(["password_assignment"]);
     // Greptile round 9: a reference keeps its quotes, so a quoted default is the value's own text.
     expect(rulesOf(`x='y ${passwordKey}: ${D}{X:-"'>${literal}"}`)).toEqual(["password_assignment"]);
     // Greptile round 6: a double quote after a plain prefix opens the value's own shell piece.
@@ -248,6 +250,12 @@ describe("a whole Windows variable is a placeholder for every key-named rule (GH
       expect(rulesOf(text), text).toEqual([]);
     }
     expect(rulesOf({ config: { [passwordKey]: "%DB_PASSWORD%" } })).toEqual([]);
+  });
+
+  it("judges a quoted percent reference that more of its set line follows (CodeRabbit round 5)", () => {
+    expect(rulesOf(`set ${passwordKey.toUpperCase()}="%DB_PASSWORD%" ${literal}`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`set ${passwordKey.toUpperCase()}="%DB_PASSWORD%"`)).toEqual([]);
+    expect(rulesOf(`{"cfg": {"${passwordKey}":"%DB_PASSWORD%"}, "x": 1}`)).toEqual([]);
   });
 
   it("judges a percent reference that more of its line follows, or a literal attached to it", () => {
