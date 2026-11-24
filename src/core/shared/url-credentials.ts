@@ -536,7 +536,8 @@ function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpenin
     colonBeforeSeparator: separator > 0 && (hasPasswordColon(authority.slice(0, separator)) || authority[separator - 1] === ":"),
     colon: hasPasswordColon(authority),
     trailingColon: authority.endsWith(":"),
-    hasPath: delimiter >= 0 && closed < 0,
+    // Whether the separator's host goes on into a path, judged apart from whether a slash ends the search.
+    hasPath: closed < 0 && separator >= 0 && /[/\\]/u.test(word.slice(separator + 1)),
     closedByOpener: closed >= 0,
     endsAuthority: delimiter >= 0 || closed >= 0,
   };
