@@ -189,9 +189,10 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`<a x='y ${passwordKey}: "v7'>cV9uM2a!"/>`)).toEqual(["password_assignment"]);
     // Greptile: an apostrophe inside a placeholder never opens the value's own quote.
     expect(rulesOf(JSON.stringify({ title: `${passwordKey}: <team's-password>`, updated: "ok" }))).toEqual([]);
-    // CodeRabbit round 4: a quote inside a placeholder or reference is that span's text, after any character.
+    // CodeRabbit round 4: a quote inside an angle placeholder is its text, after any character.
     expect(rulesOf(JSON.stringify({ title: `${passwordKey}: <team-'s-password>`, updated: "ok" }))).toEqual([]);
-    expect(rulesOf(JSON.stringify({ title: `${passwordKey}: ${D}{PW:-'x}`, updated: "ok" }))).toEqual([]);
+    // Greptile round 9: a reference keeps its quotes, so a quoted default is the value's own text.
+    expect(rulesOf(`x='y ${passwordKey}: ${D}{X:-"'>${literal}"}`)).toEqual(["password_assignment"]);
     // Greptile round 6: a double quote after a plain prefix opens the value's own shell piece.
     expect(rulesOf(`x='y ${passwordKey}: a"b'>${literal}"`)).toEqual(["password_assignment"]);
     // Greptile round 7: a real attribute value still ends at its closing quote before the tag end.

@@ -1277,7 +1277,7 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   const other = kind === DOUBLE_STRING ? "'" : "\"";
   // Whether the value opened a quoted span of the other kind that is still open: a closer there is
   // that span's data (`password: "v7'>…"` after a stray apostrophe), never the enclosing string's end.
-  const own: OwnQuoteState = { open: false, closers: [] };
+  const own: OwnQuoteState = { open: false, placeholder: false };
   const last = Math.min(end, content.length - 1);
   while (lexer.index <= last) {
     trackOwnQuote(own, content, lexer.index, other);
@@ -1289,32 +1289,28 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   return -1;
 }
 
-/** The value's own quoted span state while the lexer walks it, and the references and placeholders open around the walk. */
+/** The value's own quoted span state while the lexer walks it, and whether an angle placeholder is open there. */
 interface OwnQuoteState {
   open: boolean;
-  /** Closers of the `${…}`, `$(…)` and `<…>` spans open at the walk, innermost last. */
-  closers: string[];
+  placeholder: boolean;
 }
 
 /**
- * Read one character of a value for its own quote state. Quotes inside a
- * reference or placeholder (`<team-'s-password>`, `${PW:-'x'}`) are that
- * span's text and never open or close the value's own span; outside them a
- * quote of the other kind opens or closes it (see opensOwnQuote).
+ * Read one character of a value for its own quote state. Quotes inside an
+ * angle placeholder (`<team-'s-password>`) are its text and never open or
+ * close the value's own span. A reference keeps its quotes, because the shell
+ * reads them (`${X:-"…"}` holds a quoted default). Elsewhere a quote of the
+ * other kind opens or closes the span (see opensOwnQuote).
  */
 function trackOwnQuote(own: OwnQuoteState, content: string, index: number, other: string): void {
   const character = content[index];
   if (own.open) {
     if (character === other) own.open = false;
-    return;
-  }
-  if (character === own.closers.at(-1)) {
-    own.closers.pop();
+  } else if (own.placeholder) {
+    if (character === ">") own.placeholder = false;
   } else if (character === "<") {
-    own.closers.push(">");
-  } else if (character === "$" && (content[index + 1] === "{" || content[index + 1] === "(")) {
-    own.closers.push(content[index + 1] === "{" ? "}" : ")");
-  } else if (character === other && own.closers.length === 0) {
+    own.placeholder = true;
+  } else if (character === other) {
     own.open = opensOwnQuote(content, index);
   }
 }
