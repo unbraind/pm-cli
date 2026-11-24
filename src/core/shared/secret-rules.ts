@@ -1015,12 +1015,18 @@ function isWholePercentReference(match: RegExpMatchArray, text: string): boolean
 /** A quoted key and its separator right before a value, after the text's start, a blank or a bracket; never a quoted shell option (`--'password'=`). */
 const LEADING_QUOTED_KEY_BEFORE = /(?:^|[\s{,[])(["'])[^"'\r\n]{1,256}\1\s*[:=]\s*$/u;
 
-/** Whether a quoted value is structured data: an array element, or a quoted key's value even at the start of the text. */
+/**
+ * Whether a quoted value is structured data: an array element, a quoted key's
+ * value even at the start of the text, or a value after a `:` separator (JSON,
+ * YAML flow `{password: "…", other: ok}`). A value after `=` is an assignment
+ * (`set NAME="…"`, shell, dotenv), whose line goes on after its quote.
+ */
 function isStructuredQuotedValue(match: RegExpMatchArray): boolean {
   if (structuredContext(match, false) !== undefined) return true;
   const input = match.input!;
   const valueStart = match.index! + match[0].length - match[1].length;
-  return LEADING_QUOTED_KEY_BEFORE.test(input.slice(Math.max(0, valueStart - STRUCTURED_LOOK_BACK), valueStart));
+  const before = input.slice(Math.max(0, valueStart - STRUCTURED_LOOK_BACK), valueStart);
+  return LEADING_QUOTED_KEY_BEFORE.test(before) || /:[ \t]*$/u.test(before);
 }
 
 /**

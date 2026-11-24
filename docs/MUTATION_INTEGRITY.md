@@ -382,8 +382,9 @@ unquoted text value is whole only when nothing but blanks follows it on its
 line or when it ends at the string it sits in; a decoded literal and an
 element body are whole by construction, and a quoted value is whole when the
 end of its line follows its closing quote, or, for a structured value (a
-quoted key's or an array element), structure (`,` `;` `)` `}` `]`) does,
-because a `set` line keeps whatever follows its quote. So a dotenv or
+quoted key's, an array element, or a value after a `:` separator),
+structure (`,` `;` `)` `}` `]`) does, because a `set` line or any other `=`
+assignment keeps whatever follows its quote. So a dotenv or
 `set` line whose percent reference more words follow, and a literal attached
 to the reference (`%API_KEY%…`, under any credential key), are still reported.
 

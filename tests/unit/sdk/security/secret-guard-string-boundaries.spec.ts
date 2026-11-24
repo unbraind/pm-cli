@@ -259,6 +259,8 @@ describe("a whole Windows variable is a placeholder for every key-named rule (GH
     // Greptile round 10: blanks between the closing quote and the structure are padding.
     expect(rulesOf(`{"${passwordKey}":"%DB_PASSWORD%" , "other":1}`)).toEqual([]);
     expect(rulesOf(`["%DB_PASSWORD%", "${passwordKey}"]`)).toEqual([]);
+    // Greptile round 12: a value after a colon in a YAML flow mapping is structured too.
+    expect(rulesOf(`{${passwordKey}: "%DB_PASSWORD%", other: ok}`)).toEqual([]);
     // Greptile round 11: cmd.exe keeps a padded comma and what follows in a set value.
     expect(rulesOf(`set ${passwordKey.toUpperCase()}="%DB_PASSWORD%" , ${literal}`)).toEqual(["password_assignment"]);
     expect(rulesOf(`set ${passwordKey.toUpperCase()}="%DB_PASSWORD%",${literal}`)).toEqual(["password_assignment"]);
