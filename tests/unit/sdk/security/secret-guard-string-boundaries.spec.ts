@@ -187,6 +187,11 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     // An apostrophe after `=` opens a false attribute string; the quote inside the password is data.
     expect(rulesOf(`x='y ${passwordKey}: "v7'>cV9uM2a!"`)).toEqual(["password_assignment"]);
     expect(rulesOf(`<a x='y ${passwordKey}: "v7'>cV9uM2a!"/>`)).toEqual(["password_assignment"]);
+    // Greptile: an apostrophe inside a placeholder never opens the value's own quote.
+    expect(rulesOf(JSON.stringify({ title: `${passwordKey}: <team's-password>`, updated: "ok" }))).toEqual([]);
+    // A quoted piece the value closes again leaves the enclosing closer free to end the value.
+    expect(rulesOf(`{"t":"api_key: ${D}{E}'x'","u":"y"}`)).toEqual([]);
+    expect(rulesOf(`{"t":"api_key: ${D}{E}'${literal}'","u":"y"}`)).toEqual(["credential_key_assignment"]);
   });
 
   it("reads a long sibling scalar or flow key after a closing quote whole (CodeRabbit round 2)", () => {

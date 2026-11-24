@@ -1280,19 +1280,33 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   let ownQuoteOpen = false;
   const last = Math.min(end, content.length - 1);
   while (lexer.index <= last) {
-    if (content[lexer.index] === other) ownQuoteOpen = !ownQuoteOpen;
+    if (content[lexer.index] === other) ownQuoteOpen = toggledOwnQuote(content, lexer.index, ownQuoteOpen);
     const closed = lexStep(lexer);
-    if (closed !== -1) {
-      // Inside the capture, a quote inside the value's own quoted text (another quote kind still
-      // open, or a blank after it, which the grammar reads only there) was a stray apostrophe's,
-      // so the grammar's reading is kept.
-      if (closed < end && (ownQuoteOpen || /\s/u.test(content.charAt(closed + 1)))) return -1;
-      return endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
-    }
+    if (closed !== -1) return closesValueAt(content, closed, end, ownQuoteOpen) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
     // A line break ended the string before any closing quote.
     if (lexer.state !== kind) return -1;
   }
   return -1;
+}
+
+/**
+ * The value's own quote state after a quote of the other kind at `index`. As
+ * in the lexer, a quote right after a letter, digit or underscore never opens
+ * a span (`<team's-password>`), and any quote of the kind closes an open one.
+ */
+function toggledOwnQuote(content: string, index: number, open: boolean): boolean {
+  // A value always follows its key, so a character stands before `index`.
+  return open ? false : !WORD_CHARACTER.test(content[index - 1]!);
+}
+
+/**
+ * Whether the enclosing string's closing quote at `closed` may end the value.
+ * Inside the capture, a quote inside the value's own quoted text (another
+ * quote kind still open, or a blank after it, which the grammar reads only
+ * there) was a stray apostrophe's, so the grammar's reading is kept.
+ */
+function closesValueAt(content: string, closed: number, end: number, ownQuoteOpen: boolean): boolean {
+  return closed >= end || !(ownQuoteOpen || /\s/u.test(content.charAt(closed + 1)));
 }
 
 /** A copy of a flat match whose value ends at `end`, as if the grammar had stopped there. */
