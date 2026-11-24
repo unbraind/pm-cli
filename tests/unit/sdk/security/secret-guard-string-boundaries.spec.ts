@@ -256,6 +256,8 @@ describe("a whole Windows variable is a placeholder for every key-named rule (GH
     expect(rulesOf(`set ${passwordKey.toUpperCase()}="%DB_PASSWORD%" ${literal}`)).toEqual(["password_assignment"]);
     expect(rulesOf(`set ${passwordKey.toUpperCase()}="%DB_PASSWORD%"`)).toEqual([]);
     expect(rulesOf(`{"cfg": {"${passwordKey}":"%DB_PASSWORD%"}, "x": 1}`)).toEqual([]);
+    // Greptile round 10: blanks between the closing quote and the structure are padding.
+    expect(rulesOf(`{"${passwordKey}":"%DB_PASSWORD%" , "other":1}`)).toEqual([]);
   });
 
   it("judges a percent reference that more of its line follows, or a literal attached to it", () => {

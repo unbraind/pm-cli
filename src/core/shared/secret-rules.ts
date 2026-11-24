@@ -1003,11 +1003,12 @@ function isWholePercentReference(match: RegExpMatchArray, text: string): boolean
   const input = match.input!;
   const end = match.index! + match[0].length;
   if (ENCLOSING_STRING_CLOSE.get(match) === end) return true;
-  // A quoted value is whole when structure ends it (`{"password":"%X%"}`), but a `set` line goes on after its quote.
-  if (isQuote(text[0]) && /[,;)}\]]/u.test(input[end] ?? "")) return true;
   let index = end;
   while (index < input.length && (input[index] === " " || input[index] === "\t")) index += 1;
-  return index === input.length || LINE_BREAK.test(input[index]!);
+  if (index === input.length || LINE_BREAK.test(input[index]!)) return true;
+  // A quoted value is whole when structure ends it, padded or not (`{"password":"%X%" , …}`),
+  // but a `set` line goes on after its quote with more words.
+  return isQuote(text[0]) && /[,;)}\]]/u.test(input[index]!);
 }
 
 /**

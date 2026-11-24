@@ -226,6 +226,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["an authority that starts with a query", "https://?q=1 user x:y me@example.org"],
     ["a path word before the at sign", "https://ci:pa ss /x@y"],
     ["a bare scheme before a host and port", "https://\texample.com:8080 ping @bob"],
+    // Greptile review round 10: a path after a tab-split authority ends it before later prose.
+    ["a tab-split public link before prose with a colon and a mention", "https://\texample.com/docs status:404 then ping @oncall"],
     ["a clock time in prose", "See https://example.com at 09:30 and ping @oncall"],
     ["a Windows drive path before an error code and a mention", "Log output C:/Temp (code:ENOENT), fix and notify @admin"],
     ["a Markdown link before prose with a colon and a mention", "See [docs](https://example.invalid) status:404 then ping @oncall."],

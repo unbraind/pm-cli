@@ -563,11 +563,12 @@ function startsWithScheme(text: string): boolean {
  * word's authority starts in the next word, judged as if the blank between them
  * were dropped; a special scheme's authority there ends at its path, which the
  * opening judges apart (`https://` then a tab then `token:x@host/repo`). When
- * that word holds the separator, the join reaches at least its end.
+ * that word holds the separator, the join reaches at least its end, and when
+ * the word goes on into a path the authority has ended there (`final`).
  */
-function openingAt(text: string, word: string, from: number): { opening: SpacedOpening; from: number; seed: number } | undefined {
+function openingAt(text: string, word: string, from: number): { opening: SpacedOpening; from: number; seed: number; final: boolean } | undefined {
   const opening = spacedUserinfoOpening(word);
-  if (opening?.kind !== "pending") return opening === undefined ? undefined : { opening, from, seed: -1 };
+  if (opening?.kind !== "pending") return opening === undefined ? undefined : { opening, from, seed: -1, final: false };
   const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
   if (next === undefined) return undefined;
   const nextText = text.slice(next[0], next[1]);
@@ -575,7 +576,8 @@ function openingAt(text: string, word: string, from: number): { opening: SpacedO
   const joined = spacedUserinfoOpening(`${word}${authorityWord}`);
   if (joined === undefined || joined.kind === "pending") return undefined;
   const seed = joined.kind === "user" && /@|%40/iu.test(authorityWord) ? next[1] : -1;
-  return { opening: joined, from: next[1], seed };
+  // A path in that word already ended the authority, so later prose is never searched (`https://` tab `host/docs …`).
+  return { opening: joined, from: next[1], seed, final: authorityWord.length < nextText.length };
 }
 
 /**
@@ -593,7 +595,7 @@ function redactSpacedUserinfo(text: string): string {
   for (let match = word.exec(text); match !== null; match = word.exec(text)) {
     const opened = openingAt(text, match[0], match.index + match[0].length);
     if (opened === undefined) continue;
-    const end = spacedUserinfoEnd(text, opened.from, opened.opening, opened.seed);
+    const end = opened.final ? opened.seed : spacedUserinfoEnd(text, opened.from, opened.opening, opened.seed);
     if (end === -1) continue;
     result += `${text.slice(cursor, match.index)}${redactUrlCredentialsInToken(text.slice(match.index, end))}`;
     cursor = end;
