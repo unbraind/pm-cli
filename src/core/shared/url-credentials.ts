@@ -384,7 +384,8 @@ function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   if (start === word.length) return { kind: "pending", closer, special };
   const authority = word.slice(start);
   if (authority.startsWith("[") || (special && /[/\\]/u.test(authority)) || closingDelimiterAt(authority, closer) >= 0) return undefined;
-  const kind = authorityOpening(authority.split(/[?#]/u, 1)[0]!);
+  // Only a special scheme's authority ends at a query or fragment; OpenSSH reads userinfo across them.
+  const kind = authorityOpening(special ? authority.split(/[?#]/u, 1)[0]! : authority);
   return kind === undefined ? undefined : { kind, closer, special };
 }
 
@@ -407,12 +408,23 @@ function closingDelimiterAt(text: string, closer: string | undefined): number {
   return end > 0 && text[end - 1] === closer ? end - 1 : -1;
 }
 
-/** Where the last `:` that an authority slash or backslash follows stands in a word, or -1. */
+/**
+ * The scheme separator a word opens its URL at: the last `:` that an authority
+ * slash or backslash follows and whose scheme starts the word or follows a
+ * query, fragment or opening character (`…?next=https://u:p`, `{"url":"https://…`),
+ * so a URL nested in another one's query is judged; otherwise the first such
+ * `:`, so a `:/` inside userinfo (`ssh://ci:pa:/ss`) is that userinfo's text.
+ * Returns -1 when the word has none.
+ */
 function lastSchemeSeparator(word: string): number {
+  let first = -1;
   for (let index = word.length - 2; index >= 0; index -= 1) {
-    if (word[index] === ":" && (word[index + 1] === "/" || word[index + 1] === "\\")) return index;
+    if (word[index] !== ":" || (word[index + 1] !== "/" && word[index + 1] !== "\\")) continue;
+    const start = schemeStartBefore(word, index);
+    if (start === 0 || /[=?&#"'`(<[{,]/u.test(word[start - 1]!)) return index;
+    first = index;
   }
-  return -1;
+  return first;
 }
 
 /** Where the scheme that ends at `colon` starts, read back over scheme characters. */

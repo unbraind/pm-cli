@@ -178,6 +178,10 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a slash inside a spaced SSH password", "ssh://ci:AbCd ef/gh==@repo.example.invalid/x", "ssh://[redacted]@repo.example.invalid/x"],
     // CodeRabbit review round 4: a Windows drive inside SSH userinfo is no new URL.
     ["a Windows drive inside spaced SSH userinfo", "ssh://ci:fake C:/Temp words@host", "ssh://[redacted]@host"],
+    // CodeRabbit review round 6: a `:/` inside SSH userinfo, and userinfo across a query mark.
+    ["a colon and slash inside a spaced SSH password", "ssh://ci:pa:/ss words@host", "ssh://[redacted]@host"],
+    ["a query mark inside a spaced SSH username", "ssh://ci?account:fake words@host", "ssh://[redacted]@host"],
+    ["a fragment mark inside a spaced SSH username", "ssh://ci#account:fake words@host", "ssh://[redacted]@host"],
     // Greptile review round 8: a spaced password colon before an SSH host with a path.
     ["a spaced SSH password colon before a host with a path", "ssh://service account: secret@host/x", "ssh://[redacted]@host/x"],
     // CodeRabbit review round 2: the word after a tab holds the whole userinfo.

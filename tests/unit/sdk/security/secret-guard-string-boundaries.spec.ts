@@ -191,6 +191,8 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(JSON.stringify({ title: `${passwordKey}: <team's-password>`, updated: "ok" }))).toEqual([]);
     // CodeRabbit round 4: a quote inside an angle placeholder is its text, after any character.
     expect(rulesOf(JSON.stringify({ title: `${passwordKey}: <team-'s-password>`, updated: "ok" }))).toEqual([]);
+    // CodeRabbit round 6: a command redirection is no placeholder, so the closing quote still ends the value.
+    expect(rulesOf(`{"title":"${passwordKey}: ${D}(cat <file)","updated":"ok"}`)).toEqual([]);
     // CodeRabbit round 5: a quote inside an angle placeholder is never a cut point.
     expect(rulesOf(`{note: x='bad, ${passwordKey}: <a'b>${literal}}`)).toEqual(["password_assignment"]);
     // Greptile round 9: a reference keeps its quotes, so a quoted default is the value's own text.

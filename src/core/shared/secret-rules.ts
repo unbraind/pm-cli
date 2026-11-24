@@ -1309,6 +1309,11 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   return -1;
 }
 
+/** A complete angle placeholder at the start of the text: no blank or other angle bracket before its `>`. */
+const COMPLETE_PLACEHOLDER = /^<[^<>\s]{0,254}>/u;
+/** Code units read ahead for a complete placeholder. */
+const PLACEHOLDER_BOUND = 256;
+
 /** The value's own quoted span state while the lexer walks it, and whether an angle placeholder is open there. */
 interface OwnQuoteState {
   open: boolean;
@@ -1328,7 +1333,8 @@ function trackOwnQuote(own: OwnQuoteState, content: string, index: number, other
     if (character === other) own.open = false;
   } else if (own.placeholder) {
     if (character === ">") own.placeholder = false;
-  } else if (character === "<") {
+  } else if (character === "<" && COMPLETE_PLACEHOLDER.test(content.slice(index, index + PLACEHOLDER_BOUND))) {
+    // Only a complete placeholder (`<team-'s-password>`), never a redirection (`$(cat <file)`).
     own.placeholder = true;
   } else if (character === other) {
     own.open = opensOwnQuote(content, index);
