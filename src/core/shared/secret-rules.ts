@@ -301,7 +301,7 @@ const EXCLUSION_REPEAT_BOUND = 4096;
 // millions of characters overflowed the stack and the guard failed open.
 const CREDENTIAL_OPEN = String.raw`"(?=[^"\s]{8}[^"\s]*")|'(?=[^'\s]{8}[^'\s]*')|(?!["'])`;
 const CREDENTIAL_PLAIN =
-  String.raw`(?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8}[^\s"]*|(?<=')[^\s']{8}[^\s']*|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})`;
+  String.raw`(?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%(?=$|[\s"',;)}\]<>&|\\])|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}|(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+){0,${EXCLUSION_REPEAT_BOUND}}(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.){1,${EXCLUSION_REPEAT_BOUND}}[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/){1,${EXCLUSION_REPEAT_BOUND}}[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8}[^\s"]*|(?<=')[^\s']{8}[^\s']*|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})`;
 // The grammar a reference-free value is judged by. A referenced value's literal
 // is judged by it too, read as one double-quoted literal (literalValue).
 const CREDENTIAL_LITERAL_VALUE = new RegExp(`(?:${CREDENTIAL_OPEN})(${CREDENTIAL_PLAIN})`, "iy");
@@ -606,6 +606,8 @@ function insideQuotedRange(span: ReferenceSpan, position: number): boolean {
 
 /** A reference or placeholder opener inside a captured value. */
 const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
+/** For a flat match whose value sits in a string, where that string's closing quote ends it (see enclosingStringClose). */
+const ENCLOSING_STRING_CLOSE = new WeakMap<RegExpMatchArray, number>();
 
 /**
  * Flat matches of one reading. A rule with a literal minimum also judges the
@@ -614,12 +616,32 @@ const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
  * rescanDepth for how far it reaches while staying linear.
  */
 function* flatMatches(rule: SecretRule, content: string): Generator<SecretRuleMatch> {
-  const regex = rule.regex;
-  regex.lastIndex = 0;
+  // Every scan owns its cursor, so a scan suspended at a yield never moves another one's.
+  const regex = new RegExp(rule.regex);
   const rescan = rescanDepth(rule);
   // A scanner for keys inside rejected values, created on first use; every scan owns its own cursor.
   let inner: RegExp | undefined;
-  for (const match of content.matchAll(regex)) {
+  // Only a rule with a literal minimum reads quoted pieces after a value, so only it ends
+  // a value at the string it sits in (GH-1775); the lexer is created on first use.
+  let lexer: StringLexer | undefined;
+  for (let found = regex.exec(content); found !== null; found = regex.exec(content)) {
+    let match = found;
+    if (rule.minimumLiteralLength !== undefined) {
+      lexer ??= createStringLexer(content);
+      const end = found.index + found[0].length;
+      const valueStart = end - found[1]!.length;
+      const close = enclosingStringClose(lexer, valueStart, end);
+      // A value is never cut at its own first character: a quote there may be the value's own
+      // opening quote after a stray apostrophe, so the grammar's reading is kept.
+      if (close > valueStart) {
+        if (close < end) {
+          match = truncateMatch(found, close);
+          // Resume at the closing quote, so keys in the members the grammar read past are still scanned.
+          regex.lastIndex = close;
+        }
+        ENCLOSING_STRING_CLOSE.set(match, close);
+      }
+    }
     if (acceptsSecretMatch(rule, match)) {
       yield { index: match.index! };
     } else if (rescan !== undefined && VALUE_REFERENCE.test(match[1])) {
@@ -954,10 +976,57 @@ function judgedLiteral(match: RegExpMatchArray): string {
   // A quoted value's body is data, never shell syntax, so only an unquoted inner value is cut.
   const word = INNER_SHELL_MATCHES.has(match) && !isQuote(captureOpener(match)) ? shellWordPrefix(match[1]) : undefined;
   const text = word ?? match[1];
+  if (word === undefined && isWholePercentReference(match, text)) return "";
   const variables = word !== undefined || wordComplete(match);
   return DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match))
     ? expandRuntimeReferences(text, variables)
     : literalAfterReferences(text, variables);
+}
+
+/** A Windows `%NAME%` reference with nothing around it, as an element body. */
+const BARE_PERCENT_REFERENCE = /^%[A-Za-z_]\w*%$/u;
+/** A Windows `%NAME%` reference, bare or in one pair of quotes, as a whole value. */
+const PERCENT_REFERENCE = /^(["']?)%[A-Za-z_]\w*%\1$/u;
+
+/**
+ * Whether a captured value is one whole Windows `%NAME%` reference, which
+ * spells no literal (GH-1775). `cmd.exe` reads `set NAME=value` to the end of
+ * the line, so an unquoted text value is whole only when nothing but blanks
+ * follows it on its line, or when it ends at the string it sits in (see
+ * enclosingStringClose); a decoded literal is whole by construction, and a
+ * quoted structured value (a quoted key's, or an array element) is whole when
+ * structure follows its closing quote. A percent reference that more words follow on its
+ * `set` line therefore keeps its literal reading.
+ */
+function isWholePercentReference(match: RegExpMatchArray, text: string): boolean {
+  if (!PERCENT_REFERENCE.test(text)) return false;
+  if (DECODED_DATA_MATCHES.has(match)) return true;
+  const input = match.input!;
+  const end = match.index! + match[0].length;
+  if (ENCLOSING_STRING_CLOSE.get(match) === end) return true;
+  let index = end;
+  while (index < input.length && (input[index] === " " || input[index] === "\t")) index += 1;
+  if (index === input.length || LINE_BREAK.test(input[index]!)) return true;
+  // A quoted structured value (a quoted key's, or an array element) is whole when structure ends it,
+  // padded or not (`{"password":"%X%" , …}`); a `set` line keeps whatever follows its quote.
+  return isQuote(text[0]) && /[,;)}\]]/u.test(input[index]!) && isStructuredQuotedValue(match);
+}
+
+/** A quoted key and its separator right before a value, after the text's start, a blank or a bracket; never a quoted shell option (`--'password'=`). */
+const LEADING_QUOTED_KEY_BEFORE = /(?:^|[\s{,[])(["'])[^"'\r\n]{1,256}\1\s*[:=]\s*$/u;
+
+/**
+ * Whether a quoted value is structured data: an array element, a quoted key's
+ * value even at the start of the text, or a value after a `:` separator (JSON,
+ * YAML flow `{password: "…", other: ok}`). A value after `=` is an assignment
+ * (`set NAME="…"`, shell, dotenv), whose line goes on after its quote.
+ */
+function isStructuredQuotedValue(match: RegExpMatchArray): boolean {
+  if (structuredContext(match, false) !== undefined) return true;
+  const input = match.input!;
+  const valueStart = match.index! + match[0].length - match[1].length;
+  const before = input.slice(Math.max(0, valueStart - STRUCTURED_LOOK_BACK), valueStart);
+  return LEADING_QUOTED_KEY_BEFORE.test(before) || /:[ \t]*$/u.test(before);
 }
 
 /**
@@ -991,8 +1060,10 @@ const STRUCTURE_RUN = /^[;,)}\]]{0,64}/u;
  * comes after it. Any other text after the match (`$PW:literal`, `$PW[literal`,
  * `$PW,"literal"`, `"$PW""literal"`) is part of the same word. So is a quote
  * after an unquoted value, which may open a concatenated piece
- * (`$PW" spaced literal"`) as well as close an enclosing string. In either
- * case the value is not known to be a bare or leading variable, and its
+ * (`$PW" spaced literal"`) as well as close an enclosing string, unless the
+ * lexical string states show that it closes the string the value sits in and
+ * a word end follows (see enclosingStringClose). In either case the value is
+ * not known to be a bare or leading variable, and its
  * `$NAME` text stays literal. The look-ahead is bounded, so judging stays
  * linear.
  */
@@ -1004,14 +1075,7 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
-  // Inside a rejected reference value, the closer of the reference the match
-  // sat in ends its word whatever follows (`"$(get --password=$PW)${SUFFIX}"`).
-  // Any other parenthesis or brace, and one at the top level, is literal data
-  // (`${A:?password=$PW)literal}`).
-  if (INNER_CLOSE_AT.get(match) === start) return true;
-  // Inside a command substitution, shell control operators and redirections end a word too (`--password=$PW|filter`, `$PW>/dev/null`).
-  // (The end of the input has already returned above, so a character stands at `start`.)
-  if (INNER_SHELL_MATCHES.has(match) && /[|&;<>]/u.test(input[start]!)) return true;
+  if (endsAtRecordedCloser(match, start, end)) return true;
   if (closed === -1) return false;
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
@@ -1024,6 +1088,23 @@ function wordComplete(match: RegExpMatchArray): boolean {
   // After a closing brace or bracket the value's container has closed, so a bare scalar is the parent's next element.
   const closedContainer = /[}\]]/u.test(input.slice(start, after));
   return context !== undefined && (NEXT_MEMBER.test(next) || ((context === "element" || closedContainer) && BARE_SCALAR_MEMBER.test(next)));
+}
+
+/**
+ * Whether a match's word ends at a closer the scan recorded for it. Inside a
+ * rejected reference value, the closer of the reference the match sat in ends
+ * its word whatever follows (`"$(get --password=$PW)${SUFFIX}"`); any other
+ * parenthesis or brace, and one at the top level, is literal data
+ * (`${A:?password=$PW)literal}`). Inside a command substitution, shell control
+ * operators and redirections end a word too (`--password=$PW|filter`,
+ * `$PW>/dev/null`); the caller has already handled the end of the input, so a
+ * character stands at `start`. And the quote that closes the string a flat
+ * match's value sits in ends its word (see enclosingStringClose).
+ */
+function endsAtRecordedCloser(match: RegExpMatchArray, start: number, end: number): boolean {
+  if (INNER_CLOSE_AT.get(match) === start) return true;
+  if (INNER_SHELL_MATCHES.has(match) && /[|&;<>]/u.test(match.input![start]!)) return true;
+  return ENCLOSING_STRING_CLOSE.get(match) === end;
 }
 
 /**
@@ -1059,6 +1140,294 @@ const BARE_SCALAR_MEMBER = /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;
+/** The lexical string states: no string open, a double-quoted one, a single-quoted one. */
+const NO_STRING = 0;
+const DOUBLE_STRING = 1;
+const SINGLE_STRING = 2;
+
+/** A letter, digit or underscore, after which a quote never opens a string (see StringLexer). */
+const WORD_CHARACTER = /[\p{L}\p{N}_]/u;
+
+/** Whether a UTF-16 code unit is a line feed or carriage return, which end every string in the lexical pass. */
+function isNewlineCode(code: number): boolean {
+  return code === 0x0a || code === 0x0d;
+}
+
+/**
+ * A forward-only lexical string scanner over one content string (GH-1775). A
+ * quote opens a string of its kind when none is open and closes the open
+ * string of its kind; a quote of the other kind inside a string is data; a
+ * quote right after a letter, digit or underscore never opens one (in prose it
+ * is an apostrophe such as `customer's` or a unit mark, and a code prefix such
+ * as `f"…"` just keeps main's reading); a backslash escapes the next
+ * character, except inside a single-quoted string a shell word opened (there
+ * it is literal, as in the shell; a single-quoted container member, as in a
+ * Python repr, keeps escapes); and a line feed or carriage return ends every string, as JSON,
+ * Python and shell strings on one line read (U+2028 and U+2029 are data inside
+ * a JSON string). Each flat scan owns one lexer and only ever moves it
+ * forward, to the start of each value it judges and through a value that sits
+ * in a string, so a scan reads each character at most once more.
+ */
+interface StringLexer {
+  readonly content: string;
+  /** Next position to read. */
+  index: number;
+  /** The string state before `index`. */
+  state: number;
+  /** Where the open string's opening quote stands, when one is open. */
+  opener: number;
+  /** Whether a backslash escapes inside the open string: always in a double-quoted one, in a single-quoted one only as a container member. */
+  escapes: boolean;
+}
+
+function createStringLexer(content: string): StringLexer {
+  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true };
+}
+
+/** Read one character (two for an escape); returns the position of a quote that closed the open string, or -1. */
+function lexStep(lexer: StringLexer): number {
+  const { content } = lexer;
+  const index = lexer.index;
+  const code = content.charCodeAt(index);
+  lexer.index = index + 1;
+  if (isNewlineCode(code)) {
+    lexer.state = NO_STRING;
+    return -1;
+  }
+  if (code === 0x5c) {
+    // A backslash is literal inside a shell single-quoted string (`note='C:\'`), but escapes in a
+    // Python or JavaScript one that is a container member (`{'title': 'can\'t …'}`).
+    if (lexer.escapes && index + 1 < content.length && !isNewlineCode(content.charCodeAt(index + 1))) lexer.index = index + 2;
+    return -1;
+  }
+  if (code !== 0x22 && code !== 0x27) return -1;
+  const kind = code === 0x22 ? DOUBLE_STRING : SINGLE_STRING;
+  if (lexer.state === kind) {
+    lexer.state = NO_STRING;
+    return index;
+  }
+  if (lexer.state === NO_STRING && !(index > 0 && WORD_CHARACTER.test(content[index - 1]!))) {
+    lexer.state = kind;
+    lexer.opener = index;
+    lexer.escapes = kind === DOUBLE_STRING || opensAfterContainer(content, index);
+  }
+  return -1;
+}
+
+/** Move the lexer to `position`; an escape that straddles it leaves the same state, since an escaped character never changes it. */
+function advanceLexer(lexer: StringLexer, position: number): void {
+  while (lexer.index < position) lexStep(lexer);
+}
+
+/** Where the string a value sits in opened: as a container member or element, or as an attribute value. */
+interface StringOpening {
+  inContainer: boolean;
+  attribute: boolean;
+}
+
+/**
+ * How the string that opened at `opener` sits. It is a member or element of a
+ * container when its quote follows `[`, `{`, `,` or `:` and optional
+ * whitespace, as in JSON, YAML flow or a Python repr; a string a command word
+ * or prose opened (`echo "…"`, `Use "…"`) is a shell word or a quotation
+ * instead. It is an attribute value when its quote follows `=` and optional
+ * whitespace inside an open start tag (`<setting value="…"/>`,
+ * `<setting value = "…"`, also across attribute lines), so only then does `>`
+ * after its closing quote end it.
+ */
+function stringOpening(content: string, opener: number): StringOpening {
+  const index = significantBefore(content, opener);
+  const before = content[index];
+  return { inContainer: before !== undefined && /[[{,:]/u.test(before), attribute: before === "=" && insideStartTag(content, index) };
+}
+
+/**
+ * Where the last non-whitespace character before `opener` stands, or -1. JSON
+ * allows any whitespace, line breaks included, between a separator and a
+ * value, and XML allows blanks around an attribute's `=` (`value = "…"`).
+ */
+function significantBefore(content: string, opener: number): number {
+  let index = opener - 1;
+  while (index >= 0 && /\s/u.test(content[index]!)) index -= 1;
+  return index;
+}
+
+/** Whether a string's opening quote follows a container's `[`, `{`, `,` or `:`; the lexer's escape decision needs only this, never the start-tag read. */
+function opensAfterContainer(content: string, opener: number): boolean {
+  return /[[{,:]/u.test(content.charAt(significantBefore(content, opener)));
+}
+
+/** Code units read back from an attribute's `=` for the start tag it sits in. */
+const START_TAG_LOOK_BACK = 8192;
+
+/**
+ * Whether the `=` at `equals` sits inside an open XML or HTML start tag: read
+ * back, skipping earlier quoted attribute values whole (a `>` inside one is
+ * data), the first unquoted `<` that opens a tag name comes before any
+ * unquoted `>` (`<setting value=`, also across attribute lines). An `=`
+ * outside any tag (`x="…"`, a shell or dotenv assignment) opens no attribute
+ * value, so `>` after its closing quote never ends the value there. The read
+ * is bounded, and each `=` reads its own tag once.
+ */
+function insideStartTag(content: string, equals: number): boolean {
+  const floor = Math.max(0, equals - START_TAG_LOOK_BACK);
+  for (let index = equals - 1; index >= floor; index -= 1) {
+    const character = content[index]!;
+    if (character === ">") return false;
+    if (character === "<") return /[A-Za-z]/u.test(content.charAt(index + 1));
+    if (character === "\"" || character === "'") {
+      const open = content.lastIndexOf(character, index - 1);
+      if (open < floor) return false;
+      index = open;
+    }
+  }
+  return false;
+}
+
+/** Structure that may follow a closing quote before the next member, element or statement. */
+const STRUCTURE_AFTER_STRING = /[,:;)}\]]/u;
+
+/**
+ * Whether the word a closing quote at `at` ends is complete: whitespace or the
+ * end of the text follows it, or a bounded run of structure, optional blanks
+ * and then a line break, the end of the text, or the next member or element
+ * (`","x"`, `"},{"y"`, `"], "z"`, `");`, an unquoted YAML flow key) when the
+ * string is a member or element of a container, or the end of an XML tag
+ * (`"/>`, `">`) when the string is an attribute value (see stringOpening). Any other text after the quote,
+ * such as another quote (`""…`) or a word (`"…`), continues a shell word.
+ */
+function endsWordAfterQuote(content: string, at: number, opening: StringOpening): boolean {
+  let index = at + 1;
+  if (endsRightAfterQuote(content, index, opening)) return true;
+  const structureEnd = Math.min(content.length, index + WORD_END_BOUND);
+  while (index < structureEnd && STRUCTURE_AFTER_STRING.test(content[index]!)) index += 1;
+  if (index === at + 1) return false;
+  // Blanks after the structure are padding, however many (each closing quote is read once).
+  while (index < content.length && (content[index] === " " || content[index] === "\t")) index += 1;
+  if (index === content.length || LINE_BREAK.test(content[index]!)) return true;
+  // The next member or element after the structure ends the word only for a string in a container;
+  // after a shell word's closing quote, `,"…"` is more of the same word (`echo "…${EMPTY}","…"`).
+  if (!opening.inContainer) return false;
+  // Read enough of the next token to see a long scalar or flow key whole (bounded, once per closer).
+  const next = content.slice(index, index + NEXT_TOKEN_BOUND);
+  return NEXT_MEMBER.test(next) || BARE_SCALAR_MEMBER.test(next) || YAML_FLOW_KEY.test(next);
+}
+
+/** Whether the text at `index`, right after a closing quote, ends the word: whitespace, the end, or an attribute value's tag end. */
+function endsRightAfterQuote(content: string, index: number, opening: StringOpening): boolean {
+  if (index === content.length || /\s/u.test(content[index]!)) return true;
+  // An XML attribute value (`value="…"`) ends its tag (`"/>`, `">`).
+  return opening.attribute && (content[index] === ">" || content.startsWith("/>", index));
+}
+
+/** Code units of the next member read after a closing quote's structure. */
+const NEXT_TOKEN_BOUND = 512;
+/** An unquoted YAML flow key and its separator, the next member of `{title: "…", updated: ok}`. */
+const YAML_FLOW_KEY = /^[A-Za-z_][\w.-]{0,480}:(?:\s|$)/u;
+
+/**
+ * Where the string that a value starting at `valueStart` sits in closes, when
+ * its closing quote lies inside the captured value or directly after it
+ * (`end`) and ends the word there; -1 otherwise (GH-1775). In serialized JSON
+ * text such as `{"title":"api_key: ${API_KEY}","updated":…}` the value sits in
+ * the title string, whose closing quote ends it, so `","` and the next member
+ * are never read as quoted pieces concatenated to it. A value outside every
+ * string keeps its own quoted pieces (`password="$PW","…"`), and a closing
+ * quote that another quote or a word follows (`"…${EMPTY}""…"`) continues the
+ * shell word, as before. Each scan reads the value once.
+ */
+function enclosingStringClose(lexer: StringLexer, valueStart: number, end: number): number {
+  advanceLexer(lexer, valueStart);
+  const kind = lexer.state;
+  if (kind === NO_STRING) return -1;
+  const { content } = lexer;
+  const opener = lexer.opener;
+  const other = kind === DOUBLE_STRING ? "'" : "\"";
+  // Whether the value opened a quoted span of the other kind that is still open: a closer there is
+  // that span's data (`password: "v7'>…"` after a stray apostrophe), never the enclosing string's end.
+  const own: OwnQuoteState = { open: false, placeholder: false, references: [] };
+  const last = Math.min(end, content.length - 1);
+  while (lexer.index <= last) {
+    trackOwnQuote(own, content, lexer.index, other);
+    const closed = lexStep(lexer);
+    if (closed !== -1) {
+      const insideOwnText = own.open || own.placeholder || own.references.length > 0;
+      return closesValueAt(content, closed, end, insideOwnText) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
+    }
+    // A line break ended the string before any closing quote.
+    if (lexer.state !== kind) return -1;
+  }
+  return -1;
+}
+
+/** A complete angle placeholder at the start of the text: no blank or other angle bracket before its `>`. */
+const COMPLETE_PLACEHOLDER = /^<[^<>\s]{0,254}>/u;
+/** Code units read ahead for a complete placeholder. */
+const PLACEHOLDER_BOUND = 256;
+
+/** The value's own quoted span state while the lexer walks it, whether an angle placeholder is open, and the references open there. */
+interface OwnQuoteState {
+  open: boolean;
+  placeholder: boolean;
+  /** Closers of the `${…}` and `$(…)` references open at the walk, innermost last. */
+  references: string[];
+}
+
+/**
+ * Read one character of a value for its own quote state. Quotes inside an
+ * angle placeholder (`<team-'s-password>`) are its text and never open or
+ * close the value's own span. A reference keeps its quotes, because the shell
+ * reads them (`${X:-"…"}` holds a quoted default), and while one is open any
+ * quote of the enclosing kind is its text too (`${X:-a'…'}`), so no closer
+ * there ends the value. Elsewhere a quote of the other kind opens or closes
+ * the span (see opensOwnQuote).
+ */
+function trackOwnQuote(own: OwnQuoteState, content: string, index: number, other: string): void {
+  const character = content[index];
+  if (own.open) {
+    if (character === other) own.open = false;
+  } else if (own.placeholder) {
+    if (character === ">") own.placeholder = false;
+  } else if (character === "$" && (content[index + 1] === "{" || content[index + 1] === "(")) {
+    own.references.push(content[index + 1] === "{" ? "}" : ")");
+  } else if (character === own.references.at(-1)) {
+    own.references.pop();
+  } else if (character === "<" && COMPLETE_PLACEHOLDER.test(content.slice(index, index + PLACEHOLDER_BOUND))) {
+    // Only a complete placeholder (`<team-'s-password>`), never a redirection (`$(cat <file)`).
+    own.placeholder = true;
+  } else if (character === other) {
+    own.open = opensOwnQuote(content, index);
+  }
+}
+
+/**
+ * Whether a quote of the other kind at `index`, outside any open span, opens
+ * the value's own quoted span. An apostrophe right after a letter, digit or
+ * underscore is prose and never opens one; a double quote there opens a shell
+ * piece (`a"b…"`).
+ */
+function opensOwnQuote(content: string, index: number): boolean {
+  // A value always follows its key, so a character stands before `index`.
+  return content[index] === "\"" || !WORD_CHARACTER.test(content[index - 1]!);
+}
+
+/**
+ * Whether the enclosing string's closing quote at `closed` may end the value.
+ * Inside the capture, a quote inside the value's own quoted text or inside an
+ * open angle placeholder (another quote kind or a placeholder still open, or a
+ * blank after it, which the grammar reads only there) was a stray
+ * apostrophe's, so the grammar's reading is kept.
+ */
+function closesValueAt(content: string, closed: number, end: number, insideOwnText: boolean): boolean {
+  return closed >= end || !(insideOwnText || /\s/u.test(content.charAt(closed + 1)));
+}
+
+/** A copy of a flat match whose value ends at `end`, as if the grammar had stopped there. */
+function truncateMatch(match: RegExpExecArray, end: number): RegExpExecArray {
+  const valueStart = match.index + match[0].length - match[1]!.length;
+  const captures: [string, string] = [match.input.slice(match.index, end), match.input.slice(valueStart, end)];
+  return Object.assign(captures, { index: match.index, input: match.input, groups: undefined });
+}
 
 /** A call's opening parenthesis, after at most a short run of whitespace (`getToken ()`). */
 const CALL_AFTER = /^\s{0,16}\(/u;
@@ -1373,7 +1742,8 @@ function elementValueJudge(
     // Element text has no shell quoting: an apostrophe or quote in the body is
     // a literal character, so only references expand.
     const minimum = rule.minimumLiteralLength ?? DEFAULT_ELEMENT_LITERAL_LENGTH;
-    return (value) => expandRuntimeReferences(value).length >= minimum;
+    // A whole Windows `%NAME%` body spells nothing, as in text (GH-1775).
+    return (value) => !BARE_PERCENT_REFERENCE.test(value.trim()) && expandRuntimeReferences(value).length >= minimum;
   }
   // The whole trimmed body must be one value, so element prose never counts. It
   // is judged as a double-quoted literal: an element body has no code to confuse

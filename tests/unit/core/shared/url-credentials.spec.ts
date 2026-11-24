@@ -134,6 +134,159 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(redactUrlCredentialsInText("one\thttps://t@h/x\ntwo")).toBe("one\thttps://[redacted]@h/x\ntwo");
   });
 
+  it.each([
+    ["an encoded at sign (GH-1773)", "blocked by https://fixture:fake words%40example.invalid/path today", "blocked by https://[redacted]%40example.invalid/path today"],
+    ["a plain at sign", "https://fixture:fake words@example.invalid/path", "https://[redacted]@example.invalid/path"],
+    ["several blanks and words", "https://user:pa ss wo rd@host/x", "https://[redacted]@host/x"],
+    ["a blank right after the separator", "https://user: pass@host", "https://[redacted]@host"],
+    ["a tab", "a https://user:p\tq@host b", "a https://[redacted]@host b"],
+    ["a line break, which URL parsers drop", "https://user:pass\nword@host", "https://[redacted]@host"],
+    ["a non-special scheme", "git+ssh://u:p w%40h:repo", "git+ssh://[redacted]%40h:repo"],
+    ["two URLs in one text", "https://u:p w%40h/x https://a:b c@d", "https://[redacted]%40h/x https://[redacted]@d"],
+    // Codex review round 1 on the GH-1773 change.
+    ["an encoded at sign inside the password", "https://ci:pa%40ss words@example.invalid", "https://[redacted]@example.invalid"],
+    ["an at sign inside a later word of the password", "https://ci:pa word@ss rest@example.invalid", "https://[redacted]@example.invalid"],
+    ["a long query after the host", `https://ci:some words@example.invalid/download?state=${"a".repeat(600)}`, `https://[redacted]@example.invalid/download?state=${"a".repeat(600)}`],
+    ["a password holding a colon and digits", "https://ci:pincode:1234 suffix@example.invalid", "https://[redacted]@example.invalid"],
+    ["a spaced username", "https://service account:pass phrase@example.invalid", "https://[redacted]@example.invalid"],
+    ["a spaced username whose password word holds the at sign", "https://service account:pass@example.invalid", "https://[redacted]@example.invalid"],
+    ["extra authority slashes", "https:///ci:pass words@example.invalid", "https://[redacted]@example.invalid"],
+    // Codex review round 2.
+    ["a redirect URL in the query", "https://ci:fake words@example.invalid/download?next=https://docs.example.invalid", "https://[redacted]@example.invalid/download?next=https://docs.example.invalid"],
+    ["a redirect URL after an encoded at sign", "https://ci:fake words%40example.invalid/a?next=https://docs.example.invalid", "https://[redacted]%40example.invalid/a?next=https://docs.example.invalid"],
+    ["a dotted spaced username", "https://jane.doe account:fake words@example.invalid/private", "https://[redacted]@example.invalid/private"],
+    ["a password that starts with digits", "https://ci:123456 words@example.invalid/private", "https://[redacted]@example.invalid/private"],
+    ["a quoted URL", '"https://ci:pa ss@host"', '"https://[redacted]@host"'],
+    // Greptile review round 1: URL parsers drop a tab after the authority slashes.
+    ["a tab before the username", "https://\tu:pass words@host/x", "https://[redacted]@host/x"],
+    ["a line break before a spaced username", "https://\nservice account:pass@host/x", "https://[redacted]@host/x"],
+    // Codex review round 3.
+    ["a compact JSON field before the URL", '{"url":"https://ci:demo pass@example.invalid"}', '{"url":[redacted]@example.invalid"}'],
+    ["an apostrophe inside the password", "https://ci:O'Brian Pass@example.invalid", "https://[redacted]@example.invalid"],
+    ["an apostrophe in a later password word", "https://ci:old pass'word@example.invalid", "https://[redacted]@example.invalid"],
+    ["a percent escape in the first username word", "https://build%2Dteam\taccount:demo pass@example.invalid", "https://[redacted]@example.invalid"],
+    ["a password colon before a tab", "https://service\taccount:\tDemoPass7@example.invalid", "https://[redacted]@example.invalid"],
+    ["an encoded at sign that starts inside the bound", `https://x:demo ${"a".repeat(510)}%40host`, "https://[redacted]%40host"],
+    // Codex review round 4.
+    ["a redirect query without a path", "https://ci:demo words@registry.example.invalid?next=https://docs.example.invalid", "https://[redacted]@registry.example.invalid?next=https://docs.example.invalid"],
+    ["a quoted pathless URL with a spaced password colon", '"https://Build Team: demo-pass@registry.example.invalid"', '"https://[redacted]@registry.example.invalid"'],
+    // Codex review round 5.
+    ["a credential URL nested in a public URL's query", "https://public.invalid/login?next=https://build:demo pass@private.invalid/repo", "https://[redacted]@private.invalid/repo"],
+    ["a URL in parentheses", "See (https://ci:demo pass@host.invalid/x) now", "See (https://[redacted]@host.invalid/x) now"],
+    // CodeRabbit review round 3: a non-special scheme reads userinfo across slashes, as OpenSSH does.
+    ["a slash inside a spaced SSH username", "ssh://team other/member:fake words@host", "ssh://[redacted]@host"],
+    ["a slash inside a spaced SSH password", "ssh://ci:AbCd ef/gh==@repo.example.invalid/x", "ssh://[redacted]@repo.example.invalid/x"],
+    // CodeRabbit review round 4: a Windows drive inside SSH userinfo is no new URL.
+    ["a Windows drive inside spaced SSH userinfo", "ssh://ci:fake C:/Temp words@host", "ssh://[redacted]@host"],
+    // CodeRabbit review round 6: a `:/` inside SSH userinfo, and userinfo across a query mark.
+    ["a colon and slash inside a spaced SSH password", "ssh://ci:pa:/ss words@host", "ssh://[redacted]@host"],
+    ["a query mark inside a spaced SSH username", "ssh://ci?account:fake words@host", "ssh://[redacted]@host"],
+    ["a fragment mark inside a spaced SSH username", "ssh://ci#account:fake words@host", "ssh://[redacted]@host"],
+    // Greptile review round 8: a spaced password colon before an SSH host with a path.
+    ["a spaced SSH password colon before a host with a path", "ssh://service account: secret@host/x", "ssh://[redacted]@host/x"],
+    // CodeRabbit review round 2: the word after a tab holds the whole userinfo.
+    ["a token username after a tab", "https://\tfixtureToken:x@example.invalid", "https://[redacted]@example.invalid"],
+    ["a token username after a tab, then a later at sign", "https://\tfixtureToken:x@example.invalid then pass words@x", "https://[redacted]@x"],
+    // CodeRabbit review round 5: a path after the authority that a tab split from its scheme.
+    ["a token username after a tab before a path", "https://\tfixtureToken:x@example.invalid/repo", "https://[redacted]@example.invalid/repo"],
+    ["a token username after a tab in an SSH URL", "ssh://\tfixtureToken:x@host/repo", "ssh://[redacted]@host/repo"],
+    // CodeRabbit review round 10: an escaped JSON quote inside a password, and authority slashes split by a tab.
+    ["an escaped JSON quote inside a spaced password", String.raw`{"url":"ssh://ci:pa\"ss words@host"}`, '{"url":[redacted]@host"}'],
+    ["authority slashes split by a tab", '"https:/\t/u:pass words@host"', '"https:/[redacted]@host"'],
+    // CodeRabbit review round 9: a username-only userinfo after a tab.
+    ["a token-only username after a tab", "https://\tfixtureToken@example.invalid/repo", "https://[redacted]@example.invalid/repo"],
+    // CodeRabbit review round 8: a host-and-port-shaped head that a tab follows may be a dotted user and a digit password.
+    ["a dotted username and a digit-led password before a tab", "https://jane.doe:123456\tmore@example.invalid/private", "https://[redacted]@example.invalid/private"],
+    // CodeRabbit review round 7: a quoted URL whose authority a tab split from its scheme.
+    ["a quoted token username after a tab", '"https://\tfixtureToken:x@example.invalid"', '"https://[redacted]@example.invalid"'],
+    // Greptile review round 3.
+    ["a numeric username part", "https://service 123:pass words@host/x", "https://[redacted]@host/x"],
+    ["a parenthesis inside a parenthesized URL's password", "(https://ci:pa)ss words@host/x)", "(https://[redacted]@host/x)"],
+    ["a long numeric username part", "https://build 10442:sample pass@host.invalid/repo", "https://[redacted]@host.invalid/repo"],
+    ["an empty password after a spaced username", "https://repo-\tdeploy-token-42:@registry.invalid/v2/", "https://[redacted]@registry.invalid/v2/"],
+    // CodeRabbit: the escape at offsets 510 and 511 after the opening word starts inside the bound.
+    ["an encoded at sign at offset 510", `https://x:demo ${"a".repeat(509)}%40host`, "https://[redacted]%40host"],
+    // Greptile review round 2.
+    ["an apostrophe in the first password word", "https://u:pa'ss words@host/x", "https://[redacted]@host/x"],
+    ["a spaced colon before a host with a path", "https://service account: secret@host/x", "https://[redacted]@host/x"],
+  ])("removes URL userinfo that holds whitespace across words: %s", (_case, text, expected) => {
+    expect(redactUrlCredentialsInText(text)).toBe(expected);
+    expect(redactUrlCredentialsInText(expected)).toBe(expected);
+  });
+
+  it.each([
+    ["a host and port before prose", "https://example.com:8080 ping @bob"],
+    ["a plain host before prose", "see https://example.com and ping @bob"],
+    ["a bracketed IPv6 host", "https://[::1] x@y"],
+    ["an authority with a path", "https://user:pass/x more@words"],
+    ["another URL before the at sign", "https://user:pass w https://x/ y@z"],
+    ["no at sign after the opening word", "x https://user:pass word"],
+    ["more words than the bound", `https://u:p ${"a ".repeat(16)}r@h`],
+    ["a span longer than the bound", `https://u:p ${"a".repeat(600)}@h`],
+    ["a blank run longer than the bound", `https://u:p ${" ".repeat(600)}x@h`],
+    ["slashes not at the scheme separator", "user:pass words@host"],
+    ["a colon only in a public URL's query", "See https://example.com?time=12:30Z or email ops@example.org"],
+    ["a later public URL holding an at sign", "Compare https://ci:1234-beta with https://example.org/package/@scope/name"],
+    ["a single-label host before prose", "https://localhost and ping @bob"],
+    ["a single-label host before prose with a colon after the at sign", "https://intranet ping @bob: now"],
+    ["a quoted URL before prose with a colon", 'See "https://intranet" and email support: ops@example.org.'],
+    ["a dotted host before prose with a colon", "Visit https://example.com and email support: ops@example.org"],
+    ["a localhost port before prose", "https://localhost:3000 ping @bob"],
+    ["a bare scheme before prose", "See https:// for details, email me@example.org"],
+    ["a bare scheme ending the text", "x https://"],
+    ["a bare scheme before more slashes", "https:// // x@y"],
+    ["a bare scheme ending text that holds an earlier at sign", "mail me@example.org at https://"],
+    ["an authority that starts with a query", "https://?q=1 user x:y me@example.org"],
+    ["a path word before the at sign", "https://ci:pa ss /x@y"],
+    ["a bare scheme before a host and port", "https://\texample.com:8080 ping @bob"],
+    // Greptile review round 10: a path after a tab-split authority ends it before later prose.
+    ["a tab-split public link before prose with a colon and a mention", "https://\texample.com/docs status:404 then ping @oncall"],
+    ["a public link whose slashes a tab splits, before prose", "https:/\t/example.com/docs status:404 ping @oncall"],
+    // CodeRabbit review round 7: a special scheme's query or fragment ends its authority.
+    ["a public link with a query before prose with a colon and a mention", "See https://example.invalid?next=docs status:404 notify @oncall"],
+    ["a public link with a fragment before prose with a colon and a mention", "See https://example.invalid#top status:404 notify @oncall"],
+    ["a quoted public authority after a tab before prose", '"https://\texample.com" status:404 notify @oncall'],
+    ["a clock time in prose", "See https://example.com at 09:30 and ping @oncall"],
+    ["a Windows drive path before an error code and a mention", "Log output C:/Temp (code:ENOENT), fix and notify @admin"],
+    ["a Markdown link before prose with a colon and a mention", "See [docs](https://example.invalid) status:404 then ping @oncall."],
+    ["a Markdown link and a full stop before prose", "See [docs](https://example.invalid). status:404 then ping @oncall."],
+    // Greptile review round 4: Markdown emphasis after a link destination.
+    ["an emphasized Markdown link before prose", "See **[docs](https://example.invalid)** status:404 then ping @oncall."],
+    ["a clock time with a meridiem", "See https://example.com at 9:30pm, ping @oncall"],
+    ["a later public URL in parentheses", "Compare https://ci:1234-beta with (https://example.org/package/@scope/name)"],
+    ["a colon that a space follows", "https://service account: ping @oncall"],
+    ["a trailing colon ending the text", "https://service account:"],
+    ["a spaced colon before an email address", "https://service and email support: ops@example.org"],
+    ["an encoded at sign at offset 512, past the bound", `https://x:demo ${"a".repeat(511)}%40host`],
+    ["an encoded at sign that starts past the bound", `https://x:demo ${"a".repeat(512)}%40host`],
+  ])("leaves text alone when no whitespace-bearing userinfo opens: %s", (_case, text) => {
+    expect(redactUrlCredentialsInText(text)).toBe(text);
+  });
+
+  it("leaves a username at sign in the opening word to the word rule", () => {
+    // A first word with an at sign but no colon opens no join; the word rule masks its bare userinfo.
+    expect(redactUrlCredentialsInText("https://user@host and email x:y me@example.org")).toBe("https://[redacted]@host and email x:y me@example.org");
+  });
+
+  it("redacts a joined URL exactly as the same URL without blanks", () => {
+    // The token rule masks through the last at sign by design (GH-1707: a base64 password may hold `/`).
+    const joined = redactUrlCredentialsInText("https://ci:fake words@example.invalid/npm/@scope/pkg");
+    expect(joined).toBe(redactUrlCredentialsInToken("https://ci:fakewords@example.invalid/npm/@scope/pkg"));
+    expect(joined).not.toContain("fake");
+  });
+
+  it("judges a huge dotted host without exhausting the regex stack", () => {
+    const text = `https://${"a.".repeat(4_000_000)}a:443 note @alice`;
+    expect(() => redactUrlCredentialsInText(text)).not.toThrow();
+  });
+
+  it("stays linear over many opening words before a later at sign", () => {
+    const text = `${`See https://intranet ${"A".repeat(500)}\n`.repeat(4_000)}Contact ops@example.org`;
+    const started = performance.now();
+    expect(redactUrlCredentialsInText(text)).toBe(text);
+    expect(performance.now() - started).toBeLessThan(2_000);
+  });
+
   it("removes a registered whitespace-bearing span in any case, layout, shell or JSON escaping", () => {
     const token = 'https://U:my "pass\\$x\tmore@localhost/x';
     runWithUrlCredentialInvocation(["package", "install", token, "https://user@host/x"], () => {

@@ -3668,8 +3668,14 @@ Apply `redactUrlCredentialsInToken(token)` to each argv token. Apply
 `redactUrlCredentialsInText(text)` to free text. Both replace the span between
 a token's first `:` and its last `@` with `URL_CREDENTIAL_PLACEHOLDER`
 (`[redacted]`). The token rule is complete for every spelling a URL parser
-normalizes, and it is idempotent. The text rule sees only whitespace-delimited
-words, so a URL whose userinfo contains whitespace is complete only when you
+normalizes, and it is idempotent. The text rule judges whitespace-delimited
+words. It first joins a URL whose authority opens with a `user:` prefix, or
+with a single-label username, across whitespace through the word that holds
+its last `@` or `%40`
+([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
+tracker record excluded from npm), so `https://user:pass words@host` is
+redacted in free text. A whitespace-bearing bare token (`https://my token@host`)
+or a separator beyond 16 words or 512 characters is still complete only when you
 redact the original token before interpolating it into text. Do not echo a
 value you extracted from a raw token, such as a parsed password or a
 fragment cut at a delimiter. Build diagnostics from redacted tokens, or omit
