@@ -326,6 +326,20 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
       expect(echoed).not.toContain("tok_abc");
       expect(echoed).toContain("[redacted]");
     });
+    // An apostrophe or quote a dialect escaped inside a spaced password never closes the URL, with no
+    // registered invocation: PowerShell doubles it, POSIX closes, escapes and reopens, cmd carets it.
+    const spaced = "https://ci:my 'secret\" words@host.test/x";
+    for (const [dialect, arg] of [["powershell", spaced], ["posix", `${spaced}!`], ["posix", spaced], ["cmd", spaced]] as const) {
+      const rendered = `pm clone ${quoteCommandArg(arg, "win32", dialect)}`;
+      expect(redactUrlCredentialsInText(rendered), rendered).not.toMatch(/my |secret|words/u);
+    }
+    expect(redactUrlCredentialsInText("pm clone 'https://ci:my ''secret words@host.test/x'")).toBe("pm clone 'https://[redacted]@host.test/x'");
+    // A backslash-escaped closer inside a non-special URL (whose backslashes are no path delimiter) is userinfo.
+    expect(redactUrlCredentialsInText("run `ssh://ci:my \\`secret words@host.test/x`")).toBe("run `ssh://[redacted]@host.test/x`");
+    // An even backslash run before a quote is an escaped backslash, so that quote still closes the URL.
+    expect(redactUrlCredentialsInText('see "https://example.test/a\\\\" or reply@example.org')).toBe('see "https://example.test/a\\\\" or reply@example.org');
+    // A real closing quote still ends the URL: the word after it is prose, not userinfo.
+    expect(redactUrlCredentialsInText("see 'https://example.test/a' or reply@example.org")).toBe("see 'https://example.test/a' or reply@example.org");
     // A spaced userinfo ended by the caret form is joined as one span too.
     expect(redactUrlCredentialsInText("clone https://ci:my secret%^40example.test/repo")).not.toMatch(/my |secret/u);
   });

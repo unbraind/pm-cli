@@ -408,7 +408,7 @@ function spacedUserinfoOpening(word: string, droppedBlankAfter = false): SpacedO
   let start = colon + 1;
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
   if (start === word.length) return { kind: "pending", closer, special };
-  const authority = word.slice(start);
+  const authority = neutralizeEscapedQuotes(word.slice(start), closer);
   // A special scheme's authority ends at a path, query or fragment, so no later word can hold its userinfo.
   if (authority.startsWith("[") || (special && /[/\\?#]/u.test(authority)) || closingDelimiterAt(authority, closer) >= 0) return undefined;
   // A special scheme's authority with a query or fragment was refused above; OpenSSH reads userinfo across them.
@@ -418,6 +418,26 @@ function spacedUserinfoOpening(word: string, droppedBlankAfter = false): SpacedO
 
 /** Closers that only end a URL at the end of a word, after which only punctuation or emphasis follows; inside a word they are data (`pa)ss`). */
 const WORD_END_CLOSERS = new Set([")", "]"]);
+
+/** POSIX's close-escape-reopen spelling of an apostrophe inside a single-quoted string. */
+const POSIX_ESCAPED_APOSTROPHE = "'\\''";
+/** A run of backslashes before a quote, optionally across cmd.exe's caret (`\\"`, `\\^"`). */
+const BACKSLASHED_QUOTE = /(\\+)\^?"/gu;
+
+/**
+ * Authority text with every escaped quote of the opening's kind replaced by
+ * neutral characters (GH-1774): inside a URL opened by `'`, POSIX's escaped
+ * apostrophe (`'\\''`); inside one opened by `"`, a quote an odd run of
+ * backslashes escapes (`\\"`, or cmd's caret form `\\^"`). Their backslashes
+ * are then not read as a special scheme's path delimiter, nor their quotes
+ * as the closer. Positions are kept, so every index read from the result
+ * fits the original.
+ */
+function neutralizeEscapedQuotes(text: string, closer: string | undefined): string {
+  if (closer === "'") return text.replaceAll(POSIX_ESCAPED_APOSTROPHE, "____");
+  if (closer === '"') return text.replace(BACKSLASHED_QUOTE, (run, backslashes: string) => (backslashes.length % 2 === 1 ? "_".repeat(run.length) : run));
+  return text;
+}
 
 /**
  * Where the delimiter that closes a URL stands in text, or -1. A quote,
@@ -435,9 +455,19 @@ function closingDelimiterAt(text: string, closer: string | undefined): number {
   return end > 0 && text[end - 1] === closer ? end - 1 : -1;
 }
 
-/** Where the first occurrence of `character` stands that no backslash escapes (`pa\\"ss` holds none), or -1. */
+/**
+ * Where the first occurrence of `character` stands that no escape covers
+ * (`pa\\"ss` holds none), or -1. A backslash escapes a quote, and a doubled
+ * apostrophe (`''`, PowerShell) is an apostrophe inside the string, never its
+ * closing quote (GH-1774). Callers pass text whose POSIX and cmd escapes
+ * {@link neutralizeEscapedQuotes} already neutralized.
+ */
 function unescapedIndexOf(text: string, character: string): number {
   for (let index = text.indexOf(character); index >= 0; index = text.indexOf(character, index + 1)) {
+    if (character === "'" && text[index + 1] === "'") {
+      index += 1;
+      continue;
+    }
     let backslashes = 0;
     while (index - backslashes > 0 && text[index - backslashes - 1] === "\\") backslashes += 1;
     if (backslashes % 2 === 0) return index;
@@ -564,7 +594,7 @@ const CLOCK_TIME = /^\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[AaPp][Mm])?[.,;:!?)
  * a scheme and its `:` (`https://…`), read back from that `:` so a long word
  * costs one pass.
  */
-function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpening): {
+function readAuthorityWord(rawWord: string, maxStart: number, opening: SpacedOpening): {
   startsUrl: boolean;
   separator: boolean;
   colonBeforeSeparator: boolean;
@@ -574,6 +604,7 @@ function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpenin
   closedByOpener: boolean;
   endsAuthority: boolean;
 } {
+  const word = neutralizeEscapedQuotes(rawWord, opening.closer);
   // Only a special scheme's authority ends at a path, query or fragment delimiter; OpenSSH reads
   // `ssh://a/b@host` as user `a/b`.
   const delimiter = opening.special ? word.search(/[/\\?#]/u) : -1;
@@ -625,7 +656,7 @@ function openingAt(text: string, word: string, from: number): { opening: SpacedO
   if (opening?.kind !== "pending") return opening === undefined ? undefined : { opening, from, seed: -1, final: false };
   const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
   if (next === undefined) return undefined;
-  const nextText = text.slice(next[0], next[1]);
+  const nextText = neutralizeEscapedQuotes(text.slice(next[0], next[1]), opening.closer);
   // The rest of the authority slashes may follow the blank too (`https:/` tab `/u:pass`).
   const slashes = /^[/\\]*/u.exec(nextText)![0];
   const body = nextText.slice(slashes.length);

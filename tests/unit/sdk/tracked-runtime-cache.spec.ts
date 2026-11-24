@@ -109,7 +109,11 @@ describe("tracked runtime cache governance", () => {
         decisions: [],
       });
 
+      // The remediation assertion pins the POSIX spelling, so a developer's PM_COMMAND_SHELL is set aside.
+      const inheritedShell = process.env.PM_COMMAND_SHELL;
+      delete process.env.PM_COMMAND_SHELL;
       const scan = await scanTrackedRuntimeCache(context.pmPath);
+      if (inheritedShell !== undefined) process.env.PM_COMMAND_SHELL = inheritedShell;
       expect(scan).toMatchObject({
         tracker_relative_root: ".agents/pm",
         tracked_path_count: 5,
@@ -209,9 +213,11 @@ describe("tracked runtime cache governance", () => {
         "--",
         `:(literal)${path.relative(tempRoot, trackedPath).replaceAll("\\", "/")}`,
       ]);
-      expect(
-        (await scanTrackedRuntimeCache(customRoot)).remediation_command,
-      ).toContain(`"${":(literal)tracker[cache]'s pm/runtime"}"`);
+      const customShell = process.env.PM_COMMAND_SHELL;
+      delete process.env.PM_COMMAND_SHELL;
+      const customScan = await scanTrackedRuntimeCache(customRoot);
+      if (customShell !== undefined) process.env.PM_COMMAND_SHELL = customShell;
+      expect(customScan.remediation_command).toContain(`"${":(literal)tracker[cache]'s pm/runtime"}"`);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

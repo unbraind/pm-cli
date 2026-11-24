@@ -3674,11 +3674,11 @@ with a single-label username, across whitespace through the word that holds
 its last `@` or `%40`
 ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
 tracker record excluded from npm), so `https://user:pass words@host` is
-redacted in free text. A whitespace-bearing bare token (`https://my token@host`),
-a separator beyond 16 words or 512 characters, or a whitespace-bearing
-password holding an apostrophe that a single-quoting dialect (POSIX for an
-argument with `!`, PowerShell) doubled or escaped is still complete only
-when you redact the original token before interpolating it into text. Do not echo a
+redacted in free text. A whitespace-bearing bare token (`https://my token@host`)
+or a separator beyond 16 words or 512 characters is still complete only when you
+redact the original token before interpolating it into text. A quote that a
+rendering dialect escaped inside a URL (PowerShell `''`, POSIX `'\''`, a
+backslash-escaped `\"` or cmd's `\^"`) never ends that URL. Do not echo a
 value you extracted from a raw token, such as a parsed password or a
 fragment cut at a delimiter. Build diagnostics from redacted tokens, or omit
 the extracted value. When a retry
@@ -3708,7 +3708,10 @@ apply. The callback then receives `callerClaimScoped: true` and must leave
 the holder's ownership unchanged. A scoped mutation that changes nothing
 writes nothing, not even implicit deferral cleanup. `pm release` uses this,
 so a close's holder never clears a later holder's claim and a status-changing
-release in that state is refused
+release in that state is refused. The scope holds only while the item's
+history can prove that a close ended the caller's claim. After
+`history-compact` folds the claim and the close into a baseline, or when the
+stream cannot be replayed, the ownership policy applies
 ([GH-1774](https://github.com/unbraind/pm-cli/issues/1774)).
 
 `resolveLifecycleVerbRecovery(verb, availablePaths)` returns explicit argument
