@@ -799,9 +799,18 @@ describe("runClaim/runRelease", () => {
         const before = await itemState(context, id);
         await expect(fence(() => runRelease(id, true, global, { author: "agent-a" }))).rejects.toMatchObject<PmCliError>({
           code: "pause_item_changed",
-          context: expect.objectContaining({ item_id: id, nextSteps: [expect.stringContaining(`release ${id} --pause`)] }),
+          context: expect.objectContaining({ item_id: id, nextSteps: [expect.stringContaining(`release ${id} --pause --author agent-a`)] }),
         });
         expect(await itemState(context, id)).toEqual(before);
+        // A reproducible clock can hold updated_at still; the history stream's growth still trips the fence.
+        vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-11-24T00:00:00.000Z") });
+        try {
+          const frozen = await assertPauseKeepsLaterHolder(id, global, "agent-b");
+          expect(context.runCli(["comments", id, "--add", "frozen-clock progress", "--author", "agent-b"]).code).toBe(0);
+          await expect(frozen(() => runRelease(id, false, global, { author: "agent-b" }))).rejects.toMatchObject<PmCliError>({ code: "pause_item_changed" });
+        } finally {
+          vi.useRealTimers();
+        }
         // The same holder with a newer write (a close and reclaim, or any other change) also refuses.
         const judgedOnce = await assertPauseKeepsLaterHolder(id, global, "agent-b");
         expect(context.runCli(["comments", id, "--add", "progress", "--author", "agent-b"]).code).toBe(0);
@@ -812,11 +821,12 @@ describe("runClaim/runRelease", () => {
       });
     });
 
-    it("keeps the takeover hint on the detected author when no explicit author was passed", () => {
-      for (const author of [undefined, "  "]) {
-        const refusal = _testOnlyClaimCommand.releaseClaimEndedRefusal("pm-x", "agent-b", "--pause", { path: "/tmp/other tracker" }, author);
-        expect(refusal.context.nextSteps?.[1]).toBe('Take the item first with a coordinated pm --pm-path "/tmp/other tracker" claim pm-x --force only when that takeover is approved.');
-      }
+    it("keeps the takeover hint on the detected author only when no author was supplied", () => {
+      const refusal = (author: string | undefined) =>
+        _testOnlyClaimCommand.releaseClaimEndedRefusal("pm-x", "agent-b", "--pause", { path: "/tmp/other tracker" }, author).context.nextSteps?.[1];
+      expect(refusal(undefined)).toBe('Take the item first with a coordinated pm --pm-path "/tmp/other tracker" claim pm-x --force only when that takeover is approved.');
+      // A supplied blank author resolves differently from an omitted one, so it is kept.
+      expect(refusal("")).toBe('Take the item first with a coordinated pm --pm-path "/tmp/other tracker" claim pm-x --force --author "" only when that takeover is approved.');
     });
 
     it("leaves every other pause to the ownership policy", async () => {
@@ -826,6 +836,10 @@ describe("runClaim/runRelease", () => {
         // Unclaimed, missing and stranger-held items pass the pre-check; the pause's own writes judge them.
         const unclaimed = createTask(context, { title: "pause-unclaimed", status: "in_progress" });
         await expect(assertPauseKeepsLaterHolder(unclaimed, global, "agent-a")).resolves.toBeTypeOf("function");
+        // An item whose history stream is missing still gets a fence: its fingerprint records the absent stream.
+        const streamless = createTask(context, { title: "pause-streamless", status: "in_progress" });
+        await rm(getHistoryPath(context.pmPath, streamless));
+        await expect(assertPauseKeepsLaterHolder(streamless, global, "agent-a")).resolves.toBeTypeOf("function");
         // A missing item gets a pass-through fence; the pause's own update reports it.
         const missingFence = await assertPauseKeepsLaterHolder("pm-missing-id", global, "agent-a");
         await expect(missingFence(async () => "written")).resolves.toBe("written");

@@ -3674,9 +3674,11 @@ with a single-label username, across whitespace through the word that holds
 its last `@` or `%40`
 ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon);
 tracker record excluded from npm), so `https://user:pass words@host` is
-redacted in free text. A whitespace-bearing bare token (`https://my token@host`)
-or a separator beyond 16 words or 512 characters is still complete only when you
-redact the original token before interpolating it into text. Do not echo a
+redacted in free text. A whitespace-bearing bare token (`https://my token@host`),
+a separator beyond 16 words or 512 characters, or a whitespace-bearing
+password holding an apostrophe that a single-quoting dialect (POSIX for an
+argument with `!`, PowerShell) doubled or escaped is still complete only
+when you redact the original token before interpolating it into text. Do not echo a
 value you extracted from a raw token, such as a parsed password or a
 fragment cut at a delimiter. Build diagnostics from redacted tokens, or omit
 the extracted value. When a retry

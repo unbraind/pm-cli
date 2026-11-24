@@ -225,6 +225,9 @@ describe("argv-utils shell dialects (pm-kjoudp, GH-1774)", () => {
     expect(quoteCommandArg("literal !!", "linux", "posix")).toBe("'literal !!'");
     expect(quotePosixCommandArg("it's !$")).toBe("'it'\\''s !$'");
     expect(quoteCommandArg("no bang $HOME", "linux", "posix")).toBe('"no bang \\$HOME"');
+    // zsh expands a leading = to a command path (=git), so such a token is quoted.
+    expect(quoteCommandArg("=git", "linux", "posix")).toBe('"=git"');
+    expect(quoteCommandArg("a=b", "linux", "posix")).toBe("a=b");
   });
 
   it("follows PM_COMMAND_SHELL when no dialect is passed", () => {

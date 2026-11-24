@@ -312,6 +312,12 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(redactUrlCredentialsInText(rendered)).toBe('pm package install ^"https://[redacted]%^40example.test/repo^"');
     expect(redactUrlCredentialsInText(JSON.stringify({ next_steps: [rendered] }))).not.toContain("sample");
     expect(redactUrlCredentialsInToken("https://ci:sample%^40example.test/repo")).toBe("https://[redacted]%^40example.test/repo");
+    // Inside an invocation, registered spellings never remove the separator the URL rule needs.
+    const tokenInUsername = "https://ghp_abcdefghijkl:x-oauth-basic%40github.com/x";
+    runWithUrlCredentialInvocation(["clone", tokenInUsername], () => {
+      const echoed = redactUrlCredentialsInText(`pm clone ${quoteCommandArg(tokenInUsername, "win32", "cmd")}`);
+      expect(echoed).toBe('pm clone ^"https://[redacted]%^40github.com/x^"');
+    });
     // A spaced userinfo ended by the caret form is joined as one span too.
     expect(redactUrlCredentialsInText("clone https://ci:my secret%^40example.test/repo")).not.toMatch(/my |secret/u);
   });

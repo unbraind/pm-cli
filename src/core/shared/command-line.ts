@@ -117,7 +117,8 @@ export const quotePowerShellCommandArg = (arg: string): string =>
 
 /** Bare tokens each dialect passes through unchanged. */
 const SAFE_BARE_TOKEN: Readonly<Record<CommandShellDialect, RegExp>> = {
-  posix: /^[A-Za-z0-9._:/@=-]+$/u,
+  // A leading `=` is zsh's `=command` path expansion.
+  posix: /^(?!=)[A-Za-z0-9._:/@=-]+$/u,
   cmd: /^[A-Za-z0-9._:/\\@=-]+$/u,
   // A leading `@` splats in PowerShell, and a bare `--` can be consumed by the parameter binder.
   powershell: /^(?!--$)[A-Za-z0-9._:/\\=-][A-Za-z0-9._:/\\@=-]*$/u,

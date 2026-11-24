@@ -73,9 +73,14 @@ export interface ItemOwnershipActivity extends ItemOwnershipConflict {
   activity: ClaimActivityEvidence;
 }
 
-/** A measured age in whole hours, or null when it could not be computed. */
-function finiteHoursOrNull(hours: number): number | null {
-  return Number.isFinite(hours) ? hours : null;
+/**
+ * Whole hours from a valid timestamp to the evaluation clock, or null when
+ * the timestamp is missing or the clock is not finite (NaN, either
+ * infinity), so an unmeasurable age is never reported as zero.
+ */
+function measuredHoursSince(timestamp: string | null, nowMs: number): number | null {
+  // Both callers pass a timestamp that already parses, so a finite clock always yields finite hours.
+  return timestamp === null || !Number.isFinite(nowMs) ? null : wholeHoursSince(timestamp, nowMs);
 }
 
 /** Evaluate claim age, last activity and stale-claim eligibility from one item's evidence. */
@@ -88,8 +93,7 @@ export function evaluateClaimActivity(
   const thresholdHours = normalizeStaleWorkThresholdHours(options.threshold_hours);
   const lastActivityAt = resolveLastActivityAt(options.updated_at, latestHistoryAt) ?? null;
   const validClaimedAt = claimedAt !== null && Number.isFinite(Date.parse(claimedAt)) ? claimedAt : null;
-  // An evaluation clock that is not a finite time (`new Date(NaN)`) measures nothing, so ages are unknown.
-  const idleHours = lastActivityAt === null ? null : finiteHoursOrNull(wholeHoursSince(lastActivityAt, nowMs));
+  const idleHours = measuredHoursSince(lastActivityAt, nowMs);
   // Unknown or unprovable activity never qualifies: a takeover needs positive evidence of idleness.
   const judgeable =
     idleHours !== null && options.history_unreadable !== true && options.unproven_activity === undefined;
@@ -100,7 +104,7 @@ export function evaluateClaimActivity(
     ...(options.unproven_activity === undefined ? {} : { unproven_activity: options.unproven_activity }),
     // Unjudgeable activity is its own state, never reported as active (GH-1774).
     state: judgeable ? (stale ? "stale" : "active") : "unknown",
-    claim_age_hours: validClaimedAt === null ? null : finiteHoursOrNull(wholeHoursSince(validClaimedAt, nowMs)),
+    claim_age_hours: measuredHoursSince(validClaimedAt, nowMs),
     idle_hours: idleHours,
     stale_policy: {
       setting: STALE_WORK_THRESHOLD_SETTING,
@@ -318,10 +322,10 @@ function writeHolderObject(fields: HolderFields, metadata: Record<string, unknow
   for (const key of HOLDER_FIELD_PATHS.values()) writeHolderField(fields, key, metadata[key]);
 }
 
-/** The metadata object a whole-document write carries, in either era's key. */
+/** The metadata a whole-document write carries, or undefined unless it has replay's shape (object `metadata`, string `body`). */
 function documentMetadata(value: unknown): unknown {
-  if (!isObjectValue(value)) return undefined;
-  return value.metadata ?? value.front_matter;
+  if (!isObjectValue(value) || typeof value.body !== "string") return undefined;
+  return value.metadata;
 }
 
 /** Whether a normalized path replaces a holder field: the field, the metadata object or the whole document. */

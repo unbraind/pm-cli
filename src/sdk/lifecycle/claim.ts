@@ -3,6 +3,7 @@
  *
  * Implements the pm claim command surface and its agent-facing runtime behavior.
  */
+import { statSync } from "node:fs";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   resolveRuntimeStatusRegistry,
@@ -32,6 +33,7 @@ import {
 } from "../ownership-source.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 import { runWithItemMutationPrecondition } from "../../core/store/item-mutation-precondition.js";
+import { getHistoryPath } from "../../core/store/paths.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
 import { admitExplicitStartClaim, admitStartTransition, START_BLOCKED_REFUSAL_CODE } from "./start-blockers.js";
@@ -786,6 +788,15 @@ function noAvailableNextItemError(attempts: number, startRefused: readonly strin
   );
 }
 
+/**
+ * The `--author` an explicit actor passed, for a rendered retry or takeover,
+ * so copying it never acts as the configured default author. A supplied blank
+ * value is kept too: it resolves differently from an omitted one.
+ */
+function explicitActorArgs(explicitAuthor: string | undefined): string[] {
+  return explicitAuthor === undefined ? [] : ["--author", redactIdentityCredentials(explicitAuthor)];
+}
+
 /** Stable warning when a release by the holder a close ended leaves a later holder's claim in place (GH-1774). */
 export const RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING = "release_claim_ended_by_close";
 
@@ -801,8 +812,7 @@ function releaseClaimEndedRefusal(
   global: GlobalOptions,
   explicitAuthor: string | undefined,
 ): PmCliError {
-  // An explicit actor stays on the takeover hint, so copying it never claims as the configured default author.
-  const actor = explicitAuthor?.trim() ? ["--author", redactIdentityCredentials(explicitAuthor.trim())] : [];
+  const actor = explicitActorArgs(explicitAuthor);
   return new PmCliError(
     `A close of ${itemId} already ended your claim, and ${holder} has claimed it since; ${action} cannot move or release another holder's claim.`,
     EXIT_CODE.CONFLICT,
@@ -852,20 +862,22 @@ export async function assertPauseKeepsLaterHolder(
   if (judged !== undefined && judged !== callerPrincipal && (await callerClaimEndedByClose(pmRoot, located.id, callerPrincipal))) {
     throw releaseClaimEndedRefusal(located.id, redactIdentityCredentials(document.metadata.assignee!.trim()), "--pause", global, author);
   }
-  // The judgement holds only for the item it read: every write advances updated_at, so a claim, close or
-  // reopen that lands before the status write takes its lock changes this fingerprint.
-  const judgedState = pauseJudgementFingerprint(document.metadata);
+  // The judgement holds only for the item it read. Every write appends to the item's history stream (and
+  // advances updated_at unless a reproducible clock holds it), so a claim, close or reopen that lands
+  // before the status write takes its lock changes this fingerprint.
+  const historyPath = getHistoryPath(pmRoot, located.id);
+  const judgedState = pauseJudgementFingerprint(document.metadata, historyPath);
   return (write) =>
     runWithItemMutationPrecondition(
       {
         pmRoot,
         id: located.id,
         validate: (locked) => {
-          if (pauseJudgementFingerprint(locked.metadata) === judgedState) return;
+          if (pauseJudgementFingerprint(locked.metadata, historyPath) === judgedState) return;
           throw new PmCliError(`${located.id} changed while the pause was judged, so nothing was written.`, EXIT_CODE.CONFLICT, {
             code: PAUSE_ITEM_CHANGED_CODE,
             item_id: located.id,
-            nextSteps: [`Retry ${renderPmCommand([...resolvePmCommandScopeArgs(global), "release", located.id, "--pause"])} to judge the current holder.`],
+            nextSteps: [`Retry ${renderPmCommand([...resolvePmCommandScopeArgs(global), "release", located.id, "--pause", ...explicitActorArgs(author)])} to judge the current holder.`],
           });
         },
       },
@@ -876,9 +888,18 @@ export async function assertPauseKeepsLaterHolder(
 /** Stable refusal code when the item changes between a pause's judgement and its status write (GH-1774). */
 export const PAUSE_ITEM_CHANGED_CODE = "pause_item_changed";
 
-/** What a pause judged: the holder principal, the status and the time of the last write. */
-function pauseJudgementFingerprint(metadata: ItemMetadata): string {
-  return JSON.stringify([documentHolderPrincipal(metadata) ?? null, metadata.status, metadata.updated_at]);
+/** What a pause judged: the holder principal, the status, the time of the last write and the history stream's size. */
+function pauseJudgementFingerprint(metadata: ItemMetadata, historyPath: string): string {
+  return JSON.stringify([documentHolderPrincipal(metadata) ?? null, metadata.status, metadata.updated_at, historyStreamSize(historyPath)]);
+}
+
+/** Byte size of an item's history stream, or -1 when it cannot be read; any append changes it. */
+function historyStreamSize(historyPath: string): number {
+  try {
+    return statSync(historyPath).size;
+  } catch {
+    return -1;
+  }
 }
 
 /** Implements run release for the public runtime surface of this module. */

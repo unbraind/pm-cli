@@ -44,10 +44,12 @@ const HOSTILE_ARGUMENTS = [
   "^caret ^& (paren) <in> >out |pipe",
   "!bang!",
   "literal !! and !$ and it's !",
+  "=node",
   "line;next",
 ];
 
 const historyBash = spawnSync("bash", ["--version"]).status === 0;
+const zsh = spawnSync("zsh", ["--version"]).status === 0;
 const powerShell = ["pwsh"].find((candidate) => spawnSync(candidate, ["-NoProfile", "-Command", "exit 0"]).status === 0);
 
 let workdir: string;
@@ -95,6 +97,12 @@ describe("rendered command arguments survive their declared shell unchanged", ()
     const echoed = String(result.stdout).split("\n").find((output) => output.startsWith("["));
     expect(echoed, String(result.stderr)).toBeDefined();
     expect(JSON.parse(echoed!)).toEqual(HOSTILE_ARGUMENTS);
+  });
+
+  it.runIf(process.platform !== "win32" && zsh)("posix: zsh with =command expansion receives every argument literally", () => {
+    const line = `${quoteCommandArg(process.execPath, process.platform, "posix")} ${quoteCommandArg(echoScript, process.platform, "posix")} ${renderArguments("posix")}`;
+    const result = spawnSync("zsh", ["-f", "-s"], { env, input: `${line}\n`, timeout: 30_000 });
+    expect(parseEcho(result)).toEqual(HOSTILE_ARGUMENTS);
   });
 
   it.runIf(process.platform === "win32")("cmd: cmd.exe /c neither expands %VAR% nor splits at a quoted &", () => {

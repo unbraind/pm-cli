@@ -84,6 +84,15 @@ describe("claim activity evidence (GH-1336)", () => {
     expect(
       evaluateClaimActivity("2026-07-20T12:00:00.000Z", undefined, { updated_at: "2026-07-21T12:00:00.000Z", threshold_hours: 72, now: new Date(Number.NaN) }),
     ).toMatchObject({ state: "unknown", claim_age_hours: null, idle_hours: null, stale_policy: { stale: false, eligible_at: null } });
+    // A custom clock reading either infinity is unmeasurable too, never clamped to zero hours.
+    class EndlessPast extends Date {
+      override getTime(): number {
+        return Number.NEGATIVE_INFINITY;
+      }
+    }
+    expect(
+      evaluateClaimActivity("2026-07-20T12:00:00.000Z", undefined, { updated_at: "2026-07-21T12:00:00.000Z", threshold_hours: 72, now: new EndlessPast() }),
+    ).toMatchObject({ state: "unknown", claim_age_hours: null, idle_hours: null });
   });
 
   it("derives the holder and its activity from one stream read", async () => {
@@ -369,7 +378,10 @@ describe("claim activity evidence (GH-1336)", () => {
         record("close", [{ op: "replace", path: "", value: { front_matter: { id: "pm-root-legacy", status: "closed" }, body: "" } }]),
         claimB,
       ]);
-      expect(await callerClaimEndedByClose(pmRoot, "pm-root-legacy", "agent-a")).toBe(true);
+      // Replay accepts a whole document only as object metadata with a string body, so a front_matter root proves nothing.
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-legacy", "agent-a")).toBe(false);
+      await write("pm-root-no-body", [claimA, record("close", [{ op: "replace", path: "", value: { metadata: { id: "pm-root-no-body" } } }]), claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-no-body", "agent-a#1")).toBe(false);
       // A whole-document write of another shape is rejected by strict replay, so the close proves nothing.
       await write("pm-root-not-object", [claimA, record("close", [{ op: "replace", path: "", value: "x" }]), claimB]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-root-not-object", "agent-a#1")).toBe(false);
