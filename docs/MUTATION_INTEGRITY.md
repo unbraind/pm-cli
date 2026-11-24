@@ -610,9 +610,11 @@ combine:
   parser takes the authority's last `@`; a word that starts another URL (its
   scheme opens the word, so a redirect inside a query does not), or holds the
   URL's closing delimiter, or, for a WHATWG special scheme (`http`, `https`,
-  `ws`, `wss`, `ftp`, `file`), a path delimiter, before any separator, ends the
-  search. Any other scheme reads userinfo across slashes, as OpenSSH reads
-  `ssh://a/b@host` as user `a/b`. The joined span is redacted exactly as the same
+  `ws`, `wss`, `ftp`, `file`), a path, query or fragment delimiter, before any
+  separator, ends the search; such a delimiter in the opening word's authority
+  means no later word can hold its userinfo. Any other scheme reads userinfo
+  across slashes, query and fragment marks, as OpenSSH reads `ssh://a/b@host`
+  as user `a/b`. The joined span is redacted exactly as the same
   URL without blanks. So stored text a refusal echoes, such as a blocker title
   holding `https://user:pass words%40host/path`, loses its whole userinfo,
   while `https://host.example:8080 … @bob`, `https://host and ping @bob`,

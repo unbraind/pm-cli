@@ -190,6 +190,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // CodeRabbit review round 5: a path after the authority that a tab split from its scheme.
     ["a token username after a tab before a path", "https://\tfixtureToken:x@example.invalid/repo", "https://[redacted]@example.invalid/repo"],
     ["a token username after a tab in an SSH URL", "ssh://\tfixtureToken:x@host/repo", "ssh://[redacted]@host/repo"],
+    // CodeRabbit review round 7: a quoted URL whose authority a tab split from its scheme.
+    ["a quoted token username after a tab", '"https://\tfixtureToken:x@example.invalid"', '"https://[redacted]@example.invalid"'],
     // Greptile review round 3.
     ["a numeric username part", "https://service 123:pass words@host/x", "https://[redacted]@host/x"],
     ["a parenthesis inside a parenthesized URL's password", "(https://ci:pa)ss words@host/x)", "(https://[redacted]@host/x)"],
@@ -232,6 +234,10 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a bare scheme before a host and port", "https://\texample.com:8080 ping @bob"],
     // Greptile review round 10: a path after a tab-split authority ends it before later prose.
     ["a tab-split public link before prose with a colon and a mention", "https://\texample.com/docs status:404 then ping @oncall"],
+    // CodeRabbit review round 7: a special scheme's query or fragment ends its authority.
+    ["a public link with a query before prose with a colon and a mention", "See https://example.invalid?next=docs status:404 notify @oncall"],
+    ["a public link with a fragment before prose with a colon and a mention", "See https://example.invalid#top status:404 notify @oncall"],
+    ["a quoted public authority after a tab before prose", '"https://\texample.com" status:404 notify @oncall'],
     ["a clock time in prose", "See https://example.com at 09:30 and ping @oncall"],
     ["a Windows drive path before an error code and a mention", "Log output C:/Temp (code:ENOENT), fix and notify @admin"],
     ["a Markdown link before prose with a colon and a mention", "See [docs](https://example.invalid) status:404 then ping @oncall."],

@@ -1297,12 +1297,15 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   const other = kind === DOUBLE_STRING ? "'" : "\"";
   // Whether the value opened a quoted span of the other kind that is still open: a closer there is
   // that span's data (`password: "v7'>…"` after a stray apostrophe), never the enclosing string's end.
-  const own: OwnQuoteState = { open: false, placeholder: false };
+  const own: OwnQuoteState = { open: false, placeholder: false, references: [] };
   const last = Math.min(end, content.length - 1);
   while (lexer.index <= last) {
     trackOwnQuote(own, content, lexer.index, other);
     const closed = lexStep(lexer);
-    if (closed !== -1) return closesValueAt(content, closed, end, own.open || own.placeholder) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
+    if (closed !== -1) {
+      const insideOwnText = own.open || own.placeholder || own.references.length > 0;
+      return closesValueAt(content, closed, end, insideOwnText) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
+    }
     // A line break ended the string before any closing quote.
     if (lexer.state !== kind) return -1;
   }
@@ -1314,18 +1317,22 @@ const COMPLETE_PLACEHOLDER = /^<[^<>\s]{0,254}>/u;
 /** Code units read ahead for a complete placeholder. */
 const PLACEHOLDER_BOUND = 256;
 
-/** The value's own quoted span state while the lexer walks it, and whether an angle placeholder is open there. */
+/** The value's own quoted span state while the lexer walks it, whether an angle placeholder is open, and the references open there. */
 interface OwnQuoteState {
   open: boolean;
   placeholder: boolean;
+  /** Closers of the `${…}` and `$(…)` references open at the walk, innermost last. */
+  references: string[];
 }
 
 /**
  * Read one character of a value for its own quote state. Quotes inside an
  * angle placeholder (`<team-'s-password>`) are its text and never open or
  * close the value's own span. A reference keeps its quotes, because the shell
- * reads them (`${X:-"…"}` holds a quoted default). Elsewhere a quote of the
- * other kind opens or closes the span (see opensOwnQuote).
+ * reads them (`${X:-"…"}` holds a quoted default), and while one is open any
+ * quote of the enclosing kind is its text too (`${X:-a'…'}`), so no closer
+ * there ends the value. Elsewhere a quote of the other kind opens or closes
+ * the span (see opensOwnQuote).
  */
 function trackOwnQuote(own: OwnQuoteState, content: string, index: number, other: string): void {
   const character = content[index];
@@ -1333,6 +1340,10 @@ function trackOwnQuote(own: OwnQuoteState, content: string, index: number, other
     if (character === other) own.open = false;
   } else if (own.placeholder) {
     if (character === ">") own.placeholder = false;
+  } else if (character === "$" && (content[index + 1] === "{" || content[index + 1] === "(")) {
+    own.references.push(content[index + 1] === "{" ? "}" : ")");
+  } else if (character === own.references.at(-1)) {
+    own.references.pop();
   } else if (character === "<" && COMPLETE_PLACEHOLDER.test(content.slice(index, index + PLACEHOLDER_BOUND))) {
     // Only a complete placeholder (`<team-'s-password>`), never a redirection (`$(cat <file)`).
     own.placeholder = true;

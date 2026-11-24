@@ -195,6 +195,8 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`{"title":"${passwordKey}: ${D}(cat <file)","updated":"ok"}`)).toEqual([]);
     // CodeRabbit round 5: a quote inside an angle placeholder is never a cut point.
     expect(rulesOf(`{note: x='bad, ${passwordKey}: <a'b>${literal}}`)).toEqual(["password_assignment"]);
+    // CodeRabbit round 7: a quote of the enclosing kind inside a reference is the reference's text.
+    expect(rulesOf(`x='y ${passwordKey}: ${D}{X:-a'>${literal}'}`)).toEqual(["password_assignment"]);
     // Greptile round 9: a reference keeps its quotes, so a quoted default is the value's own text.
     expect(rulesOf(`x='y ${passwordKey}: ${D}{X:-"'>${literal}"}`)).toEqual(["password_assignment"]);
     // Greptile round 6: a double quote after a plain prefix opens the value's own shell piece.

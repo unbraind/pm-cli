@@ -383,9 +383,10 @@ function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
   if (start === word.length) return { kind: "pending", closer, special };
   const authority = word.slice(start);
-  if (authority.startsWith("[") || (special && /[/\\]/u.test(authority)) || closingDelimiterAt(authority, closer) >= 0) return undefined;
-  // Only a special scheme's authority ends at a query or fragment; OpenSSH reads userinfo across them.
-  const kind = authorityOpening(special ? authority.split(/[?#]/u, 1)[0]! : authority);
+  // A special scheme's authority ends at a path, query or fragment, so no later word can hold its userinfo.
+  if (authority.startsWith("[") || (special && /[/\\?#]/u.test(authority)) || closingDelimiterAt(authority, closer) >= 0) return undefined;
+  // A special scheme's authority with a query or fragment was refused above; OpenSSH reads userinfo across them.
+  const kind = authorityOpening(authority);
   return kind === undefined ? undefined : { kind, closer, special };
 }
 
@@ -434,9 +435,8 @@ function schemeStartBefore(word: string, colon: number): number {
   return start;
 }
 
-/** How an authority head (before any query or fragment) opens a whitespace-bearing userinfo. */
+/** How a non-empty authority head (before any query or fragment) opens a whitespace-bearing userinfo. */
 function authorityOpening(head: string): "user" | "label" | undefined {
-  if (head === "") return undefined;
   if (head.includes(":")) return head.length <= HOST_PORT_MAX_LENGTH && HOST_PORT.test(head) ? undefined : "user";
   return /@|%40/iu.test(head) ? undefined : "label";
 }
@@ -533,8 +533,9 @@ function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpenin
   closedByOpener: boolean;
   endsAuthority: boolean;
 } {
-  // Only a special scheme's authority ends at a path delimiter; OpenSSH reads `ssh://a/b@host` as user `a/b`.
-  const delimiter = opening.special ? word.search(/[/\\]/u) : -1;
+  // Only a special scheme's authority ends at a path, query or fragment delimiter; OpenSSH reads
+  // `ssh://a/b@host` as user `a/b`.
+  const delimiter = opening.special ? word.search(/[/\\?#]/u) : -1;
   const beforePath = delimiter < 0 ? word : word.slice(0, delimiter);
   const closed = closingDelimiterAt(beforePath, opening.closer);
   const scheme = word.search(/:[/\\]/u);
@@ -584,11 +585,14 @@ function openingAt(text: string, word: string, from: number): { opening: SpacedO
   const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
   if (next === undefined) return undefined;
   const nextText = text.slice(next[0], next[1]);
-  const authorityWord = opening.special ? nextText.split(/[/\\]/u, 1)[0]! : nextText;
+  const pathless = opening.special ? nextText.split(/[/\\?#]/u, 1)[0]! : nextText;
+  // The delimiter that opened a quoted URL closes its authority too (`"https://` tab `token:x@host"`).
+  const closed = closingDelimiterAt(pathless, opening.closer);
+  const authorityWord = closed < 0 ? pathless : pathless.slice(0, closed);
   const joined = spacedUserinfoOpening(`${word}${authorityWord}`);
   if (joined === undefined || joined.kind === "pending") return undefined;
   const seed = joined.kind === "user" && /@|%40/iu.test(authorityWord) ? next[1] : -1;
-  // A path in that word already ended the authority, so later prose is never searched (`https://` tab `host/docs …`).
+  // A path, query, fragment or closing delimiter in that word already ended the authority, so later prose is never searched.
   return { opening: joined, from: next[1], seed, final: authorityWord.length < nextText.length };
 }
 
