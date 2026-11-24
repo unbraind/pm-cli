@@ -1240,7 +1240,8 @@ function endsWordAfterQuote(content: string, at: number, opening: StringOpening)
   // The next member or element after the structure ends the word only for a string in a container;
   // after a shell word's closing quote, `,"…"` is more of the same word (`echo "…${EMPTY}","…"`).
   if (!opening.inContainer) return false;
-  const next = content.slice(index, index + 40);
+  // Read enough of the next token to see a long scalar or flow key whole (bounded, once per closer).
+  const next = content.slice(index, index + NEXT_TOKEN_BOUND);
   return NEXT_MEMBER.test(next) || BARE_SCALAR_MEMBER.test(next) || YAML_FLOW_KEY.test(next);
 }
 
@@ -1251,8 +1252,10 @@ function endsRightAfterQuote(content: string, index: number, opening: StringOpen
   return opening.attribute && (content[index] === ">" || content.startsWith("/>", index));
 }
 
+/** Code units of the next member read after a closing quote's structure. */
+const NEXT_TOKEN_BOUND = 512;
 /** An unquoted YAML flow key and its separator, the next member of `{title: "…", updated: ok}`. */
-const YAML_FLOW_KEY = /^[A-Za-z_][\w.-]{0,32}:(?:\s|$)/u;
+const YAML_FLOW_KEY = /^[A-Za-z_][\w.-]{0,480}:(?:\s|$)/u;
 
 /**
  * Where the string that a value starting at `valueStart` sits in closes, when
@@ -1271,14 +1274,19 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   if (kind === NO_STRING) return -1;
   const { content } = lexer;
   const opener = lexer.opener;
+  const other = kind === DOUBLE_STRING ? "'" : "\"";
+  // Whether the value opened a quoted span of the other kind that is still open: a closer there is
+  // that span's data (`password: "v7'>…"` after a stray apostrophe), never the enclosing string's end.
+  let ownQuoteOpen = false;
   const last = Math.min(end, content.length - 1);
   while (lexer.index <= last) {
+    if (content[lexer.index] === other) ownQuoteOpen = !ownQuoteOpen;
     const closed = lexStep(lexer);
     if (closed !== -1) {
-      // Inside the capture, a quote that a blank follows can only be data of the value's own quoted
-      // text (the grammar never reads a blank otherwise), so the string the lexer saw open there
-      // was a stray apostrophe's, and the grammar's reading is kept.
-      if (closed < end && /\s/u.test(content.charAt(closed + 1))) return -1;
+      // Inside the capture, a quote inside the value's own quoted text (another quote kind still
+      // open, or a blank after it, which the grammar reads only there) was a stray apostrophe's,
+      // so the grammar's reading is kept.
+      if (closed < end && (ownQuoteOpen || /\s/u.test(content.charAt(closed + 1)))) return -1;
       return endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
     }
     // A line break ended the string before any closing quote.

@@ -183,6 +183,18 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`{"title":"api_key=%DEPLOY_KEY%\\nmode=prod","updated":"ok"}`)).toEqual([]);
   });
 
+  it("never cuts a value while its own quote of the other kind is open (CodeRabbit round 2)", () => {
+    // An apostrophe after `=` opens a false attribute string; the quote inside the password is data.
+    expect(rulesOf(`x='y ${passwordKey}: "v7'>cV9uM2a!"`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`<a x='y ${passwordKey}: "v7'>cV9uM2a!"/>`)).toEqual(["password_assignment"]);
+  });
+
+  it("reads a long sibling scalar or flow key after a closing quote whole (CodeRabbit round 2)", () => {
+    expect(rulesOf(`["${passwordKey}: ${D}DB_PASSWORD",${"1".repeat(50)}]`)).toEqual([]);
+    expect(rulesOf(`{title: "${passwordKey}: ${D}DB_PASSWORD", ${"a".repeat(60)}: ok}`)).toEqual([]);
+    expect(rulesOf(`["${passwordKey}: ${D}DB_PASSWORD",word]`)).toEqual(["password_assignment"]);
+  });
+
   it("reads a JSON member value that starts on the next line", () => {
     expect(rulesOf(`{"title":\n  "${passwordKey}=${D}DB_PASSWORD","other":"ok"}`)).toEqual([]);
     // Greptile: an element after an opening bracket on the previous line is a container element too.

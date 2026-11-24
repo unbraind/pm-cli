@@ -439,10 +439,10 @@ function authorityOpening(head: string): "user" | "label" | undefined {
  * separator may run past the length bound (a long query), and each opening
  * reads at most that word and the bounded span before it.
  */
-function spacedUserinfoEnd(text: string, from: number, opening: SpacedOpening): number {
+function spacedUserinfoEnd(text: string, from: number, opening: SpacedOpening, seed = -1): number {
   const limit = Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH);
   let index = from;
-  let end = -1;
+  let end = seed;
   let colonSeen = opening.kind === "user";
   // A colon that a space follows (`account: secret`) is weaker evidence, because prose writes `support: me@x`.
   let spacedColonSeen = false;
@@ -562,15 +562,19 @@ function redactSpacedUserinfo(text: string): string {
   for (let match = word.exec(text); match !== null; match = word.exec(text)) {
     let opening = spacedUserinfoOpening(match[0]);
     let from = match.index + match[0].length;
+    let seed = -1;
     if (opening?.kind === "pending") {
       // Judge the authority that starts in the next word as if the blank between them were dropped.
       const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
       if (next === undefined) continue;
-      opening = spacedUserinfoOpening(`${match[0]}${text.slice(next[0], next[1])}`);
+      const authorityWord = text.slice(next[0], next[1]);
+      opening = spacedUserinfoOpening(`${match[0]}${authorityWord}`);
+      // That word may hold the whole userinfo (`https://` then a tab then `token:x@host`): join it at least.
+      if (opening?.kind === "user" && /@|%40/iu.test(authorityWord)) seed = next[1];
       from = next[1];
     }
     if (opening === undefined || opening.kind === "pending") continue;
-    const end = spacedUserinfoEnd(text, from, opening);
+    const end = spacedUserinfoEnd(text, from, opening, seed);
     if (end === -1) continue;
     result += `${text.slice(cursor, match.index)}${redactUrlCredentialsInToken(text.slice(match.index, end))}`;
     cursor = end;

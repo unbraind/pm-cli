@@ -173,6 +173,9 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // Codex review round 5.
     ["a credential URL nested in a public URL's query", "https://public.invalid/login?next=https://build:demo pass@private.invalid/repo", "https://[redacted]@private.invalid/repo"],
     ["a URL in parentheses", "See (https://ci:demo pass@host.invalid/x) now", "See (https://[redacted]@host.invalid/x) now"],
+    // CodeRabbit review round 2: the word after a tab holds the whole userinfo.
+    ["a token username after a tab", "https://\tfixtureToken:x@example.invalid", "https://[redacted]@example.invalid"],
+    ["a token username after a tab, then a later at sign", "https://\tfixtureToken:x@example.invalid then pass words@x", "https://[redacted]@x"],
     // Greptile review round 3.
     ["a numeric username part", "https://service 123:pass words@host/x", "https://[redacted]@host/x"],
     ["a parenthesis inside a parenthesized URL's password", "(https://ci:pa)ss words@host/x)", "(https://[redacted]@host/x)"],
