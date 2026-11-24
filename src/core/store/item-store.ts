@@ -837,6 +837,12 @@ function itemMutationLocation(storageId: string, callerClaimScoped: boolean): It
   return callerClaimScoped ? { storageId, callerClaimScoped: true } : { storageId };
 }
 
+/** Resolve deferrals the write settles, except on a caller-scoped no-op, which must leave the holder's item untouched. */
+function settleDeferralsUnlessScopedNoop(document: ItemDocument, changedFields: string[], callerClaimScoped: boolean): void {
+  if (callerClaimScoped && changedFields.length === 0) return;
+  recordResolvedDeferrals(document, changedFields);
+}
+
 /** An unchanged write is skipped on request, and always for a caller-scoped mutation, which must not touch the holder's item or its activity clock. */
 function skipsUnchangedWrite(skipNoop: boolean | undefined, callerClaimScoped: boolean): boolean {
   return skipNoop === true || callerClaimScoped;
@@ -881,7 +887,7 @@ async function mutateItemWithDeferredHistoryContext(
       extensionFieldNames: params.extensionFieldNames,
     });
     const mutation = await params.mutate(mutableDocument, itemMutationLocation(located.id, callerClaimScoped));
-    recordResolvedDeferrals(mutableDocument, mutation.changedFields);
+    settleDeferralsUnlessScopedNoop(mutableDocument, mutation.changedFields, callerClaimScoped);
     if (skipsUnchangedWrite(params.skipNoop, callerClaimScoped) && mutation.changedFields.length === 0) {
       return {
         item: beforeDocument.metadata,

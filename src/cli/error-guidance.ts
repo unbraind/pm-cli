@@ -764,15 +764,23 @@ function unknownActivityCause(activity: NonNullable<GuidanceMessage["claimActivi
   return "no valid activity time";
 }
 
+/** The activity state, derived as the SDK evaluator derives it when an older producer omitted it. */
+function claimActivityState(activity: NonNullable<GuidanceMessage["claimActivity"]>): "active" | "stale" | "unknown" {
+  if (activity.state !== undefined) return activity.state;
+  if (activity.history_unreadable === true || activity.unproven_activity !== undefined || activity.idle_hours === null) return "unknown";
+  return activity.stale_policy.stale ? "stale" : "active";
+}
+
 /** The holder's activity under the stale-work policy; unjudgeable activity is reported as unknown, never as active (GH-1774). */
 function renderClaimActivitySuffix(activity: GuidanceMessage["claimActivity"]): string {
   if (activity === undefined) return "";
   const policy = `${activity.stale_policy.setting}=${activity.stale_policy.threshold_hours}`;
-  if (activity.state === "unknown") {
+  const state = claimActivityState(activity);
+  if (state === "unknown") {
     const idle = activity.idle_hours === null ? "" : `, last recorded activity ${activity.idle_hours}h ago`;
     return `; activity unknown under ${policy} (${unknownActivityCause(activity)}${idle})`;
   }
-  return `; idle ${activity.idle_hours}h, ${activity.state} under ${policy}`;
+  return `; idle ${activity.idle_hours}h, ${state} under ${policy}`;
 }
 
 /** Headline, requirement, next steps, the non-duplicated detail and typed holder evidence. */

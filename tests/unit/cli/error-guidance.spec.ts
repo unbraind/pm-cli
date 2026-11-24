@@ -502,6 +502,16 @@ describe("pm cli error guidance context plumbing", () => {
         claim_activity: { ...activity(false, 3), unproven_activity: "rewritten_history", state: "unknown" },
       });
       expect(unproven).toContain("(idleness unproven: rewritten_history, last recorded activity 3h ago)");
+      // Evidence from an older producer without state is classified the way the SDK evaluator classifies it.
+      const legacy = (fields: Record<string, unknown>) => {
+        const { state: _omitted, ...rest } = { ...activity(false, 3), ...fields };
+        return formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: rest as never });
+      };
+      expect(legacy({})).toContain("; idle 3h, active under mutation_guard.stale_in_progress_hours=72");
+      expect(legacy({ stale_policy: { ...activity(true, 96).stale_policy } })).toContain("; idle 3h, stale under");
+      expect(legacy({ history_unreadable: true })).toContain("; activity unknown under mutation_guard.stale_in_progress_hours=72 (history unreadable");
+      expect(legacy({ unproven_activity: "workspace_restored" })).toContain("(idleness unproven: workspace_restored");
+      expect(legacy({ idle_hours: null })).toContain("(no valid activity time)");
       const envelope = formatPmCliErrorForJson(claimMessage, 4, { ...claimContext, claim_activity: activity(true, 96) });
       expect(envelope).toMatchObject({ claimed_by: "agent-a", claim_activity: activity(true, 96) });
       expect(projectLeanErrorEnvelope(envelope)).toMatchObject({ claim_activity: activity(true, 96) });

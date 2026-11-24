@@ -11,6 +11,7 @@ import {
 import {
   COMMAND_SHELL_ENV,
   quoteCmdCommandArg,
+  quotePosixCommandArg,
   quotePowerShellCommandArg,
   resolveCommandShellDialect,
 } from "../../../src/core/shared/command-line.js";
@@ -207,6 +208,12 @@ describe("argv-utils shell dialects (pm-kjoudp, GH-1774)", () => {
     expect(quoteCommandArg("user@host", "win32", "powershell")).toBe("user@host");
     expect(quoteCommandArg("C:\\repo\\pm", "linux", "powershell")).toBe("C:\\repo\\pm");
     expect(quoteCommandArg("", "win32", "powershell")).toBe("''");
+  });
+
+  it("single-quotes a POSIX argument holding ! so interactive bash and zsh cannot history-expand it (pm-oq893h)", () => {
+    expect(quoteCommandArg("literal !!", "linux")).toBe("'literal !!'");
+    expect(quotePosixCommandArg("it's !$")).toBe("'it'\\''s !$'");
+    expect(quoteCommandArg("no bang $HOME", "linux")).toBe('"no bang \\$HOME"');
   });
 
   it("follows PM_COMMAND_SHELL when no dialect is passed", () => {

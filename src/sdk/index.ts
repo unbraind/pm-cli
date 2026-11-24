@@ -162,6 +162,7 @@ export {
   COMMAND_SHELL_ENV,
   quoteCmdCommandArg,
   quoteCommandArg,
+  quotePosixCommandArg,
   quotePowerShellCommandArg,
   quoteWindowsCommandArg,
   redactUrlCredentialsInText,

@@ -139,8 +139,17 @@ export const quoteCommandArg = (
   if (shell === "powershell") {
     return quotePowerShellCommandArg(arg);
   }
-  return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
+  return quotePosixCommandArg(arg);
 };
+
+/**
+ * Quote one argument for a POSIX shell. Double quotes with `"`, `\`, `$` and
+ * backticks escaped are exact for `sh -c` and scripts; an argument holding
+ * `!` is single-quoted instead, because interactive bash and zsh
+ * history-expand `!` inside double quotes (pm-oq893h).
+ */
+export const quotePosixCommandArg = (arg: string): string =>
+  arg.includes("!") ? `'${arg.replaceAll("'", "'\\''")}'` : `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
 
 /** Render a complete pm command from already-tokenized arguments. */
 export const renderPmCommand = (

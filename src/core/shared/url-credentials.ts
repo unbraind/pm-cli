@@ -226,19 +226,30 @@ function lowerPreservingLength(text: string): string {
   return result;
 }
 
-/** Every spelling a span takes in raw text, in each rendered shell dialect's quoting and in a JSON string. */
-function spanSpellings(span: string): string[] {
+/**
+ * Every spelling a span takes in raw text, in each rendered shell dialect's
+ * quoting, and each of those again inside a JSON string. `separator` is the
+ * text that ends the span in its token (`@` or an encoded `%40`).
+ */
+function spanSpellings(span: string, separator: string): string[] {
   // A span always precedes the token's `@`, so no trailing backslash doubling applies.
   const windowsQuoted = quoteWindowsCommandArg(`${span}@`);
-  return [
+  const shellSpellings = [
     span,
     span.replaceAll(/(["\\$`])/gu, "\\$1"),
+    span.replaceAll("'", "'\\''"),
     windowsQuoted.slice(1, -2),
     // cmd.exe caret form: drop the escaped opening quote (`^"`) and the trailing `@^"`.
     escapeCmdMetacharacters(windowsQuoted).slice(2, -3),
     escapePowerShellSingleQuotes(span),
-    JSON.stringify(span).slice(1, -1),
   ];
+  if (separator !== "@") {
+    // The cmd caret form renders an encoded separator as `%^40`, which the text rule does not read
+    // as a separator, so the secret and its rendered separator are registered together; that run is
+    // at least one fragment long even when the secret alone is shorter (GH-1774).
+    shellSpellings.push(escapeCmdMetacharacters(quoteWindowsCommandArg(`${span}${separator}`)).slice(2, -2));
+  }
+  return [...shellSpellings, ...shellSpellings.map((spelling) => JSON.stringify(spelling).slice(1, -1))];
 }
 
 /** The secret part of a userinfo: the password, or the whole userinfo when it is a bare token; a username is not. */
@@ -254,7 +265,7 @@ function describeInvocation(argv: readonly string[]): InvocationCredentials {
     const bounds = userinfoBounds(token);
     if (!bounds) continue;
     carried = true;
-    for (const spelling of spanSpellings(userinfoSecret(token.slice(bounds[0], bounds[1])))) {
+    for (const spelling of spanSpellings(userinfoSecret(token.slice(bounds[0], bounds[1])), token.slice(bounds[1], bounds[1] + (token[bounds[1]] === "@" ? 1 : 3)))) {
       unique.add(lowerPreservingLength(spelling));
     }
   }

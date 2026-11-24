@@ -339,9 +339,11 @@ export interface PmCliErrorContext {
      * Holder activity under the stale-work policy: `stale` when idleness is
      * proven past the threshold, `active` when recorded activity is recent,
      * and `unknown` when the history is unreadable, cannot prove idleness, or
-     * no valid activity time is recorded (GH-1774).
+     * no valid activity time is recorded (GH-1774). pm always sets it;
+     * evidence built by an older producer may omit it, and readers then
+     * derive it from the other fields.
      */
-    state: "active" | "stale" | "unknown";
+    state?: "active" | "stale" | "unknown";
     /** Whole hours since `claimed_at`, or null when the claim time is unknown. */
     claim_age_hours: number | null;
     /** Whole hours since `last_activity_at`, or null when the activity time is unknown. */

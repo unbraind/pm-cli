@@ -5,6 +5,7 @@
  * claim or a general metadata assignment using the append-only history stream.
  */
 import { readHistoryEntries } from "../core/history/read.js";
+import { normalizeReplayPatchPath } from "../core/history/replay.js";
 import { getWorkspaceHistoryPath, WORKSPACE_HISTORY_ID } from "../core/history/workspace-history.js";
 import type { PmCliErrorContext } from "../core/shared/errors.js";
 import { redactIdentityCredentials } from "../core/shared/url-credentials.js";
@@ -72,6 +73,11 @@ export interface ItemOwnershipActivity extends ItemOwnershipConflict {
   activity: ClaimActivityEvidence;
 }
 
+/** A measured age in whole hours, or null when it could not be computed. */
+function finiteHoursOrNull(hours: number): number | null {
+  return Number.isFinite(hours) ? hours : null;
+}
+
 /** Evaluate claim age, last activity and stale-claim eligibility from one item's evidence. */
 export function evaluateClaimActivity(
   claimedAt: string | null,
@@ -82,10 +88,11 @@ export function evaluateClaimActivity(
   const thresholdHours = normalizeStaleWorkThresholdHours(options.threshold_hours);
   const lastActivityAt = resolveLastActivityAt(options.updated_at, latestHistoryAt) ?? null;
   const validClaimedAt = claimedAt !== null && Number.isFinite(Date.parse(claimedAt)) ? claimedAt : null;
-  const idleHours = lastActivityAt === null ? null : wholeHoursSince(lastActivityAt, nowMs);
+  // An evaluation clock that is not a finite time (`new Date(NaN)`) measures nothing, so ages are unknown.
+  const idleHours = lastActivityAt === null ? null : finiteHoursOrNull(wholeHoursSince(lastActivityAt, nowMs));
   // Unknown or unprovable activity never qualifies: a takeover needs positive evidence of idleness.
   const judgeable =
-    lastActivityAt !== null && options.history_unreadable !== true && options.unproven_activity === undefined;
+    idleHours !== null && options.history_unreadable !== true && options.unproven_activity === undefined;
   const stale = judgeable && (idleHours as number) >= thresholdHours;
   return {
     last_activity_at: lastActivityAt,
@@ -93,14 +100,15 @@ export function evaluateClaimActivity(
     ...(options.unproven_activity === undefined ? {} : { unproven_activity: options.unproven_activity }),
     // Unjudgeable activity is its own state, never reported as active (GH-1774).
     state: judgeable ? (stale ? "stale" : "active") : "unknown",
-    claim_age_hours: validClaimedAt === null ? null : wholeHoursSince(validClaimedAt, nowMs),
+    claim_age_hours: validClaimedAt === null ? null : finiteHoursOrNull(wholeHoursSince(validClaimedAt, nowMs)),
     idle_hours: idleHours,
     stale_policy: {
       setting: STALE_WORK_THRESHOLD_SETTING,
       threshold_hours: thresholdHours,
       stale,
       // A threshold past the Date range (accepted by settings) yields a null eligibility, never a throw.
-      eligible_at: judgeable ? staleEligibleAt(lastActivityAt, thresholdHours) : null,
+      // `judgeable` implies a measured idle time, so the activity time is a valid string.
+      eligible_at: judgeable ? staleEligibleAt(lastActivityAt as string, thresholdHours) : null,
     },
   };
 }
@@ -285,19 +293,61 @@ interface HolderFields {
   claim_principal?: string;
 }
 
-/** Apply one record's assignee and claim-principal operations to the tracked holder fields. */
-function applyHolderPatch(fields: HolderFields, patch: ReadonlyArray<{ path: string; value?: unknown }>): void {
-  for (const operation of patch as ReadonlyArray<{ op?: unknown; path: string; value?: unknown }>) {
-    const key = operation.path === ASSIGNEE_PATH ? "assignee" : operation.path === CLAIM_PRINCIPAL_PATH ? "claim_principal" : undefined;
-    if (key === undefined) continue;
-    if (operation.op === "remove") delete fields[key];
-    else if ((operation.op === "add" || operation.op === "replace") && typeof operation.value === "string") fields[key] = operation.value;
-  }
+/** Holder fields keyed by their normalized metadata path. */
+const HOLDER_FIELD_PATHS: ReadonlyMap<string, keyof HolderFields> = new Map([
+  [ASSIGNEE_PATH, "assignee"],
+  [CLAIM_PRINCIPAL_PATH, "claim_principal"],
+]);
+
+/** Set or clear one holder field from a written value; a value that is not a string clears it. */
+function writeHolderField(fields: HolderFields, key: keyof HolderFields, value: unknown): void {
+  if (typeof value === "string") fields[key] = value;
+  else delete fields[key];
 }
 
-/** The principal the ownership guard compares: the claim principal, else the assignee. */
+/** One JSON-patch operation as a decoded history record stores it. */
+type HolderPatchOperation = { op?: unknown; path: string; value?: unknown };
+
+/** Whether an operation writes its value (`add` or `replace`). */
+function writesValue(operation: HolderPatchOperation): boolean {
+  return operation.op === "add" || operation.op === "replace";
+}
+
+/** Apply a write or removal of the whole metadata object: both holder fields take the new object's values. */
+function applyMetadataObjectOperation(fields: HolderFields, operation: HolderPatchOperation): void {
+  if (!writesValue(operation) && operation.op !== "remove") return;
+  const value = writesValue(operation) ? operation.value : undefined;
+  const metadata = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  for (const key of HOLDER_FIELD_PATHS.values()) writeHolderField(fields, key, metadata[key]);
+}
+
+/** Apply one operation to the tracked holder fields; paths are normalized, so legacy `/front_matter/...` records count. */
+function applyHolderOperation(fields: HolderFields, operation: HolderPatchOperation): void {
+  const path = normalizeReplayPatchPath(operation.path);
+  if (path === "/metadata") {
+    applyMetadataObjectOperation(fields, operation);
+    return;
+  }
+  const key = HOLDER_FIELD_PATHS.get(path);
+  if (key === undefined) return;
+  if (operation.op === "remove") delete fields[key];
+  else if (writesValue(operation) && typeof operation.value === "string") fields[key] = operation.value;
+}
+
+/** Apply one record's assignee and claim-principal operations to the tracked holder fields. */
+function applyHolderPatch(fields: HolderFields, patch: ReadonlyArray<{ path: string; value?: unknown }>): void {
+  for (const operation of patch as ReadonlyArray<HolderPatchOperation>) applyHolderOperation(fields, operation);
+}
+
+/**
+ * The principal the ownership guard compares: the claim principal, else the
+ * assignee. As in the guard, an item without a non-empty assignee has no
+ * holder, even when a claim principal was left behind.
+ */
 function holderPrincipal(fields: HolderFields): string | undefined {
-  return fields.claim_principal?.trim() || fields.assignee?.trim() || undefined;
+  const assignee = fields.assignee?.trim();
+  if (!assignee) return undefined;
+  return fields.claim_principal?.trim() || assignee;
 }
 
 /**

@@ -3692,8 +3692,10 @@ or `powershell`), otherwise `cmd` on Windows and `posix` elsewhere. Pass a
 `CommandShellDialect` as the third argument to render for one shell
 explicitly. `quoteCmdCommandArg` caret-escapes an argument that holds `%` or
 `"`, so cmd.exe can neither expand `%VAR%` nor split the line.
-`quotePowerShellCommandArg` emits a single-quoted literal. The redaction
-rules above recognize a credential in every one of these spellings.
+`quotePowerShellCommandArg` emits a single-quoted literal, and
+`quotePosixCommandArg` single-quotes an argument that holds `!`. The
+redaction rules above recognize a credential in every one of these
+spellings, also when the rendered command is embedded in a JSON string.
 
 `callerClaimEndedByClose(pmRoot, storageId, callerPrincipal)` reports whether
 the caller's latest claim on an item was ended by a close. A package
@@ -3702,8 +3704,9 @@ mutation that should act only on the caller's own claim passes a
 true under the item lock, the assignee-conflict policy and `--force` do not
 apply. The callback then receives `callerClaimScoped: true` and must leave
 the holder's ownership unchanged. A scoped mutation that changes nothing
-writes nothing. `pm release` uses this, so a close's holder never clears a
-later holder's claim
+writes nothing, not even implicit deferral cleanup. `pm release` uses this,
+so a close's holder never clears a later holder's claim and a status-changing
+release in that state is refused
 ([GH-1774](https://github.com/unbraind/pm-cli/issues/1774)).
 
 `resolveLifecycleVerbRecovery(verb, availablePaths)` returns explicit argument

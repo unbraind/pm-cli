@@ -12,6 +12,10 @@ import {
   PmCliError,
   toItemRecord,
   mutateItem,
+  locateItem,
+  readLocatedItem,
+  resolveItemTypeRegistry,
+  getActiveExtensionRegistrations,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -784,6 +788,51 @@ function noAvailableNextItemError(attempts: number, startRefused: readonly strin
 /** Stable warning when a release by the holder a close ended leaves a later holder's claim in place (GH-1774). */
 export const RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING = "release_claim_ended_by_close";
 
+/**
+ * The refusal for a status-changing release (`--handoff`, `--pause`) by the
+ * holder a close ended: the item now belongs to a later holder, so the caller
+ * can neither move it nor clear that claim (GH-1774).
+ */
+function releaseClaimEndedRefusal(itemId: string, holder: string, action: "--handoff" | "--pause"): PmCliError {
+  return new PmCliError(
+    `A close of ${itemId} already ended your claim, and ${holder} has claimed it since; ${action} cannot move or release another holder's claim.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING,
+      item_id: itemId,
+      claimed_by: holder,
+      required: `Only the current holder (${holder}) can release or hand off ${itemId}.`,
+      why: "A close ends its holder's claim, so that holder's later release must not change work another principal claimed after it.",
+      nextSteps: [
+        `Ask ${holder} to release or hand off ${itemId}.`,
+        `Take the item first with a coordinated pm claim ${itemId} --force only when that takeover is approved.`,
+      ],
+    },
+  );
+}
+
+/**
+ * Refuse a `--pause` before its status write when the caller's claim on the
+ * item was ended by a close and another principal holds it now (GH-1774).
+ * The pause is two writes (status, then release), so the decision must come
+ * before the first one; the release re-judges under its own lock.
+ */
+export async function assertPauseKeepsLaterHolder(id: string, global: GlobalOptions, author: string | undefined): Promise<void> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const settings = await readSettings(pmRoot);
+  const callerPrincipal = resolveClaimPrincipal(resolveAuthor(author, settings.author_default));
+  const typeToFolder = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder;
+  // A missing item is left to the pause's own update, which reports it with its recovery.
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  if (!located) return;
+  const { document } = await readLocatedItem(located, { schema: settings.schema });
+  const assignee = document.metadata.assignee?.trim();
+  if (!assignee || (document.metadata.claim_principal?.trim() || assignee) === callerPrincipal) return;
+  if (await callerClaimEndedByClose(pmRoot, located.id, callerPrincipal)) {
+    throw releaseClaimEndedRefusal(located.id, redactIdentityCredentials(assignee), "--pause");
+  }
+}
+
 /** Implements run release for the public runtime surface of this module. */
 export async function runRelease(
   id: string,
@@ -822,18 +871,20 @@ export async function runRelease(
       message: options.message,
       force,
       bypassAssigneeConflict: ownershipReleaseBypass,
-      // A plain release by the holder a close ended acts only on that ended
-      // claim, so a holder who claimed the item afterwards keeps it under
-      // every ownership policy, --force included (GH-1774). A handoff or the
-      // package ownership-release bypass is an explicit change and keeps
-      // the ownership policy.
-      ...(handoffStatus === undefined && !ownershipReleaseBypass
-        ? { callerClaimScope: ({ storageId, callerPrincipal }) => callerClaimEndedByClose(pmRoot, storageId, callerPrincipal) }
-        : {}),
+      // A release by the holder a close ended acts only on that ended claim,
+      // so a holder who claimed the item afterwards keeps it under every
+      // ownership policy, --force included (GH-1774): a plain release is a
+      // no-op and a handoff is refused. The package ownership-release bypass
+      // is an explicit audited change and keeps the ownership policy.
+      ...(ownershipReleaseBypass
+        ? {}
+        : { callerClaimScope: ({ storageId, callerPrincipal }) => callerClaimEndedByClose(pmRoot, storageId, callerPrincipal) }),
       mutate(document, location) {
         if (location.callerClaimScoped === true) {
-          keptHolder = redactIdentityCredentials(document.metadata.assignee!.trim());
-          return { changedFields: [], warnings: [`${RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING}:${document.metadata.id}:${keptHolder}`] };
+          const holder = redactIdentityCredentials(document.metadata.assignee!.trim());
+          if (handoffStatus !== undefined) throw releaseClaimEndedRefusal(document.metadata.id, holder, "--handoff");
+          keptHolder = holder;
+          return { changedFields: [], warnings: [`${RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING}:${document.metadata.id}:${holder}`] };
         }
         previousAssignee = document.metadata.assignee ?? null;
         const transition = handoffStatus === undefined ? undefined : applyReleaseHandoff(document.metadata, handoffStatus, settings, statusRegistry, options.message!);
@@ -859,7 +910,8 @@ export async function runRelease(
   }
 
   const attribution = attributionAdvice(
-    await recordAttributionAfterCommit("release", result.item.id, global, false, () =>
+    // A scoped no-op committed nothing, so it records no post-commit attribution either.
+    await recordAttributionAfterCommit("release", result.item.id, global, keptHolder !== undefined, () =>
       recordReleaseSemanticAttribution({
         pmRoot,
         principal: claimPrincipal,

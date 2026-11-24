@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import { assertPauseKeepsLaterHolder } from "../../../../src/sdk/lifecycle/claim.js";
 import {
   claimNextFromRecommendations,
   isAlreadyClaimedError,
@@ -26,6 +27,7 @@ import {
   type TempPmContext,
 } from "../../../helpers/withTempPmPath.js";
 import { withIsolatedHarnessEnvironment } from "../../../helpers/withIsolatedHarnessEnvironment.js";
+import { runPauseTask } from "../../../../src/sdk/lifecycle/task-composition.js";
 
 function createTask(
   context: TempPmContext,
@@ -740,6 +742,95 @@ describe("runClaim/runRelease", () => {
         });
       }
     }
+
+    /** Claim and close as agent-a, reopen, then claim (and start) as agent-b. */
+    async function reopenedThenReclaimed(context: TempPmContext, title: string): Promise<string> {
+      const id = await closedThenReclaimed(context, title);
+      const global = { path: context.pmPath };
+      await runRelease(id, false, global, { author: "agent-b" });
+      const reopened = context.runCli(["item", "reopen", id, "Reopened for more work", "--author", "agent-b", "--json"], { expectJson: true });
+      expect(reopened.code, `${reopened.stdout}${reopened.stderr}`).toBe(0);
+      await runClaim(id, false, global, { author: "agent-b", start: true });
+      return id;
+    }
+
+    it("refuses a handoff by the closed holder without moving or releasing the later claim", async () => {
+      await withTempPmPath(async (context) => {
+        expect(context.runCli(["schema", "add-status", "review", "--role", "active"]).code).toBe(0);
+        const id = await reopenedThenReclaimed(context, "release-after-close-handoff");
+        const before = await itemState(context, id);
+        await expect(
+          runRelease(id, true, { path: context.pmPath }, { author: "agent-a", handoff: "review", message: "Implemented; verify" }),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+          code: "release_claim_ended_by_close",
+          context: expect.objectContaining({ claimed_by: "agent-b", item_id: id }),
+        });
+        expect(await itemState(context, id)).toEqual(before);
+      });
+    });
+
+    it("refuses a pause by the closed holder before its status write", async () => {
+      await withTempPmPath(async (context) => {
+        setGovernancePreset(context, "default");
+        const id = await reopenedThenReclaimed(context, "release-after-close-pause");
+        const before = await itemState(context, id);
+        await expect(runPauseTask(id, { author: "agent-a", force: true }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+          code: "release_claim_ended_by_close",
+        });
+        expect(await itemState(context, id)).toEqual(before);
+        // The holder itself still pauses normally.
+        const paused = await runPauseTask(id, { author: "agent-b" }, { path: context.pmPath });
+        expect(paused.release.item.assignee).toBeUndefined();
+      });
+    });
+
+    it("leaves every other pause to the ownership policy", async () => {
+      await withTempPmPath(async (context) => {
+        setGovernancePreset(context, "default");
+        const global = { path: context.pmPath };
+        // Unclaimed, missing and stranger-held items pass the pre-check; the pause's own writes judge them.
+        const unclaimed = createTask(context, { title: "pause-unclaimed", status: "in_progress" });
+        await expect(assertPauseKeepsLaterHolder(unclaimed, global, "agent-a")).resolves.toBeUndefined();
+        await expect(assertPauseKeepsLaterHolder("pm-missing-id", global, "agent-a")).resolves.toBeUndefined();
+        // An assignment without a claim principal is compared by its assignee, as the ownership guard compares it.
+        const assigned = createTask(context, { title: "pause-assigned", status: "open", assignee: "agent-b" });
+        await expect(assertPauseKeepsLaterHolder(assigned, global, "agent-a")).resolves.toBeUndefined();
+        await expect(assertPauseKeepsLaterHolder(assigned, global, "agent-b")).resolves.toBeUndefined();
+        const held = createTask(context, { title: "pause-stranger", status: "open" });
+        await runClaim(held, false, global, { author: "agent-b", start: true });
+        await expect(assertPauseKeepsLaterHolder(held, global, "agent-c")).resolves.toBeUndefined();
+        const paused = await runPauseTask(held, { author: "agent-c" }, global);
+        expect(paused.release.warnings).toContain(`ownership_warning:assignee_conflict:${held}:agent-b`);
+      });
+    });
+
+    it("leaves a stored leftover deferral alone on a scoped no-op", async () => {
+      await withTempPmPath(async (context) => {
+        const created = context.runCli(
+          ["create", "Task", "--title", "release-after-close-deferral", "--description", "d", "--defer", "deadline", "--defer-reason", "later", "--json"],
+          { expectJson: true },
+        );
+        expect(created.code, created.stderr).toBe(0);
+        const payload = created.json as { id?: string; item?: { id?: string } };
+        const id = (payload.item?.id ?? payload.id)!;
+        const global = { path: context.pmPath };
+        await runClaim(id, false, global, { author: "agent-a" });
+        const closed = context.runCli(
+          ["close", id, "completed", "--author", "agent-a", "--resolution", "done", "--expected-result", "done", "--actual-result", "done", "--json"],
+          { expectJson: true },
+        );
+        expect(closed.code, `${closed.stdout}${closed.stderr}`).toBe(0);
+        await runClaim(id, true, global, { author: "agent-b" });
+        // A value recorded out of band leaves the deferral resolved but stored, which any write would prune.
+        const located = await locateItem(context.pmPath, id);
+        await writeFile(located!.itemPath, `${await readFile(located!.itemPath, "utf8")}deadline: "2026-12-31T00:00:00.000Z"\n`);
+        const before = await itemState(context, id);
+        const released = await runRelease(id, false, global, { author: "agent-a" });
+        expect(released.changed_fields).toEqual([]);
+        expect(await itemState(context, id)).toEqual(before);
+      });
+    });
 
     it("lets the replacement holder release itself", async () => {
       await withTempPmPath(async (context) => {

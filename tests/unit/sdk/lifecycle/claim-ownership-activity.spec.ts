@@ -80,6 +80,10 @@ describe("claim activity evidence (GH-1336)", () => {
     expect(
       evaluateClaimActivity(null, undefined, { updated_at: "2026-07-24T11:00:00.000Z", threshold_hours: 72, now: NOW }),
     ).toMatchObject({ state: "active", claim_age_hours: null, idle_hours: 1, stale_policy: { stale: false } });
+    // A clock that is not a finite time measures nothing: ages are null and the state is unknown.
+    expect(
+      evaluateClaimActivity("2026-07-20T12:00:00.000Z", undefined, { updated_at: "2026-07-21T12:00:00.000Z", threshold_hours: 72, now: new Date(Number.NaN) }),
+    ).toMatchObject({ state: "unknown", claim_age_hours: null, idle_hours: null, stale_policy: { stale: false, eligible_at: null } });
   });
 
   it("derives the holder and its activity from one stream read", async () => {
@@ -308,6 +312,32 @@ describe("claim activity evidence (GH-1336)", () => {
         closeAll,
       ]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-ignored", "agent-a")).toBe(true);
+
+      // An unset assignee ends the claim even when the claim principal is left behind, as the live guard reads it.
+      await write("pm-unset-assignee", [claimA, record("update", [remove("/metadata/assignee")]), closeAll, claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-unset-assignee", "agent-a#1")).toBe(false);
+
+      // Legacy /front_matter records and whole-metadata writes count like current per-field records.
+      await write("pm-legacy-close", [
+        record("claim", [set("/front_matter/assignee", "agent-a")]),
+        record("close", [remove("/front_matter/assignee")]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-legacy-close", "agent-a")).toBe(true);
+      await write("pm-whole-metadata", [
+        record("create", [{ op: "replace", path: "/front_matter", value: { id: "pm-whole-metadata", assignee: "agent-a" } }]),
+        record("update", [{ op: "test", path: "/metadata", value: {} }]),
+        record("close", [{ op: "replace", path: "/metadata", value: { id: "pm-whole-metadata", status: "closed" } }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-whole-metadata", "agent-a")).toBe(true);
+      await write("pm-metadata-removed", [
+        record("claim", [set("/metadata/assignee", "agent-a")]),
+        record("close", [remove("/metadata")]),
+        record("update", [{ op: "add", path: "/metadata", value: "not-an-object" }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-metadata-removed", "agent-a")).toBe(true);
 
       // A missing stream, an unparseable one (invalid JSON or a null line) and a decoded value that is not a
       // well-formed record (no patch list) all prove nothing.
