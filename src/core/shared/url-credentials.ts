@@ -339,11 +339,16 @@ const HOST_PORT_MAX_LENGTH = 260;
 /** The delimiter that closes a URL a quote, backtick, angle bracket, parenthesis or square bracket opened in prose. */
 const URL_CLOSERS: Readonly<Record<string, string>> = { "\"": "\"", "'": "'", "`": "`", "<": ">", "(": ")", "[": "]" };
 
-/** An opening of a whitespace-bearing userinfo: its kind and the delimiter that closes its URL, if one opened it. */
+/** An opening of a whitespace-bearing userinfo: its kind, the delimiter that closes its URL, and whether its scheme is special. */
 interface SpacedOpening {
   kind: "user" | "label" | "pending";
   closer: string | undefined;
+  /** A WHATWG special scheme, whose authority a `/` or `\\` ends; any other (`ssh:`) reads userinfo across them, as OpenSSH does. */
+  special: boolean;
 }
+
+/** WHATWG special schemes, whose authority ends at a slash or backslash. */
+const SPECIAL_SCHEMES = new Set(["http", "https", "ws", "wss", "ftp", "file"]);
 
 /**
  * How a word opens a URL authority whose userinfo may go on past whitespace
@@ -373,13 +378,14 @@ function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   // A one-letter scheme is a Windows drive (`C:/Temp`), never a URL.
   if (colon - schemeStart < 2) return undefined;
   const closer = URL_CLOSERS[word[schemeStart - 1] ?? ""];
+  const special = SPECIAL_SCHEMES.has(word.slice(schemeStart, colon).toLowerCase());
   let start = colon + 1;
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
-  if (start === word.length) return { kind: "pending", closer };
+  if (start === word.length) return { kind: "pending", closer, special };
   const authority = word.slice(start);
-  if (authority.startsWith("[") || /[/\\]/u.test(authority) || closingDelimiterAt(authority, closer) >= 0) return undefined;
+  if (authority.startsWith("[") || (special && /[/\\]/u.test(authority)) || closingDelimiterAt(authority, closer) >= 0) return undefined;
   const kind = authorityOpening(authority.split(/[?#]/u, 1)[0]!);
-  return kind === undefined ? undefined : { kind, closer };
+  return kind === undefined ? undefined : { kind, closer, special };
 }
 
 /** Closers that only end a URL at the end of a word, after which only punctuation or emphasis follows; inside a word they are data (`pa)ss`). */
@@ -450,7 +456,7 @@ function spacedUserinfoEnd(text: string, from: number, opening: SpacedOpening, s
     const bounds = nextWord(text, index, limit);
     if (bounds === undefined) break;
     // Two code units past the bound complete a `%40` that starts inside it.
-    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit + 2)), limit - bounds[0], opening.closer);
+    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit + 2)), limit - bounds[0], opening);
     if (read.startsUrl) break;
     if (endsUserinfo(read, colonSeen, spacedColonSeen)) end = bounds[1];
     const dropped = /[\t\r\n]/u.test(text[bounds[1]] ?? "");
@@ -505,7 +511,7 @@ const CLOCK_TIME = /^\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[AaPp][Mm])?[.,;:!?)
  * a scheme and its `:` (`https://…`), read back from that `:` so a long word
  * costs one pass.
  */
-function readAuthorityWord(word: string, maxStart: number, closer: string | undefined): {
+function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpening): {
   startsUrl: boolean;
   separator: boolean;
   colonBeforeSeparator: boolean;
@@ -515,14 +521,16 @@ function readAuthorityWord(word: string, maxStart: number, closer: string | unde
   closedByOpener: boolean;
   endsAuthority: boolean;
 } {
-  const delimiter = word.search(/[/\\]/u);
+  // Only a special scheme's authority ends at a path delimiter; OpenSSH reads `ssh://a/b@host` as user `a/b`.
+  const delimiter = opening.special ? word.search(/[/\\]/u) : -1;
   const beforePath = delimiter < 0 ? word : word.slice(0, delimiter);
-  const closed = closingDelimiterAt(beforePath, closer);
+  const closed = closingDelimiterAt(beforePath, opening.closer);
+  const scheme = word.search(/:[/\\]/u);
   const authority = closed < 0 ? beforePath : beforePath.slice(0, closed);
   const last = Math.min(authority.length, maxStart) - 1;
   const separator = last < 0 ? -1 : Math.max(authority.lastIndexOf("@", last), authority.toLowerCase().lastIndexOf("%40", last));
   return {
-    startsUrl: delimiter >= 0 && closed < 0 && startsWithScheme(beforePath),
+    startsUrl: scheme >= 0 && closed < 0 && startsWithScheme(word.slice(0, scheme + 1)),
     separator: separator >= 0,
     // A colon right before the separator is an empty password (`deploy-token:@host`).
     colonBeforeSeparator: separator > 0 && (hasPasswordColon(authority.slice(0, separator)) || authority[separator - 1] === ":"),
@@ -535,14 +543,14 @@ function readAuthorityWord(word: string, maxStart: number, closer: string | unde
 }
 
 /**
- * Whether text is a URL scheme and its `:`, optionally after one opening
+ * Whether text, which ends with a `:`, is a URL scheme and that `:`, optionally after one opening
  * quote, backtick, parenthesis or bracket: the start of another URL
  * (`https://…`, `(https://…`). A scheme inside a query (`…?next=https://…`)
  * is part of the current URL, not a new one. Read back from the end, so a
  * long word costs one pass.
  */
 function startsWithScheme(text: string): boolean {
-  if (!text.endsWith(":")) return false;
+  // The caller passes the text up to and including a scheme separator's `:`.
   const start = schemeStartBefore(text, text.length - 1);
   return start < text.length - 1 && /[A-Za-z]/u.test(text[start]!) && (start === 0 || (start === 1 && /["'`(<[]/u.test(text[0]!)));
 }

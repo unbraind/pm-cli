@@ -1282,7 +1282,7 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
   while (lexer.index <= last) {
     if (content[lexer.index] === other) ownQuoteOpen = toggledOwnQuote(content, lexer.index, ownQuoteOpen);
     const closed = lexStep(lexer);
-    if (closed !== -1) return closesValueAt(content, closed, end, ownQuoteOpen) && endsWordAfterQuote(content, closed, closerOpening(content, opener, closed < end)) ? closed : -1;
+    if (closed !== -1) return closesValueAt(content, closed, end, ownQuoteOpen) && endsWordAfterQuote(content, closed, stringOpening(content, opener)) ? closed : -1;
     // A line break ended the string before any closing quote.
     if (lexer.state !== kind) return -1;
   }
@@ -1290,24 +1290,15 @@ function enclosingStringClose(lexer: StringLexer, valueStart: number, end: numbe
 }
 
 /**
- * How the enclosing string opened, for judging its closer. An attribute value's
- * tag end ends only a value the grammar stopped at the closing quote
- * (`<setting value="…"/>`); inside a capture, `'>` or `">` is the value's own
- * data after a stray quote, so it never cuts one.
- */
-function closerOpening(content: string, opener: number, insideCapture: boolean): StringOpening {
-  const opening = stringOpening(content, opener);
-  return insideCapture ? { ...opening, attribute: false } : opening;
-}
-
-/**
- * The value's own quote state after a quote of the other kind at `index`. As
- * in the lexer, a quote right after a letter, digit or underscore never opens
- * a span (`<team's-password>`), and any quote of the kind closes an open one.
+ * The value's own quote state after a quote of the other kind at `index`. An
+ * apostrophe right after a letter, digit or underscore is prose
+ * (`<team's-password>`) and never opens a span; a double quote there opens a
+ * shell piece (`a"b…"`), and any quote of the kind closes an open one.
  */
 function toggledOwnQuote(content: string, index: number, open: boolean): boolean {
+  if (open) return false;
   // A value always follows its key, so a character stands before `index`.
-  return open ? false : !WORD_CHARACTER.test(content[index - 1]!);
+  return content[index] === "\"" || !WORD_CHARACTER.test(content[index - 1]!);
 }
 
 /**

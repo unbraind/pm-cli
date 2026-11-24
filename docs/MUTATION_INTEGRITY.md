@@ -604,9 +604,11 @@ combine:
   opening word is joined, across any whitespace, through the later word that
   holds the last `@` or `%40` starting within 16 words and 512 characters, as a
   parser takes the authority's last `@`; a word that starts another URL (its
-  scheme opens the word, so a redirect inside a query does not), or holds a
-  path delimiter or the URL's closing delimiter before any separator, ends the
-  search. The joined span is redacted exactly as the same
+  scheme opens the word, so a redirect inside a query does not), or holds the
+  URL's closing delimiter, or, for a WHATWG special scheme (`http`, `https`,
+  `ws`, `wss`, `ftp`, `file`), a path delimiter, before any separator, ends the
+  search. Any other scheme reads userinfo across slashes, as OpenSSH reads
+  `ssh://a/b@host` as user `a/b`. The joined span is redacted exactly as the same
   URL without blanks. So stored text a refusal echoes, such as a blocker title
   holding `https://user:pass words%40host/path`, loses its whole userinfo,
   while `https://host.example:8080 … @bob`, `https://host and ping @bob`,
