@@ -190,6 +190,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // CodeRabbit review round 5: a path after the authority that a tab split from its scheme.
     ["a token username after a tab before a path", "https://\tfixtureToken:x@example.invalid/repo", "https://[redacted]@example.invalid/repo"],
     ["a token username after a tab in an SSH URL", "ssh://\tfixtureToken:x@host/repo", "ssh://[redacted]@host/repo"],
+    // CodeRabbit review round 8: a host-and-port-shaped head that a tab follows may be a dotted user and a digit password.
+    ["a dotted username and a digit-led password before a tab", "https://jane.doe:123456\tmore@example.invalid/private", "https://[redacted]@example.invalid/private"],
     // CodeRabbit review round 7: a quoted URL whose authority a tab split from its scheme.
     ["a quoted token username after a tab", '"https://\tfixtureToken:x@example.invalid"', '"https://[redacted]@example.invalid"'],
     // Greptile review round 3.

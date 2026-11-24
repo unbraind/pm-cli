@@ -370,7 +370,7 @@ const SPECIAL_SCHEMES = new Set(["http", "https", "ws", "wss", "ftp", "file"]);
  * opening, and a word that ends with its slashes is `pending`: its authority
  * starts in the next word (`https://` then a tab).
  */
-function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
+function spacedUserinfoOpening(word: string, droppedBlankAfter = false): SpacedOpening | undefined {
   // The last scheme in the word, so a URL nested in another one's query (`…?next=https://u:p`) is judged.
   const colon = lastSchemeSeparator(word);
   if (colon < 0) return undefined;
@@ -386,7 +386,7 @@ function spacedUserinfoOpening(word: string): SpacedOpening | undefined {
   // A special scheme's authority ends at a path, query or fragment, so no later word can hold its userinfo.
   if (authority.startsWith("[") || (special && /[/\\?#]/u.test(authority)) || closingDelimiterAt(authority, closer) >= 0) return undefined;
   // A special scheme's authority with a query or fragment was refused above; OpenSSH reads userinfo across them.
-  const kind = authorityOpening(authority);
+  const kind = authorityOpening(authority, droppedBlankAfter);
   return kind === undefined ? undefined : { kind, closer, special };
 }
 
@@ -435,9 +435,14 @@ function schemeStartBefore(word: string, colon: number): number {
   return start;
 }
 
-/** How a non-empty authority head (before any query or fragment) opens a whitespace-bearing userinfo. */
-function authorityOpening(head: string): "user" | "label" | undefined {
-  if (head.includes(":")) return head.length <= HOST_PORT_MAX_LENGTH && HOST_PORT.test(head) ? undefined : "user";
+/**
+ * How a non-empty authority head opens a whitespace-bearing userinfo. A
+ * `host:port` head is public only when a space follows the word: after a tab
+ * or line break, which URL parsers drop, it may be a dotted username and a
+ * digit-led password (`https://jane.doe:1234` then a tab then `…@host`).
+ */
+function authorityOpening(head: string, droppedBlankAfter: boolean): "user" | "label" | undefined {
+  if (head.includes(":")) return !droppedBlankAfter && head.length <= HOST_PORT_MAX_LENGTH && HOST_PORT.test(head) ? undefined : "user";
   return /@|%40/iu.test(head) ? undefined : "label";
 }
 
@@ -580,7 +585,7 @@ function startsWithScheme(text: string): boolean {
  * the word goes on into a path the authority has ended there (`final`).
  */
 function openingAt(text: string, word: string, from: number): { opening: SpacedOpening; from: number; seed: number; final: boolean } | undefined {
-  const opening = spacedUserinfoOpening(word);
+  const opening = spacedUserinfoOpening(word, /[\t\r\n]/u.test(text.charAt(from)));
   if (opening?.kind !== "pending") return opening === undefined ? undefined : { opening, from, seed: -1, final: false };
   const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
   if (next === undefined) return undefined;

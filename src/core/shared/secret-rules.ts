@@ -1160,7 +1160,8 @@ function isNewlineCode(code: number): boolean {
  * quote right after a letter, digit or underscore never opens one (in prose it
  * is an apostrophe such as `customer's` or a unit mark, and a code prefix such
  * as `f"…"` just keeps main's reading); a backslash escapes the next
- * character; and a line feed or carriage return ends every string, as JSON,
+ * character outside a single-quoted string (inside one it is literal, as in
+ * the shell); and a line feed or carriage return ends every string, as JSON,
  * Python and shell strings on one line read (U+2028 and U+2029 are data inside
  * a JSON string). Each flat scan owns one lexer and only ever moves it
  * forward, to the start of each value it judges and through a value that sits
@@ -1191,7 +1192,8 @@ function lexStep(lexer: StringLexer): number {
     return -1;
   }
   if (code === 0x5c) {
-    if (index + 1 < content.length && !isNewlineCode(content.charCodeAt(index + 1))) lexer.index = index + 2;
+    // A backslash is literal inside a single-quoted string, as in the shell (`note='C:\'`).
+    if (lexer.state !== SINGLE_STRING && index + 1 < content.length && !isNewlineCode(content.charCodeAt(index + 1))) lexer.index = index + 2;
     return -1;
   }
   if (code !== 0x22 && code !== 0x27) return -1;
