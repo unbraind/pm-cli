@@ -594,9 +594,11 @@ function openingAt(text: string, word: string, from: number): { opening: SpacedO
   // The delimiter that opened a quoted URL closes its authority too (`"https://` tab `token:x@host"`).
   const closed = closingDelimiterAt(pathless, opening.closer);
   const authorityWord = closed < 0 ? pathless : pathless.slice(0, closed);
-  const joined = spacedUserinfoOpening(`${word}${authorityWord}`);
+  const holdsSeparator = /@|%40/iu.test(authorityWord);
+  // A separator after a dropped blank is userinfo whatever its head holds (`https://` tab `token@host`).
+  const joined = holdsSeparator ? { ...opening, kind: "user" as const } : spacedUserinfoOpening(`${word}${authorityWord}`);
   if (joined === undefined || joined.kind === "pending") return undefined;
-  const seed = joined.kind === "user" && /@|%40/iu.test(authorityWord) ? next[1] : -1;
+  const seed = holdsSeparator ? next[1] : -1;
   // A path, query, fragment or closing delimiter in that word already ended the authority, so later prose is never searched.
   return { opening: joined, from: next[1], seed, final: authorityWord.length < nextText.length };
 }

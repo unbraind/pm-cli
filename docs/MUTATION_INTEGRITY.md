@@ -361,7 +361,8 @@ after its first character, or directly after it, and a word end as above
 follows the quote, the value ends there. After a closing quote, an unquoted
 YAML flow key (`{title: "…", updated: ok}`) is a word end too, and so is the
 end of an XML tag (`"/>`, `">`) when the string is an attribute value (its
-quote follows `=` and optional blanks), and blanks after its structure are padding however
+quote follows `=` and optional blanks inside an open start tag such as
+`<setting value=`), and blanks after its structure are padding however
 many there are. A quote at the value's first character is never a cut point,
 because after a stray apostrophe it may be the value's own opening quote, and
 neither is a quote inside the capture that a blank follows, which can only be

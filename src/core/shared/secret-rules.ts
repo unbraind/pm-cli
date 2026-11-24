@@ -1231,8 +1231,9 @@ interface StringOpening {
  * whitespace, as in JSON, YAML flow or a Python repr; a string a command word
  * or prose opened (`echo "…"`, `Use "…"`) is a shell word or a quotation
  * instead. It is an attribute value when its quote follows `=` and optional
- * whitespace (`<setting value="…"/>`, `value = "…"`), so only then does `>`
- * after its closing quote end it.
+ * whitespace inside an open start tag (`<setting value="…"/>`,
+ * `<setting value = "…"`), so only then does `>` after its closing quote end
+ * it.
  */
 function stringOpening(content: string, opener: number): StringOpening {
   let index = opener - 1;
@@ -1240,7 +1241,25 @@ function stringOpening(content: string, opener: number): StringOpening {
   // allows blanks around an attribute's `=` (`value = "…"`).
   while (index >= 0 && /\s/u.test(content[index]!)) index -= 1;
   const before = content[index];
-  return { inContainer: before !== undefined && /[[{,:]/u.test(before), attribute: before === "=" };
+  return { inContainer: before !== undefined && /[[{,:]/u.test(before), attribute: before === "=" && insideStartTag(content, index) };
+}
+
+/** Code units read back from an attribute's `=` for the start tag it sits in. */
+const START_TAG_LOOK_BACK = 512;
+
+/**
+ * Whether the `=` at `equals` sits inside an open XML or HTML start tag on its
+ * line: the last `<` before it opens a tag name and no `>` closed it since
+ * (`<setting value=`). An `=` outside any tag (`x="…"`, a shell or dotenv
+ * assignment) opens no attribute value, so `>` after its closing quote never
+ * ends the value there.
+ */
+function insideStartTag(content: string, equals: number): boolean {
+  const from = Math.max(0, equals - START_TAG_LOOK_BACK);
+  const before = content.slice(from, equals);
+  const lineStart = Math.max(before.lastIndexOf("\n"), before.lastIndexOf("\r")) + 1;
+  const open = before.lastIndexOf("<");
+  return open >= lineStart && /[A-Za-z]/u.test(before.charAt(open + 1)) && !before.includes(">", open);
 }
 
 /** Structure that may follow a closing quote before the next member, element or statement. */
