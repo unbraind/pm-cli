@@ -334,6 +334,15 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
       expect(redactUrlCredentialsInText(rendered), rendered).not.toMatch(/my |secret|words/u);
     }
     expect(redactUrlCredentialsInText("pm clone 'https://ci:my ''secret words@host.test/x'")).toBe("pm clone 'https://[redacted]@host.test/x'");
+    // The same renderings embedded in JSON (an escaped cmd quote becomes \\^\") stay redacted too.
+    for (const [dialect, arg] of [["cmd", 'https://ci:my "secret words@host.test/x'], ["cmd", spaced], ["posix", spaced], ["posix", `${spaced}!`], ["powershell", spaced]] as const) {
+      const wrapped = JSON.stringify({ suggested_retry: `pm clone ${quoteCommandArg(arg, "win32", dialect)}` });
+      expect(redactUrlCredentialsInText(wrapped), wrapped).not.toMatch(/my |secret|words/u);
+    }
+    // A caret and an even inner run before a quote, or a caret with no quote after its run, is no escaped quote.
+    expect(redactUrlCredentialsInText('see "ssh://example.test/a\\^\\\\" or reply@example.org')).toContain("reply@example.org");
+    expect(redactUrlCredentialsInText('see "ssh://example.test/a\\^b" or reply@example.org')).toContain("reply@example.org");
+    expect(redactUrlCredentialsInText('see "ssh://example.test/a\\\\^" or reply@example.org')).toContain("reply@example.org");
     // A backslash run with no quote after it is left alone, and a long one costs linear time (CodeQL js/polynomial-redos).
     expect(redactUrlCredentialsInText('see "ssh://example.test/a\\\\b" or reply@example.org')).toBe('see "ssh://example.test/a\\\\b" or reply@example.org');
     const backslashRun = `"https://ci:my ${"\\".repeat(1_000_000)}x words@host/x"`;

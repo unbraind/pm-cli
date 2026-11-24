@@ -421,36 +421,63 @@ const WORD_END_CLOSERS = new Set([")", "]"]);
 
 /** POSIX's close-escape-reopen spelling of an apostrophe inside a single-quoted string. */
 const POSIX_ESCAPED_APOSTROPHE = "'\\''";
+/** That spelling as a JSON string encodes it: the backslash doubled. */
+const JSON_POSIX_ESCAPED_APOSTROPHE = "'\\\\''";
 
 /**
  * Authority text with every escaped quote of the opening's kind replaced by
  * neutral characters (GH-1774): inside a URL opened by `'`, POSIX's escaped
- * apostrophe (`'\\''`); inside one opened by `"`, a quote an odd run of
- * backslashes escapes (`\\"`, or cmd's caret form `\\^"`). Their backslashes
+ * apostrophe (`'\\''`, or `'\\\\''` in JSON); inside one opened by `'` or `"`,
+ * a quote an odd run of backslashes escapes (`\\"`, cmd's caret form `\\^"`,
+ * or either as JSON encodes it). Their backslashes
  * are then not read as a special scheme's path delimiter, nor their quotes
  * as the closer. Positions are kept, so every index read from the result
  * fits the original.
  */
 function neutralizeEscapedQuotes(text: string, closer: string | undefined): string {
-  if (closer === "'") return text.replaceAll(POSIX_ESCAPED_APOSTROPHE, "____");
+  if (closer === "'") {
+    // POSIX's escaped apostrophe raw and as JSON encodes it (`'\\\\''`); a JSON-escaped quote in the password too.
+    return neutralizeBackslashedQuotes(text.replaceAll(JSON_POSIX_ESCAPED_APOSTROPHE, "_____").replaceAll(POSIX_ESCAPED_APOSTROPHE, "____"));
+  }
   if (closer === '"') return neutralizeBackslashedQuotes(text);
   return text;
 }
 
+/** Index just past the run of backslashes that starts at `start`. */
+function backslashRunEnd(text: string, start: number): number {
+  let end = start;
+  while (text[end] === "\\") end += 1;
+  return end;
+}
+
+/**
+ * Where the quote stands that the backslash run `[start, runEnd)` escapes,
+ * or -1: an odd run before `"` (`\\"`), or before cmd's caret and `"`
+ * (`\\^"`), or, as JSON encodes that caret form, any run, the caret and an
+ * odd run before `"` (`\\\\^\\"`).
+ */
+function escapedQuoteEnd(text: string, start: number, runEnd: number): number {
+  const odd = (runEnd - start) % 2 === 1;
+  if (text[runEnd] === '"') return odd ? runEnd : -1;
+  if (text[runEnd] !== "^") return -1;
+  if (text[runEnd + 1] === '"') return odd ? runEnd + 1 : -1;
+  const innerEnd = backslashRunEnd(text, runEnd + 1);
+  return text[innerEnd] === '"' && (innerEnd - runEnd - 1) % 2 === 1 ? innerEnd : -1;
+}
+
 /**
  * Replace each quote that an odd run of backslashes escapes, optionally
- * across cmd.exe's caret (`\\"`, `\\^"`), and that run with neutral
- * characters. One linear pass: each backslash run is read once, so a long
+ * across cmd.exe's caret (`\\"`, `\\^"`) or that caret form's JSON
+ * encoding, and that run with neutral characters. One linear pass: each backslash run is read once, so a long
  * run with no quote after it costs no backtracking.
  */
 function neutralizeBackslashedQuotes(text: string): string {
   const parts: string[] = [];
   let copied = 0;
   for (let index = text.indexOf("\\"); index >= 0; index = text.indexOf("\\", index)) {
-    let runEnd = index;
-    while (text[runEnd] === "\\") runEnd += 1;
-    const quote = text[runEnd] === "^" ? runEnd + 1 : runEnd;
-    if (text[quote] === '"' && (runEnd - index) % 2 === 1) {
+    const runEnd = backslashRunEnd(text, index);
+    const quote = escapedQuoteEnd(text, index, runEnd);
+    if (quote >= 0) {
       parts.push(text.slice(copied, index), "_".repeat(quote + 1 - index));
       copied = quote + 1;
     }
