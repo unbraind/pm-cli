@@ -182,7 +182,10 @@ describe("GH-1662 intent budgets bind every shaped, resumed and session read", (
       // Negative control: the omission reported 210 tokens against its 300-token budget.
       expect(shortIntent.estimated_tokens).toBeGreaterThan(shortIntent.token_budget);
 
-      // The retry a refusal names keeps the caller's field projection and returns the result.
+      // The retry a refusal names keeps the caller's field projection and returns the result. The assertion
+      // pins the POSIX spelling, so a developer's PM_COMMAND_SHELL is set aside for this call.
+      const inheritedShell = process.env.PM_COMMAND_SHELL;
+      delete process.env.PM_COMMAND_SHELL;
       const wideId = createTestItemId(context, { title: "T", description: "w".repeat(1000), acceptanceCriteria: "a".repeat(1000) });
       const narrow = await runSource(context, ["get", wideId, "--fields", "id,title", "--for", "inspect", "--token-budget", "300", "--output-row-contract", "--json"]);
       const refusal = JSON.parse(narrow.stdout) as { budget_exceeded: { restore_with: string } };
@@ -190,6 +193,7 @@ describe("GH-1662 intent budgets bind every shaped, resumed and session read", (
       const restore = refusal.budget_exceeded.restore_with;
       expect(restore).toContain('--fields "id,title"');
       const retried = await runSource(context, argvOf(restore));
+      if (inheritedShell !== undefined) process.env.PM_COMMAND_SHELL = inheritedShell;
       expect(retried.code, retried.stdout).toBe(0);
 
       // An SDK intent refusal always carries the read-output receipt its type promises.

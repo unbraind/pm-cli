@@ -793,8 +793,12 @@ function noAvailableNextItemError(attempts: number, startRefused: readonly strin
  * so copying it never acts as the configured default author. A supplied blank
  * value is kept too: it resolves differently from an omitted one.
  */
-function explicitActorArgs(explicitAuthor: string | undefined): string[] {
-  return explicitAuthor === undefined ? [] : ["--author", redactIdentityCredentials(explicitAuthor)];
+function explicitActorArgs(explicitAuthor: string | undefined): string[] | undefined {
+  if (explicitAuthor === undefined) return [];
+  // Trimmed first, as author resolution trims it. A redacted author would name a different principal, so
+  // no executable command is rendered for it (undefined), as the SDK withholds retries that lose credentials.
+  const author = explicitAuthor.trim();
+  return redactIdentityCredentials(author) === author ? ["--author", author] : undefined;
 }
 
 /** Stable warning when a release by the holder a close ended leaves a later holder's claim in place (GH-1774). */
@@ -813,6 +817,10 @@ function releaseClaimEndedRefusal(
   explicitAuthor: string | undefined,
 ): PmCliError {
   const actor = explicitActorArgs(explicitAuthor);
+  const takeover =
+    actor === undefined
+      ? "Take the item first with a coordinated pm claim --force as the same author only when that takeover is approved."
+      : `Take the item first with a coordinated ${renderPmCommand([...resolvePmCommandScopeArgs(global), "claim", itemId, "--force", ...actor])} only when that takeover is approved.`;
   return new PmCliError(
     `A close of ${itemId} already ended your claim, and ${holder} has claimed it since; ${action} cannot move or release another holder's claim.`,
     EXIT_CODE.CONFLICT,
@@ -824,7 +832,7 @@ function releaseClaimEndedRefusal(
       why: "A close ends its holder's claim, so that holder's later release must not change work another principal claimed after it.",
       nextSteps: [
         `Ask ${holder} to release or hand off ${itemId}.`,
-        `Take the item first with a coordinated ${renderPmCommand([...resolvePmCommandScopeArgs(global), "claim", itemId, "--force", ...actor])} only when that takeover is approved.`,
+        takeover,
       ],
     },
   );
@@ -857,6 +865,10 @@ export async function assertPauseKeepsLaterHolder(
   // A missing item is left to the pause's own update, which reports it with its recovery.
   const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
   if (!located) return (write) => write();
+  // Sample the history stream before reading anything the judgement uses: a write that lands after this
+  // point changes the size the status write's lock compares, and one before it is in both reads below.
+  const historyPath = getHistoryPath(pmRoot, located.id);
+  const judgedStreamSize = historyStreamSize(historyPath);
   const { document } = await readLocatedItem(located, { schema: settings.schema });
   const judged = documentHolderPrincipal(document.metadata);
   if (judged !== undefined && judged !== callerPrincipal && (await callerClaimEndedByClose(pmRoot, located.id, callerPrincipal))) {
@@ -865,19 +877,20 @@ export async function assertPauseKeepsLaterHolder(
   // The judgement holds only for the item it read. Every write appends to the item's history stream (and
   // advances updated_at unless a reproducible clock holds it), so a claim, close or reopen that lands
   // before the status write takes its lock changes this fingerprint.
-  const historyPath = getHistoryPath(pmRoot, located.id);
-  const judgedState = pauseJudgementFingerprint(document.metadata, historyPath);
+  const judgedState = pauseJudgementFingerprint(document.metadata, judgedStreamSize);
   return (write) =>
     runWithItemMutationPrecondition(
       {
         pmRoot,
         id: located.id,
         validate: (locked) => {
-          if (pauseJudgementFingerprint(locked.metadata, historyPath) === judgedState) return;
+          if (pauseJudgementFingerprint(locked.metadata, historyStreamSize(historyPath)) === judgedState) return;
           throw new PmCliError(`${located.id} changed while the pause was judged, so nothing was written.`, EXIT_CODE.CONFLICT, {
             code: PAUSE_ITEM_CHANGED_CODE,
             item_id: located.id,
-            nextSteps: [`Retry ${renderPmCommand([...resolvePmCommandScopeArgs(global), "release", located.id, "--pause", ...explicitActorArgs(author)])} to judge the current holder.`],
+            nextSteps: [
+              `Check the current holder with ${renderPmCommand([...resolvePmCommandScopeArgs(global), "get", located.id])}, reconfirm any override, then re-run the original pause command unchanged.`,
+            ],
           });
         },
       },
@@ -889,8 +902,8 @@ export async function assertPauseKeepsLaterHolder(
 export const PAUSE_ITEM_CHANGED_CODE = "pause_item_changed";
 
 /** What a pause judged: the holder principal, the status, the time of the last write and the history stream's size. */
-function pauseJudgementFingerprint(metadata: ItemMetadata, historyPath: string): string {
-  return JSON.stringify([documentHolderPrincipal(metadata) ?? null, metadata.status, metadata.updated_at, historyStreamSize(historyPath)]);
+function pauseJudgementFingerprint(metadata: ItemMetadata, streamSize: number): string {
+  return JSON.stringify([documentHolderPrincipal(metadata) ?? null, metadata.status, metadata.updated_at, streamSize]);
 }
 
 /** Byte size of an item's history stream, or -1 when it cannot be read; any append changes it. */

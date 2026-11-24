@@ -673,6 +673,14 @@ function redactSpacedUserinfo(text: string): string {
  */
 export function redactUrlCredentialsInText(text: string): string {
   const invocation = invocations.getStore() ?? NO_INVOCATION;
-  const redacted = invocation.carried ? removeRegisteredFragments(text, invocation) : text;
-  return AT_OR_ENCODED_AT.test(redacted) ? redactSpacedUserinfo(redacted).replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
+  // The URL rule runs first, while every separator is still in place: a registered fragment can span a
+  // separator (a password holding `%40` before an `a`-initial host) and would hide the userinfo end.
+  // Fragment removal then scrubs split echoes, and a second URL pass judges what that removal exposed.
+  const urlRedacted = redactUrlUserinfoInText(text);
+  return invocation.carried ? redactUrlUserinfoInText(removeRegisteredFragments(urlRedacted, invocation)) : urlRedacted;
+}
+
+/** Apply the URL userinfo rules (spaced userinfo, then each word's token rule) to free text. */
+function redactUrlUserinfoInText(text: string): string {
+  return AT_OR_ENCODED_AT.test(text) ? redactSpacedUserinfo(text).replaceAll(/\S+/gu, redactUrlCredentialsInToken) : text;
 }

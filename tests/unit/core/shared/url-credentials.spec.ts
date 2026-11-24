@@ -318,6 +318,14 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
       const echoed = redactUrlCredentialsInText(`pm clone ${quoteCommandArg(tokenInUsername, "win32", "cmd")}`);
       expect(echoed).toBe('pm clone ^"https://[redacted]%^40github.com/x^"');
     });
+    // A registered password holding %40 can span the final separator before an a-initial host; the URL rule
+    // runs first, so the username token never survives.
+    const spanning = "https://tok_abcdefgh:a%40a%40ahost.test/x";
+    runWithUrlCredentialInvocation(["clone", spanning], () => {
+      const echoed = redactUrlCredentialsInText(`pm clone ${quoteCommandArg(spanning, "win32", "cmd")}`);
+      expect(echoed).not.toContain("tok_abc");
+      expect(echoed).toContain("[redacted]");
+    });
     // A spaced userinfo ended by the caret form is joined as one span too.
     expect(redactUrlCredentialsInText("clone https://ci:my secret%^40example.test/repo")).not.toMatch(/my |secret/u);
   });

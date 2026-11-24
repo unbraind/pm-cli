@@ -301,6 +301,8 @@ describe("claim activity evidence (GH-1336)", () => {
       const claimA = record("claim", [set("/metadata/assignee", "agent-a"), set("/metadata/claim_principal", "agent-a#1")]);
       const closeAll = record("close", [remove("/metadata/claim_principal"), remove("/metadata/assignee")]);
       const claimB = record("claim", [set("/metadata/assignee", "agent-b")]);
+      // A close of a holder recorded by assignee alone (no claim principal).
+      const closeAssignee = record("close", [remove("/metadata/assignee")]);
 
       await write("pm-closed", [claimA, closeAll, claimB]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-closed", "agent-a#1")).toBe(true);
@@ -318,15 +320,15 @@ describe("claim activity evidence (GH-1336)", () => {
       await write("pm-ignored", [
         record("claim", [set("/metadata/assignee", "agent-a")]),
         record("update", [{ op: "test", path: "/metadata/assignee", value: "agent-a" }, set("/metadata/title", "t")]),
-        closeAll,
+        closeAssignee,
       ]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-ignored", "agent-a")).toBe(true);
       // A value that is not a string names no holder, so the update (not the close) ended the claim.
-      await write("pm-non-string", [record("claim", [set("/metadata/assignee", "agent-a")]), record("update", [set("/metadata/assignee", 42)]), closeAll, claimB]);
+      await write("pm-non-string", [record("claim", [set("/metadata/assignee", "agent-a")]), record("update", [set("/metadata/assignee", 42)]), closeAssignee, claimB]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-non-string", "agent-a")).toBe(false);
 
       // An unset assignee ends the claim even when the claim principal is left behind, as the live guard reads it.
-      await write("pm-unset-assignee", [claimA, record("update", [remove("/metadata/assignee")]), closeAll, claimB]);
+      await write("pm-unset-assignee", [claimA, record("update", [remove("/metadata/assignee")]), record("close", [remove("/metadata/claim_principal")]), claimB]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-unset-assignee", "agent-a#1")).toBe(false);
 
       // Legacy /front_matter records and whole-metadata writes count like current per-field records.
@@ -338,7 +340,7 @@ describe("claim activity evidence (GH-1336)", () => {
       expect(await callerClaimEndedByClose(pmRoot, "pm-legacy-close", "agent-a")).toBe(true);
       await write("pm-whole-metadata", [
         record("create", [{ op: "replace", path: "/front_matter", value: { id: "pm-whole-metadata", assignee: "agent-a" } }]),
-        record("update", [{ op: "test", path: "/metadata", value: {} }]),
+        record("update", [{ op: "test", path: "/metadata/assignee", value: "agent-a" }]),
         record("close", [{ op: "replace", path: "/metadata", value: { id: "pm-whole-metadata", status: "closed" } }]),
         claimB,
       ]);
@@ -364,15 +366,31 @@ describe("claim activity evidence (GH-1336)", () => {
       expect(await callerClaimEndedByClose(pmRoot, "pm-root-replaced", "agent-a#1")).toBe(true);
       await write("pm-moved-away", [
         record("claim", [set("/metadata/assignee", "agent-a")]),
-        record("close", [{ op: "move", from: "/metadata/assignee", path: "/metadata/previous_holder" }, { op: "copy", from: "/metadata/id", path: "/metadata/alias" }]),
+        record("close", [{ op: "move", from: "/metadata/assignee", path: "/metadata/previous_holder" }, { op: "copy", from: "/body", path: "/metadata/alias" }]),
         claimB,
       ]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-moved-away", "agent-a")).toBe(true);
-      // A move or copy onto a holder path carries a value the fold does not track, so the stream proves nothing.
-      await write("pm-moved-onto", [claimA, closeAll, record("update", [{ op: "copy", from: "/metadata/reporter", path: "/metadata/assignee" }])]);
-      expect(await callerClaimEndedByClose(pmRoot, "pm-moved-onto", "agent-a#1")).toBe(false);
+      // A copy onto a holder path sets it exactly as replay does: here it makes the caller the holder again,
+      // and the later claim (not the close) ends that claim.
+      await write("pm-copied-onto", [
+        claimA,
+        closeAll,
+        record("update", [set("/metadata/reporter", "agent-a#1"), { op: "copy", from: "/metadata/reporter", path: "/metadata/assignee" }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-copied-onto", "agent-a#1")).toBe(false);
+      // A record strict replay rejects (a move without a source, a failed test, a missing path) proves nothing.
       await write("pm-move-no-from", [claimA, record("update", [{ op: "move", path: "/metadata/title" }]), closeAll, claimB]);
-      expect(await callerClaimEndedByClose(pmRoot, "pm-move-no-from", "agent-a#1")).toBe(true);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-move-no-from", "agent-a#1")).toBe(false);
+      await write("pm-failed-test", [claimA, record("update", [{ op: "test", path: "/metadata/assignee", value: "someone-else" }]), closeAll, claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-failed-test", "agent-a#1")).toBe(false);
+      // A whole-document write whose body is completed later in the same record is accepted, as replay accepts it.
+      await write("pm-root-then-body", [
+        claimA,
+        record("close", [{ op: "replace", path: "", value: { metadata: { id: "pm-root-then-body" } } }, { op: "add", path: "/body", value: "" }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-then-body", "agent-a#1")).toBe(true);
       await write("pm-root-legacy", [
         record("create", [{ op: "replace", path: "", value: { front_matter: { id: "pm-root-legacy", assignee: "agent-a" }, body: "" } }]),
         record("close", [{ op: "replace", path: "", value: { front_matter: { id: "pm-root-legacy", status: "closed" }, body: "" } }]),

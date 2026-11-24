@@ -5,7 +5,8 @@
  * claim or a general metadata assignment using the append-only history stream.
  */
 import { readHistoryEntries } from "../core/history/read.js";
-import { normalizeReplayPatchPath } from "../core/history/replay.js";
+import { cloneEmptyReplayDocument, tryApplyReplayPatch, type ReplayDocument } from "../core/history/replay.js";
+import type { HistoryPatchOp } from "../types/index.js";
 import { getWorkspaceHistoryPath, WORKSPACE_HISTORY_ID } from "../core/history/workspace-history.js";
 import type { PmCliErrorContext } from "../core/shared/errors.js";
 import { redactIdentityCredentials } from "../core/shared/url-credentials.js";
@@ -291,118 +292,30 @@ export async function describeItemOwnershipConflict(
 /** History operations whose ownership change ends the holder's claim at closure. */
 const CLAIM_ENDING_CLOSE_OPERATIONS: ReadonlySet<string> = new Set(["close"]);
 
-/** Holder fields a history record can set or remove, as the ownership guard reads them. */
-interface HolderFields {
-  assignee?: string;
-  claim_principal?: string;
-}
-
-/** Holder fields keyed by their normalized metadata path. */
-const HOLDER_FIELD_PATHS: ReadonlyMap<string, keyof HolderFields> = new Map([
-  [ASSIGNEE_PATH, "assignee"],
-  [CLAIM_PRINCIPAL_PATH, "claim_principal"],
-]);
-
-/** Set or clear one holder field from a written value; a value that is not a string clears it. */
-function writeHolderField(fields: HolderFields, key: keyof HolderFields, value: unknown): void {
-  if (typeof value === "string") fields[key] = value;
-  else delete fields[key];
-}
-
-/** One JSON-patch operation as a decoded history record stores it. */
-type HolderPatchOperation = { op?: unknown; path: string; from?: unknown; value?: unknown };
-
-/** Whether an operation writes its value (`add` or `replace`). */
-function writesValue(operation: HolderPatchOperation): boolean {
-  return operation.op === "add" || operation.op === "replace";
-}
-
-/** Set both holder fields from a written metadata object. */
-function writeHolderObject(fields: HolderFields, metadata: Record<string, unknown>): void {
-  for (const key of HOLDER_FIELD_PATHS.values()) writeHolderField(fields, key, metadata[key]);
-}
-
-/** The metadata a whole-document write carries, or undefined unless it has replay's shape (object `metadata`, string `body`). */
-function documentMetadata(value: unknown): unknown {
-  if (!isObjectValue(value) || typeof value.body !== "string") return undefined;
-  return value.metadata;
-}
-
-/** Whether a normalized path replaces a holder field: the field, the metadata object or the whole document. */
-function reachesHolder(path: string): boolean {
-  return path === "" || path === "/metadata" || HOLDER_FIELD_PATHS.has(path);
-}
-
-/** Whether a value is a JSON object, the only shape replay accepts for the document and its metadata. */
-function isObjectValue(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/**
- * Write `value` at a path that reaches the holder fields; `undefined` clears a
- * holder field. The document or its metadata must stay an object, as strict
- * replay requires: removing either or writing another shape returns false,
- * so a stream replay would reject never counts as ownership evidence.
- */
-function writeHolderAt(fields: HolderFields, path: string, value: unknown): boolean {
-  if (path === "" || path === "/metadata") {
-    const metadata = path === "" ? documentMetadata(value) : value;
-    if (!isObjectValue(metadata)) return false;
-    writeHolderObject(fields, metadata);
-    return true;
-  }
-  writeHolderField(fields, HOLDER_FIELD_PATHS.get(path)!, value);
-  return true;
-}
-
-/**
- * Apply one operation to the tracked holder fields with history replay's path
- * semantics: legacy `/front_matter/...` paths normalize, and a whole-document
- * or whole-metadata write replaces both fields. A `move` or `copy` onto a
- * holder path carries a value this fold does not track, so it returns false
- * and the stream proves nothing; a `move` away from one clears it.
- */
-function applyHolderOperation(fields: HolderFields, operation: HolderPatchOperation): boolean {
-  const path = normalizeReplayPatchPath(operation.path);
-  if (operation.op === "move" || operation.op === "copy") {
-    if (reachesHolder(path)) return false;
-    const from = typeof operation.from === "string" ? normalizeReplayPatchPath(operation.from) : undefined;
-    // Moving the document or its metadata away leaves a shape replay rejects.
-    if (operation.op === "move" && from !== undefined && reachesHolder(from)) return writeHolderAt(fields, from, undefined);
-    return true;
-  }
-  if (!reachesHolder(path)) return true;
-  if (writesValue(operation)) return writeHolderAt(fields, path, operation.value);
-  if (operation.op === "remove") return writeHolderAt(fields, path, undefined);
-  return true;
-}
-
-/** Apply one record's operations to the tracked holder fields; false when a record makes the holder unprovable. */
-function applyHolderPatch(fields: HolderFields, patch: ReadonlyArray<{ path: string; value?: unknown }>): boolean {
-  return (patch as ReadonlyArray<HolderPatchOperation>).every((operation) => applyHolderOperation(fields, operation));
-}
-
 /**
  * The principal the ownership guard compares: the claim principal, else the
  * assignee. As in the guard, an item without a non-empty assignee has no
  * holder, even when a claim principal was left behind.
  */
-function holderPrincipal(fields: HolderFields): string | undefined {
-  const assignee = fields.assignee?.trim();
+function replayedHolderPrincipal(metadata: Record<string, unknown>): string | undefined {
+  const assignee = typeof metadata.assignee === "string" ? metadata.assignee.trim() : "";
   if (!assignee) return undefined;
-  return fields.claim_principal?.trim() || assignee;
+  const principal = typeof metadata.claim_principal === "string" ? metadata.claim_principal.trim() : "";
+  return principal || assignee;
 }
 
 /**
  * Whether `callerPrincipal`'s most recent claim on the item was ended by a
- * close (GH-1774). Folding the readable history forward, a record that moves
- * the holder away from the caller ends the caller's claim, and one that makes
- * the caller the holder again starts a new one; the caller's claim counts as
- * ended by a close only when the record that last ended it is a close. A
- * release by that caller then acts only on its own ended claim, so a holder
- * who claimed the item after the close keeps it. A stream that cannot be read
- * or replayed proves nothing and returns false, leaving the ownership policy
- * in force.
+ * close (GH-1774). The readable history is replayed record by record with the
+ * shared strict replay (`tryApplyReplayPatch`), so legacy paths, whole-document
+ * writes and every patch operation mean exactly what they mean to `pm history`.
+ * A record that moves the holder away from the caller ends the caller's
+ * claim, and one that makes the caller the holder again starts a new one; the
+ * claim counts as ended by a close only when the record that last ended it is
+ * a close. A release by that caller then acts only on its own ended claim, so
+ * a holder who claimed the item after the close keeps it. A stream that cannot
+ * be read or replayed proves nothing and returns false, leaving the ownership
+ * policy in force. The replay runs only for a release by a non-holder.
  */
 export async function callerClaimEndedByClose(
   pmRoot: string,
@@ -415,13 +328,15 @@ export async function callerClaimEndedByClose(
   } catch {
     return false;
   }
-  const fields: HolderFields = {};
+  let document: ReplayDocument = cloneEmptyReplayDocument();
   let endedByClose = false;
   for (const entry of entries) {
     if (!isWellFormedHistoryRecord(entry)) return false;
-    const before = holderPrincipal(fields);
-    if (!applyHolderPatch(fields, entry.patch)) return false;
-    const after = holderPrincipal(fields);
+    const before = replayedHolderPrincipal(document.metadata);
+    const applied = tryApplyReplayPatch(document, entry.patch as HistoryPatchOp[]);
+    if (!applied.ok) return false;
+    document = applied.document;
+    const after = replayedHolderPrincipal(document.metadata);
     if (before === callerPrincipal && after !== callerPrincipal) endedByClose = CLAIM_ENDING_CLOSE_OPERATIONS.has(entry.op);
     else if (after === callerPrincipal && before !== callerPrincipal) endedByClose = false;
   }

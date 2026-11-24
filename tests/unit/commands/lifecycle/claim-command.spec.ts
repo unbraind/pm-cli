@@ -799,7 +799,10 @@ describe("runClaim/runRelease", () => {
         const before = await itemState(context, id);
         await expect(fence(() => runRelease(id, true, global, { author: "agent-a" }))).rejects.toMatchObject<PmCliError>({
           code: "pause_item_changed",
-          context: expect.objectContaining({ item_id: id, nextSteps: [expect.stringContaining(`release ${id} --pause --author agent-a`)] }),
+          context: expect.objectContaining({
+            item_id: id,
+            nextSteps: [`Check the current holder with pm --pm-path ${context.pmPath} get ${id}, reconfirm any override, then re-run the original pause command unchanged.`],
+          }),
         });
         expect(await itemState(context, id)).toEqual(before);
         // A reproducible clock can hold updated_at still; the history stream's growth still trips the fence.
@@ -827,6 +830,12 @@ describe("runClaim/runRelease", () => {
       expect(refusal(undefined)).toBe('Take the item first with a coordinated pm --pm-path "/tmp/other tracker" claim pm-x --force only when that takeover is approved.');
       // A supplied blank author resolves differently from an omitted one, so it is kept.
       expect(refusal("")).toBe('Take the item first with a coordinated pm --pm-path "/tmp/other tracker" claim pm-x --force --author "" only when that takeover is approved.');
+      // A supplied author is trimmed, as author resolution trims it.
+      expect(refusal("https://example.invalid/team/@alice\t")).toContain("--author https://example.invalid/team/@alice only");
+      // An author that redaction would change gets no executable command: copying it would claim as someone else.
+      const redacted = refusal("https://deploy:hunter2@example.test");
+      expect(redacted).toBe("Take the item first with a coordinated pm claim --force as the same author only when that takeover is approved.");
+      expect(redacted).not.toContain("hunter2");
     });
 
     it("leaves every other pause to the ownership policy", async () => {
