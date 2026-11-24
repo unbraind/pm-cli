@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { assertPauseKeepsLaterHolder } from "../../../../src/sdk/lifecycle/claim.js";
+import { _testOnlyClaimCommand, assertPauseKeepsLaterHolder } from "../../../../src/sdk/lifecycle/claim.js";
 import {
   claimNextFromRecommendations,
   isAlreadyClaimedError,
@@ -767,7 +767,7 @@ describe("runClaim/runRelease", () => {
           context: expect.objectContaining({
             claimed_by: "agent-b",
             item_id: id,
-            nextSteps: expect.arrayContaining([expect.stringContaining(`--pm-path ${context.pmPath} claim ${id} --force`)]),
+            nextSteps: expect.arrayContaining([expect.stringContaining(`--pm-path ${context.pmPath} claim ${id} --force --author agent-a`)]),
           }),
         });
         expect(await itemState(context, id)).toEqual(before);
@@ -798,14 +798,25 @@ describe("runClaim/runRelease", () => {
         await runClaim(id, false, global, { author: "agent-b" });
         const before = await itemState(context, id);
         await expect(fence(() => runRelease(id, true, global, { author: "agent-a" }))).rejects.toMatchObject<PmCliError>({
-          code: "pause_holder_changed",
+          code: "pause_item_changed",
           context: expect.objectContaining({ item_id: id, nextSteps: [expect.stringContaining(`release ${id} --pause`)] }),
         });
         expect(await itemState(context, id)).toEqual(before);
-        // An unchanged holder passes the fence.
+        // The same holder with a newer write (a close and reclaim, or any other change) also refuses.
+        const judgedOnce = await assertPauseKeepsLaterHolder(id, global, "agent-b");
+        expect(context.runCli(["comments", id, "--add", "progress", "--author", "agent-b"]).code).toBe(0);
+        await expect(judgedOnce(() => runRelease(id, false, global, { author: "agent-b" }))).rejects.toMatchObject<PmCliError>({ code: "pause_item_changed" });
+        // An unchanged item passes the fence.
         const unchanged = await assertPauseKeepsLaterHolder(id, global, "agent-b");
         await expect(unchanged(() => runRelease(id, false, global, { author: "agent-b" }))).resolves.toMatchObject({ previous_assignee: "agent-b" });
       });
+    });
+
+    it("keeps the takeover hint on the detected author when no explicit author was passed", () => {
+      for (const author of [undefined, "  "]) {
+        const refusal = _testOnlyClaimCommand.releaseClaimEndedRefusal("pm-x", "agent-b", "--pause", { path: "/tmp/other tracker" }, author);
+        expect(refusal.context.nextSteps?.[1]).toBe('Take the item first with a coordinated pm --pm-path "/tmp/other tracker" claim pm-x --force only when that takeover is approved.');
+      }
     });
 
     it("leaves every other pause to the ownership policy", async () => {

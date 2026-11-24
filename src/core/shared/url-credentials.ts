@@ -13,6 +13,25 @@ import { PmCliError } from "./errors.js";
 export const URL_CREDENTIAL_PLACEHOLDER = "[redacted]";
 
 /**
+ * An encoded at sign as text spells it: `%40`, or `%^40` in a cmd.exe
+ * caret-escaped rendering (GH-1774), which a URL in recovery guidance takes
+ * when cmd.exe would otherwise expand its percent sign.
+ */
+const ENCODED_AT = /%\^?40/giu;
+/** A literal or encoded at sign, in any rendering. */
+const AT_OR_ENCODED_AT = /@|%\^?40/iu;
+
+/** Index of the last encoded at sign that starts at or before `before` (default: anywhere), or -1. */
+function lastEncodedAtIndex(text: string, before = text.length): number {
+  let last = -1;
+  for (const match of text.matchAll(ENCODED_AT)) {
+    if (match.index > before) break;
+    last = match.index;
+  }
+  return last;
+}
+
+/**
  * Whether no URL parser can read userinfo anywhere in the token (GH-1707).
  * The authority runs from the slashes after the first `:` to the next `/`
  * (never `?` or `#`, which SSH-style parsers read as userinfo). Only an
@@ -42,7 +61,7 @@ function provablyWithoutUserinfo(token: string, colon: number): boolean {
 /** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */
 function userinfoBounds(token: string): readonly [start: number, end: number] | undefined {
   // Git decodes `%40` in an authority, so an encoded at sign ends userinfo too.
-  const at = Math.max(token.lastIndexOf("@"), token.toLowerCase().lastIndexOf("%40"));
+  const at = Math.max(token.lastIndexOf("@"), lastEncodedAtIndex(token));
   const colon = token.indexOf(":");
   if (at < 0 || colon < 0 || colon > at) return undefined;
   // Skip at most the two authority delimiters. A non-special scheme accepts
@@ -269,7 +288,7 @@ function describeInvocation(argv: readonly string[]): InvocationCredentials {
     carried = true;
     const secret = userinfoSecret(token.slice(bounds[0], bounds[1]));
     const secretStart = bounds[1] - secret.length;
-    const separator = token.slice(bounds[1], bounds[1] + (token[bounds[1]] === "@" ? 1 : 3));
+    const separator = token[bounds[1]] === "@" ? "@" : token.slice(bounds[1]).match(/^%\^?40/iu)![0];
     for (const spelling of spanSpellings(secret, separator, token.slice(Math.max(0, secretStart - 3), secretStart))) {
       unique.add(lowerPreservingLength(spelling));
     }
@@ -473,7 +492,7 @@ function schemeStartBefore(word: string, colon: number): number {
  */
 function authorityOpening(head: string, droppedBlankAfter: boolean): "user" | "label" | undefined {
   if (head.includes(":")) return !droppedBlankAfter && head.length <= HOST_PORT_MAX_LENGTH && HOST_PORT.test(head) ? undefined : "user";
-  return /@|%40/iu.test(head) ? undefined : "label";
+  return AT_OR_ENCODED_AT.test(head) ? undefined : "label";
 }
 
 /**
@@ -502,8 +521,8 @@ function spacedUserinfoEnd(text: string, from: number, opening: SpacedOpening, s
   for (let words = 0; words < SPACED_USERINFO_MAX_WORDS && index < limit; words += 1) {
     const bounds = nextWord(text, index, limit);
     if (bounds === undefined) break;
-    // Two code units past the bound complete a `%40` that starts inside it.
-    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit + 2)), limit - bounds[0], opening);
+    // Three code units past the bound complete a `%40` or `%^40` that starts inside it.
+    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit + 3)), limit - bounds[0], opening);
     if (read.startsUrl) break;
     if (endsUserinfo(read, colonSeen, spacedColonSeen)) end = bounds[1];
     const dropped = /[\t\r\n]/u.test(text[bounds[1]] ?? "");
@@ -576,7 +595,7 @@ function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpenin
   const scheme = word.search(/:[/\\]/u);
   const authority = closed < 0 ? beforePath : beforePath.slice(0, closed);
   const last = Math.min(authority.length, maxStart) - 1;
-  const separator = last < 0 ? -1 : Math.max(authority.lastIndexOf("@", last), authority.toLowerCase().lastIndexOf("%40", last));
+  const separator = last < 0 ? -1 : Math.max(authority.lastIndexOf("@", last), lastEncodedAtIndex(authority, last));
   return {
     startsUrl: scheme >= 0 && closed < 0 && startsWithScheme(word.slice(0, scheme + 1)),
     separator: separator >= 0,
@@ -627,7 +646,7 @@ function openingAt(text: string, word: string, from: number): { opening: SpacedO
   // The delimiter that opened a quoted URL closes its authority too (`"https://` tab `token:x@host"`).
   const closed = closingDelimiterAt(pathless, opening.closer);
   const authorityWord = `${slashes}${closed < 0 ? pathless : pathless.slice(0, closed)}`;
-  const holdsSeparator = /@|%40/iu.test(authorityWord);
+  const holdsSeparator = AT_OR_ENCODED_AT.test(authorityWord);
   // A separator after a dropped blank is userinfo whatever its head holds (`https://` tab `token@host`).
   const joined = holdsSeparator ? { ...opening, kind: "user" as const } : spacedUserinfoOpening(`${word}${authorityWord}`);
   if (joined === undefined || joined.kind === "pending") return undefined;
@@ -668,5 +687,5 @@ function redactSpacedUserinfo(text: string): string {
 export function redactUrlCredentialsInText(text: string): string {
   const invocation = invocations.getStore() ?? NO_INVOCATION;
   const redacted = invocation.carried ? removeRegisteredFragments(text, invocation) : text;
-  return /@|%40/iu.test(redacted) ? redactSpacedUserinfo(redacted).replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
+  return AT_OR_ENCODED_AT.test(redacted) ? redactSpacedUserinfo(redacted).replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
 }

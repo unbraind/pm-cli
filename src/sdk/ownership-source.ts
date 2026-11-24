@@ -313,17 +313,15 @@ function writesValue(operation: HolderPatchOperation): boolean {
   return operation.op === "add" || operation.op === "replace";
 }
 
-/** Set both holder fields from a written metadata object; anything else clears them. */
-function writeHolderObject(fields: HolderFields, value: unknown): void {
-  const metadata = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+/** Set both holder fields from a written metadata object. */
+function writeHolderObject(fields: HolderFields, metadata: Record<string, unknown>): void {
   for (const key of HOLDER_FIELD_PATHS.values()) writeHolderField(fields, key, metadata[key]);
 }
 
 /** The metadata object a whole-document write carries, in either era's key. */
 function documentMetadata(value: unknown): unknown {
-  if (typeof value !== "object" || value === null) return undefined;
-  const document = value as { metadata?: unknown; front_matter?: unknown };
-  return document.metadata ?? document.front_matter;
+  if (!isObjectValue(value)) return undefined;
+  return value.metadata ?? value.front_matter;
 }
 
 /** Whether a normalized path replaces a holder field: the field, the metadata object or the whole document. */
@@ -331,11 +329,26 @@ function reachesHolder(path: string): boolean {
   return path === "" || path === "/metadata" || HOLDER_FIELD_PATHS.has(path);
 }
 
-/** Write `value` at a path that reaches the holder fields; `undefined` clears what the path covers. */
-function writeHolderAt(fields: HolderFields, path: string, value: unknown): void {
-  if (path === "") writeHolderObject(fields, documentMetadata(value));
-  else if (path === "/metadata") writeHolderObject(fields, value);
-  else writeHolderField(fields, HOLDER_FIELD_PATHS.get(path)!, value);
+/** Whether a value is a JSON object, the only shape replay accepts for the document and its metadata. */
+function isObjectValue(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Write `value` at a path that reaches the holder fields; `undefined` clears a
+ * holder field. The document or its metadata must stay an object, as strict
+ * replay requires: removing either or writing another shape returns false,
+ * so a stream replay would reject never counts as ownership evidence.
+ */
+function writeHolderAt(fields: HolderFields, path: string, value: unknown): boolean {
+  if (path === "" || path === "/metadata") {
+    const metadata = path === "" ? documentMetadata(value) : value;
+    if (!isObjectValue(metadata)) return false;
+    writeHolderObject(fields, metadata);
+    return true;
+  }
+  writeHolderField(fields, HOLDER_FIELD_PATHS.get(path)!, value);
+  return true;
 }
 
 /**
@@ -350,12 +363,13 @@ function applyHolderOperation(fields: HolderFields, operation: HolderPatchOperat
   if (operation.op === "move" || operation.op === "copy") {
     if (reachesHolder(path)) return false;
     const from = typeof operation.from === "string" ? normalizeReplayPatchPath(operation.from) : undefined;
-    if (operation.op === "move" && from !== undefined && reachesHolder(from)) writeHolderAt(fields, from, undefined);
+    // Moving the document or its metadata away leaves a shape replay rejects.
+    if (operation.op === "move" && from !== undefined && reachesHolder(from)) return writeHolderAt(fields, from, undefined);
     return true;
   }
   if (!reachesHolder(path)) return true;
-  if (writesValue(operation)) writeHolderAt(fields, path, operation.value);
-  else if (operation.op === "remove") writeHolderAt(fields, path, undefined);
+  if (writesValue(operation)) return writeHolderAt(fields, path, operation.value);
+  if (operation.op === "remove") return writeHolderAt(fields, path, undefined);
   return true;
 }
 

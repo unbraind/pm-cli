@@ -337,10 +337,14 @@ describe("claim activity evidence (GH-1336)", () => {
       await write("pm-metadata-removed", [
         record("claim", [set("/metadata/assignee", "agent-a")]),
         record("close", [remove("/metadata")]),
-        record("update", [{ op: "add", path: "/metadata", value: "not-an-object" }]),
         claimB,
       ]);
-      expect(await callerClaimEndedByClose(pmRoot, "pm-metadata-removed", "agent-a")).toBe(true);
+      // Removing the metadata object leaves a document strict replay rejects, so it proves nothing.
+      expect(await callerClaimEndedByClose(pmRoot, "pm-metadata-removed", "agent-a")).toBe(false);
+      await write("pm-metadata-scalar", [claimA, closeAll, record("update", [{ op: "add", path: "/metadata", value: "not-an-object" }]), claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-metadata-scalar", "agent-a#1")).toBe(false);
+      await write("pm-metadata-moved", [claimA, closeAll, record("update", [{ op: "move", from: "/metadata", path: "/archived" }]), claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-metadata-moved", "agent-a#1")).toBe(false);
 
       // A whole-document replacement clears the holder as replay does; a move away from a holder field clears it too.
       await write("pm-root-replaced", [
@@ -366,8 +370,9 @@ describe("claim activity evidence (GH-1336)", () => {
         claimB,
       ]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-root-legacy", "agent-a")).toBe(true);
+      // A whole-document write of another shape is rejected by strict replay, so the close proves nothing.
       await write("pm-root-not-object", [claimA, record("close", [{ op: "replace", path: "", value: "x" }]), claimB]);
-      expect(await callerClaimEndedByClose(pmRoot, "pm-root-not-object", "agent-a#1")).toBe(true);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-not-object", "agent-a#1")).toBe(false);
 
       // A missing stream, an unparseable one (invalid JSON or a null line) and a decoded value that is not a
       // well-formed record (no patch list) all prove nothing.

@@ -306,6 +306,16 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(invocationCarriesUrlCredentials()).toBe(false);
   });
 
+  it("reads a cmd caret-escaped encoded separator without any registered invocation (GH-1774)", () => {
+    const rendered = `pm package install ${quoteCommandArg("https://ci:sample%40example.test/repo", "win32", "cmd")}`;
+    expect(rendered).toContain("%^40");
+    expect(redactUrlCredentialsInText(rendered)).toBe('pm package install ^"https://[redacted]%^40example.test/repo^"');
+    expect(redactUrlCredentialsInText(JSON.stringify({ next_steps: [rendered] }))).not.toContain("sample");
+    expect(redactUrlCredentialsInToken("https://ci:sample%^40example.test/repo")).toBe("https://[redacted]%^40example.test/repo");
+    // A spaced userinfo ended by the caret form is joined as one span too.
+    expect(redactUrlCredentialsInText("clone https://ci:my secret%^40example.test/repo")).not.toMatch(/my |secret/u);
+  });
+
   it("removes a secret from every shell dialect's rendering and from each rendering embedded in JSON (GH-1774)", () => {
     const tokens = ['https://deploy:"""%40example.test/x', "https://ci:abcde%40example.test/x", "https://ops:it's!long-pass@host/x", "https://ci:Z%40example.test/x"];
     runWithUrlCredentialInvocation(["package", "install", ...tokens], () => {

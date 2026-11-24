@@ -794,7 +794,15 @@ export const RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING = "release_claim_ended_by_clos
  * holder a close ended: the item now belongs to a later holder, so the caller
  * can neither move it nor clear that claim (GH-1774).
  */
-function releaseClaimEndedRefusal(itemId: string, holder: string, action: "--handoff" | "--pause", global: GlobalOptions): PmCliError {
+function releaseClaimEndedRefusal(
+  itemId: string,
+  holder: string,
+  action: "--handoff" | "--pause",
+  global: GlobalOptions,
+  explicitAuthor: string | undefined,
+): PmCliError {
+  // An explicit actor stays on the takeover hint, so copying it never claims as the configured default author.
+  const actor = explicitAuthor?.trim() ? ["--author", redactIdentityCredentials(explicitAuthor.trim())] : [];
   return new PmCliError(
     `A close of ${itemId} already ended your claim, and ${holder} has claimed it since; ${action} cannot move or release another holder's claim.`,
     EXIT_CODE.CONFLICT,
@@ -806,7 +814,7 @@ function releaseClaimEndedRefusal(itemId: string, holder: string, action: "--han
       why: "A close ends its holder's claim, so that holder's later release must not change work another principal claimed after it.",
       nextSteps: [
         `Ask ${holder} to release or hand off ${itemId}.`,
-        `Take the item first with a coordinated ${renderPmCommand([...resolvePmCommandScopeArgs(global), "claim", itemId, "--force"])} only when that takeover is approved.`,
+        `Take the item first with a coordinated ${renderPmCommand([...resolvePmCommandScopeArgs(global), "claim", itemId, "--force", ...actor])} only when that takeover is approved.`,
       ],
     },
   );
@@ -823,9 +831,9 @@ function documentHolderPrincipal(metadata: ItemMetadata): string | undefined {
  * that write must run under. The pause is two writes (status, then release),
  * so a caller whose claim a close ended is refused before the first one when
  * another principal holds the item. The judgement reads history outside the
- * item lock, so the returned fence re-reads the holder under the status
- * write's lock and refuses when it changed since: a claim that lands in
- * between can never have its status moved by this pause.
+ * item lock, so the returned fence re-reads the item under the status
+ * write's lock and refuses when its holder, status or last write changed
+ * since: work claimed or closed in between can never be moved by this pause.
  */
 export async function assertPauseKeepsLaterHolder(
   id: string,
@@ -842,17 +850,20 @@ export async function assertPauseKeepsLaterHolder(
   const { document } = await readLocatedItem(located, { schema: settings.schema });
   const judged = documentHolderPrincipal(document.metadata);
   if (judged !== undefined && judged !== callerPrincipal && (await callerClaimEndedByClose(pmRoot, located.id, callerPrincipal))) {
-    throw releaseClaimEndedRefusal(located.id, redactIdentityCredentials(document.metadata.assignee!.trim()), "--pause", global);
+    throw releaseClaimEndedRefusal(located.id, redactIdentityCredentials(document.metadata.assignee!.trim()), "--pause", global, author);
   }
+  // The judgement holds only for the item it read: every write advances updated_at, so a claim, close or
+  // reopen that lands before the status write takes its lock changes this fingerprint.
+  const judgedState = pauseJudgementFingerprint(document.metadata);
   return (write) =>
     runWithItemMutationPrecondition(
       {
         pmRoot,
         id: located.id,
         validate: (locked) => {
-          if (documentHolderPrincipal(locked.metadata) === judged) return;
-          throw new PmCliError(`The holder of ${located.id} changed while the pause was judged, so nothing was written.`, EXIT_CODE.CONFLICT, {
-            code: PAUSE_HOLDER_CHANGED_CODE,
+          if (pauseJudgementFingerprint(locked.metadata) === judgedState) return;
+          throw new PmCliError(`${located.id} changed while the pause was judged, so nothing was written.`, EXIT_CODE.CONFLICT, {
+            code: PAUSE_ITEM_CHANGED_CODE,
             item_id: located.id,
             nextSteps: [`Retry ${renderPmCommand([...resolvePmCommandScopeArgs(global), "release", located.id, "--pause"])} to judge the current holder.`],
           });
@@ -862,8 +873,13 @@ export async function assertPauseKeepsLaterHolder(
     );
 }
 
-/** Stable refusal code when the holder changes between a pause's judgement and its status write (GH-1774). */
-export const PAUSE_HOLDER_CHANGED_CODE = "pause_holder_changed";
+/** Stable refusal code when the item changes between a pause's judgement and its status write (GH-1774). */
+export const PAUSE_ITEM_CHANGED_CODE = "pause_item_changed";
+
+/** What a pause judged: the holder principal, the status and the time of the last write. */
+function pauseJudgementFingerprint(metadata: ItemMetadata): string {
+  return JSON.stringify([documentHolderPrincipal(metadata) ?? null, metadata.status, metadata.updated_at]);
+}
 
 /** Implements run release for the public runtime surface of this module. */
 export async function runRelease(
@@ -914,7 +930,7 @@ export async function runRelease(
       mutate(document, location) {
         if (location.callerClaimScoped === true) {
           const holder = redactIdentityCredentials(document.metadata.assignee!.trim());
-          if (handoffStatus !== undefined) throw releaseClaimEndedRefusal(document.metadata.id, holder, "--handoff", global);
+          if (handoffStatus !== undefined) throw releaseClaimEndedRefusal(document.metadata.id, holder, "--handoff", global, options.author);
           keptHolder = holder;
           return { changedFields: [], warnings: [`${RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING}:${document.metadata.id}:${holder}`] };
         }
@@ -990,5 +1006,6 @@ function releaseHandoffAdvice(
 export const _testOnlyClaimCommand = {
   claimConflictRefusal,
   decideHeldClaim,
+  releaseClaimEndedRefusal,
   staleTakeoverReceipt,
 };
