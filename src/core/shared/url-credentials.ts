@@ -481,7 +481,8 @@ function neutralizeBackslashedQuotes(text: string): string {
       parts.push(text.slice(copied, index), "_".repeat(quote + 1 - index));
       copied = quote + 1;
     }
-    index = runEnd;
+    // Resume after a matched quote, so an inner run of the JSON caret form is never read twice.
+    index = quote >= 0 ? quote + 1 : runEnd;
   }
   return copied === 0 ? text : `${parts.join("")}${text.slice(copied)}`;
 }
@@ -762,3 +763,6 @@ export function redactUrlCredentialsInText(text: string): string {
 function redactUrlUserinfoInText(text: string): string {
   return AT_OR_ENCODED_AT.test(text) ? redactSpacedUserinfo(text).replaceAll(/\S+/gu, redactUrlCredentialsInToken) : text;
 }
+
+/** Test-only access to the position-keeping escape neutralization (GH-1774). */
+export const urlCredentialsTestOnly = { neutralizeEscapedQuotes };

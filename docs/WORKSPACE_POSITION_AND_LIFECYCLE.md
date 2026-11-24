@@ -67,7 +67,10 @@ characters are therefore copy-safe in the declared shell (POSIX shells,
 cmd.exe, or PowerShell with `PM_COMMAND_SHELL=powershell`; see
 [Configuration](CONFIGURATION.md#environment-variables)), while package
 consumers can reuse `renderPmCommand` for their own tokenized recovery actions.
-The cmd.exe guarantee covers the line cmd.exe parses. npm's `pm.cmd` launcher
+The cmd.exe guarantee covers the line cmd.exe parses with delayed expansion
+off, its default. Under `cmd /v:on` or the DelayedExpansion registry setting,
+cmd.exe expands `!name!` even inside double quotes, so an argument holding `!`
+is not copy-safe in that mode. npm's `pm.cmd` launcher
 parses the forwarded `%*` a second time, so an argument holding a double quote
 together with `^`, `&`, `|`, `<` or `>` is not forwarded byte for byte. In that
 case run the native entry point instead (`node <install>/dist/cli.js ...`), or

@@ -10,6 +10,7 @@ import {
   redactOptionalIdentityCredentials,
   redactUrlCredentialsInText,
   redactUrlCredentialsInToken,
+  urlCredentialsTestOnly,
   runWithUrlCredentialInvocation,
 } from "../../../../src/core/shared/url-credentials.js";
 
@@ -339,6 +340,16 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
       const wrapped = JSON.stringify({ suggested_retry: `pm clone ${quoteCommandArg(arg, "win32", dialect)}` });
       expect(redactUrlCredentialsInText(wrapped), wrapped).not.toMatch(/my |secret|words/u);
     }
+    // Neutralization keeps every position: the result is as long as its input for each escape spelling.
+    for (const [text, closer] of [
+      ['a\\\\^\\"b\\^"c\\"d\\\\"e', '"'],
+      ["a'\\''b'\\\\''c\\\"d", "'"],
+      ["plain", undefined],
+    ] as const) {
+      const neutral = urlCredentialsTestOnly.neutralizeEscapedQuotes(text, closer);
+      expect(neutral.length, text).toBe(text.length);
+    }
+    expect(urlCredentialsTestOnly.neutralizeEscapedQuotes('x\\\\^\\"y', '"')).toBe("x_____y");
     // A caret and an even inner run before a quote, or a caret with no quote after its run, is no escaped quote.
     expect(redactUrlCredentialsInText('see "ssh://example.test/a\\^\\\\" or reply@example.org')).toContain("reply@example.org");
     expect(redactUrlCredentialsInText('see "ssh://example.test/a\\^b" or reply@example.org')).toContain("reply@example.org");
