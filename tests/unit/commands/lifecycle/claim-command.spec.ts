@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { _testOnlyClaimCommand, assertPauseKeepsLaterHolder } from "../../../../src/sdk/lifecycle/claim.js";
+import { runWithUrlCredentialInvocation } from "../../../../src/core/shared/url-credentials.js";
 import {
   claimNextFromRecommendations,
   isAlreadyClaimedError,
@@ -818,6 +819,13 @@ describe("runClaim/runRelease", () => {
         const judgedOnce = await assertPauseKeepsLaterHolder(id, global, "agent-b");
         expect(context.runCli(["comments", id, "--add", "progress", "--author", "agent-b"]).code).toBe(0);
         await expect(judgedOnce(() => runRelease(id, false, global, { author: "agent-b" }))).rejects.toMatchObject<PmCliError>({ code: "pause_item_changed" });
+        // A same-size replacement of the history stream (a snapshot restore) also refuses: the fence binds its digest.
+        const beforeRestore = await assertPauseKeepsLaterHolder(id, global, "agent-b");
+        const historyPath = getHistoryPath(context.pmPath, id);
+        const stream = await readFile(historyPath, "utf8");
+        await writeFile(historyPath, stream.replace("progress", "progrxss"));
+        await expect(beforeRestore(() => runRelease(id, false, global, { author: "agent-b" }))).rejects.toMatchObject<PmCliError>({ code: "pause_item_changed" });
+        await writeFile(historyPath, stream);
         // An unchanged item passes the fence.
         const unchanged = await assertPauseKeepsLaterHolder(id, global, "agent-b");
         await expect(unchanged(() => runRelease(id, false, global, { author: "agent-b" }))).resolves.toMatchObject({ previous_assignee: "agent-b" });
@@ -836,6 +844,12 @@ describe("runClaim/runRelease", () => {
       const redacted = refusal("https://deploy:hunter2@example.test");
       expect(redacted).toBe("Take the item first with a coordinated pm claim --force as the same author only when that takeover is approved.");
       expect(redacted).not.toContain("hunter2");
+      // A leading-dash author is attached so it still parses as the --author value.
+      expect(refusal(" --team ")).toContain("claim pm-x --force --author=--team only");
+      // A command the guidance redactor would rewrite (a registered password inside the author) is withheld too.
+      runWithUrlCredentialInvocation(["release", "--message", "https://ci:build-source@example.test/x"], () => {
+        expect(refusal("build-source")).toBe("Take the item first with a coordinated pm claim --force as the same author only when that takeover is approved.");
+      });
     });
 
     it("leaves every other pause to the ownership policy", async () => {

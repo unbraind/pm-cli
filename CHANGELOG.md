@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Changed (SDK contract)
+
+- Recovery commands rendered on Windows are not paste-safe in PowerShell: $(...) and backticks expand inside CommandLineToArgvW double quotes: Windows recovery commands were always CommandLineToArgvW double-quoted, so PowerShell expanded $, $(...) and backticks; the intent restore_with and the git rm --cached remediation always used POSIX single quotes → PM_COMMAND_SHELL declares posix, cmd or powershell (default cmd on Windows, posix elsewhere); powershell renders single-quoted literals; every rendered command, including the intent restore_with and the git remediation, follows the declared dialect. Migrate: Set PM_COMMAND_SHELL=powershell (or pwsh) when pasting pm recovery commands into PowerShell; SDK callers can pass a CommandShellDialect as the third argument of quoteCommandArg and renderPmCommand ([pm-kjoudp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kjoudp.toon))
+- GH-1774: parity review findings: cmd.exe-unsafe recovery commands, a claim with unreadable history reported as active, and a release after a force-claim clears the replacement holder: A release by the holder a close ended cleared a later holder (warn policy, or strict with --force) and a --handoff or --pause from it moved the later holder work; claim_activity had no activity state and text refusals called an unjudgeable holder active; cmd.exe recovery commands left %VAR% and inner quotes live → That release writes nothing and warns release_claim_ended_by_close:<id\>:<holder\>, and a --handoff or --pause from it is refused with release_claim_ended_by_close before any write; claim_activity.state (optional for older producers) is active, stale or unknown, and text refusals print activity unknown with its cause; an argument holding % or a double quote renders in the cmd.exe caret form. Migrate: Read claim_activity.state instead of inferring activity from stale_policy.stale; treat the release_claim_ended_by_close warning as a successful no-op and the refusal as the later holder owning the item; to take a later holder claim, use pm claim <id\> --force and then release ([pm-gh1774](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1774.toon))
+
+### Fixed
+
+- POSIX recovery commands are not paste-safe in interactive bash or zsh: a ! inside the double-quoted form triggers history expansion ([pm-oq893h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oq893h.toon))
+
 ### Security
 
 - GH-1773: refusal envelopes echo URL userinfo when it contains whitespace and a percent-encoded @ separator ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon))

@@ -3,7 +3,8 @@
  *
  * Implements the pm claim command surface and its agent-facing runtime behavior.
  */
-import { statSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   resolveRuntimeStatusRegistry,
@@ -50,7 +51,7 @@ import {
   recordClaimSemanticAttribution,
   recordReleaseSemanticAttribution,
 } from "../context/semantic-session-attribution.js";
-import { redactIdentityCredentials, redactIdentityFields, redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
+import { redactIdentityCredentials, redactIdentityFields, redactOptionalIdentityCredentials, redactUrlCredentialsInText } from "../../core/shared/url-credentials.js";
 
 /** Stable warning/error code for an exhausted atomic next-work walk. */
 export const NO_AVAILABLE_NEXT_ITEM_CODE = "no_available_next_item";
@@ -798,7 +799,9 @@ function explicitActorArgs(explicitAuthor: string | undefined): string[] | undef
   // Trimmed first, as author resolution trims it. A redacted author would name a different principal, so
   // no executable command is rendered for it (undefined), as the SDK withholds retries that lose credentials.
   const author = explicitAuthor.trim();
-  return redactIdentityCredentials(author) === author ? ["--author", author] : undefined;
+  if (redactIdentityCredentials(author) !== author) return undefined;
+  // A value that starts with "-" would parse as another option, so it is attached (`--author=--team`).
+  return author.startsWith("-") ? [`--author=${author}`] : ["--author", author];
 }
 
 /** Stable warning when a release by the holder a close ended leaves a later holder's claim in place (GH-1774). */
@@ -817,10 +820,12 @@ function releaseClaimEndedRefusal(
   explicitAuthor: string | undefined,
 ): PmCliError {
   const actor = explicitActorArgs(explicitAuthor);
+  const command = actor === undefined ? undefined : renderPmCommand([...resolvePmCommandScopeArgs(global), "claim", itemId, "--force", ...actor]);
+  // The guidance redactor runs on every refusal; a command it would rewrite runs as someone else, so none is shown.
   const takeover =
-    actor === undefined
+    command === undefined || redactUrlCredentialsInText(command) !== command
       ? "Take the item first with a coordinated pm claim --force as the same author only when that takeover is approved."
-      : `Take the item first with a coordinated ${renderPmCommand([...resolvePmCommandScopeArgs(global), "claim", itemId, "--force", ...actor])} only when that takeover is approved.`;
+      : `Take the item first with a coordinated ${command} only when that takeover is approved.`;
   return new PmCliError(
     `A close of ${itemId} already ended your claim, and ${holder} has claimed it since; ${action} cannot move or release another holder's claim.`,
     EXIT_CODE.CONFLICT,
@@ -866,9 +871,9 @@ export async function assertPauseKeepsLaterHolder(
   const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
   if (!located) return (write) => write();
   // Sample the history stream before reading anything the judgement uses: a write that lands after this
-  // point changes the size the status write's lock compares, and one before it is in both reads below.
+  // point changes the digest the status write's lock compares, and one before it is in both reads below.
   const historyPath = getHistoryPath(pmRoot, located.id);
-  const judgedStreamSize = historyStreamSize(historyPath);
+  const judgedStream = historyStreamDigest(historyPath);
   const { document } = await readLocatedItem(located, { schema: settings.schema });
   const judged = documentHolderPrincipal(document.metadata);
   if (judged !== undefined && judged !== callerPrincipal && (await callerClaimEndedByClose(pmRoot, located.id, callerPrincipal))) {
@@ -877,14 +882,14 @@ export async function assertPauseKeepsLaterHolder(
   // The judgement holds only for the item it read. Every write appends to the item's history stream (and
   // advances updated_at unless a reproducible clock holds it), so a claim, close or reopen that lands
   // before the status write takes its lock changes this fingerprint.
-  const judgedState = pauseJudgementFingerprint(document.metadata, judgedStreamSize);
+  const judgedState = pauseJudgementFingerprint(document.metadata, judgedStream);
   return (write) =>
     runWithItemMutationPrecondition(
       {
         pmRoot,
         id: located.id,
         validate: (locked) => {
-          if (pauseJudgementFingerprint(locked.metadata, historyStreamSize(historyPath)) === judgedState) return;
+          if (pauseJudgementFingerprint(locked.metadata, historyStreamDigest(historyPath)) === judgedState) return;
           throw new PmCliError(`${located.id} changed while the pause was judged, so nothing was written.`, EXIT_CODE.CONFLICT, {
             code: PAUSE_ITEM_CHANGED_CODE,
             item_id: located.id,
@@ -901,17 +906,21 @@ export async function assertPauseKeepsLaterHolder(
 /** Stable refusal code when the item changes between a pause's judgement and its status write (GH-1774). */
 export const PAUSE_ITEM_CHANGED_CODE = "pause_item_changed";
 
-/** What a pause judged: the holder principal, the status, the time of the last write and the history stream's size. */
-function pauseJudgementFingerprint(metadata: ItemMetadata, streamSize: number): string {
-  return JSON.stringify([documentHolderPrincipal(metadata) ?? null, metadata.status, metadata.updated_at, streamSize]);
+/** What a pause judged: the holder principal, the status, the time of the last write and the history stream's digest. */
+function pauseJudgementFingerprint(metadata: ItemMetadata, streamDigest: string): string {
+  return JSON.stringify([documentHolderPrincipal(metadata) ?? null, metadata.status, metadata.updated_at, streamDigest]);
 }
 
-/** Byte size of an item's history stream, or -1 when it cannot be read; any append changes it. */
-function historyStreamSize(historyPath: string): number {
+/**
+ * SHA-256 of an item's history stream bytes, or "absent" when it cannot be
+ * read. Any append, rewrite or same-size replacement (a workspace snapshot
+ * restore) changes it.
+ */
+function historyStreamDigest(historyPath: string): string {
   try {
-    return statSync(historyPath).size;
+    return createHash("sha256").update(readFileSync(historyPath)).digest("hex");
   } catch {
-    return -1;
+    return "absent";
   }
 }
 
