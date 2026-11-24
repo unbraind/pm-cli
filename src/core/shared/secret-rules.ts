@@ -1160,8 +1160,9 @@ function isNewlineCode(code: number): boolean {
  * quote right after a letter, digit or underscore never opens one (in prose it
  * is an apostrophe such as `customer's` or a unit mark, and a code prefix such
  * as `f"…"` just keeps main's reading); a backslash escapes the next
- * character outside a single-quoted string (inside one it is literal, as in
- * the shell); and a line feed or carriage return ends every string, as JSON,
+ * character, except inside a single-quoted string a shell word opened (there
+ * it is literal, as in the shell; a single-quoted container member, as in a
+ * Python repr, keeps escapes); and a line feed or carriage return ends every string, as JSON,
  * Python and shell strings on one line read (U+2028 and U+2029 are data inside
  * a JSON string). Each flat scan owns one lexer and only ever moves it
  * forward, to the start of each value it judges and through a value that sits
@@ -1175,10 +1176,12 @@ interface StringLexer {
   state: number;
   /** Where the open string's opening quote stands, when one is open. */
   opener: number;
+  /** Whether a backslash escapes inside the open string: always in a double-quoted one, in a single-quoted one only as a container member. */
+  escapes: boolean;
 }
 
 function createStringLexer(content: string): StringLexer {
-  return { content, index: 0, state: NO_STRING, opener: -1 };
+  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true };
 }
 
 /** Read one character (two for an escape); returns the position of a quote that closed the open string, or -1. */
@@ -1192,8 +1195,9 @@ function lexStep(lexer: StringLexer): number {
     return -1;
   }
   if (code === 0x5c) {
-    // A backslash is literal inside a single-quoted string, as in the shell (`note='C:\'`).
-    if (lexer.state !== SINGLE_STRING && index + 1 < content.length && !isNewlineCode(content.charCodeAt(index + 1))) lexer.index = index + 2;
+    // A backslash is literal inside a shell single-quoted string (`note='C:\'`), but escapes in a
+    // Python or JavaScript one that is a container member (`{'title': 'can\'t …'}`).
+    if (lexer.escapes && index + 1 < content.length && !isNewlineCode(content.charCodeAt(index + 1))) lexer.index = index + 2;
     return -1;
   }
   if (code !== 0x22 && code !== 0x27) return -1;
@@ -1205,6 +1209,7 @@ function lexStep(lexer: StringLexer): number {
   if (lexer.state === NO_STRING && !(index > 0 && WORD_CHARACTER.test(content[index - 1]!))) {
     lexer.state = kind;
     lexer.opener = index;
+    lexer.escapes = kind === DOUBLE_STRING || stringOpening(content, index).inContainer;
   }
   return -1;
 }
