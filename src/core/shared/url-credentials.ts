@@ -403,10 +403,20 @@ const WORD_END_CLOSERS = new Set([")", "]"]);
  */
 function closingDelimiterAt(text: string, closer: string | undefined): number {
   if (closer === undefined) return -1;
-  if (!WORD_END_CLOSERS.has(closer)) return text.indexOf(closer);
+  if (!WORD_END_CLOSERS.has(closer)) return unescapedIndexOf(text, closer);
   let end = text.length;
   while (end > 0 && /[.,;:!?*_~`]/u.test(text[end - 1]!)) end -= 1;
   return end > 0 && text[end - 1] === closer ? end - 1 : -1;
+}
+
+/** Where the first occurrence of `character` stands that no backslash escapes (`pa\\"ss` holds none), or -1. */
+function unescapedIndexOf(text: string, character: string): number {
+  for (let index = text.indexOf(character); index >= 0; index = text.indexOf(character, index + 1)) {
+    let backslashes = 0;
+    while (index - backslashes > 0 && text[index - backslashes - 1] === "\\") backslashes += 1;
+    if (backslashes % 2 === 0) return index;
+  }
+  return -1;
 }
 
 /**
@@ -590,10 +600,13 @@ function openingAt(text: string, word: string, from: number): { opening: SpacedO
   const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
   if (next === undefined) return undefined;
   const nextText = text.slice(next[0], next[1]);
-  const pathless = opening.special ? nextText.split(/[/\\?#]/u, 1)[0]! : nextText;
+  // The rest of the authority slashes may follow the blank too (`https:/` tab `/u:pass`).
+  const slashes = /^[/\\]*/u.exec(nextText)![0];
+  const body = nextText.slice(slashes.length);
+  const pathless = opening.special ? body.split(/[/\\?#]/u, 1)[0]! : body;
   // The delimiter that opened a quoted URL closes its authority too (`"https://` tab `token:x@host"`).
   const closed = closingDelimiterAt(pathless, opening.closer);
-  const authorityWord = closed < 0 ? pathless : pathless.slice(0, closed);
+  const authorityWord = `${slashes}${closed < 0 ? pathless : pathless.slice(0, closed)}`;
   const holdsSeparator = /@|%40/iu.test(authorityWord);
   // A separator after a dropped blank is userinfo whatever its head holds (`https://` tab `token@host`).
   const joined = holdsSeparator ? { ...opening, kind: "user" as const } : spacedUserinfoOpening(`${word}${authorityWord}`);

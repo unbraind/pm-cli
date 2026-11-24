@@ -385,9 +385,10 @@ element body are whole by construction, and a quoted value is whole when the
 end of its line follows its closing quote, or, for a structured value (a
 quoted key's, an array element, or a value after a `:` separator),
 structure (`,` `;` `)` `}` `]`) does, because a `set` line or any other `=`
-assignment keeps whatever follows its quote. So a dotenv or
-`set` line whose percent reference more words follow, and a literal attached
-to the reference (`%API_KEY%…`, under any credential key), are still reported.
+assignment keeps whatever follows its quote. So under a password key a dotenv or `set` line whose percent reference more
+words follow is still reported; under a credential key a literal attached to
+the reference (`%API_KEY%…`) is reported, while words after a blank are judged
+as their own word.
 
 A credential-key value led by a lowercase `$name` keeps the reference-free
 reading, in which a `$`-led literal is a placeholder. Any other `$` text is literal, so a

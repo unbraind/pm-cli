@@ -190,6 +190,9 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // CodeRabbit review round 5: a path after the authority that a tab split from its scheme.
     ["a token username after a tab before a path", "https://\tfixtureToken:x@example.invalid/repo", "https://[redacted]@example.invalid/repo"],
     ["a token username after a tab in an SSH URL", "ssh://\tfixtureToken:x@host/repo", "ssh://[redacted]@host/repo"],
+    // CodeRabbit review round 10: an escaped JSON quote inside a password, and authority slashes split by a tab.
+    ["an escaped JSON quote inside a spaced password", String.raw`{"url":"ssh://ci:pa\"ss words@host"}`, '{"url":[redacted]@host"}'],
+    ["authority slashes split by a tab", '"https:/\t/u:pass words@host"', '"https:/[redacted]@host"'],
     // CodeRabbit review round 9: a username-only userinfo after a tab.
     ["a token-only username after a tab", "https://\tfixtureToken@example.invalid/repo", "https://[redacted]@example.invalid/repo"],
     // CodeRabbit review round 8: a host-and-port-shaped head that a tab follows may be a dotted user and a digit password.
@@ -238,6 +241,7 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["a bare scheme before a host and port", "https://\texample.com:8080 ping @bob"],
     // Greptile review round 10: a path after a tab-split authority ends it before later prose.
     ["a tab-split public link before prose with a colon and a mention", "https://\texample.com/docs status:404 then ping @oncall"],
+    ["a public link whose slashes a tab splits, before prose", "https:/\t/example.com/docs status:404 ping @oncall"],
     // CodeRabbit review round 7: a special scheme's query or fragment ends its authority.
     ["a public link with a query before prose with a colon and a mention", "See https://example.invalid?next=docs status:404 notify @oncall"],
     ["a public link with a fragment before prose with a colon and a mention", "See https://example.invalid#top status:404 notify @oncall"],

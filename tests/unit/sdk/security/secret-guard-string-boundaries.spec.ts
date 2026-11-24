@@ -287,6 +287,8 @@ describe("a whole Windows variable is a placeholder for every key-named rule (GH
     expect(rulesOf(`${passwordKey.toUpperCase()}=%DB_PASSWORD% staging`)).toEqual(["password_assignment"]);
     expect(rulesOf(`${passwordKey}: %DB_PASSWORD%${literal}`)).toEqual(["password_assignment"]);
     expect(rulesOf(`api_key=%API_KEY%${literal}`)).toEqual(["credential_key_assignment"]);
+    // CodeRabbit round 10: under a credential key, words after a blank are their own word, as the docs state.
+    expect(rulesOf(`token=%API_KEY% words after it`)).toEqual([]);
     expect(rulesOf(`{"api_key":"%API_KEY%${literal}"}`)).toEqual(["credential_key_assignment"]);
   });
 });

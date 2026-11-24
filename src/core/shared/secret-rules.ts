@@ -1209,7 +1209,7 @@ function lexStep(lexer: StringLexer): number {
   if (lexer.state === NO_STRING && !(index > 0 && WORD_CHARACTER.test(content[index - 1]!))) {
     lexer.state = kind;
     lexer.opener = index;
-    lexer.escapes = kind === DOUBLE_STRING || stringOpening(content, index).inContainer;
+    lexer.escapes = kind === DOUBLE_STRING || opensAfterContainer(content, index);
   }
   return -1;
 }
@@ -1236,12 +1236,25 @@ interface StringOpening {
  * after its closing quote end it.
  */
 function stringOpening(content: string, opener: number): StringOpening {
-  let index = opener - 1;
-  // JSON allows any whitespace, line breaks included, between a separator and a value, and XML
-  // allows blanks around an attribute's `=` (`value = "…"`).
-  while (index >= 0 && /\s/u.test(content[index]!)) index -= 1;
+  const index = significantBefore(content, opener);
   const before = content[index];
   return { inContainer: before !== undefined && /[[{,:]/u.test(before), attribute: before === "=" && insideStartTag(content, index) };
+}
+
+/**
+ * Where the last non-whitespace character before `opener` stands, or -1. JSON
+ * allows any whitespace, line breaks included, between a separator and a
+ * value, and XML allows blanks around an attribute's `=` (`value = "…"`).
+ */
+function significantBefore(content: string, opener: number): number {
+  let index = opener - 1;
+  while (index >= 0 && /\s/u.test(content[index]!)) index -= 1;
+  return index;
+}
+
+/** Whether a string's opening quote follows a container's `[`, `{`, `,` or `:`; the lexer's escape decision needs only this, never the start-tag read. */
+function opensAfterContainer(content: string, opener: number): boolean {
+  return /[[{,:]/u.test(content.charAt(significantBefore(content, opener)));
 }
 
 /** Code units read back from an attribute's `=` for the start tag it sits in. */
