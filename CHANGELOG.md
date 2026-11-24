@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- GH-1773: refusal envelopes echo URL userinfo when it contains whitespace and a percent-encoded @ separator ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon))
+- GH-1775: the secret guard flags bare environment-variable references (api_key: ${API_KEY}) as credentials since the \#1704 widening ([pm-gh1775](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1775.toon))
+
 ## 2026.11.24 - 2026-11-24
 
 ### Changed (SDK contract)
@@ -14,8 +21,6 @@
 
 ### Security
 
-- GH-1773: refusal envelopes echo URL userinfo when it contains whitespace and a percent-encoded @ separator ([pm-gh1773](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1773.toon))
-- GH-1775: the secret guard flags bare environment-variable references (api_key: ${API_KEY}) as credentials since the \#1704 widening ([pm-gh1775](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1775.toon))
 - CodeFactor reports zizmor dangerous-triggers on release-reliability.yml's workflow_run trigger as a new critical issue on every PR that touches a workflow ([pm-5mstyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5mstyv.toon))
 
 ### Other
