@@ -1232,8 +1232,8 @@ interface StringOpening {
  * or prose opened (`echo "…"`, `Use "…"`) is a shell word or a quotation
  * instead. It is an attribute value when its quote follows `=` and optional
  * whitespace inside an open start tag (`<setting value="…"/>`,
- * `<setting value = "…"`), so only then does `>` after its closing quote end
- * it.
+ * `<setting value = "…"`, also across attribute lines), so only then does `>`
+ * after its closing quote end it.
  */
 function stringOpening(content: string, opener: number): StringOpening {
   let index = opener - 1;
@@ -1245,21 +1245,30 @@ function stringOpening(content: string, opener: number): StringOpening {
 }
 
 /** Code units read back from an attribute's `=` for the start tag it sits in. */
-const START_TAG_LOOK_BACK = 512;
+const START_TAG_LOOK_BACK = 8192;
 
 /**
- * Whether the `=` at `equals` sits inside an open XML or HTML start tag on its
- * line: the last `<` before it opens a tag name and no `>` closed it since
- * (`<setting value=`). An `=` outside any tag (`x="…"`, a shell or dotenv
- * assignment) opens no attribute value, so `>` after its closing quote never
- * ends the value there.
+ * Whether the `=` at `equals` sits inside an open XML or HTML start tag: read
+ * back, skipping earlier quoted attribute values whole (a `>` inside one is
+ * data), the first unquoted `<` that opens a tag name comes before any
+ * unquoted `>` (`<setting value=`, also across attribute lines). An `=`
+ * outside any tag (`x="…"`, a shell or dotenv assignment) opens no attribute
+ * value, so `>` after its closing quote never ends the value there. The read
+ * is bounded, and each `=` reads its own tag once.
  */
 function insideStartTag(content: string, equals: number): boolean {
-  const from = Math.max(0, equals - START_TAG_LOOK_BACK);
-  const before = content.slice(from, equals);
-  const lineStart = Math.max(before.lastIndexOf("\n"), before.lastIndexOf("\r")) + 1;
-  const open = before.lastIndexOf("<");
-  return open >= lineStart && /[A-Za-z]/u.test(before.charAt(open + 1)) && !before.includes(">", open);
+  const floor = Math.max(0, equals - START_TAG_LOOK_BACK);
+  for (let index = equals - 1; index >= floor; index -= 1) {
+    const character = content[index]!;
+    if (character === ">") return false;
+    if (character === "<") return /[A-Za-z]/u.test(content.charAt(index + 1));
+    if (character === "\"" || character === "'") {
+      const open = content.lastIndexOf(character, index - 1);
+      if (open < floor) return false;
+      index = open;
+    }
+  }
+  return false;
 }
 
 /** Structure that may follow a closing quote before the next member, element or statement. */

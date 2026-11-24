@@ -195,6 +195,12 @@ describe("attached literals and literal values are still credentials (GH-1775 ne
     expect(rulesOf(`{"title":"${passwordKey}: ${D}(cat <file)","updated":"ok"}`)).toEqual([]);
     // CodeRabbit round 5: a quote inside an angle placeholder is never a cut point.
     expect(rulesOf(`{note: x='bad, ${passwordKey}: <a'b>${literal}}`)).toEqual(["password_assignment"]);
+    // Greptile round 15: a start tag across lines, with a `>` inside an earlier quoted attribute, still holds the value.
+    expect(rulesOf(`<setting\n  label="a > b"\n  value="${passwordKey}=${D}DB_PASSWORD"/>`)).toEqual([]);
+    expect(rulesOf(`<setting label='${"x".repeat(600)}' value="${passwordKey}=${D}DB_PASSWORD"/>`)).toEqual([]);
+    // A closed tag before the `=`, or a quoted span reaching past the bounded read, is no open start tag.
+    expect(rulesOf(`<p>note x="${passwordKey}: a'b">${literal}'`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`'${"y".repeat(8300)}' x="${passwordKey}: a'b">${literal}'`)).toEqual(["password_assignment"]);
     // CodeRabbit round 9: an `=` outside any start tag opens no attribute, so `">` never ends the value there.
     expect(rulesOf(`x="y ${passwordKey}: a'b">${literal}'`)).toEqual(["password_assignment"]);
     // CodeRabbit round 8: a backslash is literal inside a shell single-quoted string.
