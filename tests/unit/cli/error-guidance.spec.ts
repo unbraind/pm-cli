@@ -511,7 +511,11 @@ describe("pm cli error guidance context plumbing", () => {
       expect(legacy({ stale_policy: { ...activity(true, 96).stale_policy } })).toContain("; idle 3h, stale under");
       expect(legacy({ history_unreadable: true })).toContain("; activity unknown under mutation_guard.stale_in_progress_hours=72 (history unreadable");
       expect(legacy({ unproven_activity: "workspace_restored" })).toContain("(idleness unproven: workspace_restored");
-      expect(legacy({ idle_hours: null })).toContain("(no valid activity time)");
+      expect(legacy({ idle_hours: null, last_activity_at: null })).toContain("(no valid activity time)");
+      // A legacy NaN idle time is unmeasurable, never "idle NaNh, active".
+      const unmeasurable = legacy({ idle_hours: Number.NaN });
+      expect(unmeasurable).toContain("; activity unknown under mutation_guard.stale_in_progress_hours=72 (idle time not measurable)");
+      expect(unmeasurable).not.toContain("NaN");
       const envelope = formatPmCliErrorForJson(claimMessage, 4, { ...claimContext, claim_activity: activity(true, 96) });
       expect(envelope).toMatchObject({ claimed_by: "agent-a", claim_activity: activity(true, 96) });
       expect(projectLeanErrorEnvelope(envelope)).toMatchObject({ claim_activity: activity(true, 96) });

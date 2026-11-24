@@ -761,13 +761,13 @@ function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
 function unknownActivityCause(activity: NonNullable<GuidanceMessage["claimActivity"]>): string {
   if (activity.history_unreadable === true) return "history unreadable";
   if (activity.unproven_activity !== undefined) return `idleness unproven: ${activity.unproven_activity}`;
-  return "no valid activity time";
+  return activity.last_activity_at === null ? "no valid activity time" : "idle time not measurable";
 }
 
 /** The activity state, derived as the SDK evaluator derives it when an older producer omitted it. */
 function claimActivityState(activity: NonNullable<GuidanceMessage["claimActivity"]>): "active" | "stale" | "unknown" {
   if (activity.state !== undefined) return activity.state;
-  if (activity.history_unreadable === true || activity.unproven_activity !== undefined || activity.idle_hours === null) return "unknown";
+  if (activity.history_unreadable === true || activity.unproven_activity !== undefined || !Number.isFinite(activity.idle_hours)) return "unknown";
   return activity.stale_policy.stale ? "stale" : "active";
 }
 
@@ -777,7 +777,7 @@ function renderClaimActivitySuffix(activity: GuidanceMessage["claimActivity"]): 
   const policy = `${activity.stale_policy.setting}=${activity.stale_policy.threshold_hours}`;
   const state = claimActivityState(activity);
   if (state === "unknown") {
-    const idle = activity.idle_hours === null ? "" : `, last recorded activity ${activity.idle_hours}h ago`;
+    const idle = Number.isFinite(activity.idle_hours) ? `, last recorded activity ${activity.idle_hours}h ago` : "";
     return `; activity unknown under ${policy} (${unknownActivityCause(activity)}${idle})`;
   }
   return `; idle ${activity.idle_hours}h, ${state} under ${policy}`;

@@ -102,7 +102,7 @@ vi.mock("../../../src/sdk/lifecycle/claim.js", async (importOriginal) => ({
   ...lifecyclePrimitives,
   requireClaimTarget: (await importOriginal<typeof import("../../../src/sdk/lifecycle/claim.js")>()).requireClaimTarget,
   // The pause pre-check reads the tracker; registration tests cover routing only.
-  assertPauseKeepsLaterHolder: vi.fn(async () => undefined),
+  assertPauseKeepsLaterHolder: vi.fn(async () => (write: () => Promise<unknown>) => write()),
 }));
 vi.mock("../../../src/sdk/lifecycle/update.js", () => lifecyclePrimitives);
 vi.mock("../../../src/sdk/lifecycle/close.js", () => lifecyclePrimitives);

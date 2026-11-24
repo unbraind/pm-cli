@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   extractProvidedOptionFlags,
@@ -119,6 +119,17 @@ describe("argv-utils.extractProvidedOptionFlags", () => {
   });
 });
 
+/** Dialect-specific assertions must not inherit a developer's PM_COMMAND_SHELL. */
+let inheritedCommandShell: string | undefined;
+beforeEach(() => {
+  inheritedCommandShell = process.env.PM_COMMAND_SHELL;
+  delete process.env.PM_COMMAND_SHELL;
+});
+afterEach(() => {
+  if (inheritedCommandShell === undefined) delete process.env.PM_COMMAND_SHELL;
+  else process.env.PM_COMMAND_SHELL = inheritedCommandShell;
+});
+
 describe("argv-utils.quoteCommandArg / renderPmCommand", () => {
   it("leaves safe tokens bare and quotes/escapes unsafe tokens", () => {
     expect(quoteCommandArg("src/cli/main.ts", "linux")).toBe("src/cli/main.ts");
@@ -211,21 +222,16 @@ describe("argv-utils shell dialects (pm-kjoudp, GH-1774)", () => {
   });
 
   it("single-quotes a POSIX argument holding ! so interactive bash and zsh cannot history-expand it (pm-oq893h)", () => {
-    expect(quoteCommandArg("literal !!", "linux")).toBe("'literal !!'");
+    expect(quoteCommandArg("literal !!", "linux", "posix")).toBe("'literal !!'");
     expect(quotePosixCommandArg("it's !$")).toBe("'it'\\''s !$'");
-    expect(quoteCommandArg("no bang $HOME", "linux")).toBe('"no bang \\$HOME"');
+    expect(quoteCommandArg("no bang $HOME", "linux", "posix")).toBe('"no bang \\$HOME"');
   });
 
   it("follows PM_COMMAND_SHELL when no dialect is passed", () => {
-    const previous = process.env.PM_COMMAND_SHELL;
-    try {
-      process.env.PM_COMMAND_SHELL = "powershell";
-      expect(renderPmCommand(["get", "it's"], "win32")).toBe("pm get 'it''s'");
-      process.env.PM_COMMAND_SHELL = "posix";
-      expect(renderPmCommand(["--pm-path", "C:\\repo", "get"], "win32")).toBe('pm --pm-path "C:\\\\repo" get');
-    } finally {
-      if (previous === undefined) delete process.env.PM_COMMAND_SHELL;
-      else process.env.PM_COMMAND_SHELL = previous;
-    }
+    // The file-level hooks restore the developer's value afterwards.
+    process.env.PM_COMMAND_SHELL = "powershell";
+    expect(renderPmCommand(["get", "it's"], "win32")).toBe("pm get 'it''s'");
+    process.env.PM_COMMAND_SHELL = "posix";
+    expect(renderPmCommand(["--pm-path", "C:\\repo", "get"], "win32")).toBe('pm --pm-path "C:\\\\repo" get');
   });
 });

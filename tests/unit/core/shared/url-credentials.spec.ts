@@ -307,14 +307,17 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
   });
 
   it("removes a secret from every shell dialect's rendering and from each rendering embedded in JSON (GH-1774)", () => {
-    const tokens = ['https://deploy:"""%40example.test/x', "https://ci:abcde%40example.test/x", "https://ops:it's!long-pass@host/x"];
+    const tokens = ['https://deploy:"""%40example.test/x', "https://ci:abcde%40example.test/x", "https://ops:it's!long-pass@host/x", "https://ci:Z%40example.test/x"];
     runWithUrlCredentialInvocation(["package", "install", ...tokens], () => {
       for (const token of tokens) {
         for (const dialect of ["posix", "cmd", "powershell"] as const) {
           const rendered = `pm package install ${quoteCommandArg(token, "win32", dialect)}`;
           for (const echo of [rendered, JSON.stringify(rendered), JSON.stringify({ suggested_retry: rendered })]) {
             const redacted = redactUrlCredentialsInText(echo);
-            expect(redacted, `${dialect}: ${echo}`).not.toMatch(/abcde|"""|\\"\\"\\"|long-pass/u);
+            expect(redacted, `${dialect}: ${echo}`).not.toMatch(/abcde|"""|\\"\\"\\"|long-pass|ci:Z/u);
+            // Whatever spelling the dialect gave the password, nothing of it may follow the username.
+            const user = token.slice("https://".length, token.indexOf(":", "https://".length));
+            expect(redacted, `${dialect}: ${echo}`).not.toMatch(new RegExp(`${user}:(?!\\[redacted\\])`, "u"));
           }
         }
       }

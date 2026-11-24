@@ -306,37 +306,62 @@ function writeHolderField(fields: HolderFields, key: keyof HolderFields, value: 
 }
 
 /** One JSON-patch operation as a decoded history record stores it. */
-type HolderPatchOperation = { op?: unknown; path: string; value?: unknown };
+type HolderPatchOperation = { op?: unknown; path: string; from?: unknown; value?: unknown };
 
 /** Whether an operation writes its value (`add` or `replace`). */
 function writesValue(operation: HolderPatchOperation): boolean {
   return operation.op === "add" || operation.op === "replace";
 }
 
-/** Apply a write or removal of the whole metadata object: both holder fields take the new object's values. */
-function applyMetadataObjectOperation(fields: HolderFields, operation: HolderPatchOperation): void {
-  if (!writesValue(operation) && operation.op !== "remove") return;
-  const value = writesValue(operation) ? operation.value : undefined;
+/** Set both holder fields from a written metadata object; anything else clears them. */
+function writeHolderObject(fields: HolderFields, value: unknown): void {
   const metadata = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
   for (const key of HOLDER_FIELD_PATHS.values()) writeHolderField(fields, key, metadata[key]);
 }
 
-/** Apply one operation to the tracked holder fields; paths are normalized, so legacy `/front_matter/...` records count. */
-function applyHolderOperation(fields: HolderFields, operation: HolderPatchOperation): void {
-  const path = normalizeReplayPatchPath(operation.path);
-  if (path === "/metadata") {
-    applyMetadataObjectOperation(fields, operation);
-    return;
-  }
-  const key = HOLDER_FIELD_PATHS.get(path);
-  if (key === undefined) return;
-  if (operation.op === "remove") delete fields[key];
-  else if (writesValue(operation) && typeof operation.value === "string") fields[key] = operation.value;
+/** The metadata object a whole-document write carries, in either era's key. */
+function documentMetadata(value: unknown): unknown {
+  if (typeof value !== "object" || value === null) return undefined;
+  const document = value as { metadata?: unknown; front_matter?: unknown };
+  return document.metadata ?? document.front_matter;
 }
 
-/** Apply one record's assignee and claim-principal operations to the tracked holder fields. */
-function applyHolderPatch(fields: HolderFields, patch: ReadonlyArray<{ path: string; value?: unknown }>): void {
-  for (const operation of patch as ReadonlyArray<HolderPatchOperation>) applyHolderOperation(fields, operation);
+/** Whether a normalized path replaces a holder field: the field, the metadata object or the whole document. */
+function reachesHolder(path: string): boolean {
+  return path === "" || path === "/metadata" || HOLDER_FIELD_PATHS.has(path);
+}
+
+/** Write `value` at a path that reaches the holder fields; `undefined` clears what the path covers. */
+function writeHolderAt(fields: HolderFields, path: string, value: unknown): void {
+  if (path === "") writeHolderObject(fields, documentMetadata(value));
+  else if (path === "/metadata") writeHolderObject(fields, value);
+  else writeHolderField(fields, HOLDER_FIELD_PATHS.get(path)!, value);
+}
+
+/**
+ * Apply one operation to the tracked holder fields with history replay's path
+ * semantics: legacy `/front_matter/...` paths normalize, and a whole-document
+ * or whole-metadata write replaces both fields. A `move` or `copy` onto a
+ * holder path carries a value this fold does not track, so it returns false
+ * and the stream proves nothing; a `move` away from one clears it.
+ */
+function applyHolderOperation(fields: HolderFields, operation: HolderPatchOperation): boolean {
+  const path = normalizeReplayPatchPath(operation.path);
+  if (operation.op === "move" || operation.op === "copy") {
+    if (reachesHolder(path)) return false;
+    const from = typeof operation.from === "string" ? normalizeReplayPatchPath(operation.from) : undefined;
+    if (operation.op === "move" && from !== undefined && reachesHolder(from)) writeHolderAt(fields, from, undefined);
+    return true;
+  }
+  if (!reachesHolder(path)) return true;
+  if (writesValue(operation)) writeHolderAt(fields, path, operation.value);
+  else if (operation.op === "remove") writeHolderAt(fields, path, undefined);
+  return true;
+}
+
+/** Apply one record's operations to the tracked holder fields; false when a record makes the holder unprovable. */
+function applyHolderPatch(fields: HolderFields, patch: ReadonlyArray<{ path: string; value?: unknown }>): boolean {
+  return (patch as ReadonlyArray<HolderPatchOperation>).every((operation) => applyHolderOperation(fields, operation));
 }
 
 /**
@@ -377,7 +402,7 @@ export async function callerClaimEndedByClose(
   for (const entry of entries) {
     if (!isWellFormedHistoryRecord(entry)) return false;
     const before = holderPrincipal(fields);
-    applyHolderPatch(fields, entry.patch);
+    if (!applyHolderPatch(fields, entry.patch)) return false;
     const after = holderPrincipal(fields);
     if (before === callerPrincipal && after !== callerPrincipal) endedByClose = CLAIM_ENDING_CLOSE_OPERATIONS.has(entry.op);
     else if (after === callerPrincipal && before !== callerPrincipal) endedByClose = false;

@@ -734,7 +734,7 @@ describe("runClaim/runRelease", () => {
             expect(released.warnings).toEqual([`release_claim_ended_by_close:${id}:agent-b`]);
             expect(released.warnings?.some((warning) => warning.startsWith("ownership_warning:"))).toBe(false);
             expect(released.suggestions).toEqual([
-              `A close of ${id} already ended your claim; agent-b claimed it afterwards and keeps it. Nothing was changed.`,
+              `A close of ${id} already ended your claim; agent-b claimed it afterwards and keeps it. The item was not changed.`,
             ]);
             // The holder's item and its activity clock are untouched.
             expect(await itemState(context, id)).toEqual(before);
@@ -764,7 +764,11 @@ describe("runClaim/runRelease", () => {
         ).rejects.toMatchObject<PmCliError>({
           exitCode: EXIT_CODE.CONFLICT,
           code: "release_claim_ended_by_close",
-          context: expect.objectContaining({ claimed_by: "agent-b", item_id: id }),
+          context: expect.objectContaining({
+            claimed_by: "agent-b",
+            item_id: id,
+            nextSteps: expect.arrayContaining([expect.stringContaining(`--pm-path ${context.pmPath} claim ${id} --force`)]),
+          }),
         });
         expect(await itemState(context, id)).toEqual(before);
       });
@@ -785,21 +789,42 @@ describe("runClaim/runRelease", () => {
       });
     });
 
+    it("fences the pause's status write to the holder it judged, so a claim landing in between is never moved", async () => {
+      await withTempPmPath(async (context) => {
+        const global = { path: context.pmPath };
+        const id = createTask(context, { title: "pause-race", status: "in_progress" });
+        const fence = await assertPauseKeepsLaterHolder(id, global, "agent-a");
+        // B claims after the judgement and before the status write takes the lock.
+        await runClaim(id, false, global, { author: "agent-b" });
+        const before = await itemState(context, id);
+        await expect(fence(() => runRelease(id, true, global, { author: "agent-a" }))).rejects.toMatchObject<PmCliError>({
+          code: "pause_holder_changed",
+          context: expect.objectContaining({ item_id: id, nextSteps: [expect.stringContaining(`release ${id} --pause`)] }),
+        });
+        expect(await itemState(context, id)).toEqual(before);
+        // An unchanged holder passes the fence.
+        const unchanged = await assertPauseKeepsLaterHolder(id, global, "agent-b");
+        await expect(unchanged(() => runRelease(id, false, global, { author: "agent-b" }))).resolves.toMatchObject({ previous_assignee: "agent-b" });
+      });
+    });
+
     it("leaves every other pause to the ownership policy", async () => {
       await withTempPmPath(async (context) => {
         setGovernancePreset(context, "default");
         const global = { path: context.pmPath };
         // Unclaimed, missing and stranger-held items pass the pre-check; the pause's own writes judge them.
         const unclaimed = createTask(context, { title: "pause-unclaimed", status: "in_progress" });
-        await expect(assertPauseKeepsLaterHolder(unclaimed, global, "agent-a")).resolves.toBeUndefined();
-        await expect(assertPauseKeepsLaterHolder("pm-missing-id", global, "agent-a")).resolves.toBeUndefined();
+        await expect(assertPauseKeepsLaterHolder(unclaimed, global, "agent-a")).resolves.toBeTypeOf("function");
+        // A missing item gets a pass-through fence; the pause's own update reports it.
+        const missingFence = await assertPauseKeepsLaterHolder("pm-missing-id", global, "agent-a");
+        await expect(missingFence(async () => "written")).resolves.toBe("written");
         // An assignment without a claim principal is compared by its assignee, as the ownership guard compares it.
         const assigned = createTask(context, { title: "pause-assigned", status: "open", assignee: "agent-b" });
-        await expect(assertPauseKeepsLaterHolder(assigned, global, "agent-a")).resolves.toBeUndefined();
-        await expect(assertPauseKeepsLaterHolder(assigned, global, "agent-b")).resolves.toBeUndefined();
+        await expect(assertPauseKeepsLaterHolder(assigned, global, "agent-a")).resolves.toBeTypeOf("function");
+        await expect(assertPauseKeepsLaterHolder(assigned, global, "agent-b")).resolves.toBeTypeOf("function");
         const held = createTask(context, { title: "pause-stranger", status: "open" });
         await runClaim(held, false, global, { author: "agent-b", start: true });
-        await expect(assertPauseKeepsLaterHolder(held, global, "agent-c")).resolves.toBeUndefined();
+        await expect(assertPauseKeepsLaterHolder(held, global, "agent-c")).resolves.toBeTypeOf("function");
         const paused = await runPauseTask(held, { author: "agent-c" }, global);
         expect(paused.release.warnings).toContain(`ownership_warning:assignee_conflict:${held}:agent-b`);
       });

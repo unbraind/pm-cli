@@ -117,9 +117,11 @@ export async function runPauseTask(id: string, options: TaskCompositionOptions, 
   const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
   const registry = resolveRuntimeStatusRegistry(settings.schema);
   resolveReleaseHandoff({ ...options, pause: true }, registry);
-  await assertPauseKeepsLaterHolder(id, global, options.author);
+  const fenceStatusWrite = await assertPauseKeepsLaterHolder(id, global, options.author);
   const status = registry.open_status;
-  const update = await runUpdate(id, mutationOptionsWithOverrides(options, { status }, ["assignee", "pause"]) as UpdateCommandOptions, global);
+  const update = await fenceStatusWrite(() =>
+    runUpdate(id, mutationOptionsWithOverrides(options, { status }, ["assignee", "pause"]) as UpdateCommandOptions, global),
+  );
   const canonicalId = update.item.id as string;
   const release = await finishComposition(canonicalId, "update", /** Release the persisted update identity only after its open-status mutation succeeds. */ () => runRelease(canonicalId, options.force === true, global, options));
   return { id: canonicalId, action: "pause_task", update, release };

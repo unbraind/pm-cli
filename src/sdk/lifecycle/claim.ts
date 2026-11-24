@@ -31,6 +31,7 @@ import {
   type ItemOwnershipActivity,
 } from "../ownership-source.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
+import { runWithItemMutationPrecondition } from "../../core/store/item-mutation-precondition.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
 import { admitExplicitStartClaim, admitStartTransition, START_BLOCKED_REFUSAL_CODE } from "./start-blockers.js";
@@ -793,7 +794,7 @@ export const RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING = "release_claim_ended_by_clos
  * holder a close ended: the item now belongs to a later holder, so the caller
  * can neither move it nor clear that claim (GH-1774).
  */
-function releaseClaimEndedRefusal(itemId: string, holder: string, action: "--handoff" | "--pause"): PmCliError {
+function releaseClaimEndedRefusal(itemId: string, holder: string, action: "--handoff" | "--pause", global: GlobalOptions): PmCliError {
   return new PmCliError(
     `A close of ${itemId} already ended your claim, and ${holder} has claimed it since; ${action} cannot move or release another holder's claim.`,
     EXIT_CODE.CONFLICT,
@@ -805,33 +806,64 @@ function releaseClaimEndedRefusal(itemId: string, holder: string, action: "--han
       why: "A close ends its holder's claim, so that holder's later release must not change work another principal claimed after it.",
       nextSteps: [
         `Ask ${holder} to release or hand off ${itemId}.`,
-        `Take the item first with a coordinated pm claim ${itemId} --force only when that takeover is approved.`,
+        `Take the item first with a coordinated ${renderPmCommand([...resolvePmCommandScopeArgs(global), "claim", itemId, "--force"])} only when that takeover is approved.`,
       ],
     },
   );
 }
 
+/** The holder principal the ownership guard reads from a document, or undefined when it has no non-empty assignee. */
+function documentHolderPrincipal(metadata: ItemMetadata): string | undefined {
+  const assignee = metadata.assignee?.trim();
+  return assignee ? metadata.claim_principal?.trim() || assignee : undefined;
+}
+
 /**
- * Refuse a `--pause` before its status write when the caller's claim on the
- * item was ended by a close and another principal holds it now (GH-1774).
- * The pause is two writes (status, then release), so the decision must come
- * before the first one; the release re-judges under its own lock.
+ * Judge a `--pause` before its status write (GH-1774) and return the fence
+ * that write must run under. The pause is two writes (status, then release),
+ * so a caller whose claim a close ended is refused before the first one when
+ * another principal holds the item. The judgement reads history outside the
+ * item lock, so the returned fence re-reads the holder under the status
+ * write's lock and refuses when it changed since: a claim that lands in
+ * between can never have its status moved by this pause.
  */
-export async function assertPauseKeepsLaterHolder(id: string, global: GlobalOptions, author: string | undefined): Promise<void> {
+export async function assertPauseKeepsLaterHolder(
+  id: string,
+  global: GlobalOptions,
+  author: string | undefined,
+): Promise<<T>(write: () => Promise<T>) => Promise<T>> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const callerPrincipal = resolveClaimPrincipal(resolveAuthor(author, settings.author_default));
   const typeToFolder = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder;
   // A missing item is left to the pause's own update, which reports it with its recovery.
   const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
-  if (!located) return;
+  if (!located) return (write) => write();
   const { document } = await readLocatedItem(located, { schema: settings.schema });
-  const assignee = document.metadata.assignee?.trim();
-  if (!assignee || (document.metadata.claim_principal?.trim() || assignee) === callerPrincipal) return;
-  if (await callerClaimEndedByClose(pmRoot, located.id, callerPrincipal)) {
-    throw releaseClaimEndedRefusal(located.id, redactIdentityCredentials(assignee), "--pause");
+  const judged = documentHolderPrincipal(document.metadata);
+  if (judged !== undefined && judged !== callerPrincipal && (await callerClaimEndedByClose(pmRoot, located.id, callerPrincipal))) {
+    throw releaseClaimEndedRefusal(located.id, redactIdentityCredentials(document.metadata.assignee!.trim()), "--pause", global);
   }
+  return (write) =>
+    runWithItemMutationPrecondition(
+      {
+        pmRoot,
+        id: located.id,
+        validate: (locked) => {
+          if (documentHolderPrincipal(locked.metadata) === judged) return;
+          throw new PmCliError(`The holder of ${located.id} changed while the pause was judged, so nothing was written.`, EXIT_CODE.CONFLICT, {
+            code: PAUSE_HOLDER_CHANGED_CODE,
+            item_id: located.id,
+            nextSteps: [`Retry ${renderPmCommand([...resolvePmCommandScopeArgs(global), "release", located.id, "--pause"])} to judge the current holder.`],
+          });
+        },
+      },
+      write,
+    );
 }
+
+/** Stable refusal code when the holder changes between a pause's judgement and its status write (GH-1774). */
+export const PAUSE_HOLDER_CHANGED_CODE = "pause_holder_changed";
 
 /** Implements run release for the public runtime surface of this module. */
 export async function runRelease(
@@ -882,7 +914,7 @@ export async function runRelease(
       mutate(document, location) {
         if (location.callerClaimScoped === true) {
           const holder = redactIdentityCredentials(document.metadata.assignee!.trim());
-          if (handoffStatus !== undefined) throw releaseClaimEndedRefusal(document.metadata.id, holder, "--handoff");
+          if (handoffStatus !== undefined) throw releaseClaimEndedRefusal(document.metadata.id, holder, "--handoff", global);
           keptHolder = holder;
           return { changedFields: [], warnings: [`${RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING}:${document.metadata.id}:${holder}`] };
         }
@@ -910,8 +942,8 @@ export async function runRelease(
   }
 
   const attribution = attributionAdvice(
-    // A scoped no-op committed nothing, so it records no post-commit attribution either.
-    await recordAttributionAfterCommit("release", result.item.id, global, keptHolder !== undefined, () =>
+    // A scoped no-op still retires the caller's own session attribution: its claim ended at the close.
+    await recordAttributionAfterCommit("release", result.item.id, global, false, () =>
       recordReleaseSemanticAttribution({
         pmRoot,
         principal: claimPrincipal,
@@ -924,7 +956,7 @@ export async function runRelease(
     : {
         warnings: [],
         suggestions: [
-          `A close of ${result.item.id} already ended your claim; ${keptHolder} claimed it afterwards and keeps it. Nothing was changed.`,
+          `A close of ${result.item.id} already ended your claim; ${keptHolder} claimed it afterwards and keeps it. The item was not changed.`,
         ],
       };
 
