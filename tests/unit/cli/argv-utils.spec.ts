@@ -197,6 +197,10 @@ describe("argv-utils shell dialects (pm-kjoudp, GH-1774)", () => {
     // A quote and a later & stay escaped; plain quoting still covers metacharacters without % or ".
     expect(quoteCmdCommandArg('a"b & calc')).toBe('^"a\\^"b ^& calc^"');
     expect(quoteCmdCommandArg("a & b | (c) <d> ^e !f")).toBe('"a & b | (c) <d> ^e !f"');
+    // cmd.exe ends a command at a line break, so a break is rendered as a space and never starts another command.
+    expect(quoteCmdCommandArg("first\r\nsecond & echo PWNED\nthird\rfourth")).toBe('"first second & echo PWNED third fourth"');
+    expect(quoteCmdCommandArg('50%\nof "it"')).toBe('^"50%^ of \\^"it\\^"^"');
+    expect(renderPmCommand(["search", "a\nb"], "win32", "cmd")).not.toMatch(/[\r\n]/u);
   });
 
   it("leaves $, $(...) and backticks inert inside cmd.exe quotes and PowerShell literal strings", () => {

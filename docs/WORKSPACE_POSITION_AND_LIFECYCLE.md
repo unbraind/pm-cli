@@ -70,8 +70,12 @@ consumers can reuse `renderPmCommand` for their own tokenized recovery actions.
 The cmd.exe guarantee covers the line cmd.exe parses. npm's `pm.cmd` launcher
 parses the forwarded `%*` a second time, so an argument holding a double quote
 together with `^`, `&`, `|`, `<` or `>` is not forwarded byte for byte. In that
-case run the native entry point instead (`node <install>/dist/cli.js ...`) or
-use PowerShell, whose `pm.ps1` launcher passes arguments unchanged.
+case run the native entry point instead (`node <install>/dist/cli.js ...`), or
+use PowerShell 7.3 or later in its default argument-passing mode with
+`PM_COMMAND_SHELL=powershell`, whose `pm.ps1` launcher passes arguments
+unchanged. Windows PowerShell 5.1 and `Legacy` passing drop empty arguments
+and mangle embedded double quotes. cmd.exe cannot carry a line break in any
+quoting, so the cmd form renders each line break as a space.
 
 Recovery precedence is intentional:
 

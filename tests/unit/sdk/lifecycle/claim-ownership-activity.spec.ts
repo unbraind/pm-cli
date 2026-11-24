@@ -311,7 +311,7 @@ describe("claim activity evidence (GH-1336)", () => {
       expect(await callerClaimEndedByClose(pmRoot, "pm-closed", "agent-b")).toBe(false);
 
       // A later claim by the caller starts a new claim, which a takeover (not a close) then ends.
-      const reclaimA = record("claim", [{ op: "replace", path: "/metadata/assignee", value: "agent-a" }, set("/metadata/claim_principal", "agent-a#1")]);
+      const reclaimA = record("claim", [set("/metadata/assignee", "agent-a"), set("/metadata/claim_principal", "agent-a#1")]);
       const takeoverB = record("claim", [{ op: "replace", path: "/metadata/assignee", value: "agent-b" }, remove("/metadata/claim_principal")]);
       await write("pm-retaken", [claimA, closeAll, reclaimA, takeoverB]);
       expect(await callerClaimEndedByClose(pmRoot, "pm-retaken", "agent-a#1")).toBe(false);

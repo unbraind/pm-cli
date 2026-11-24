@@ -95,10 +95,20 @@ export const escapeCmdMetacharacters = (quoted: string): string => {
  */
 const CMD_UNSAFE_IN_QUOTES = /["%]/u;
 
-/** Quote one argument for cmd.exe: CommandLineToArgvW quoting, caret-escaped when cmd.exe would otherwise expand or split it. */
+/** A line break, which cmd.exe treats as the end of the command in every quoting. */
+const CMD_LINE_BREAK = /\r\n|[\r\n]/gu;
+
+/**
+ * Quote one argument for cmd.exe: CommandLineToArgvW quoting, caret-escaped
+ * when cmd.exe would otherwise expand or split it. cmd.exe ends a command at
+ * a line break and no escape carries one, so each line break is rendered as
+ * a space: a pasted retry can never run the text after the break as another
+ * command (GH-1774).
+ */
 export const quoteCmdCommandArg = (arg: string): string => {
-  const quoted = quoteWindowsCommandArg(arg);
-  return CMD_UNSAFE_IN_QUOTES.test(arg) ? escapeCmdMetacharacters(quoted) : quoted;
+  const singleLine = arg.replace(CMD_LINE_BREAK, " ");
+  const quoted = quoteWindowsCommandArg(singleLine);
+  return CMD_UNSAFE_IN_QUOTES.test(singleLine) ? escapeCmdMetacharacters(quoted) : quoted;
 };
 
 /** PowerShell treats the typographic single quotes as quote characters too. */

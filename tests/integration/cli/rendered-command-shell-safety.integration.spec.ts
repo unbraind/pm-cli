@@ -46,6 +46,7 @@ const HOSTILE_ARGUMENTS = [
   "literal !! and !$ and it's !",
   "=node",
   "line;next",
+  "first line\nsecond & echo PWNED",
 ];
 
 const historyBash = spawnSync("bash", ["--version"]).status === 0;
@@ -113,8 +114,10 @@ describe("rendered command arguments survive their declared shell unchanged", ()
       windowsVerbatimArguments: true,
     });
     const received = parseEcho(result);
-    expect(received).toEqual(HOSTILE_ARGUMENTS);
+    // cmd.exe cannot carry a line break, so the cmd form renders it as a space and no second command runs.
+    expect(received).toEqual(HOSTILE_ARGUMENTS.map((arg) => arg.replace(/\r\n|[\r\n]/gu, " ")));
     expect(String(result.stdout)).not.toContain(PROBE_VALUE);
+    expect(String(result.stdout).trim().startsWith("[")).toBe(true);
   });
 
   it.runIf(powerShell !== undefined)("powershell: literal strings never expand $, $(...), backticks or %VAR%", () => {
