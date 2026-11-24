@@ -20,6 +20,7 @@ import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { getHistoryPath, getItemPath } from "../../../../src/core/store/paths.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
+import { formatPmCliErrorForDisplay } from "../../../../src/cli/error-guidance.js";
 
 const HOUR = 3_600_000;
 // Items are created by a real-time CLI subprocess, so the pinned clock starts after it, on a whole hour.
@@ -83,6 +84,7 @@ describe("stale-claim takeover (GH-1336)", () => {
         claim_source: "claim",
         claim_activity: {
           last_activity_at: at(0).toISOString(),
+          state: "active",
           claim_age_hours: 5,
           idle_hours: 5,
           stale_policy: {
@@ -198,6 +200,16 @@ describe("stale-claim takeover (GH-1336)", () => {
       });
       expect(error.message).toContain("its history stream could not be read");
       expect(error.context.nextSteps?.[0]).toBe(`Repair the history stream of ${id} (pm history ${id} --verify), then retry --takeover-stale.`);
+
+      // GH-1774: a plain claim against the same holder reports the activity as unknown, never as active.
+      const contention = await refusal(runClaim(id, false, global, { author: "agent-b" }));
+      expect(contention.context).toMatchObject({
+        code: "already_claimed_by",
+        claim_activity: { history_unreadable: true, state: "unknown", stale_policy: { stale: false } },
+      });
+      const text = formatPmCliErrorForDisplay(contention.message, contention.context);
+      expect(text).toContain("; activity unknown under mutation_guard.stale_in_progress_hours=72 (history unreadable");
+      expect(text).not.toContain("active under");
     });
   });
 

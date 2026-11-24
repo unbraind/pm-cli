@@ -146,7 +146,8 @@ describe("GH-1662 one budget contract for intent reads", () => {
 
 describe("GH-1662 intent budgets bind every shaped, resumed and session read", () => {
   /** Split a rendered recovery command into argv, honouring POSIX single quotes. */
-  const argvOf = (command: string): string[] => [...command.matchAll(/'((?:[^']|'"'"')*)'|(\S+)/gu)].map((match) => match[1] === undefined ? match[2]! : match[1].replaceAll(`'"'"'`, "'")).slice(1);
+  // Splits a rendered POSIX or cmd recovery: double-quoted spans keep their backslash escapes as one argument.
+  const argvOf = (command: string): string[] => [...command.matchAll(/"((?:[^"\\]|\\.)*)"|(\S+)/gu)].map((match) => match[1] === undefined ? match[2]! : match[1].replace(/\\(.)/gu, "$1")).slice(1);
 
   it("binds include-shaped reads, keeps resumed refusals whole, names working retries and charges sessions exactly", async () => {
     await withTempPmPath(async (context) => {
@@ -181,14 +182,18 @@ describe("GH-1662 intent budgets bind every shaped, resumed and session read", (
       // Negative control: the omission reported 210 tokens against its 300-token budget.
       expect(shortIntent.estimated_tokens).toBeGreaterThan(shortIntent.token_budget);
 
-      // The retry a refusal names keeps the caller's field projection and returns the result.
+      // The retry a refusal names keeps the caller's field projection and returns the result. The assertion
+      // pins the POSIX spelling, so a developer's PM_COMMAND_SHELL is set aside for this call.
+      const inheritedShell = process.env.PM_COMMAND_SHELL;
+      delete process.env.PM_COMMAND_SHELL;
       const wideId = createTestItemId(context, { title: "T", description: "w".repeat(1000), acceptanceCriteria: "a".repeat(1000) });
       const narrow = await runSource(context, ["get", wideId, "--fields", "id,title", "--for", "inspect", "--token-budget", "300", "--output-row-contract", "--json"]);
       const refusal = JSON.parse(narrow.stdout) as { budget_exceeded: { restore_with: string } };
       expect(refusal.budget_exceeded, narrow.stdout).toBeDefined();
       const restore = refusal.budget_exceeded.restore_with;
-      expect(restore).toContain("--fields 'id,title'");
+      expect(restore).toContain('--fields "id,title"');
       const retried = await runSource(context, argvOf(restore));
+      if (inheritedShell !== undefined) process.env.PM_COMMAND_SHELL = inheritedShell;
       expect(retried.code, retried.stdout).toBe(0);
 
       // An SDK intent refusal always carries the read-output receipt its type promises.

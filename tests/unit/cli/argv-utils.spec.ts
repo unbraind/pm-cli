@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   extractProvidedOptionFlags,
@@ -8,6 +8,13 @@ import {
   redactSensitiveCommandArgs,
   renderPmCommand,
 } from "../../../src/cli/argv-utils.js";
+import {
+  COMMAND_SHELL_ENV,
+  quoteCmdCommandArg,
+  quotePosixCommandArg,
+  quotePowerShellCommandArg,
+  resolveCommandShellDialect,
+} from "../../../src/core/shared/command-line.js";
 
 describe("argv-utils.normalizeLongOptionFlag", () => {
   it("normalizes long flags and accepts inline =value forms", () => {
@@ -112,6 +119,17 @@ describe("argv-utils.extractProvidedOptionFlags", () => {
   });
 });
 
+/** Dialect-specific assertions must not inherit a developer's PM_COMMAND_SHELL. */
+let inheritedCommandShell: string | undefined;
+beforeEach(() => {
+  inheritedCommandShell = process.env.PM_COMMAND_SHELL;
+  delete process.env.PM_COMMAND_SHELL;
+});
+afterEach(() => {
+  if (inheritedCommandShell === undefined) delete process.env.PM_COMMAND_SHELL;
+  else process.env.PM_COMMAND_SHELL = inheritedCommandShell;
+});
+
 describe("argv-utils.quoteCommandArg / renderPmCommand", () => {
   it("leaves safe tokens bare and quotes/escapes unsafe tokens", () => {
     expect(quoteCommandArg("src/cli/main.ts", "linux")).toBe("src/cli/main.ts");
@@ -126,23 +144,101 @@ describe("argv-utils.quoteCommandArg / renderPmCommand", () => {
   });
 
   it("preserves native Windows path separators in copy-safe command hints", () => {
-    expect(quoteCommandArg("C:\\workspace\\.agents\\pm", "win32")).toBe(
+    expect(quoteCommandArg("C:\\workspace\\.agents\\pm", "win32", "cmd")).toBe(
       "C:\\workspace\\.agents\\pm",
     );
     expect(
       renderPmCommand(
         ["--pm-path", "C:\\project files\\.agents\\pm", "init"],
         "win32",
+        "cmd",
       ),
     ).toBe('pm --pm-path "C:\\project files\\.agents\\pm" init');
-    expect(quoteCommandArg('title "quoted"', "win32")).toBe(
-      '"title \\"quoted\\""',
+    // A quote inside the argument would flip cmd.exe's quote state, so the cmd form caret-escapes it (GH-1774).
+    expect(quoteCommandArg('title "quoted"', "win32", "cmd")).toBe(
+      '^"title \\^"quoted\\^"^"',
     );
-    expect(quoteCommandArg(`path${"\\"}"quoted`, "win32")).toBe(
-      `"path${"\\".repeat(3)}"quoted"`,
+    expect(quoteCommandArg(`path${"\\"}"quoted`, "win32", "cmd")).toBe(
+      `^"path${"\\".repeat(3)}^"quoted^"`,
     );
-    expect(quoteCommandArg("C:\\Program Files\\pm\\", "win32")).toBe(
+    expect(quoteCommandArg("C:\\Program Files\\pm\\", "win32", "cmd")).toBe(
       '"C:\\Program Files\\pm\\\\"',
     );
+  });
+});
+
+describe("argv-utils shell dialects (pm-kjoudp, GH-1774)", () => {
+  it("resolves the declared shell from PM_COMMAND_SHELL, defaulting to cmd on Windows and posix elsewhere", () => {
+    expect(resolveCommandShellDialect("win32", {})).toBe("cmd");
+    expect(resolveCommandShellDialect("linux", {})).toBe("posix");
+    expect(resolveCommandShellDialect("darwin", { PM_COMMAND_SHELL: "" })).toBe("posix");
+    expect(resolveCommandShellDialect("win32", { PM_COMMAND_SHELL: " PowerShell " })).toBe("powershell");
+    expect(resolveCommandShellDialect("win32", { PM_COMMAND_SHELL: "pwsh" })).toBe("powershell");
+    expect(resolveCommandShellDialect("win32", { PM_COMMAND_SHELL: "bash" })).toBe("posix");
+    expect(resolveCommandShellDialect("linux", { PM_COMMAND_SHELL: "cmd.exe" })).toBe("cmd");
+    // An unrecognized value never selects a dialect the caller did not choose.
+    expect(resolveCommandShellDialect("win32", { PM_COMMAND_SHELL: "fish" })).toBe("cmd");
+    expect(resolveCommandShellDialect("linux", { PM_COMMAND_SHELL: "constructor" })).toBe("posix");
+    expect(COMMAND_SHELL_ENV).toBe("PM_COMMAND_SHELL");
+  });
+
+  it("renders a %VAR% tracker path that cmd.exe cannot expand", () => {
+    expect(renderPmCommand(["--pm-path", "C:\\repo\\%TRACKER%\\pm", "get", "item-1"], "win32", "cmd")).toBe(
+      'pm --pm-path ^"C:\\repo\\%^TRACKER%^\\pm^" get item-1',
+    );
+    // Every percent sign is followed by a caret, so no %name% or %name:modifier% text names a defined variable.
+    for (const arg of ["C:\\x\\%PATH:a=b%", "100%", "%%", "50% & 25%", 'say "%OS%"']) {
+      const rendered = quoteCmdCommandArg(arg);
+      expect(rendered).toMatch(/^\^"/u);
+      expect(rendered.match(/%(?!\^)/gu)).toBeNull();
+    }
+    expect(quoteCmdCommandArg("%%")).toBe('^"%^%^"');
+    expect(quoteCmdCommandArg("100%")).toBe('^"100%^"');
+    // A quote and a later & stay escaped; plain quoting still covers metacharacters without % or ".
+    expect(quoteCmdCommandArg('a"b & calc')).toBe('^"a\\^"b ^& calc^"');
+    expect(quoteCmdCommandArg("a & b | (c) <d> ^e !f")).toBe('"a & b | (c) <d> ^e !f"');
+    // cmd.exe ends a command at a line break, so a break is rendered as a space and never starts another command.
+    expect(quoteCmdCommandArg("first\r\nsecond & echo PWNED\nthird\rfourth")).toBe('"first second & echo PWNED third fourth"');
+    expect(quoteCmdCommandArg('50%\nof "it"')).toBe('^"50%^ of \\^"it\\^"^"');
+    expect(renderPmCommand(["search", "a\nb"], "win32", "cmd")).not.toMatch(/[\r\n]/u);
+  });
+
+  it("leaves $, $(...) and backticks inert inside cmd.exe quotes and PowerShell literal strings", () => {
+    const path = "C:\\trackers\\$(Start-Process calc)\\`tick";
+    expect(quoteCommandArg(path, "win32", "cmd")).toBe('"C:\\trackers\\$(Start-Process calc)\\`tick"');
+    expect(quoteCommandArg(path, "win32", "powershell")).toBe("'C:\\trackers\\$(Start-Process calc)\\`tick'");
+    expect(quoteCommandArg("C:\\repo\\%TRACKER%\\pm", "win32", "powershell")).toBe("'C:\\repo\\%TRACKER%\\pm'");
+    expect(renderPmCommand(["--pm-path", path, "get", "item-1"], "win32", "powershell")).toBe(
+      "pm --pm-path 'C:\\trackers\\$(Start-Process calc)\\`tick' get item-1",
+    );
+  });
+
+  it("doubles every PowerShell single quote and quotes tokens PowerShell would reinterpret", () => {
+    expect(quotePowerShellCommandArg("it's")).toBe("'it''s'");
+    expect(quotePowerShellCommandArg("smart\u2019s \u2018q\u2019 \u201Alow\u201B")).toBe("'smart\u2019\u2019s \u2018\u2018q\u2019\u2019 \u201A\u201Alow\u201B\u201B'");
+    expect(quoteCommandArg("@splat", "win32", "powershell")).toBe("'@splat'");
+    expect(quoteCommandArg("--", "win32", "powershell")).toBe("'--'");
+    expect(quoteCommandArg("--fields", "win32", "powershell")).toBe("--fields");
+    expect(quoteCommandArg("a,b", "win32", "powershell")).toBe("'a,b'");
+    expect(quoteCommandArg("user@host", "win32", "powershell")).toBe("user@host");
+    expect(quoteCommandArg("C:\\repo\\pm", "linux", "powershell")).toBe("C:\\repo\\pm");
+    expect(quoteCommandArg("", "win32", "powershell")).toBe("''");
+  });
+
+  it("single-quotes a POSIX argument holding ! so interactive bash and zsh cannot history-expand it (pm-oq893h)", () => {
+    expect(quoteCommandArg("literal !!", "linux", "posix")).toBe("'literal !!'");
+    expect(quotePosixCommandArg("it's !$")).toBe("'it'\\''s !$'");
+    expect(quoteCommandArg("no bang $HOME", "linux", "posix")).toBe('"no bang \\$HOME"');
+    // zsh expands a leading = to a command path (=git), so such a token is quoted.
+    expect(quoteCommandArg("=git", "linux", "posix")).toBe('"=git"');
+    expect(quoteCommandArg("a=b", "linux", "posix")).toBe("a=b");
+  });
+
+  it("follows PM_COMMAND_SHELL when no dialect is passed", () => {
+    // The file-level hooks restore the developer's value afterwards.
+    process.env.PM_COMMAND_SHELL = "powershell";
+    expect(renderPmCommand(["get", "it's"], "win32")).toBe("pm get 'it''s'");
+    process.env.PM_COMMAND_SHELL = "posix";
+    expect(renderPmCommand(["--pm-path", "C:\\repo", "get"], "win32")).toBe('pm --pm-path "C:\\\\repo" get');
   });
 });

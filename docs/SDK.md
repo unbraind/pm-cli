@@ -3676,12 +3676,43 @@ its last `@` or `%40`
 tracker record excluded from npm), so `https://user:pass words@host` is
 redacted in free text. A whitespace-bearing bare token (`https://my token@host`)
 or a separator beyond 16 words or 512 characters is still complete only when you
-redact the original token before interpolating it into text. Do not echo a
+redact the original token before interpolating it into text. A quote that a
+rendering dialect escaped inside a URL (PowerShell `''`, POSIX `'\''`, a
+backslash-escaped `\"` or cmd's `\^"`) never ends that URL. Do not echo a
 value you extracted from a raw token, such as a parsed password or a
 fragment cut at a delimiter. Build diagnostics from redacted tokens, or omit
 the extracted value. When a retry
 would lose credentials this way, withhold the retry instead of emitting one
 that runs a different command.
+
+Render a recovery command from tokens with `renderPmCommand(argv)` or quote
+one token with `quoteCommandArg(token)`, never by hand
+([pm-kjoudp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kjoudp.toon);
+tracker record excluded from npm). Both quote for the shell
+`resolveCommandShellDialect()` declares: `PM_COMMAND_SHELL` (`posix`, `cmd`
+or `powershell`), otherwise `cmd` on Windows and `posix` elsewhere. Pass a
+`CommandShellDialect` as the third argument to render for one shell
+explicitly. `quoteCmdCommandArg` caret-escapes an argument that holds `%` or
+`"`, so cmd.exe can neither expand `%VAR%` nor split the line.
+`quotePowerShellCommandArg` emits a single-quoted literal, and
+`quotePosixCommandArg` single-quotes an argument that holds `!`. The
+redaction rules above recognize a credential in every one of these
+spellings, also when the rendered command is embedded in a JSON string.
+
+`callerClaimEndedByClose(pmRoot, storageId, callerPrincipal)` reports whether
+the caller's latest claim on an item was ended by a close. A package
+mutation that should act only on the caller's own claim passes a
+`CallerClaimScope` as `callerClaimScope` to `mutateItem`. When that resolves
+true under the item lock, the assignee-conflict policy and `--force` do not
+apply. The callback then receives `callerClaimScoped: true` and must leave
+the holder's ownership unchanged. A scoped mutation that changes nothing
+writes nothing, not even implicit deferral cleanup. `pm release` uses this,
+so a close's holder never clears a later holder's claim and a status-changing
+release in that state is refused. The scope holds only while the item's
+history can prove that a close ended the caller's claim. After
+`history-compact` folds the claim and the close into a baseline, or when the
+stream cannot be replayed, the ownership policy applies
+([GH-1774](https://github.com/unbraind/pm-cli/issues/1774)).
 
 `resolveLifecycleVerbRecovery(verb, availablePaths)` returns explicit argument
 templates and next steps for unsupported `block` and `unblock` verbs. It checks

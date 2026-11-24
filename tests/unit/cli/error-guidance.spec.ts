@@ -467,6 +467,7 @@ describe("pm cli error guidance context plumbing", () => {
     it("renders the holder's idle time and stale verdict and keeps claim_activity in JSON (GH-1336)", () => {
       const activity = (stale: boolean, idle: number | null) => ({
         last_activity_at: idle === null ? null : "2026-10-31T00:17:38.745Z",
+        state: idle === null ? ("unknown" as const) : stale ? ("stale" as const) : ("active" as const),
         claim_age_hours: idle,
         idle_hours: idle,
         stale_policy: {
@@ -483,8 +484,38 @@ describe("pm cli error guidance context plumbing", () => {
       const active = formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: activity(false, 3) }, { lean: true });
       expect(active).toContain("; idle 3h, active under mutation_guard.stale_in_progress_hours=72");
       const unknown = formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: activity(false, null) });
-      expect(unknown).toContain("Held by: agent-a (claim since 2026-10-31T00:17:38.745Z)\n");
+      expect(unknown).toContain(
+        "Held by: agent-a (claim since 2026-10-31T00:17:38.745Z); activity unknown under mutation_guard.stale_in_progress_hours=72 (no valid activity time)\n",
+      );
       expect(unknown).not.toContain("; idle");
+      // GH-1774: activity that cannot be judged is never reported as active, even with a recorded idle time.
+      const unreadable = formatPmCliErrorForDisplay(claimMessage, {
+        ...claimContext,
+        claim_activity: { ...activity(false, 3), history_unreadable: true, state: "unknown" },
+      });
+      expect(unreadable).toContain(
+        "; activity unknown under mutation_guard.stale_in_progress_hours=72 (history unreadable, last recorded activity 3h ago)",
+      );
+      expect(unreadable).not.toContain("active under");
+      const unproven = formatPmCliErrorForDisplay(claimMessage, {
+        ...claimContext,
+        claim_activity: { ...activity(false, 3), unproven_activity: "rewritten_history", state: "unknown" },
+      });
+      expect(unproven).toContain("(idleness unproven: rewritten_history, last recorded activity 3h ago)");
+      // Evidence from an older producer without state is classified the way the SDK evaluator classifies it.
+      const legacy = (fields: Record<string, unknown>) => {
+        const { state: _omitted, ...rest } = { ...activity(false, 3), ...fields };
+        return formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: rest as never });
+      };
+      expect(legacy({})).toContain("; idle 3h, active under mutation_guard.stale_in_progress_hours=72");
+      expect(legacy({ stale_policy: { ...activity(true, 96).stale_policy } })).toContain("; idle 3h, stale under");
+      expect(legacy({ history_unreadable: true })).toContain("; activity unknown under mutation_guard.stale_in_progress_hours=72 (history unreadable");
+      expect(legacy({ unproven_activity: "workspace_restored" })).toContain("(idleness unproven: workspace_restored");
+      expect(legacy({ idle_hours: null, last_activity_at: null })).toContain("(no valid activity time)");
+      // A legacy NaN idle time is unmeasurable, never "idle NaNh, active".
+      const unmeasurable = legacy({ idle_hours: Number.NaN });
+      expect(unmeasurable).toContain("; activity unknown under mutation_guard.stale_in_progress_hours=72 (idle time not measurable)");
+      expect(unmeasurable).not.toContain("NaN");
       const envelope = formatPmCliErrorForJson(claimMessage, 4, { ...claimContext, claim_activity: activity(true, 96) });
       expect(envelope).toMatchObject({ claimed_by: "agent-a", claim_activity: activity(true, 96) });
       expect(projectLeanErrorEnvelope(envelope)).toMatchObject({ claim_activity: activity(true, 96) });

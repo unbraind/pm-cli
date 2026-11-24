@@ -11,6 +11,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { PM_GITIGNORE_RUNTIME_DIRECTORIES } from "../workspace.js";
 import { findGitWorkspaceRoot } from "../merge/install.js";
+import { quoteCommandArg } from "../../core/shared/command-line.js";
 
 const execFileAsync = promisify(execFile);
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
@@ -35,10 +36,6 @@ export interface TrackedRuntimeCacheScan {
 
 function toPosixPath(value: string): string {
   return value.replaceAll("\\", "/").replace(/\/+$/, "");
-}
-
-function quoteShellArgument(value: string): string {
-  return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 /** Resolves a tracker root while retaining a deterministic fallback for missing paths. */
@@ -132,7 +129,7 @@ export async function scanTrackedRuntimeCache(
         trackedPaths.length === 0
           ? null
           : `git rm --cached -r -- ${trackedRuntimeDirectories
-              .map((directory) => quoteShellArgument(`:(literal)${directory}`))
+              .map((directory) => quoteCommandArg(`:(literal)${directory}`))
               .join(" ")}`,
     };
   } catch {

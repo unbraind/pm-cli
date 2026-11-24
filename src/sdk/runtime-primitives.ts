@@ -417,6 +417,7 @@ export {
   mutateItem,
   mutateItemWithHistoryContext,
   readLocatedItem,
+  type CallerClaimScope,
   type ItemMutationCallback,
   type ItemMutationLocation,
 } from "../core/store/item-store.js";

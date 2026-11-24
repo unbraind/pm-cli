@@ -1,0 +1,20 @@
+id: pm-xv92s7
+title: "Windows recovery commands lose byte-exactness through npm's pm.cmd launcher: its %* forwarding parses an argument holding a double quote and a cmd metacharacter a second time"
+description: "Found 2026-11-24 by the CodeRabbit review of PR #1779 (pm-gh1774, pm-kjoudp). The cmd dialect makes a pasted recovery command safe for the line cmd.exe parses: an argument holding % or a double quote is caret-escaped, quotes included. On a normal Windows npm install, pm resolves to npm's generated pm.cmd, which forwards %* into its own batch line. That second parse sees the CommandLineToArgvW spelling again, so for an argument such as a\"b & calc the embedded quote flips cmd.exe's quote state and the & splits the shim's line. Main renders the same argument unescaped and splits already at the first parse, so this is not a regression, but the guarantee is incomplete for the most common Windows install. Options to decide: render a double-parse-safe spelling (^^^ before each metacharacter) when pm resolves to a batch launcher; a declared cmd-batch dialect; or an argv-preserving recovery form (a JSON argv receipt that the SDK replays without a shell). Duplicate check: searched npm cmd shim, second parse, percent star, batch launcher; pm-kjoudp and pm-gh1774 (closed) cover the first parse only."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,recovery,security,windows
+created_at: "2026-11-24T18:43:42.677Z"
+updated_at: "2026-11-24T18:43:42.677Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A rendered cmd recovery command run through a generated npm .cmd shim delivers the original argv byte for byte, or the receipt withholds the executable form for arguments it cannot carry; The rendered-command shell-safety corpus runs through a generated .cmd shim on the Windows native cohort"
+parent: pm-mpbb
+risk: medium
+confidence: medium
+expected_result: Pasting a Windows recovery command into cmd.exe with an npm-installed pm runs the original arguments unchanged
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1774,discovered_from,"2026-11-24T18:43:42.677Z","harness:claude-code","cli:create:dep",detected
+  pm-kjoudp,related,"2026-11-24T18:43:42.677Z","harness:claude-code","cli:create:dep",detected
+body: ""

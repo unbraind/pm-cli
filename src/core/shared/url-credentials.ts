@@ -5,12 +5,31 @@
  * pm-5htunt).
  */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { quoteWindowsCommandArg } from "./command-line.js";
+import { escapeCmdMetacharacters, escapePowerShellSingleQuotes, quoteWindowsCommandArg } from "./command-line.js";
 import { EXIT_CODE } from "./constants.js";
 import { PmCliError } from "./errors.js";
 
 /** Written where a possible userinfo span was removed. */
 export const URL_CREDENTIAL_PLACEHOLDER = "[redacted]";
+
+/**
+ * An encoded at sign as text spells it: `%40`, or `%^40` in a cmd.exe
+ * caret-escaped rendering (GH-1774), which a URL in recovery guidance takes
+ * when cmd.exe would otherwise expand its percent sign.
+ */
+const ENCODED_AT = /%\^?40/giu;
+/** A literal or encoded at sign, in any rendering. */
+const AT_OR_ENCODED_AT = /@|%\^?40/iu;
+
+/** Index of the last encoded at sign that starts at or before `before` (default: anywhere), or -1. */
+function lastEncodedAtIndex(text: string, before = text.length): number {
+  let last = -1;
+  for (const match of text.matchAll(ENCODED_AT)) {
+    if (match.index > before) break;
+    last = match.index;
+  }
+  return last;
+}
 
 /**
  * Whether no URL parser can read userinfo anywhere in the token (GH-1707).
@@ -42,7 +61,7 @@ function provablyWithoutUserinfo(token: string, colon: number): boolean {
 /** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */
 function userinfoBounds(token: string): readonly [start: number, end: number] | undefined {
   // Git decodes `%40` in an authority, so an encoded at sign ends userinfo too.
-  const at = Math.max(token.lastIndexOf("@"), token.toLowerCase().lastIndexOf("%40"));
+  const at = Math.max(token.lastIndexOf("@"), lastEncodedAtIndex(token));
   const colon = token.indexOf(":");
   if (at < 0 || colon < 0 || colon > at) return undefined;
   // Skip at most the two authority delimiters. A non-special scheme accepts
@@ -226,15 +245,22 @@ function lowerPreservingLength(text: string): string {
   return result;
 }
 
-/** Every spelling a span takes in raw text, in both shells' quoting and in a JSON string. */
+/** Every spelling a span takes in raw text, in each rendered shell dialect's quoting, and each of those again inside a JSON string. */
 function spanSpellings(span: string): string[] {
-  return [
+  // A span always precedes the token's `@`, so no trailing backslash doubling applies.
+  const windowsQuoted = quoteWindowsCommandArg(`${span}@`);
+  const shellSpellings = [
     span,
     span.replaceAll(/(["\\$`])/gu, "\\$1"),
-    // A span always precedes the token's `@`, so no trailing backslash doubling applies.
-    quoteWindowsCommandArg(`${span}@`).slice(1, -2),
-    JSON.stringify(span).slice(1, -1),
+    span.replaceAll("'", "'\\''"),
+    windowsQuoted.slice(1, -2),
+    // cmd.exe caret form: drop the escaped opening quote (`^"`) and the trailing `@^"`.
+    escapeCmdMetacharacters(windowsQuoted).slice(2, -3),
+    escapePowerShellSingleQuotes(span),
   ];
+  // No spelling includes the separator: the URL rule reads `@`, `%40` and cmd's `%^40` itself, and a
+  // registered run that removed the separator first would hide the userinfo end from it (GH-1774).
+  return [...shellSpellings, ...shellSpellings.map((spelling) => JSON.stringify(spelling).slice(1, -1))];
 }
 
 /** The secret part of a userinfo: the password, or the whole userinfo when it is a bare token; a username is not. */
@@ -382,7 +408,7 @@ function spacedUserinfoOpening(word: string, droppedBlankAfter = false): SpacedO
   let start = colon + 1;
   while (start < word.length && (word[start] === "/" || word[start] === "\\")) start += 1;
   if (start === word.length) return { kind: "pending", closer, special };
-  const authority = word.slice(start);
+  const authority = neutralizeEscapedQuotes(word.slice(start), closer);
   // A special scheme's authority ends at a path, query or fragment, so no later word can hold its userinfo.
   if (authority.startsWith("[") || (special && /[/\\?#]/u.test(authority)) || closingDelimiterAt(authority, closer) >= 0) return undefined;
   // A special scheme's authority with a query or fragment was refused above; OpenSSH reads userinfo across them.
@@ -392,6 +418,74 @@ function spacedUserinfoOpening(word: string, droppedBlankAfter = false): SpacedO
 
 /** Closers that only end a URL at the end of a word, after which only punctuation or emphasis follows; inside a word they are data (`pa)ss`). */
 const WORD_END_CLOSERS = new Set([")", "]"]);
+
+/** POSIX's close-escape-reopen spelling of an apostrophe inside a single-quoted string. */
+const POSIX_ESCAPED_APOSTROPHE = "'\\''";
+/** That spelling as a JSON string encodes it: the backslash doubled. */
+const JSON_POSIX_ESCAPED_APOSTROPHE = "'\\\\''";
+
+/**
+ * Authority text with every escaped quote of the opening's kind replaced by
+ * neutral characters (GH-1774): inside a URL opened by `'`, POSIX's escaped
+ * apostrophe (`'\\''`, or `'\\\\''` in JSON); inside one opened by `'` or `"`,
+ * a quote an odd run of backslashes escapes (`\\"`, cmd's caret form `\\^"`,
+ * or either as JSON encodes it). Their backslashes
+ * are then not read as a special scheme's path delimiter, nor their quotes
+ * as the closer. Positions are kept, so every index read from the result
+ * fits the original.
+ */
+function neutralizeEscapedQuotes(text: string, closer: string | undefined): string {
+  if (closer === "'") {
+    // POSIX's escaped apostrophe raw and as JSON encodes it (`'\\\\''`); a JSON-escaped quote in the password too.
+    return neutralizeBackslashedQuotes(text.replaceAll(JSON_POSIX_ESCAPED_APOSTROPHE, "_____").replaceAll(POSIX_ESCAPED_APOSTROPHE, "____"));
+  }
+  if (closer === '"') return neutralizeBackslashedQuotes(text);
+  return text;
+}
+
+/** Index just past the run of backslashes that starts at `start`. */
+function backslashRunEnd(text: string, start: number): number {
+  let end = start;
+  while (text[end] === "\\") end += 1;
+  return end;
+}
+
+/**
+ * Where the quote stands that the backslash run `[start, runEnd)` escapes,
+ * or -1: an odd run before `"` (`\\"`), or before cmd's caret and `"`
+ * (`\\^"`), or, as JSON encodes that caret form, any run, the caret and an
+ * odd run before `"` (`\\\\^\\"`).
+ */
+function escapedQuoteEnd(text: string, start: number, runEnd: number): number {
+  const odd = (runEnd - start) % 2 === 1;
+  if (text[runEnd] === '"') return odd ? runEnd : -1;
+  if (text[runEnd] !== "^") return -1;
+  if (text[runEnd + 1] === '"') return odd ? runEnd + 1 : -1;
+  const innerEnd = backslashRunEnd(text, runEnd + 1);
+  return text[innerEnd] === '"' && (innerEnd - runEnd - 1) % 2 === 1 ? innerEnd : -1;
+}
+
+/**
+ * Replace each quote that an odd run of backslashes escapes, optionally
+ * across cmd.exe's caret (`\\"`, `\\^"`) or that caret form's JSON
+ * encoding, and that run with neutral characters. One linear pass: each backslash run is read once, so a long
+ * run with no quote after it costs no backtracking.
+ */
+function neutralizeBackslashedQuotes(text: string): string {
+  const parts: string[] = [];
+  let copied = 0;
+  for (let index = text.indexOf("\\"); index >= 0; index = text.indexOf("\\", index)) {
+    const runEnd = backslashRunEnd(text, index);
+    const quote = escapedQuoteEnd(text, index, runEnd);
+    if (quote >= 0) {
+      parts.push(text.slice(copied, index), "_".repeat(quote + 1 - index));
+      copied = quote + 1;
+    }
+    // Resume after a matched quote, so an inner run of the JSON caret form is never read twice.
+    index = quote >= 0 ? quote + 1 : runEnd;
+  }
+  return copied === 0 ? text : `${parts.join("")}${text.slice(copied)}`;
+}
 
 /**
  * Where the delimiter that closes a URL stands in text, or -1. A quote,
@@ -409,9 +503,19 @@ function closingDelimiterAt(text: string, closer: string | undefined): number {
   return end > 0 && text[end - 1] === closer ? end - 1 : -1;
 }
 
-/** Where the first occurrence of `character` stands that no backslash escapes (`pa\\"ss` holds none), or -1. */
+/**
+ * Where the first occurrence of `character` stands that no escape covers
+ * (`pa\\"ss` holds none), or -1. A backslash escapes a quote, and a doubled
+ * apostrophe (`''`, PowerShell) is an apostrophe inside the string, never its
+ * closing quote (GH-1774). Callers pass text whose POSIX and cmd escapes
+ * {@link neutralizeEscapedQuotes} already neutralized.
+ */
 function unescapedIndexOf(text: string, character: string): number {
   for (let index = text.indexOf(character); index >= 0; index = text.indexOf(character, index + 1)) {
+    if (character === "'" && text[index + 1] === "'") {
+      index += 1;
+      continue;
+    }
     let backslashes = 0;
     while (index - backslashes > 0 && text[index - backslashes - 1] === "\\") backslashes += 1;
     if (backslashes % 2 === 0) return index;
@@ -453,7 +557,7 @@ function schemeStartBefore(word: string, colon: number): number {
  */
 function authorityOpening(head: string, droppedBlankAfter: boolean): "user" | "label" | undefined {
   if (head.includes(":")) return !droppedBlankAfter && head.length <= HOST_PORT_MAX_LENGTH && HOST_PORT.test(head) ? undefined : "user";
-  return /@|%40/iu.test(head) ? undefined : "label";
+  return AT_OR_ENCODED_AT.test(head) ? undefined : "label";
 }
 
 /**
@@ -482,8 +586,8 @@ function spacedUserinfoEnd(text: string, from: number, opening: SpacedOpening, s
   for (let words = 0; words < SPACED_USERINFO_MAX_WORDS && index < limit; words += 1) {
     const bounds = nextWord(text, index, limit);
     if (bounds === undefined) break;
-    // Two code units past the bound complete a `%40` that starts inside it.
-    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit + 2)), limit - bounds[0], opening);
+    // Three code units past the bound complete a `%40` or `%^40` that starts inside it.
+    const read = readAuthorityWord(text.slice(bounds[0], Math.min(bounds[1], limit + 3)), limit - bounds[0], opening);
     if (read.startsUrl) break;
     if (endsUserinfo(read, colonSeen, spacedColonSeen)) end = bounds[1];
     const dropped = /[\t\r\n]/u.test(text[bounds[1]] ?? "");
@@ -538,7 +642,7 @@ const CLOCK_TIME = /^\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[AaPp][Mm])?[.,;:!?)
  * a scheme and its `:` (`https://…`), read back from that `:` so a long word
  * costs one pass.
  */
-function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpening): {
+function readAuthorityWord(rawWord: string, maxStart: number, opening: SpacedOpening): {
   startsUrl: boolean;
   separator: boolean;
   colonBeforeSeparator: boolean;
@@ -548,6 +652,7 @@ function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpenin
   closedByOpener: boolean;
   endsAuthority: boolean;
 } {
+  const word = neutralizeEscapedQuotes(rawWord, opening.closer);
   // Only a special scheme's authority ends at a path, query or fragment delimiter; OpenSSH reads
   // `ssh://a/b@host` as user `a/b`.
   const delimiter = opening.special ? word.search(/[/\\?#]/u) : -1;
@@ -556,7 +661,7 @@ function readAuthorityWord(word: string, maxStart: number, opening: SpacedOpenin
   const scheme = word.search(/:[/\\]/u);
   const authority = closed < 0 ? beforePath : beforePath.slice(0, closed);
   const last = Math.min(authority.length, maxStart) - 1;
-  const separator = last < 0 ? -1 : Math.max(authority.lastIndexOf("@", last), authority.toLowerCase().lastIndexOf("%40", last));
+  const separator = last < 0 ? -1 : Math.max(authority.lastIndexOf("@", last), lastEncodedAtIndex(authority, last));
   return {
     startsUrl: scheme >= 0 && closed < 0 && startsWithScheme(word.slice(0, scheme + 1)),
     separator: separator >= 0,
@@ -599,7 +704,7 @@ function openingAt(text: string, word: string, from: number): { opening: SpacedO
   if (opening?.kind !== "pending") return opening === undefined ? undefined : { opening, from, seed: -1, final: false };
   const next = nextWord(text, from, Math.min(text.length, from + SPACED_USERINFO_MAX_LENGTH));
   if (next === undefined) return undefined;
-  const nextText = text.slice(next[0], next[1]);
+  const nextText = neutralizeEscapedQuotes(text.slice(next[0], next[1]), opening.closer);
   // The rest of the authority slashes may follow the blank too (`https:/` tab `/u:pass`).
   const slashes = /^[/\\]*/u.exec(nextText)![0];
   const body = nextText.slice(slashes.length);
@@ -607,7 +712,7 @@ function openingAt(text: string, word: string, from: number): { opening: SpacedO
   // The delimiter that opened a quoted URL closes its authority too (`"https://` tab `token:x@host"`).
   const closed = closingDelimiterAt(pathless, opening.closer);
   const authorityWord = `${slashes}${closed < 0 ? pathless : pathless.slice(0, closed)}`;
-  const holdsSeparator = /@|%40/iu.test(authorityWord);
+  const holdsSeparator = AT_OR_ENCODED_AT.test(authorityWord);
   // A separator after a dropped blank is userinfo whatever its head holds (`https://` tab `token@host`).
   const joined = holdsSeparator ? { ...opening, kind: "user" as const } : spacedUserinfoOpening(`${word}${authorityWord}`);
   if (joined === undefined || joined.kind === "pending") return undefined;
@@ -647,6 +752,17 @@ function redactSpacedUserinfo(text: string): string {
  */
 export function redactUrlCredentialsInText(text: string): string {
   const invocation = invocations.getStore() ?? NO_INVOCATION;
-  const redacted = invocation.carried ? removeRegisteredFragments(text, invocation) : text;
-  return /@|%40/iu.test(redacted) ? redactSpacedUserinfo(redacted).replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
+  // The URL rule runs first, while every separator is still in place: a registered fragment can span a
+  // separator (a password holding `%40` before an `a`-initial host) and would hide the userinfo end.
+  // Fragment removal then scrubs split echoes, and a second URL pass judges what that removal exposed.
+  const urlRedacted = redactUrlUserinfoInText(text);
+  return invocation.carried ? redactUrlUserinfoInText(removeRegisteredFragments(urlRedacted, invocation)) : urlRedacted;
 }
+
+/** Apply the URL userinfo rules (spaced userinfo, then each word's token rule) to free text. */
+function redactUrlUserinfoInText(text: string): string {
+  return AT_OR_ENCODED_AT.test(text) ? redactSpacedUserinfo(text).replaceAll(/\S+/gu, redactUrlCredentialsInToken) : text;
+}
+
+/** Test-only access to the position-keeping escape neutralization (GH-1774). */
+export const urlCredentialsTestOnly = { neutralizeEscapedQuotes };

@@ -62,10 +62,23 @@ The read requires no feature flag or session state. It reports:
 - one deterministic `state` and one `next_action.command`.
 
 The next action always pins the inspected tracker with `--pm-path` and uses the
-SDK's platform-aware command renderer. Paths with spaces or shell-significant
-characters are therefore copy-safe on both POSIX shells and Windows command
-lines, while package consumers can reuse `renderPmCommand` for their own
-tokenized recovery actions.
+SDK's dialect-aware command renderer. Paths with spaces or shell-significant
+characters are therefore copy-safe in the declared shell (POSIX shells,
+cmd.exe, or PowerShell with `PM_COMMAND_SHELL=powershell`; see
+[Configuration](CONFIGURATION.md#environment-variables)), while package
+consumers can reuse `renderPmCommand` for their own tokenized recovery actions.
+The cmd.exe guarantee covers the line cmd.exe parses with delayed expansion
+off, its default. Under `cmd /v:on` or the DelayedExpansion registry setting,
+cmd.exe expands `!name!` even inside double quotes, so an argument holding `!`
+is not copy-safe in that mode. npm's `pm.cmd` launcher
+parses the forwarded `%*` a second time, so an argument holding a double quote
+together with `^`, `&`, `|`, `<` or `>` is not forwarded byte for byte. In that
+case run the native entry point instead (`node <install>/dist/cli.js ...`), or
+use PowerShell 7.3 or later in its default argument-passing mode with
+`PM_COMMAND_SHELL=powershell`, whose `pm.ps1` launcher passes arguments
+unchanged. Windows PowerShell 5.1 and `Legacy` passing drop empty arguments
+and mangle embedded double quotes. cmd.exe cannot carry a line break in any
+quoting, so the cmd form renders each line break as a space.
 
 Recovery precedence is intentional:
 

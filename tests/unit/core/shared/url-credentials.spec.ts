@@ -10,6 +10,7 @@ import {
   redactOptionalIdentityCredentials,
   redactUrlCredentialsInText,
   redactUrlCredentialsInToken,
+  urlCredentialsTestOnly,
   runWithUrlCredentialInvocation,
 } from "../../../../src/core/shared/url-credentials.js";
 
@@ -304,6 +305,87 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
       expect(redactUrlCredentialsInText("ordinary users and user names")).toBe("ordinary users and user names");
     });
     expect(invocationCarriesUrlCredentials()).toBe(false);
+  });
+
+  it("reads a cmd caret-escaped encoded separator without any registered invocation (GH-1774)", () => {
+    const rendered = `pm package install ${quoteCommandArg("https://ci:sample%40example.test/repo", "win32", "cmd")}`;
+    expect(rendered).toContain("%^40");
+    expect(redactUrlCredentialsInText(rendered)).toBe('pm package install ^"https://[redacted]%^40example.test/repo^"');
+    expect(redactUrlCredentialsInText(JSON.stringify({ next_steps: [rendered] }))).not.toContain("sample");
+    expect(redactUrlCredentialsInToken("https://ci:sample%^40example.test/repo")).toBe("https://[redacted]%^40example.test/repo");
+    // Inside an invocation, registered spellings never remove the separator the URL rule needs.
+    const tokenInUsername = "https://ghp_abcdefghijkl:x-oauth-basic%40github.com/x";
+    runWithUrlCredentialInvocation(["clone", tokenInUsername], () => {
+      const echoed = redactUrlCredentialsInText(`pm clone ${quoteCommandArg(tokenInUsername, "win32", "cmd")}`);
+      expect(echoed).toBe('pm clone ^"https://[redacted]%^40github.com/x^"');
+    });
+    // A registered password holding %40 can span the final separator before an a-initial host; the URL rule
+    // runs first, so the username token never survives.
+    const spanning = "https://tok_abcdefgh:a%40a%40ahost.test/x";
+    runWithUrlCredentialInvocation(["clone", spanning], () => {
+      const echoed = redactUrlCredentialsInText(`pm clone ${quoteCommandArg(spanning, "win32", "cmd")}`);
+      expect(echoed).not.toContain("tok_abc");
+      expect(echoed).toContain("[redacted]");
+    });
+    // An apostrophe or quote a dialect escaped inside a spaced password never closes the URL, with no
+    // registered invocation: PowerShell doubles it, POSIX closes, escapes and reopens, cmd carets it.
+    const spaced = "https://ci:my 'secret\" words@host.test/x";
+    for (const [dialect, arg] of [["powershell", spaced], ["posix", `${spaced}!`], ["posix", spaced], ["cmd", spaced]] as const) {
+      const rendered = `pm clone ${quoteCommandArg(arg, "win32", dialect)}`;
+      expect(redactUrlCredentialsInText(rendered), rendered).not.toMatch(/my |secret|words/u);
+    }
+    expect(redactUrlCredentialsInText("pm clone 'https://ci:my ''secret words@host.test/x'")).toBe("pm clone 'https://[redacted]@host.test/x'");
+    // The same renderings embedded in JSON (an escaped cmd quote becomes \\^\") stay redacted too.
+    for (const [dialect, arg] of [["cmd", 'https://ci:my "secret words@host.test/x'], ["cmd", spaced], ["posix", spaced], ["posix", `${spaced}!`], ["powershell", spaced]] as const) {
+      const wrapped = JSON.stringify({ suggested_retry: `pm clone ${quoteCommandArg(arg, "win32", dialect)}` });
+      expect(redactUrlCredentialsInText(wrapped), wrapped).not.toMatch(/my |secret|words/u);
+    }
+    // Neutralization keeps every position: the result is as long as its input for each escape spelling.
+    for (const [text, closer] of [
+      ['a\\\\^\\"b\\^"c\\"d\\\\"e', '"'],
+      ["a'\\''b'\\\\''c\\\"d", "'"],
+      ["plain", undefined],
+    ] as const) {
+      const neutral = urlCredentialsTestOnly.neutralizeEscapedQuotes(text, closer);
+      expect(neutral.length, text).toBe(text.length);
+    }
+    expect(urlCredentialsTestOnly.neutralizeEscapedQuotes('x\\\\^\\"y', '"')).toBe("x_____y");
+    // A caret and an even inner run before a quote, or a caret with no quote after its run, is no escaped quote.
+    expect(redactUrlCredentialsInText('see "ssh://example.test/a\\^\\\\" or reply@example.org')).toContain("reply@example.org");
+    expect(redactUrlCredentialsInText('see "ssh://example.test/a\\^b" or reply@example.org')).toContain("reply@example.org");
+    expect(redactUrlCredentialsInText('see "ssh://example.test/a\\\\^" or reply@example.org')).toContain("reply@example.org");
+    // A backslash run with no quote after it is left alone, and a long one costs linear time (CodeQL js/polynomial-redos).
+    expect(redactUrlCredentialsInText('see "ssh://example.test/a\\\\b" or reply@example.org')).toBe('see "ssh://example.test/a\\\\b" or reply@example.org');
+    const backslashRun = `"https://ci:my ${"\\".repeat(1_000_000)}x words@host/x"`;
+    const started = performance.now();
+    redactUrlCredentialsInText(backslashRun);
+    expect(performance.now() - started).toBeLessThan(2_000);
+    // A backslash-escaped closer inside a non-special URL (whose backslashes are no path delimiter) is userinfo.
+    expect(redactUrlCredentialsInText("run `ssh://ci:my \\`secret words@host.test/x`")).toBe("run `ssh://[redacted]@host.test/x`");
+    // An even backslash run before a quote is an escaped backslash, so that quote still closes the URL.
+    expect(redactUrlCredentialsInText('see "https://example.test/a\\\\" or reply@example.org')).toBe('see "https://example.test/a\\\\" or reply@example.org');
+    // A real closing quote still ends the URL: the word after it is prose, not userinfo.
+    expect(redactUrlCredentialsInText("see 'https://example.test/a' or reply@example.org")).toBe("see 'https://example.test/a' or reply@example.org");
+    // A spaced userinfo ended by the caret form is joined as one span too.
+    expect(redactUrlCredentialsInText("clone https://ci:my secret%^40example.test/repo")).not.toMatch(/my |secret/u);
+  });
+
+  it("removes a secret from every shell dialect's rendering and from each rendering embedded in JSON (GH-1774)", () => {
+    const tokens = ['https://deploy:"""%40example.test/x', "https://ci:abcde%40example.test/x", "https://ops:it's!long-pass@host/x", "https://ci:Z%40example.test/x"];
+    runWithUrlCredentialInvocation(["package", "install", ...tokens], () => {
+      for (const token of tokens) {
+        for (const dialect of ["posix", "cmd", "powershell"] as const) {
+          const rendered = `pm package install ${quoteCommandArg(token, "win32", dialect)}`;
+          for (const echo of [rendered, JSON.stringify(rendered), JSON.stringify({ suggested_retry: rendered })]) {
+            const redacted = redactUrlCredentialsInText(echo);
+            expect(redacted, `${dialect}: ${echo}`).not.toMatch(/abcde|"""|\\"\\"\\"|long-pass|ci:Z/u);
+            // Whatever spelling the dialect gave the password, nothing of it may follow the username.
+            const user = token.slice("https://".length, token.indexOf(":", "https://".length));
+            expect(redacted, `${dialect}: ${echo}`).not.toMatch(new RegExp(`${user}:(?!\\[redacted\\])`, "u"));
+          }
+        }
+      }
+    });
   });
 
   it("protects a short whitespace-bearing span and keeps dollar sequences literal", () => {

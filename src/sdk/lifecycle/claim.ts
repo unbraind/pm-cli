@@ -3,6 +3,8 @@
  *
  * Implements the pm claim command surface and its agent-facing runtime behavior.
  */
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   resolveRuntimeStatusRegistry,
@@ -12,6 +14,10 @@ import {
   PmCliError,
   toItemRecord,
   mutateItem,
+  locateItem,
+  readLocatedItem,
+  resolveItemTypeRegistry,
+  getActiveExtensionRegistrations,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -21,11 +27,14 @@ import {
 import { wrapOwnershipConflict } from "../annotations.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import {
+  callerClaimEndedByClose,
   resolveItemOwnershipActivity,
   type ClaimActivityEvidence,
   type ItemOwnershipActivity,
 } from "../ownership-source.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
+import { runWithItemMutationPrecondition } from "../../core/store/item-mutation-precondition.js";
+import { getHistoryPath } from "../../core/store/paths.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
 import { admitExplicitStartClaim, admitStartTransition, START_BLOCKED_REFUSAL_CODE } from "./start-blockers.js";
@@ -42,7 +51,7 @@ import {
   recordClaimSemanticAttribution,
   recordReleaseSemanticAttribution,
 } from "../context/semantic-session-attribution.js";
-import { redactIdentityCredentials, redactIdentityFields, redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
+import { redactIdentityCredentials, redactIdentityFields, redactOptionalIdentityCredentials, redactUrlCredentialsInText } from "../../core/shared/url-credentials.js";
 
 /** Stable warning/error code for an exhausted atomic next-work walk. */
 export const NO_AVAILABLE_NEXT_ITEM_CODE = "no_available_next_item";
@@ -780,6 +789,141 @@ function noAvailableNextItemError(attempts: number, startRefused: readonly strin
   );
 }
 
+/**
+ * The `--author` an explicit actor passed, for a rendered retry or takeover,
+ * so copying it never acts as the configured default author. A supplied blank
+ * value is kept too: it resolves differently from an omitted one.
+ */
+function explicitActorArgs(explicitAuthor: string | undefined): string[] | undefined {
+  if (explicitAuthor === undefined) return [];
+  // Trimmed first, as author resolution trims it. A redacted author would name a different principal, so
+  // no executable command is rendered for it (undefined), as the SDK withholds retries that lose credentials.
+  const author = explicitAuthor.trim();
+  if (redactIdentityCredentials(author) !== author) return undefined;
+  // A value that starts with "-" would parse as another option, so it is attached (`--author=--team`).
+  return author.startsWith("-") ? [`--author=${author}`] : ["--author", author];
+}
+
+/** Stable warning when a release by the holder a close ended leaves a later holder's claim in place (GH-1774). */
+export const RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING = "release_claim_ended_by_close";
+
+/**
+ * The refusal for a status-changing release (`--handoff`, `--pause`) by the
+ * holder a close ended: the item now belongs to a later holder, so the caller
+ * can neither move it nor clear that claim (GH-1774).
+ */
+function releaseClaimEndedRefusal(
+  itemId: string,
+  holder: string,
+  action: "--handoff" | "--pause",
+  global: GlobalOptions,
+  explicitAuthor: string | undefined,
+): PmCliError {
+  const actor = explicitActorArgs(explicitAuthor);
+  const command = actor === undefined ? undefined : renderPmCommand([...resolvePmCommandScopeArgs(global), "claim", itemId, "--force", ...actor]);
+  // The guidance redactor runs on every refusal; a command it would rewrite runs as someone else, so none is shown.
+  const takeover =
+    command === undefined || redactUrlCredentialsInText(command) !== command
+      ? "Take the item first with a coordinated pm claim --force as the same author only when that takeover is approved."
+      : `Take the item first with a coordinated ${command} only when that takeover is approved.`;
+  return new PmCliError(
+    `A close of ${itemId} already ended your claim, and ${holder} has claimed it since; ${action} cannot move or release another holder's claim.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING,
+      item_id: itemId,
+      claimed_by: holder,
+      required: `Only the current holder (${holder}) can release or hand off ${itemId}.`,
+      why: "A close ends its holder's claim, so that holder's later release must not change work another principal claimed after it.",
+      nextSteps: [
+        `Ask ${holder} to release or hand off ${itemId}.`,
+        takeover,
+      ],
+    },
+  );
+}
+
+/** The holder principal the ownership guard reads from a document, or undefined when it has no non-empty assignee. */
+function documentHolderPrincipal(metadata: ItemMetadata): string | undefined {
+  const assignee = metadata.assignee?.trim();
+  return assignee ? metadata.claim_principal?.trim() || assignee : undefined;
+}
+
+/**
+ * Judge a `--pause` before its status write (GH-1774) and return the fence
+ * that write must run under. The pause is two writes (status, then release),
+ * so a caller whose claim a close ended is refused before the first one when
+ * another principal holds the item. The judgement reads history outside the
+ * item lock, so the returned fence re-reads the item under the status
+ * write's lock and refuses when its holder, status or last write changed
+ * since: work claimed or closed in between can never be moved by this pause.
+ */
+export async function assertPauseKeepsLaterHolder(
+  id: string,
+  global: GlobalOptions,
+  author: string | undefined,
+): Promise<<T>(write: () => Promise<T>) => Promise<T>> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const settings = await readSettings(pmRoot);
+  const callerPrincipal = resolveClaimPrincipal(resolveAuthor(author, settings.author_default));
+  const typeToFolder = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder;
+  // A missing item is left to the pause's own update, which reports it with its recovery.
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  if (!located) return (write) => write();
+  // Sample the history stream before reading anything the judgement uses: a write that lands after this
+  // point changes the digest the status write's lock compares, and one before it is in both reads below.
+  const historyPath = getHistoryPath(pmRoot, located.id);
+  const judgedStream = historyStreamDigest(historyPath);
+  const { document } = await readLocatedItem(located, { schema: settings.schema });
+  const judged = documentHolderPrincipal(document.metadata);
+  if (judged !== undefined && judged !== callerPrincipal && (await callerClaimEndedByClose(pmRoot, located.id, callerPrincipal))) {
+    throw releaseClaimEndedRefusal(located.id, redactIdentityCredentials(document.metadata.assignee!.trim()), "--pause", global, author);
+  }
+  // The judgement holds only for the item it read. Every write appends to the item's history stream (and
+  // advances updated_at unless a reproducible clock holds it), so a claim, close or reopen that lands
+  // before the status write takes its lock changes this fingerprint.
+  const judgedState = pauseJudgementFingerprint(document.metadata, judgedStream);
+  return (write) =>
+    runWithItemMutationPrecondition(
+      {
+        pmRoot,
+        id: located.id,
+        validate: (locked) => {
+          if (pauseJudgementFingerprint(locked.metadata, historyStreamDigest(historyPath)) === judgedState) return;
+          throw new PmCliError(`${located.id} changed while the pause was judged, so nothing was written.`, EXIT_CODE.CONFLICT, {
+            code: PAUSE_ITEM_CHANGED_CODE,
+            item_id: located.id,
+            nextSteps: [
+              `Check the current holder with ${renderPmCommand([...resolvePmCommandScopeArgs(global), "get", located.id])}, reconfirm any override, then re-run the original pause command unchanged.`,
+            ],
+          });
+        },
+      },
+      write,
+    );
+}
+
+/** Stable refusal code when the item changes between a pause's judgement and its status write (GH-1774). */
+export const PAUSE_ITEM_CHANGED_CODE = "pause_item_changed";
+
+/** What a pause judged: the holder principal, the status, the time of the last write and the history stream's digest. */
+function pauseJudgementFingerprint(metadata: ItemMetadata, streamDigest: string): string {
+  return JSON.stringify([documentHolderPrincipal(metadata) ?? null, metadata.status, metadata.updated_at, streamDigest]);
+}
+
+/**
+ * SHA-256 of an item's history stream bytes, or "absent" when it cannot be
+ * read. Any append, rewrite or same-size replacement (a workspace snapshot
+ * restore) changes it.
+ */
+function historyStreamDigest(historyPath: string): string {
+  try {
+    return createHash("sha256").update(readFileSync(historyPath)).digest("hex");
+  } catch {
+    return "absent";
+  }
+}
+
 /** Implements run release for the public runtime surface of this module. */
 export async function runRelease(
   id: string,
@@ -805,6 +949,7 @@ export async function runRelease(
     throw new PmCliError("Ownership-release bypass only clears ownership; it cannot change a handoff status.", EXIT_CODE.USAGE);
   }
   let handoff: ReleaseResult["handoff"];
+  let keptHolder: string | undefined;
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
   try {
@@ -817,7 +962,21 @@ export async function runRelease(
       message: options.message,
       force,
       bypassAssigneeConflict: ownershipReleaseBypass,
-      mutate(document) {
+      // A release by the holder a close ended acts only on that ended claim,
+      // so a holder who claimed the item afterwards keeps it under every
+      // ownership policy, --force included (GH-1774): a plain release is a
+      // no-op and a handoff is refused. The package ownership-release bypass
+      // is an explicit audited change and keeps the ownership policy.
+      ...(ownershipReleaseBypass
+        ? {}
+        : { callerClaimScope: ({ storageId, callerPrincipal }) => callerClaimEndedByClose(pmRoot, storageId, callerPrincipal) }),
+      mutate(document, location) {
+        if (location.callerClaimScoped === true) {
+          const holder = redactIdentityCredentials(document.metadata.assignee!.trim());
+          if (handoffStatus !== undefined) throw releaseClaimEndedRefusal(document.metadata.id, holder, "--handoff", global, options.author);
+          keptHolder = holder;
+          return { changedFields: [], warnings: [`${RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING}:${document.metadata.id}:${holder}`] };
+        }
         previousAssignee = document.metadata.assignee ?? null;
         const transition = handoffStatus === undefined ? undefined : applyReleaseHandoff(document.metadata, handoffStatus, settings, statusRegistry, options.message!);
         handoff = transition?.receipt;
@@ -842,6 +1001,7 @@ export async function runRelease(
   }
 
   const attribution = attributionAdvice(
+    // A scoped no-op still retires the caller's own session attribution: its claim ended at the close.
     await recordAttributionAfterCommit("release", result.item.id, global, false, () =>
       recordReleaseSemanticAttribution({
         pmRoot,
@@ -850,7 +1010,14 @@ export async function runRelease(
       }),
     ),
   );
-  const handoffAdvice = releaseHandoffAdvice(result.item, statusRegistry);
+  const handoffAdvice = keptHolder === undefined
+    ? releaseHandoffAdvice(result.item, statusRegistry)
+    : {
+        warnings: [],
+        suggestions: [
+          `A close of ${result.item.id} already ended your claim; ${keptHolder} claimed it afterwards and keeps it. The item was not changed.`,
+        ],
+      };
 
   return {
     item: redactIdentityFields(toItemRecord(result.item)),
@@ -882,5 +1049,6 @@ function releaseHandoffAdvice(
 export const _testOnlyClaimCommand = {
   claimConflictRefusal,
   decideHeldClaim,
+  releaseClaimEndedRefusal,
   staleTakeoverReceipt,
 };

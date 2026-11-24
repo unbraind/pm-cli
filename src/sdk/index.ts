@@ -159,13 +159,19 @@ export {
   type BootstrapNormalizationEvent,
 } from "./cli-bootstrap.js";
 export {
+  COMMAND_SHELL_ENV,
+  quoteCmdCommandArg,
   quoteCommandArg,
+  quotePosixCommandArg,
+  quotePowerShellCommandArg,
   quoteWindowsCommandArg,
   redactUrlCredentialsInText,
   redactUrlCredentialsInToken,
   renderPmCommand,
+  resolveCommandShellDialect,
   resolvePmCommandScopeArgs,
   URL_CREDENTIAL_PLACEHOLDER,
+  type CommandShellDialect,
 } from "./command-line.js";
 export * from "./agent/command-recovery.js";
 export * from "./agent/linked-resource-recovery.js";
@@ -390,6 +396,7 @@ export {
   type InProgressSweepCommands,
 } from "./governance/in-progress-work-health.js";
 export {
+  callerClaimEndedByClose,
   describeItemOwnershipConflict,
   evaluateClaimActivity,
   resolveItemOwnershipActivity,

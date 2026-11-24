@@ -3578,6 +3578,18 @@
       ],
       "package_version": "2026.11.23",
       "reason": "PROFILE_LINT_CODES gains the additive field_flag_invalid code (pm-8patuh); no code is removed or renamed"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ItemMutationLocation",
+        "signature ./sdk:mutateItem",
+        "signature ./sdk:mutateItemWithHistoryContext",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk:quoteCommandArg",
+        "signature ./sdk:renderPmCommand"
+      ],
+      "package_version": "2026.11.24",
+      "reason": "pm-gh1774 and pm-kjoudp: every signature change is additive and source-compatible. quoteCommandArg and renderPmCommand gain an optional third CommandShellDialect parameter. ItemMutationLocation gains the optional callerClaimScoped flag. mutateItem and mutateItemWithHistoryContext gain the optional callerClaimScope hook. PmCliErrorContext.claim_activity gains the optional state field (active, stale or unknown); the CLI always populates it, and readers derive it when an older producer omits it. No parameter, field or export is removed or narrowed."
     }
   ],
   "entrypoints": {
@@ -5775,6 +5787,18 @@
           "signature": "export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "callerClaimEndedByClose",
+          "signature": "(pmRoot: string, storageId: string, callerPrincipal: string) => Promise<boolean> | calls: (pmRoot: string, storageId: string, callerPrincipal: string) => Promise<boolean>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "CallerClaimScope",
+          "signature": "export type CallerClaimScope = (input: { document: ItemDocument; storageId: string; callerPrincipal: string; }) => Promise<boolean>;"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "canonicalDocument",
@@ -6291,6 +6315,12 @@
           "signature": "export interface CollectUsedExtensionCapabilitiesOptions { extensionName?: string; extensionNames?: readonly string[]; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "COMMAND_SHELL_ENV",
+          "signature": "\"PM_COMMAND_SHELL\""
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "CommandDefinition",
@@ -6367,6 +6397,12 @@
           "kind": "type",
           "name": "CommandScope",
           "signature": "export type CommandScope = Pick<GlobalOptions, \"path\" | \"noExtensions\">;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "CommandShellDialect",
+          "signature": "export type CommandShellDialect = \"posix\" | \"cmd\" | \"powershell\";"
         },
         {
           "classification": "supported",
@@ -12150,7 +12186,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ItemMutationLocation",
-          "signature": "export interface ItemMutationLocation { storageId: string; }"
+          "signature": "export interface ItemMutationLocation { storageId: string; callerClaimScoped?: true; }"
         },
         {
           "classification": "advanced_export",
@@ -13326,13 +13362,13 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "mutateItem",
-          "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
+          "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; callerClaimScope?: CallerClaimScope; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; callerClaimScope?: CallerClaimScope; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
         },
         {
           "classification": "advanced_export",
           "kind": "function",
           "name": "mutateItemWithHistoryContext",
-          "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; historyContext?: Record<string, unknown>; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; historyContext?: Record<string, unknown>; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
+          "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; historyContext?: Record<string, unknown>; force?: boolean; bypassAssigneeConflict?: boolean; callerClaimScope?: CallerClaimScope; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; historyContext?: Record<string, unknown>; force?: boolean; bypassAssigneeConflict?: boolean; callerClaimScope?: CallerClaimScope; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
         },
         {
           "classification": "advanced_export",
@@ -15654,7 +15690,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; url_credentials_rejected?: { source: string; }; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; claim_activity?: { last_activity_at: string | null; history_unreadable?: true; unproven_activity?: \"claim_record_unavailable\" | \"discarded_history_tail\" | \"rewritten_history\" | \"workspace_restored\"; claim_age_hours: number | null; idle_hours: number | null; stale_policy: { setting: \"mutation_guard.stale_in_progress_hours\"; threshold_hours: number; stale: boolean; eligible_at: string | null; }; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; details?: PmCliErrorDetails; details_omitted?: PmCliErrorDetailsOmission; }"
+          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; url_credentials_rejected?: { source: string; }; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; claim_activity?: { last_activity_at: string | null; history_unreadable?: true; unproven_activity?: \"claim_record_unavailable\" | \"discarded_history_tail\" | \"rewritten_history\" | \"workspace_restored\"; state?: \"active\" | \"stale\" | \"unknown\"; claim_age_hours: number | null; idle_hours: number | null; stale_policy: { setting: \"mutation_guard.stale_in_progress_hours\"; threshold_hours: number; stale: boolean; eligible_at: string | null; }; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; details?: PmCliErrorDetails; details_omitted?: PmCliErrorDetailsOmission; }"
         },
         {
           "classification": "advanced_export",
@@ -17693,8 +17729,26 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "quoteCmdCommandArg",
+          "signature": "(arg: string) => string | calls: (arg: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "quoteCommandArg",
-          "signature": "(arg: string, platform?: NodeJS.Platform) => string | calls: (arg: string, platform?: NodeJS.Platform) => string"
+          "signature": "(arg: string, platform?: NodeJS.Platform, dialect?: CommandShellDialect) => string | calls: (arg: string, platform?: NodeJS.Platform, dialect?: CommandShellDialect) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "quotePosixCommandArg",
+          "signature": "(arg: string) => string | calls: (arg: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "quotePowerShellCommandArg",
+          "signature": "(arg: string) => string | calls: (arg: string) => string"
         },
         {
           "classification": "advanced_export",
@@ -19242,7 +19296,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "renderPmCommand",
-          "signature": "(argv: string[], platform?: NodeJS.Platform) => string | calls: (argv: string[], platform?: NodeJS.Platform) => string"
+          "signature": "(argv: string[], platform?: NodeJS.Platform, dialect?: CommandShellDialect) => string | calls: (argv: string[], platform?: NodeJS.Platform, dialect?: CommandShellDialect) => string"
         },
         {
           "classification": "contract_data",
@@ -19465,6 +19519,12 @@
           "kind": "function",
           "name": "resolveCommandOptionPolicyState",
           "signature": "(typeDefinition: ResolvedItemTypeDefinition, command: CommandOptionPolicyCommand, baseRequiredOptions: Iterable<string>) => CommandOptionPolicyState | calls: (typeDefinition: ResolvedItemTypeDefinition, command: CommandOptionPolicyCommand, baseRequiredOptions: Iterable<string>) => CommandOptionPolicyState"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "resolveCommandShellDialect",
+          "signature": "(platform?: NodeJS.Platform, env?: Readonly<Record<string, string | undefined>>) => CommandShellDialect | calls: (platform?: NodeJS.Platform, env?: Readonly<Record<string, string | undefined>>) => CommandShellDialect"
         },
         {
           "classification": "advanced_export",
@@ -41552,10 +41612,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1355,
-      "checked_values": 402,
+      "checked_functions": 1356,
+      "checked_values": 407,
       "exempt_test_seams": 15,
-      "referenced_types": 1061
+      "referenced_types": 1063
     },
     "./sdk/authoring": {
       "checked_functions": 54,

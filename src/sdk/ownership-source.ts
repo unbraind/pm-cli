@@ -5,6 +5,8 @@
  * claim or a general metadata assignment using the append-only history stream.
  */
 import { readHistoryEntries } from "../core/history/read.js";
+import { cloneEmptyReplayDocument, tryApplyReplayPatch, type ReplayDocument } from "../core/history/replay.js";
+import type { HistoryPatchOp } from "../types/index.js";
 import { getWorkspaceHistoryPath, WORKSPACE_HISTORY_ID } from "../core/history/workspace-history.js";
 import type { PmCliErrorContext } from "../core/shared/errors.js";
 import { redactIdentityCredentials } from "../core/shared/url-credentials.js";
@@ -72,6 +74,16 @@ export interface ItemOwnershipActivity extends ItemOwnershipConflict {
   activity: ClaimActivityEvidence;
 }
 
+/**
+ * Whole hours from a valid timestamp to the evaluation clock, or null when
+ * the timestamp is missing or the clock is not finite (NaN, either
+ * infinity), so an unmeasurable age is never reported as zero.
+ */
+function measuredHoursSince(timestamp: string | null, nowMs: number): number | null {
+  // Both callers pass a timestamp that already parses, so a finite clock always yields finite hours.
+  return timestamp === null || !Number.isFinite(nowMs) ? null : wholeHoursSince(timestamp, nowMs);
+}
+
 /** Evaluate claim age, last activity and stale-claim eligibility from one item's evidence. */
 export function evaluateClaimActivity(
   claimedAt: string | null,
@@ -82,22 +94,26 @@ export function evaluateClaimActivity(
   const thresholdHours = normalizeStaleWorkThresholdHours(options.threshold_hours);
   const lastActivityAt = resolveLastActivityAt(options.updated_at, latestHistoryAt) ?? null;
   const validClaimedAt = claimedAt !== null && Number.isFinite(Date.parse(claimedAt)) ? claimedAt : null;
-  const idleHours = lastActivityAt === null ? null : wholeHoursSince(lastActivityAt, nowMs);
+  const idleHours = measuredHoursSince(lastActivityAt, nowMs);
   // Unknown or unprovable activity never qualifies: a takeover needs positive evidence of idleness.
   const judgeable =
-    lastActivityAt !== null && options.history_unreadable !== true && options.unproven_activity === undefined;
+    idleHours !== null && options.history_unreadable !== true && options.unproven_activity === undefined;
+  const stale = judgeable && (idleHours as number) >= thresholdHours;
   return {
     last_activity_at: lastActivityAt,
     ...(options.history_unreadable === true ? { history_unreadable: true as const } : {}),
     ...(options.unproven_activity === undefined ? {} : { unproven_activity: options.unproven_activity }),
-    claim_age_hours: validClaimedAt === null ? null : wholeHoursSince(validClaimedAt, nowMs),
+    // Unjudgeable activity is its own state, never reported as active (GH-1774).
+    state: judgeable ? (stale ? "stale" : "active") : "unknown",
+    claim_age_hours: measuredHoursSince(validClaimedAt, nowMs),
     idle_hours: idleHours,
     stale_policy: {
       setting: STALE_WORK_THRESHOLD_SETTING,
       threshold_hours: thresholdHours,
-      stale: judgeable && (idleHours as number) >= thresholdHours,
+      stale,
       // A threshold past the Date range (accepted by settings) yields a null eligibility, never a throw.
-      eligible_at: judgeable ? staleEligibleAt(lastActivityAt, thresholdHours) : null,
+      // `judgeable` implies a measured idle time, so the activity time is a valid string.
+      eligible_at: judgeable ? staleEligibleAt(lastActivityAt as string, thresholdHours) : null,
     },
   };
 }
@@ -271,4 +287,58 @@ export async function describeItemOwnershipConflict(
   assignee: string,
 ): Promise<string> {
   return (await resolveItemOwnershipConflict(pmRoot, itemId, assignee)).phrase;
+}
+
+/** History operations whose ownership change ends the holder's claim at closure. */
+const CLAIM_ENDING_CLOSE_OPERATIONS: ReadonlySet<string> = new Set(["close"]);
+
+/**
+ * The principal the ownership guard compares: the claim principal, else the
+ * assignee. As in the guard, an item without a non-empty assignee has no
+ * holder, even when a claim principal was left behind.
+ */
+function replayedHolderPrincipal(metadata: Record<string, unknown>): string | undefined {
+  const assignee = typeof metadata.assignee === "string" ? metadata.assignee.trim() : "";
+  if (!assignee) return undefined;
+  const principal = typeof metadata.claim_principal === "string" ? metadata.claim_principal.trim() : "";
+  return principal || assignee;
+}
+
+/**
+ * Whether `callerPrincipal`'s most recent claim on the item was ended by a
+ * close (GH-1774). The readable history is replayed record by record with the
+ * shared strict replay (`tryApplyReplayPatch`), so legacy paths, whole-document
+ * writes and every patch operation mean exactly what they mean to `pm history`.
+ * A record that moves the holder away from the caller ends the caller's
+ * claim, and one that makes the caller the holder again starts a new one; the
+ * claim counts as ended by a close only when the record that last ended it is
+ * a close. A release by that caller then acts only on its own ended claim, so
+ * a holder who claimed the item after the close keeps it. A stream that cannot
+ * be read or replayed proves nothing and returns false, leaving the ownership
+ * policy in force. The replay runs only for a release by a non-holder.
+ */
+export async function callerClaimEndedByClose(
+  pmRoot: string,
+  storageId: string,
+  callerPrincipal: string,
+): Promise<boolean> {
+  let entries: unknown[];
+  try {
+    entries = await readHistoryEntries(getHistoryPath(pmRoot, storageId), storageId);
+  } catch {
+    return false;
+  }
+  let document: ReplayDocument = cloneEmptyReplayDocument();
+  let endedByClose = false;
+  for (const entry of entries) {
+    if (!isWellFormedHistoryRecord(entry)) return false;
+    const before = replayedHolderPrincipal(document.metadata);
+    const applied = tryApplyReplayPatch(document, entry.patch as HistoryPatchOp[]);
+    if (!applied.ok) return false;
+    document = applied.document;
+    const after = replayedHolderPrincipal(document.metadata);
+    if (before === callerPrincipal && after !== callerPrincipal) endedByClose = CLAIM_ENDING_CLOSE_OPERATIONS.has(entry.op);
+    else if (after === callerPrincipal && before !== callerPrincipal) endedByClose = false;
+  }
+  return endedByClose;
 }

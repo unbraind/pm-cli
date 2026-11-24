@@ -6,7 +6,7 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { attachExtensionReadOutputRows } from "./read-output/extension.js";
-import { renderPmCommand } from "./command-line.js";
+import { quoteCommandArg, renderPmCommand } from "./command-line.js";
 import { attachOutputOmissionReceipt } from "./output-projection.js";
 import { encodeQueryCursor } from "./pagination.js";
 import {
@@ -1203,17 +1203,12 @@ function contextIntentRecoveryPositional(
       : builtInCommand === "search" && typeof result.query === "string"
         ? result.query
         : undefined;
-  return recoveryTarget === undefined ? "" : ` ${shellQuote(recoveryTarget)}`;
-}
-
-/** POSIX single-quote one recovery operand. */
-function shellQuote(value: string): string {
-  return `'${value.replaceAll("'", `'"'"'`)}'`;
+  return recoveryTarget === undefined ? "" : ` ${quoteCommandArg(recoveryTarget)}`;
 }
 
 /** The caller's field projection, which the budget a retry names was sized against. */
 function contextIntentRecoveryProjection(options: Record<string, unknown>): string {
-  return typeof options.fields === "string" && options.fields.trim() !== "" ? ` --fields ${shellQuote(options.fields)}` : "";
+  return typeof options.fields === "string" && options.fields.trim() !== "" ? ` --fields ${quoteCommandArg(options.fields)}` : "";
 }
 
 /** Record a reduced explicit row limit in the receipt, warnings and filters, with the budget that keeps it. */
@@ -1286,7 +1281,7 @@ function buildContextIntentRecoveryCommand(
   });
   // The retry keeps the projection the budget was sized against; without it
   // the retry would request more data than the named budget allows.
-  return `pm ${command}${recoveryPositional}${contextIntentRecoveryProjection(options)} --for ${intent} --token-budget ${retryBudget}${boundedRowLimit}`;
+  return `pm ${command}${recoveryPositional}${contextIntentRecoveryProjection(options)} --for ${quoteCommandArg(intent)} --token-budget ${retryBudget}${boundedRowLimit}`;
 }
 
 /** Read one numeric fixed-point estimate from an optional receipt. */

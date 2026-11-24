@@ -1,0 +1,42 @@
+id: pm-oq893h
+title: "POSIX recovery commands are not paste-safe in interactive bash or zsh: a ! inside the double-quoted form triggers history expansion"
+description: "Found 2026-11-24 while implementing the shell dialects for pm-kjoudp and GH-1774. The posix renderer in src/core/shared/command-line.ts escapes double quote, backslash, dollar and backtick inside double quotes, which is complete for sh -c and for scripts. An interactive bash with histexpand on (the default) or zsh still expands an exclamation mark inside double quotes: a pasted retry such as pm create --title \"Fix crash!now\" fails with event not found, or substitutes an earlier command. Single quotes suppress history expansion in both shells. Duplicate check: searched history expansion, exclamation, interactive bash, recovery quoting; pm-kjoudp and pm-gh1774 cover cmd.exe and PowerShell only."
+type: Issue
+status: closed
+priority: 3
+tags[3]: agent-ux,posix,recovery
+created_at: "2026-11-24T10:36:48.721Z"
+updated_at: "2026-11-24T16:18:47.397Z"
+closed_at: "2026-11-24T16:18:46.268Z"
+completed_at: "2026-11-24T16:18:46.268Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "An argument containing an exclamation mark renders in a form interactive bash and zsh never history-expand, and the URL-credential span spellings register that form; The rendered-command shell-safety integration corpus runs that argument through an interactive bash with histexpand on"
+parent: pm-mpbb
+risk: low
+confidence: high
+resolution: "quotePosixCommandArg single-quotes an argument holding ! (with ' escaped as '\\''), so interactive bash and zsh cannot history-expand it. The bare-token rule quotes a token that starts with =, which zsh expands to a command path. The credential registry adds the POSIX single-quote spelling."
+expected_result: A pasted POSIX recovery command with ! in an argument runs unchanged in interactive bash and zsh
+actual_result: "The shell corpus passes byte for byte through bash with set -o history -o histexpand and through zsh -f, including literal !!, !$ and =node arguments"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-kjoudp,discovered_from,"2026-11-24T10:36:48.721Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1774,related,"2026-11-24T11:19:25.506Z","harness:claude-code","cli:update:dep",detected
+files[4]{path,scope,note}:
+  src/core/shared/command-line.ts,project,quotePosixCommandArg single-quotes a bang
+  src/core/shared/url-credentials.ts,project,registers the POSIX single-quote spelling
+  tests/integration/cli/rendered-command-shell-safety.integration.spec.ts,project,bash with histexpand corpus case
+  tests/unit/cli/argv-utils.spec.ts,project,posix bang unit cases
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/argv-utils.spec.ts tests/integration/cli/rendered-command-shell-safety.integration.spec.ts tests/unit/core/shared/url-credentials.spec.ts,project,900,"harness:claude-code","2026-11-24T12:10:50.239Z",local_mutation,fix/shell-dialect-recovery-claim-activity-release-scope
+docs[1]{path,scope}:
+  docs/CONFIGURATION.md,project
+close_reason: "Fixed in PR #1779: POSIX rendering single-quotes an argument holding ! and quotes a leading ="
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-oq893h
+  gate_id: rendered-command-shell-safety
+  negative_control: tests/integration/cli/rendered-command-shell-safety.integration.spec.ts feeds the rendered line to bash with set -o history -o histexpand and to zsh -f; the double-quoted form of 2026.11.24 replaces !! with the previous command
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/cli/argv-utils.spec.ts tests/integration/cli/rendered-command-shell-safety.integration.spec.ts
+  hosted_checks[1]: Gates (coverage)
+body: ""

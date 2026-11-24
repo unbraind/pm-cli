@@ -754,11 +754,33 @@ function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
     holder.length > CLAIM_HOLDER_TEXT_MAX_CODE_POINTS
       ? `${holder.slice(0, CLAIM_HOLDER_TEXT_MAX_CODE_POINTS).join("")}...`
       : message.claimedBy;
-  const activity = message.claimActivity;
-  const idle = activity === undefined || activity.idle_hours === null
-    ? ""
-    : `; idle ${activity.idle_hours}h, ${activity.stale_policy.stale ? "stale" : "active"} under ${activity.stale_policy.setting}=${activity.stale_policy.threshold_hours}`;
-  return `Held by: ${name} (${message.claimSource ?? "unknown"}${since})${idle}`;
+  return `Held by: ${name} (${message.claimSource ?? "unknown"}${since})${renderClaimActivitySuffix(message.claimActivity)}`;
+}
+
+/** Why a holder's activity could not be judged, in the words of the typed evidence. */
+function unknownActivityCause(activity: NonNullable<GuidanceMessage["claimActivity"]>): string {
+  if (activity.history_unreadable === true) return "history unreadable";
+  if (activity.unproven_activity !== undefined) return `idleness unproven: ${activity.unproven_activity}`;
+  return activity.last_activity_at === null ? "no valid activity time" : "idle time not measurable";
+}
+
+/** The activity state, derived as the SDK evaluator derives it when an older producer omitted it. */
+function claimActivityState(activity: NonNullable<GuidanceMessage["claimActivity"]>): "active" | "stale" | "unknown" {
+  if (activity.state !== undefined) return activity.state;
+  if (activity.history_unreadable === true || activity.unproven_activity !== undefined || !Number.isFinite(activity.idle_hours)) return "unknown";
+  return activity.stale_policy.stale ? "stale" : "active";
+}
+
+/** The holder's activity under the stale-work policy; unjudgeable activity is reported as unknown, never as active (GH-1774). */
+function renderClaimActivitySuffix(activity: GuidanceMessage["claimActivity"]): string {
+  if (activity === undefined) return "";
+  const policy = `${activity.stale_policy.setting}=${activity.stale_policy.threshold_hours}`;
+  const state = claimActivityState(activity);
+  if (state === "unknown") {
+    const idle = Number.isFinite(activity.idle_hours) ? `, last recorded activity ${activity.idle_hours}h ago` : "";
+    return `; activity unknown under ${policy} (${unknownActivityCause(activity)}${idle})`;
+  }
+  return `; idle ${activity.idle_hours}h, ${state} under ${policy}`;
 }
 
 /** Headline, requirement, next steps, the non-duplicated detail and typed holder evidence. */

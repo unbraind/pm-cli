@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  callerClaimEndedByClose,
   describeItemOwnershipConflict,
   evaluateClaimActivity,
   resolveItemOwnershipActivity,
@@ -29,6 +30,7 @@ describe("claim activity evidence (GH-1336)", () => {
       }),
     ).toEqual({
       last_activity_at: "2026-07-21T12:00:00.000Z",
+      state: "stale",
       claim_age_hours: 96,
       idle_hours: 72,
       stale_policy: {
@@ -46,7 +48,7 @@ describe("claim activity evidence (GH-1336)", () => {
         now: NOW,
         history_unreadable: true,
       }),
-    ).toMatchObject({ history_unreadable: true, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
+    ).toMatchObject({ history_unreadable: true, state: "unknown", idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
     // Activity the holder's records cannot prove (see unprovenClaimActivity): reported idle, never stale.
     for (const reason of ["claim_record_unavailable", "discarded_history_tail", "rewritten_history", "workspace_restored"] as const) {
       expect(
@@ -56,7 +58,7 @@ describe("claim activity evidence (GH-1336)", () => {
           now: NOW,
           unproven_activity: reason,
         }),
-      ).toMatchObject({ unproven_activity: reason, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
+      ).toMatchObject({ unproven_activity: reason, state: "unknown", idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
     }
     expect(
       evaluateClaimActivity(null, undefined, { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 3_000_000_000, now: NOW }),
@@ -65,6 +67,7 @@ describe("claim activity evidence (GH-1336)", () => {
       evaluateClaimActivity("not-a-date", undefined, { updated_at: "invalid", threshold_hours: 0.5, now: NOW }),
     ).toEqual({
       last_activity_at: null,
+      state: "unknown",
       claim_age_hours: null,
       idle_hours: null,
       stale_policy: {
@@ -76,7 +79,20 @@ describe("claim activity evidence (GH-1336)", () => {
     });
     expect(
       evaluateClaimActivity(null, undefined, { updated_at: "2026-07-24T11:00:00.000Z", threshold_hours: 72, now: NOW }),
-    ).toMatchObject({ claim_age_hours: null, idle_hours: 1, stale_policy: { stale: false } });
+    ).toMatchObject({ state: "active", claim_age_hours: null, idle_hours: 1, stale_policy: { stale: false } });
+    // A clock that is not a finite time measures nothing: ages are null and the state is unknown.
+    expect(
+      evaluateClaimActivity("2026-07-20T12:00:00.000Z", undefined, { updated_at: "2026-07-21T12:00:00.000Z", threshold_hours: 72, now: new Date(Number.NaN) }),
+    ).toMatchObject({ state: "unknown", claim_age_hours: null, idle_hours: null, stale_policy: { stale: false, eligible_at: null } });
+    // A custom clock reading either infinity is unmeasurable too, never clamped to zero hours.
+    class EndlessPast extends Date {
+      override getTime(): number {
+        return Number.NEGATIVE_INFINITY;
+      }
+    }
+    expect(
+      evaluateClaimActivity("2026-07-20T12:00:00.000Z", undefined, { updated_at: "2026-07-21T12:00:00.000Z", threshold_hours: 72, now: new EndlessPast() }),
+    ).toMatchObject({ state: "unknown", claim_age_hours: null, idle_hours: null });
   });
 
   it("derives the holder and its activity from one stream read", async () => {
@@ -176,6 +192,7 @@ describe("claim activity evidence (GH-1336)", () => {
       expect(legacy.activity).toEqual({
         last_activity_at: "2026-07-01T00:00:00.000Z",
         unproven_activity: "claim_record_unavailable",
+        state: "unknown",
         claim_age_hours: 96,
         idle_hours: 96,
         stale_policy: { setting: "mutation_guard.stale_in_progress_hours", threshold_hours: 72, stale: false, eligible_at: null },
@@ -267,6 +284,135 @@ describe("claim activity evidence (GH-1336)", () => {
       const active = (await judge("pm-active")).activity;
       expect(active).toMatchObject({ idle_hours: 1, stale_policy: { stale: false, eligible_at: "2026-07-07T23:00:00.000Z" } });
       expect(active).not.toHaveProperty("unproven_activity");
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports whether a caller's most recent claim was ended by a close (GH-1774)", async () => {
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-close-ended-claim-"));
+    try {
+      await mkdir(path.join(pmRoot, "history"));
+      const write = async (id: string, records: unknown[]) =>
+        writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${records.map((record) => JSON.stringify(record)).join("\n")}\n`);
+      const record = (op: string, patch: unknown[]) => ({ ts: "2026-07-01T00:00:00.000Z", op, author: "m", patch });
+      const set = (path: string, value: unknown) => ({ op: "add", path, value });
+      const remove = (path: string) => ({ op: "remove", path });
+      const claimA = record("claim", [set("/metadata/assignee", "agent-a"), set("/metadata/claim_principal", "agent-a#1")]);
+      const closeAll = record("close", [remove("/metadata/claim_principal"), remove("/metadata/assignee")]);
+      const claimB = record("claim", [set("/metadata/assignee", "agent-b")]);
+      // A close of a holder recorded by assignee alone (no claim principal).
+      const closeAssignee = record("close", [remove("/metadata/assignee")]);
+
+      await write("pm-closed", [claimA, closeAll, claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-closed", "agent-a#1")).toBe(true);
+      // The guard's principal is the claim principal: the bare assignee name is a different principal.
+      expect(await callerClaimEndedByClose(pmRoot, "pm-closed", "agent-a")).toBe(false);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-closed", "agent-b")).toBe(false);
+
+      // A later claim by the caller starts a new claim, which a takeover (not a close) then ends.
+      const reclaimA = record("claim", [set("/metadata/assignee", "agent-a"), set("/metadata/claim_principal", "agent-a#1")]);
+      const takeoverB = record("claim", [{ op: "replace", path: "/metadata/assignee", value: "agent-b" }, remove("/metadata/claim_principal")]);
+      await write("pm-retaken", [claimA, closeAll, reclaimA, takeoverB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-retaken", "agent-a#1")).toBe(false);
+
+      // A test operation and writes elsewhere leave the holder unchanged.
+      await write("pm-ignored", [
+        record("claim", [set("/metadata/assignee", "agent-a")]),
+        record("update", [{ op: "test", path: "/metadata/assignee", value: "agent-a" }, set("/metadata/title", "t")]),
+        closeAssignee,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-ignored", "agent-a")).toBe(true);
+      // A value that is not a string names no holder, so the update (not the close) ended the claim.
+      await write("pm-non-string", [record("claim", [set("/metadata/assignee", "agent-a")]), record("update", [set("/metadata/assignee", 42)]), closeAssignee, claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-non-string", "agent-a")).toBe(false);
+
+      // An unset assignee ends the claim even when the claim principal is left behind, as the live guard reads it.
+      await write("pm-unset-assignee", [claimA, record("update", [remove("/metadata/assignee")]), record("close", [remove("/metadata/claim_principal")]), claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-unset-assignee", "agent-a#1")).toBe(false);
+
+      // Legacy /front_matter records and whole-metadata writes count like current per-field records.
+      await write("pm-legacy-close", [
+        record("claim", [set("/front_matter/assignee", "agent-a")]),
+        record("close", [remove("/front_matter/assignee")]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-legacy-close", "agent-a")).toBe(true);
+      await write("pm-whole-metadata", [
+        record("create", [{ op: "replace", path: "/front_matter", value: { id: "pm-whole-metadata", assignee: "agent-a" } }]),
+        record("update", [{ op: "test", path: "/metadata/assignee", value: "agent-a" }]),
+        record("close", [{ op: "replace", path: "/metadata", value: { id: "pm-whole-metadata", status: "closed" } }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-whole-metadata", "agent-a")).toBe(true);
+      await write("pm-metadata-removed", [
+        record("claim", [set("/metadata/assignee", "agent-a")]),
+        record("close", [remove("/metadata")]),
+        claimB,
+      ]);
+      // Removing the metadata object leaves a document strict replay rejects, so it proves nothing.
+      expect(await callerClaimEndedByClose(pmRoot, "pm-metadata-removed", "agent-a")).toBe(false);
+      await write("pm-metadata-scalar", [claimA, closeAll, record("update", [{ op: "add", path: "/metadata", value: "not-an-object" }]), claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-metadata-scalar", "agent-a#1")).toBe(false);
+      await write("pm-metadata-moved", [claimA, closeAll, record("update", [{ op: "move", from: "/metadata", path: "/archived" }]), claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-metadata-moved", "agent-a#1")).toBe(false);
+
+      // A whole-document replacement clears the holder as replay does; a move away from a holder field clears it too.
+      await write("pm-root-replaced", [
+        claimA,
+        record("close", [{ op: "replace", path: "", value: { metadata: { id: "pm-root-replaced", status: "closed" }, body: "" } }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-replaced", "agent-a#1")).toBe(true);
+      await write("pm-moved-away", [
+        record("claim", [set("/metadata/assignee", "agent-a")]),
+        record("close", [{ op: "move", from: "/metadata/assignee", path: "/metadata/previous_holder" }, { op: "copy", from: "/body", path: "/metadata/alias" }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-moved-away", "agent-a")).toBe(true);
+      // A copy onto a holder path sets it exactly as replay does: here it makes the caller the holder again,
+      // and the later claim (not the close) ends that claim.
+      await write("pm-copied-onto", [
+        claimA,
+        closeAll,
+        record("update", [set("/metadata/reporter", "agent-a#1"), { op: "copy", from: "/metadata/reporter", path: "/metadata/assignee" }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-copied-onto", "agent-a#1")).toBe(false);
+      // A record strict replay rejects (a move without a source, a failed test, a missing path) proves nothing.
+      await write("pm-move-no-from", [claimA, record("update", [{ op: "move", path: "/metadata/title" }]), closeAll, claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-move-no-from", "agent-a#1")).toBe(false);
+      await write("pm-failed-test", [claimA, record("update", [{ op: "test", path: "/metadata/assignee", value: "someone-else" }]), closeAll, claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-failed-test", "agent-a#1")).toBe(false);
+      // A whole-document write whose body is completed later in the same record is accepted, as replay accepts it.
+      await write("pm-root-then-body", [
+        claimA,
+        record("close", [{ op: "replace", path: "", value: { metadata: { id: "pm-root-then-body" } } }, { op: "add", path: "/body", value: "" }]),
+        claimB,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-then-body", "agent-a#1")).toBe(true);
+      await write("pm-root-legacy", [
+        record("create", [{ op: "replace", path: "", value: { front_matter: { id: "pm-root-legacy", assignee: "agent-a" }, body: "" } }]),
+        record("close", [{ op: "replace", path: "", value: { front_matter: { id: "pm-root-legacy", status: "closed" }, body: "" } }]),
+        claimB,
+      ]);
+      // Replay accepts a whole document only as object metadata with a string body, so a front_matter root proves nothing.
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-legacy", "agent-a")).toBe(false);
+      await write("pm-root-no-body", [claimA, record("close", [{ op: "replace", path: "", value: { metadata: { id: "pm-root-no-body" } } }]), claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-no-body", "agent-a#1")).toBe(false);
+      // A whole-document write of another shape is rejected by strict replay, so the close proves nothing.
+      await write("pm-root-not-object", [claimA, record("close", [{ op: "replace", path: "", value: "x" }]), claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-root-not-object", "agent-a#1")).toBe(false);
+
+      // A missing stream, an unparseable one (invalid JSON or a null line) and a decoded value that is not a
+      // well-formed record (no patch list) all prove nothing.
+      expect(await callerClaimEndedByClose(pmRoot, "pm-missing", "agent-a")).toBe(false);
+      await writeFile(path.join(pmRoot, "history", "pm-corrupt.jsonl"), "not-json\n");
+      expect(await callerClaimEndedByClose(pmRoot, "pm-corrupt", "agent-a")).toBe(false);
+      await write("pm-null", [claimA, closeAll, null]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-null", "agent-a#1")).toBe(false);
+      await write("pm-malformed", [claimA, closeAll, { ts: "2026-07-01T00:00:00.000Z", op: "update" }]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-malformed", "agent-a#1")).toBe(false);
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }

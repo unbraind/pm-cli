@@ -529,7 +529,7 @@ describe("context intent contracts", () => {
         getProjection.budget_exceeded as { restore_with: string }
       ).restore_with;
       const getRecoveryMatch =
-        /^pm get '([^']+)' --for inspect --token-budget (\d+)$/u.exec(
+        /^pm get (\S+) --for inspect --token-budget (\d+)$/u.exec(
           getRecovery,
         );
       expect(getRecoveryMatch).not.toBeNull();
@@ -549,14 +549,18 @@ describe("context intent contracts", () => {
       expect(recovered.code, recovered.stderr).toBe(0);
       expect((recovered.json as { item: { id: string } }).item.id).toBe(id);
 
+      // The assertion pins the POSIX spelling, so a developer's PM_COMMAND_SHELL is set aside for this render.
+      const inheritedShell = process.env.PM_COMMAND_SHELL;
+      delete process.env.PM_COMMAND_SHELL;
       const searchProjection = attachContextIntentReceipt(
         "search",
         { for: "discover" },
         { ...oversized, query: "alpha's regression" },
       );
+      if (inheritedShell !== undefined) process.env.PM_COMMAND_SHELL = inheritedShell;
       expect(searchProjection.budget_exceeded).toMatchObject({
         restore_with: expect.stringMatching(
-          /^pm search 'alpha'"'"'s regression' --for discover --token-budget \d+ --limit \d+$/u,
+          /^pm search "alpha's regression" --for discover --token-budget \d+ --limit \d+$/u,
         ),
       });
       for (const projected of [getProjection, searchProjection]) {
