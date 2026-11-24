@@ -421,8 +421,6 @@ const WORD_END_CLOSERS = new Set([")", "]"]);
 
 /** POSIX's close-escape-reopen spelling of an apostrophe inside a single-quoted string. */
 const POSIX_ESCAPED_APOSTROPHE = "'\\''";
-/** A run of backslashes before a quote, optionally across cmd.exe's caret (`\\"`, `\\^"`). */
-const BACKSLASHED_QUOTE = /(\\+)\^?"/gu;
 
 /**
  * Authority text with every escaped quote of the opening's kind replaced by
@@ -435,8 +433,30 @@ const BACKSLASHED_QUOTE = /(\\+)\^?"/gu;
  */
 function neutralizeEscapedQuotes(text: string, closer: string | undefined): string {
   if (closer === "'") return text.replaceAll(POSIX_ESCAPED_APOSTROPHE, "____");
-  if (closer === '"') return text.replace(BACKSLASHED_QUOTE, (run, backslashes: string) => (backslashes.length % 2 === 1 ? "_".repeat(run.length) : run));
+  if (closer === '"') return neutralizeBackslashedQuotes(text);
   return text;
+}
+
+/**
+ * Replace each quote that an odd run of backslashes escapes, optionally
+ * across cmd.exe's caret (`\\"`, `\\^"`), and that run with neutral
+ * characters. One linear pass: each backslash run is read once, so a long
+ * run with no quote after it costs no backtracking.
+ */
+function neutralizeBackslashedQuotes(text: string): string {
+  const parts: string[] = [];
+  let copied = 0;
+  for (let index = text.indexOf("\\"); index >= 0; index = text.indexOf("\\", index)) {
+    let runEnd = index;
+    while (text[runEnd] === "\\") runEnd += 1;
+    const quote = text[runEnd] === "^" ? runEnd + 1 : runEnd;
+    if (text[quote] === '"' && (runEnd - index) % 2 === 1) {
+      parts.push(text.slice(copied, index), "_".repeat(quote + 1 - index));
+      copied = quote + 1;
+    }
+    index = runEnd;
+  }
+  return copied === 0 ? text : `${parts.join("")}${text.slice(copied)}`;
 }
 
 /**

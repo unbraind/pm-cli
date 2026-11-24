@@ -334,6 +334,12 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
       expect(redactUrlCredentialsInText(rendered), rendered).not.toMatch(/my |secret|words/u);
     }
     expect(redactUrlCredentialsInText("pm clone 'https://ci:my ''secret words@host.test/x'")).toBe("pm clone 'https://[redacted]@host.test/x'");
+    // A backslash run with no quote after it is left alone, and a long one costs linear time (CodeQL js/polynomial-redos).
+    expect(redactUrlCredentialsInText('see "ssh://example.test/a\\\\b" or reply@example.org')).toBe('see "ssh://example.test/a\\\\b" or reply@example.org');
+    const backslashRun = `"https://ci:my ${"\\".repeat(1_000_000)}x words@host/x"`;
+    const started = performance.now();
+    redactUrlCredentialsInText(backslashRun);
+    expect(performance.now() - started).toBeLessThan(2_000);
     // A backslash-escaped closer inside a non-special URL (whose backslashes are no path delimiter) is userinfo.
     expect(redactUrlCredentialsInText("run `ssh://ci:my \\`secret words@host.test/x`")).toBe("run `ssh://[redacted]@host.test/x`");
     // An even backslash run before a quote is an escaped backslash, so that quote still closes the URL.
