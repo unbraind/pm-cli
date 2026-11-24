@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  callerClaimEndedByClose,
   describeItemOwnershipConflict,
   evaluateClaimActivity,
   resolveItemOwnershipActivity,
@@ -29,6 +30,7 @@ describe("claim activity evidence (GH-1336)", () => {
       }),
     ).toEqual({
       last_activity_at: "2026-07-21T12:00:00.000Z",
+      state: "stale",
       claim_age_hours: 96,
       idle_hours: 72,
       stale_policy: {
@@ -46,7 +48,7 @@ describe("claim activity evidence (GH-1336)", () => {
         now: NOW,
         history_unreadable: true,
       }),
-    ).toMatchObject({ history_unreadable: true, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
+    ).toMatchObject({ history_unreadable: true, state: "unknown", idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
     // Activity the holder's records cannot prove (see unprovenClaimActivity): reported idle, never stale.
     for (const reason of ["claim_record_unavailable", "discarded_history_tail", "rewritten_history", "workspace_restored"] as const) {
       expect(
@@ -56,7 +58,7 @@ describe("claim activity evidence (GH-1336)", () => {
           now: NOW,
           unproven_activity: reason,
         }),
-      ).toMatchObject({ unproven_activity: reason, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
+      ).toMatchObject({ unproven_activity: reason, state: "unknown", idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
     }
     expect(
       evaluateClaimActivity(null, undefined, { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 3_000_000_000, now: NOW }),
@@ -65,6 +67,7 @@ describe("claim activity evidence (GH-1336)", () => {
       evaluateClaimActivity("not-a-date", undefined, { updated_at: "invalid", threshold_hours: 0.5, now: NOW }),
     ).toEqual({
       last_activity_at: null,
+      state: "unknown",
       claim_age_hours: null,
       idle_hours: null,
       stale_policy: {
@@ -76,7 +79,7 @@ describe("claim activity evidence (GH-1336)", () => {
     });
     expect(
       evaluateClaimActivity(null, undefined, { updated_at: "2026-07-24T11:00:00.000Z", threshold_hours: 72, now: NOW }),
-    ).toMatchObject({ claim_age_hours: null, idle_hours: 1, stale_policy: { stale: false } });
+    ).toMatchObject({ state: "active", claim_age_hours: null, idle_hours: 1, stale_policy: { stale: false } });
   });
 
   it("derives the holder and its activity from one stream read", async () => {
@@ -176,6 +179,7 @@ describe("claim activity evidence (GH-1336)", () => {
       expect(legacy.activity).toEqual({
         last_activity_at: "2026-07-01T00:00:00.000Z",
         unproven_activity: "claim_record_unavailable",
+        state: "unknown",
         claim_age_hours: 96,
         idle_hours: 96,
         stale_policy: { setting: "mutation_guard.stale_in_progress_hours", threshold_hours: 72, stale: false, eligible_at: null },
@@ -267,6 +271,53 @@ describe("claim activity evidence (GH-1336)", () => {
       const active = (await judge("pm-active")).activity;
       expect(active).toMatchObject({ idle_hours: 1, stale_policy: { stale: false, eligible_at: "2026-07-07T23:00:00.000Z" } });
       expect(active).not.toHaveProperty("unproven_activity");
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports whether a caller's most recent claim was ended by a close (GH-1774)", async () => {
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-close-ended-claim-"));
+    try {
+      await mkdir(path.join(pmRoot, "history"));
+      const write = async (id: string, records: unknown[]) =>
+        writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${records.map((record) => JSON.stringify(record)).join("\n")}\n`);
+      const record = (op: string, patch: unknown[]) => ({ ts: "2026-07-01T00:00:00.000Z", op, author: "m", patch });
+      const set = (path: string, value: unknown) => ({ op: "add", path, value });
+      const remove = (path: string) => ({ op: "remove", path });
+      const claimA = record("claim", [set("/metadata/assignee", "agent-a"), set("/metadata/claim_principal", "agent-a#1")]);
+      const closeAll = record("close", [remove("/metadata/claim_principal"), remove("/metadata/assignee")]);
+      const claimB = record("claim", [set("/metadata/assignee", "agent-b")]);
+
+      await write("pm-closed", [claimA, closeAll, claimB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-closed", "agent-a#1")).toBe(true);
+      // The guard's principal is the claim principal: the bare assignee name is a different principal.
+      expect(await callerClaimEndedByClose(pmRoot, "pm-closed", "agent-a")).toBe(false);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-closed", "agent-b")).toBe(false);
+
+      // A later claim by the caller starts a new claim, which a takeover (not a close) then ends.
+      const reclaimA = record("claim", [{ op: "replace", path: "/metadata/assignee", value: "agent-a" }, set("/metadata/claim_principal", "agent-a#1")]);
+      const takeoverB = record("claim", [{ op: "replace", path: "/metadata/assignee", value: "agent-b" }, remove("/metadata/claim_principal")]);
+      await write("pm-retaken", [claimA, closeAll, reclaimA, takeoverB]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-retaken", "agent-a#1")).toBe(false);
+
+      // Values that are not strings and operations other than add, replace and remove leave the holder unchanged.
+      await write("pm-ignored", [
+        record("claim", [set("/metadata/assignee", "agent-a")]),
+        record("update", [set("/metadata/assignee", 42), { op: "move", path: "/metadata/assignee", from: "/x" }, set("/metadata/title", "t")]),
+        closeAll,
+      ]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-ignored", "agent-a")).toBe(true);
+
+      // A missing stream, an unparseable one (invalid JSON or a null line) and a decoded value that is not a
+      // well-formed record (no patch list) all prove nothing.
+      expect(await callerClaimEndedByClose(pmRoot, "pm-missing", "agent-a")).toBe(false);
+      await writeFile(path.join(pmRoot, "history", "pm-corrupt.jsonl"), "not-json\n");
+      expect(await callerClaimEndedByClose(pmRoot, "pm-corrupt", "agent-a")).toBe(false);
+      await write("pm-null", [claimA, closeAll, null]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-null", "agent-a#1")).toBe(false);
+      await write("pm-malformed", [claimA, closeAll, { ts: "2026-07-01T00:00:00.000Z", op: "update" }]);
+      expect(await callerClaimEndedByClose(pmRoot, "pm-malformed", "agent-a#1")).toBe(false);
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }

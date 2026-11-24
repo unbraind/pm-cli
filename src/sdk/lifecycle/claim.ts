@@ -21,6 +21,7 @@ import {
 import { wrapOwnershipConflict } from "../annotations.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import {
+  callerClaimEndedByClose,
   resolveItemOwnershipActivity,
   type ClaimActivityEvidence,
   type ItemOwnershipActivity,
@@ -780,6 +781,9 @@ function noAvailableNextItemError(attempts: number, startRefused: readonly strin
   );
 }
 
+/** Stable warning when a release by the holder a close ended leaves a later holder's claim in place (GH-1774). */
+export const RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING = "release_claim_ended_by_close";
+
 /** Implements run release for the public runtime surface of this module. */
 export async function runRelease(
   id: string,
@@ -805,6 +809,7 @@ export async function runRelease(
     throw new PmCliError("Ownership-release bypass only clears ownership; it cannot change a handoff status.", EXIT_CODE.USAGE);
   }
   let handoff: ReleaseResult["handoff"];
+  let keptHolder: string | undefined;
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
   try {
@@ -817,7 +822,19 @@ export async function runRelease(
       message: options.message,
       force,
       bypassAssigneeConflict: ownershipReleaseBypass,
-      mutate(document) {
+      // A plain release by the holder a close ended acts only on that ended
+      // claim, so a holder who claimed the item afterwards keeps it under
+      // every ownership policy, --force included (GH-1774). A handoff or the
+      // package ownership-release bypass is an explicit change and keeps
+      // the ownership policy.
+      ...(handoffStatus === undefined && !ownershipReleaseBypass
+        ? { callerClaimScope: ({ storageId, callerPrincipal }) => callerClaimEndedByClose(pmRoot, storageId, callerPrincipal) }
+        : {}),
+      mutate(document, location) {
+        if (location.callerClaimScoped === true) {
+          keptHolder = redactIdentityCredentials(document.metadata.assignee!.trim());
+          return { changedFields: [], warnings: [`${RELEASE_CLAIM_ENDED_BY_CLOSE_WARNING}:${document.metadata.id}:${keptHolder}`] };
+        }
         previousAssignee = document.metadata.assignee ?? null;
         const transition = handoffStatus === undefined ? undefined : applyReleaseHandoff(document.metadata, handoffStatus, settings, statusRegistry, options.message!);
         handoff = transition?.receipt;
@@ -850,7 +867,14 @@ export async function runRelease(
       }),
     ),
   );
-  const handoffAdvice = releaseHandoffAdvice(result.item, statusRegistry);
+  const handoffAdvice = keptHolder === undefined
+    ? releaseHandoffAdvice(result.item, statusRegistry)
+    : {
+        warnings: [],
+        suggestions: [
+          `A close of ${result.item.id} already ended your claim; ${keptHolder} claimed it afterwards and keeps it. Nothing was changed.`,
+        ],
+      };
 
   return {
     item: redactIdentityFields(toItemRecord(result.item)),

@@ -692,6 +692,108 @@ describe("runClaim/runRelease", () => {
     });
   });
 
+  describe("a release by the holder a close ended (GH-1774)", () => {
+    /** Claim as agent-a, close as agent-a, then force-claim the closed item as agent-b. */
+    async function closedThenReclaimed(context: TempPmContext, title: string): Promise<string> {
+      const id = createTask(context, { title, status: "open" });
+      const global = { path: context.pmPath };
+      await runClaim(id, false, global, { author: "agent-a" });
+      const closed = context.runCli(
+        ["close", id, "completed", "--author", "agent-a", "--resolution", "done", "--expected-result", "done", "--actual-result", "done", "--json"],
+        { expectJson: true },
+      );
+      expect(closed.code, `${closed.stdout}${closed.stderr}`).toBe(0);
+      const reclaimed = await runClaim(id, true, global, { author: "agent-b" });
+      expect(reclaimed.item.assignee).toBe("agent-b");
+      return id;
+    }
+
+    async function itemState(context: TempPmContext, id: string): Promise<{ raw: string; history: string }> {
+      const located = await locateItem(context.pmPath, id);
+      return {
+        raw: await readFile(located!.itemPath, "utf8"),
+        history: await readFile(getHistoryPath(context.pmPath, id), "utf8"),
+      };
+    }
+
+    for (const preset of ["default", "strict"] as const) {
+      for (const force of [false, true]) {
+        it(`keeps the replacement holder under the ${preset} policy${force ? " with --force" : ""} and writes nothing`, async () => {
+          await withTempPmPath(async (context) => {
+            setGovernancePreset(context, preset);
+            const id = await closedThenReclaimed(context, `release-after-close-${preset}-${force}`);
+            const before = await itemState(context, id);
+
+            const released = await runRelease(id, force, { path: context.pmPath }, { author: "agent-a" });
+
+            expect(released.item.assignee).toBe("agent-b");
+            expect(released.previous_assignee).toBeNull();
+            expect(released.changed_fields).toEqual([]);
+            expect(released.warnings).toEqual([`release_claim_ended_by_close:${id}:agent-b`]);
+            expect(released.warnings?.some((warning) => warning.startsWith("ownership_warning:"))).toBe(false);
+            expect(released.suggestions).toEqual([
+              `A close of ${id} already ended your claim; agent-b claimed it afterwards and keeps it. Nothing was changed.`,
+            ]);
+            // The holder's item and its activity clock are untouched.
+            expect(await itemState(context, id)).toEqual(before);
+          });
+        });
+      }
+    }
+
+    it("lets the replacement holder release itself", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await closedThenReclaimed(context, "release-after-close-self");
+        const released = await runRelease(id, false, { path: context.pmPath }, { author: "agent-b" });
+        expect(released.previous_assignee).toBe("agent-b");
+        expect(released.item.assignee).toBeUndefined();
+      });
+    });
+
+    it("keeps the ownership policy when the caller's later claim was ended by a takeover, not a close", async () => {
+      await withTempPmPath(async (context) => {
+        setGovernancePreset(context, "strict");
+        const id = await closedThenReclaimed(context, "release-after-close-reclaimed");
+        const global = { path: context.pmPath };
+        await runClaim(id, true, global, { author: "agent-a" });
+        await runClaim(id, true, global, { author: "agent-b" });
+        await expect(runRelease(id, false, global, { author: "agent-a" })).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+        });
+      });
+    });
+
+    it("keeps the ownership policy for a caller that never held the item and for an unreadable stream", async () => {
+      await withTempPmPath(async (context) => {
+        setGovernancePreset(context, "strict");
+        const id = await closedThenReclaimed(context, "release-after-close-stranger");
+        const global = { path: context.pmPath };
+        await expect(runRelease(id, false, global, { author: "agent-c" })).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+        });
+        const historyPath = getHistoryPath(context.pmPath, id);
+        await writeFile(historyPath, `${await readFile(historyPath, "utf8")}not-json\n`);
+        await expect(runRelease(id, false, global, { author: "agent-a" })).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+        });
+      });
+    });
+
+    it("warns and clears under the default policy when the caller's claim did not end at a close", async () => {
+      await withTempPmPath(async (context) => {
+        setGovernancePreset(context, "default");
+        const id = createTask(context, { title: "release-open-takeover", status: "open" });
+        const global = { path: context.pmPath };
+        await runClaim(id, false, global, { author: "agent-a" });
+        await runClaim(id, true, global, { author: "agent-b" });
+        const released = await runRelease(id, false, global, { author: "agent-a" });
+        expect(released.previous_assignee).toBe("agent-b");
+        expect(released.item.assignee).toBeUndefined();
+        expect(released.warnings).toContain(`ownership_warning:assignee_conflict:${id}:agent-b`);
+      });
+    });
+  });
+
   it("supports audited non-owner release handoffs without force", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "strict");

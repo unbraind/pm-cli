@@ -5,7 +5,7 @@
  * pm-5htunt).
  */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { quoteWindowsCommandArg } from "./command-line.js";
+import { escapeCmdMetacharacters, escapePowerShellSingleQuotes, quoteWindowsCommandArg } from "./command-line.js";
 import { EXIT_CODE } from "./constants.js";
 import { PmCliError } from "./errors.js";
 
@@ -226,13 +226,17 @@ function lowerPreservingLength(text: string): string {
   return result;
 }
 
-/** Every spelling a span takes in raw text, in both shells' quoting and in a JSON string. */
+/** Every spelling a span takes in raw text, in each rendered shell dialect's quoting and in a JSON string. */
 function spanSpellings(span: string): string[] {
+  // A span always precedes the token's `@`, so no trailing backslash doubling applies.
+  const windowsQuoted = quoteWindowsCommandArg(`${span}@`);
   return [
     span,
     span.replaceAll(/(["\\$`])/gu, "\\$1"),
-    // A span always precedes the token's `@`, so no trailing backslash doubling applies.
-    quoteWindowsCommandArg(`${span}@`).slice(1, -2),
+    windowsQuoted.slice(1, -2),
+    // cmd.exe caret form: drop the escaped opening quote (`^"`) and the trailing `@^"`.
+    escapeCmdMetacharacters(windowsQuoted).slice(2, -3),
+    escapePowerShellSingleQuotes(span),
     JSON.stringify(span).slice(1, -1),
   ];
 }

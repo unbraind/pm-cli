@@ -146,7 +146,8 @@ describe("GH-1662 one budget contract for intent reads", () => {
 
 describe("GH-1662 intent budgets bind every shaped, resumed and session read", () => {
   /** Split a rendered recovery command into argv, honouring POSIX single quotes. */
-  const argvOf = (command: string): string[] => [...command.matchAll(/'((?:[^']|'"'"')*)'|(\S+)/gu)].map((match) => match[1] === undefined ? match[2]! : match[1].replaceAll(`'"'"'`, "'")).slice(1);
+  // Splits a rendered POSIX or cmd recovery: double-quoted spans keep their backslash escapes as one argument.
+  const argvOf = (command: string): string[] => [...command.matchAll(/"((?:[^"\\]|\\.)*)"|(\S+)/gu)].map((match) => match[1] === undefined ? match[2]! : match[1].replace(/\\(.)/gu, "$1")).slice(1);
 
   it("binds include-shaped reads, keeps resumed refusals whole, names working retries and charges sessions exactly", async () => {
     await withTempPmPath(async (context) => {
@@ -187,7 +188,7 @@ describe("GH-1662 intent budgets bind every shaped, resumed and session read", (
       const refusal = JSON.parse(narrow.stdout) as { budget_exceeded: { restore_with: string } };
       expect(refusal.budget_exceeded, narrow.stdout).toBeDefined();
       const restore = refusal.budget_exceeded.restore_with;
-      expect(restore).toContain("--fields 'id,title'");
+      expect(restore).toContain('--fields "id,title"');
       const retried = await runSource(context, argvOf(restore));
       expect(retried.code, retried.stdout).toBe(0);
 

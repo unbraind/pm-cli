@@ -62,10 +62,11 @@ The read requires no feature flag or session state. It reports:
 - one deterministic `state` and one `next_action.command`.
 
 The next action always pins the inspected tracker with `--pm-path` and uses the
-SDK's platform-aware command renderer. Paths with spaces or shell-significant
-characters are therefore copy-safe on both POSIX shells and Windows command
-lines, while package consumers can reuse `renderPmCommand` for their own
-tokenized recovery actions.
+SDK's dialect-aware command renderer. Paths with spaces or shell-significant
+characters are therefore copy-safe in the declared shell (POSIX shells,
+cmd.exe, or PowerShell with `PM_COMMAND_SHELL=powershell`; see
+[Configuration](CONFIGURATION.md#environment-variables)), while package
+consumers can reuse `renderPmCommand` for their own tokenized recovery actions.
 
 Recovery precedence is intentional:
 

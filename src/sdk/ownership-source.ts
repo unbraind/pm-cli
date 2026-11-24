@@ -86,16 +86,19 @@ export function evaluateClaimActivity(
   // Unknown or unprovable activity never qualifies: a takeover needs positive evidence of idleness.
   const judgeable =
     lastActivityAt !== null && options.history_unreadable !== true && options.unproven_activity === undefined;
+  const stale = judgeable && (idleHours as number) >= thresholdHours;
   return {
     last_activity_at: lastActivityAt,
     ...(options.history_unreadable === true ? { history_unreadable: true as const } : {}),
     ...(options.unproven_activity === undefined ? {} : { unproven_activity: options.unproven_activity }),
+    // Unjudgeable activity is its own state, never reported as active (GH-1774).
+    state: judgeable ? (stale ? "stale" : "active") : "unknown",
     claim_age_hours: validClaimedAt === null ? null : wholeHoursSince(validClaimedAt, nowMs),
     idle_hours: idleHours,
     stale_policy: {
       setting: STALE_WORK_THRESHOLD_SETTING,
       threshold_hours: thresholdHours,
-      stale: judgeable && (idleHours as number) >= thresholdHours,
+      stale,
       // A threshold past the Date range (accepted by settings) yields a null eligibility, never a throw.
       eligible_at: judgeable ? staleEligibleAt(lastActivityAt, thresholdHours) : null,
     },
@@ -271,4 +274,63 @@ export async function describeItemOwnershipConflict(
   assignee: string,
 ): Promise<string> {
   return (await resolveItemOwnershipConflict(pmRoot, itemId, assignee)).phrase;
+}
+
+/** History operations whose ownership change ends the holder's claim at closure. */
+const CLAIM_ENDING_CLOSE_OPERATIONS: ReadonlySet<string> = new Set(["close"]);
+
+/** Holder fields a history record can set or remove, as the ownership guard reads them. */
+interface HolderFields {
+  assignee?: string;
+  claim_principal?: string;
+}
+
+/** Apply one record's assignee and claim-principal operations to the tracked holder fields. */
+function applyHolderPatch(fields: HolderFields, patch: ReadonlyArray<{ path: string; value?: unknown }>): void {
+  for (const operation of patch as ReadonlyArray<{ op?: unknown; path: string; value?: unknown }>) {
+    const key = operation.path === ASSIGNEE_PATH ? "assignee" : operation.path === CLAIM_PRINCIPAL_PATH ? "claim_principal" : undefined;
+    if (key === undefined) continue;
+    if (operation.op === "remove") delete fields[key];
+    else if ((operation.op === "add" || operation.op === "replace") && typeof operation.value === "string") fields[key] = operation.value;
+  }
+}
+
+/** The principal the ownership guard compares: the claim principal, else the assignee. */
+function holderPrincipal(fields: HolderFields): string | undefined {
+  return fields.claim_principal?.trim() || fields.assignee?.trim() || undefined;
+}
+
+/**
+ * Whether `callerPrincipal`'s most recent claim on the item was ended by a
+ * close (GH-1774). Folding the readable history forward, a record that moves
+ * the holder away from the caller ends the caller's claim, and one that makes
+ * the caller the holder again starts a new one; the caller's claim counts as
+ * ended by a close only when the record that last ended it is a close. A
+ * release by that caller then acts only on its own ended claim, so a holder
+ * who claimed the item after the close keeps it. A stream that cannot be read
+ * or replayed proves nothing and returns false, leaving the ownership policy
+ * in force.
+ */
+export async function callerClaimEndedByClose(
+  pmRoot: string,
+  storageId: string,
+  callerPrincipal: string,
+): Promise<boolean> {
+  let entries: unknown[];
+  try {
+    entries = await readHistoryEntries(getHistoryPath(pmRoot, storageId), storageId);
+  } catch {
+    return false;
+  }
+  const fields: HolderFields = {};
+  let endedByClose = false;
+  for (const entry of entries) {
+    if (!isWellFormedHistoryRecord(entry)) return false;
+    const before = holderPrincipal(fields);
+    applyHolderPatch(fields, entry.patch);
+    const after = holderPrincipal(fields);
+    if (before === callerPrincipal && after !== callerPrincipal) endedByClose = CLAIM_ENDING_CLOSE_OPERATIONS.has(entry.op);
+    else if (after === callerPrincipal && before !== callerPrincipal) endedByClose = false;
+  }
+  return endedByClose;
 }

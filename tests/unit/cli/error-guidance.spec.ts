@@ -467,6 +467,7 @@ describe("pm cli error guidance context plumbing", () => {
     it("renders the holder's idle time and stale verdict and keeps claim_activity in JSON (GH-1336)", () => {
       const activity = (stale: boolean, idle: number | null) => ({
         last_activity_at: idle === null ? null : "2026-10-31T00:17:38.745Z",
+        state: idle === null ? ("unknown" as const) : stale ? ("stale" as const) : ("active" as const),
         claim_age_hours: idle,
         idle_hours: idle,
         stale_policy: {
@@ -483,8 +484,24 @@ describe("pm cli error guidance context plumbing", () => {
       const active = formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: activity(false, 3) }, { lean: true });
       expect(active).toContain("; idle 3h, active under mutation_guard.stale_in_progress_hours=72");
       const unknown = formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: activity(false, null) });
-      expect(unknown).toContain("Held by: agent-a (claim since 2026-10-31T00:17:38.745Z)\n");
+      expect(unknown).toContain(
+        "Held by: agent-a (claim since 2026-10-31T00:17:38.745Z); activity unknown under mutation_guard.stale_in_progress_hours=72 (no valid activity time)\n",
+      );
       expect(unknown).not.toContain("; idle");
+      // GH-1774: activity that cannot be judged is never reported as active, even with a recorded idle time.
+      const unreadable = formatPmCliErrorForDisplay(claimMessage, {
+        ...claimContext,
+        claim_activity: { ...activity(false, 3), history_unreadable: true, state: "unknown" },
+      });
+      expect(unreadable).toContain(
+        "; activity unknown under mutation_guard.stale_in_progress_hours=72 (history unreadable, last recorded activity 3h ago)",
+      );
+      expect(unreadable).not.toContain("active under");
+      const unproven = formatPmCliErrorForDisplay(claimMessage, {
+        ...claimContext,
+        claim_activity: { ...activity(false, 3), unproven_activity: "rewritten_history", state: "unknown" },
+      });
+      expect(unproven).toContain("(idleness unproven: rewritten_history, last recorded activity 3h ago)");
       const envelope = formatPmCliErrorForJson(claimMessage, 4, { ...claimContext, claim_activity: activity(true, 96) });
       expect(envelope).toMatchObject({ claimed_by: "agent-a", claim_activity: activity(true, 96) });
       expect(projectLeanErrorEnvelope(envelope)).toMatchObject({ claim_activity: activity(true, 96) });

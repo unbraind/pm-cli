@@ -3683,6 +3683,29 @@ the extracted value. When a retry
 would lose credentials this way, withhold the retry instead of emitting one
 that runs a different command.
 
+Render a recovery command from tokens with `renderPmCommand(argv)` or quote
+one token with `quoteCommandArg(token)`, never by hand
+([pm-kjoudp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kjoudp.toon);
+tracker record excluded from npm). Both quote for the shell
+`resolveCommandShellDialect()` declares: `PM_COMMAND_SHELL` (`posix`, `cmd`
+or `powershell`), otherwise `cmd` on Windows and `posix` elsewhere. Pass a
+`CommandShellDialect` as the third argument to render for one shell
+explicitly. `quoteCmdCommandArg` caret-escapes an argument that holds `%` or
+`"`, so cmd.exe can neither expand `%VAR%` nor split the line.
+`quotePowerShellCommandArg` emits a single-quoted literal. The redaction
+rules above recognize a credential in every one of these spellings.
+
+`callerClaimEndedByClose(pmRoot, storageId, callerPrincipal)` reports whether
+the caller's latest claim on an item was ended by a close. A package
+mutation that should act only on the caller's own claim passes a
+`CallerClaimScope` as `callerClaimScope` to `mutateItem`. When that resolves
+true under the item lock, the assignee-conflict policy and `--force` do not
+apply. The callback then receives `callerClaimScoped: true` and must leave
+the holder's ownership unchanged. A scoped mutation that changes nothing
+writes nothing. `pm release` uses this, so a close's holder never clears a
+later holder's claim
+([GH-1774](https://github.com/unbraind/pm-cli/issues/1774)).
+
 `resolveLifecycleVerbRecovery(verb, availablePaths)` returns explicit argument
 templates and next steps for unsupported `block` and `unblock` verbs. It checks
 the SDK's update flag contracts and declines installed verbs, unknown paths,

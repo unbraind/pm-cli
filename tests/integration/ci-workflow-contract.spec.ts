@@ -1253,6 +1253,7 @@ describe("GitHub workflow contract", () => {
         "command-resolution.spec.ts",
         "lifecycle-verb-recovery.spec.ts",
         "history-recency.spec.ts",
+        "rendered-command-shell-safety.integration.spec.ts",
       ]),
     );
   });

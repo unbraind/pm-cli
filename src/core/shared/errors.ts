@@ -335,6 +335,13 @@ export interface PmCliErrorContext {
     history_unreadable?: true;
     /** Present when the readable stream cannot prove the holder's idleness: no original record sets the holder, or after it a salvage discarded, a repair, redaction or merge reconcile rewrote, or a workspace restore replaced records. The claim is then never judged stale. */
     unproven_activity?: "claim_record_unavailable" | "discarded_history_tail" | "rewritten_history" | "workspace_restored";
+    /**
+     * Holder activity under the stale-work policy: `stale` when idleness is
+     * proven past the threshold, `active` when recorded activity is recent,
+     * and `unknown` when the history is unreadable, cannot prove idleness, or
+     * no valid activity time is recorded (GH-1774).
+     */
+    state: "active" | "stale" | "unknown";
     /** Whole hours since `claimed_at`, or null when the claim time is unknown. */
     claim_age_hours: number | null;
     /** Whole hours since `last_activity_at`, or null when the activity time is unknown. */

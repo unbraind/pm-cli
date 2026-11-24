@@ -529,7 +529,7 @@ describe("context intent contracts", () => {
         getProjection.budget_exceeded as { restore_with: string }
       ).restore_with;
       const getRecoveryMatch =
-        /^pm get '([^']+)' --for inspect --token-budget (\d+)$/u.exec(
+        /^pm get (\S+) --for inspect --token-budget (\d+)$/u.exec(
           getRecovery,
         );
       expect(getRecoveryMatch).not.toBeNull();
@@ -556,7 +556,7 @@ describe("context intent contracts", () => {
       );
       expect(searchProjection.budget_exceeded).toMatchObject({
         restore_with: expect.stringMatching(
-          /^pm search 'alpha'"'"'s regression' --for discover --token-budget \d+ --limit \d+$/u,
+          /^pm search "alpha's regression" --for discover --token-budget \d+ --limit \d+$/u,
         ),
       });
       for (const projected of [getProjection, searchProjection]) {

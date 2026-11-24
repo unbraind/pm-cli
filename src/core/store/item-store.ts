@@ -483,6 +483,7 @@ async function prepareLockedItem(params: {
   author: string;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
+  callerClaimScope?: CallerClaimScope;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
 }): Promise<{
@@ -493,6 +494,7 @@ async function prepareLockedItem(params: {
   warnings: string[];
   releaseLock: () => Promise<void>;
   lease: LockLease;
+  callerClaimScoped: boolean;
 }> {
   const typeToFolder =
     params.typeToFolder ??
@@ -543,9 +545,16 @@ async function prepareLockedItem(params: {
       document.metadata.claim_principal?.trim() || storedAssignee;
     const callerPrincipal = resolveClaimPrincipal(params.author);
     const governance = resolveGovernanceKnobs(params.settings);
+    const heldByAnother = Boolean(assigned) && assignedPrincipal !== callerPrincipal;
+    // A mutation scoped to the caller's own ended claim never changes another
+    // holder's ownership, so no policy or --force applies to it (GH-1774).
+    const callerClaimScoped =
+      heldByAnother &&
+      params.callerClaimScope !== undefined &&
+      (await params.callerClaimScope({ document, storageId: located.id, callerPrincipal }));
     const hasOwnershipConflict =
-      assigned &&
-      assignedPrincipal !== callerPrincipal &&
+      heldByAnother &&
+      !callerClaimScoped &&
       !params.force &&
       !bypassesAssigneeConflict(params.op, params.bypassAssigneeConflict);
     if (hasOwnershipConflict) {
@@ -570,6 +579,7 @@ async function prepareLockedItem(params: {
       warnings,
       releaseLock,
       lease,
+      callerClaimScoped,
     };
   } catch (error: unknown) {
     await releaseLock();
@@ -754,7 +764,29 @@ export interface ItemMutationLocation {
    * filesystem), so any read of this item's history inside the mutation must use it.
    */
   storageId: string;
+  /**
+   * True when another principal holds the item and the mutation's
+   * `callerClaimScope` scoped it to the caller's own ended claim: the
+   * callback must leave the holder's ownership unchanged. A scoped mutation
+   * that changes nothing writes nothing.
+   */
+  callerClaimScoped?: true;
 }
+
+/**
+ * Decide, under the item lock, whether a mutation by a caller who does not
+ * hold the item acts only on the caller's own ended claim. When it resolves
+ * true the assignee-conflict policy and `--force` do not apply, and the
+ * callback receives `callerClaimScoped`.
+ */
+export type CallerClaimScope = (input: {
+  /** The item as read under the lock. */
+  document: ItemDocument;
+  /** Storage id that keys the item's lock and history stream. */
+  storageId: string;
+  /** The caller's claim principal, compared exactly as the ownership guard compares it. */
+  callerPrincipal: string;
+}) => Promise<boolean>;
 
 /** The locked edit a single-item mutation applies; it receives the document and where the lock acts. */
 export type ItemMutationCallback = (
@@ -782,6 +814,8 @@ interface ItemMutationParams {
   historyContext?: Record<string, unknown>;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
+  /** Scope a non-holder's mutation to its own ended claim; see {@link CallerClaimScope}. */
+  callerClaimScope?: CallerClaimScope;
   skipNoop?: boolean;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
@@ -798,6 +832,16 @@ function recordResolvedDeferrals(document: ItemDocument, changedFields: string[]
   if (pruneResolvedDeferredFields(document.metadata)) changedFields.push("deferred_fields");
 }
 
+/** The location a locked mutation callback receives, flagged when the caller-claim scope applied. */
+function itemMutationLocation(storageId: string, callerClaimScoped: boolean): ItemMutationLocation {
+  return callerClaimScoped ? { storageId, callerClaimScoped: true } : { storageId };
+}
+
+/** An unchanged write is skipped on request, and always for a caller-scoped mutation, which must not touch the holder's item or its activity clock. */
+function skipsUnchangedWrite(skipNoop: boolean | undefined, callerClaimScoped: boolean): boolean {
+  return skipNoop === true || callerClaimScoped;
+}
+
 async function mutateItemWithDeferredHistoryContext(
   params: DeferredItemMutationParams,
 ): Promise<ItemMutationResult> {
@@ -810,6 +854,7 @@ async function mutateItemWithDeferredHistoryContext(
     author: params.author,
     force: params.force,
     bypassAssigneeConflict: params.bypassAssigneeConflict,
+    callerClaimScope: params.callerClaimScope,
     extensionFieldNames: params.extensionFieldNames,
     typeToFolder: params.typeToFolder,
   });
@@ -821,6 +866,7 @@ async function mutateItemWithDeferredHistoryContext(
     warnings: parseWarnings,
     releaseLock,
     lease,
+    callerClaimScoped,
   } = prepared;
 
   try {
@@ -834,9 +880,9 @@ async function mutateItemWithDeferredHistoryContext(
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,
     });
-    const mutation = await params.mutate(mutableDocument, { storageId: located.id });
+    const mutation = await params.mutate(mutableDocument, itemMutationLocation(located.id, callerClaimScoped));
     recordResolvedDeferrals(mutableDocument, mutation.changedFields);
-    if (params.skipNoop === true && mutation.changedFields.length === 0) {
+    if (skipsUnchangedWrite(params.skipNoop, callerClaimScoped) && mutation.changedFields.length === 0) {
       return {
         item: beforeDocument.metadata,
         body: beforeDocument.body,
@@ -1068,6 +1114,7 @@ export async function mutateItemWithHistoryContext(params: {
   historyContext?: Record<string, unknown>;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
+  callerClaimScope?: CallerClaimScope;
   skipNoop?: boolean;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
@@ -1104,6 +1151,7 @@ export function mutateItem(params: {
   message?: string;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
+  callerClaimScope?: CallerClaimScope;
   skipNoop?: boolean;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;

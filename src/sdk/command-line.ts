@@ -9,7 +9,16 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { resolveImplicitPmRoot, resolvePmRoot, resolveWorkspaceRoot } from "../core/store/paths.js";
 import { isPathWithinDirectory } from "../core/fs/path-utils.js";
 
-export { quoteWindowsCommandArg, quoteCommandArg, renderPmCommand } from "../core/shared/command-line.js";
+export {
+  COMMAND_SHELL_ENV,
+  quoteCmdCommandArg,
+  quoteCommandArg,
+  quotePowerShellCommandArg,
+  quoteWindowsCommandArg,
+  renderPmCommand,
+  resolveCommandShellDialect,
+  type CommandShellDialect,
+} from "../core/shared/command-line.js";
 export {
   URL_CREDENTIAL_PLACEHOLDER,
   invocationCarriesUrlCredentials,

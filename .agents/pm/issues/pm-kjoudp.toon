@@ -2,11 +2,13 @@ id: pm-kjoudp
 title: "Recovery commands rendered on Windows are not paste-safe in PowerShell: $(...) and backticks expand inside CommandLineToArgvW double quotes"
 description: "Recovery commands (`restore_with`, `suggested_retry`, next-step hints) are rendered by `quoteCommandArg` / `renderPmCommand` in `src/core/shared/command-line.ts`, used across 41 source files. On `win32` the helper follows CommandLineToArgvW quoting, which is correct for cmd.exe and CreateProcess, as settled in pm-b24b. PowerShell, however, expands `$var`, `$(...)` and backticks inside double quotes. An argument such as a tracker path `C:\\trackers\\$(Start-Process calc)` therefore expands when a user pastes the command into PowerShell. The argument comes from the user's own `--pm-path` or `PM_PATH`, so this is low risk, but recovery text should be paste-safe in the shell the agent actually uses.\n\nCodeRabbit raised it on PR #1635 for `tests_omitted.restore_with`. It applies to every rendered recovery command, so it needs one shell-dialect decision instead of a per-call-site patch."
 type: Issue
-status: open
+status: in_progress
 priority: 3
 tags[4]: agent-ux,recovery,security,windows
 created_at: "2026-10-31T09:47:32.983Z"
-updated_at: "2026-11-07T05:21:59.965Z"
+updated_at: "2026-11-24T11:06:41.411Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#c6c83012f9e42e8001963ef6"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Decide the recovery-command shell dialect on win32 (cmd/CreateProcess, PowerShell, or a declared dialect field); quoteCommandArg renders arguments containing $, backtick, ( or ) so that pasting into the declared shell never expands them; unit tests cover win32 cmd and PowerShell rendering of a tracker path containing $(...) and a backtick; existing cmd/CreateProcess round-trip tests stay green"
@@ -16,6 +18,31 @@ confidence: medium
 expected_result: "A recovery command rendered on Windows can be pasted into the declared shell without expanding $, $(...) or backticks in any argument."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-b24b,related,"2026-10-31T09:47:32.983Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-07T05:21:59.965Z","harness:claude-code","Extension from the CodeRabbit review of PR 1681: the legacy intent restore_with renders its positional and the newly carried --fields with POSIX single quotes (shellQuote in src/sdk/context-intent-contracts.ts). On Windows cmd.exe, a retry such as \"--fields 'id'\" passes the quotes as part of the selector and fails validation. That recovery should use the platform-aware quoteCommandArg/renderPmCommand path this item owns."
+  "2026-11-24T10:34:52.987Z","harness:claude-code","Decision (2026-11-24): rendered pm commands follow a declared shell dialect instead of one fixed per-platform spelling. `resolveCommandShellDialect()` reads `PM_COMMAND_SHELL`: `posix` (aliases sh, bash, zsh), `cmd` (cmd.exe) or `powershell` (pwsh), case-insensitive. It defaults to `cmd` on Windows, which keeps the pm-b24b CommandLineToArgvW decision, and to `posix` elsewhere. An empty or unrecognized value keeps the default. The alias table is a Map, so `constructor` and other inherited keys never resolve.\n\nWhy not auto-detect: PSModulePath is set system-wide on Windows and inherited by cmd.exe children, so no environment signal reliably tells cmd.exe from PowerShell. No single spelling is safe in both shells either. `$(...)` is live in every PowerShell string form a cmd.exe line can carry, and `%VAR%` is live in every cmd.exe form a PowerShell literal carries. The failure direction picked the default. A cmd caret form pasted into PowerShell keeps its carets, so it names a nonexistent path and fails closed. A PowerShell literal pasted into cmd.exe expands `%VAR%` and can select another tracker.\n\nPowerShell form: single-quoted literal with every quote doubled, including the typographic quotes PowerShell also accepts (U+2018/2019/201A/201B). The bare-token pattern quotes a leading `@` (splatting), `--` (parameter-binder token) and `,` (an array argument, which is joined with spaces for native commands).\n\nOther call sites folded in: the legacy intent `restore_with` (POSIX `shellQuote`, comment 1 here) and the `git rm --cached` remediation in tracked-runtime-cache now go through `quoteCommandArg`. Credential redaction (`spanSpellings` in url-credentials) also registers the cmd caret spelling and the PowerShell doubled-quote spelling of each userinfo secret.\n\nProof: tests/integration/cli/rendered-command-shell-safety.integration.spec.ts runs a 22-argument hostile corpus through the real `sh -c`, `cmd.exe /d /s /c` (Windows native CI cohort, added to ci.yml) and `pwsh -EncodedCommand`. It asserts the program's argv byte for byte with a defined probe variable. Locally on Linux, POSIX passes, and PowerShell 7.7.0 (portable tarball) passes."
+files[12]{path,scope,note}:
+  .github/workflows/ci.yml,project,shell dialect rendering
+  src/core/shared/command-line.ts,project,shell dialect rendering
+  src/core/shared/url-credentials.ts,project,shell dialect rendering
+  src/sdk/command-line.ts,project,shell dialect rendering
+  src/sdk/context-intent-contracts.ts,project,shell dialect rendering
+  src/sdk/governance/tracked-runtime-cache.ts,project,shell dialect rendering
+  src/sdk/index.ts,project,shell dialect rendering
+  tests/integration/ci-workflow-contract.spec.ts,project,dialect-aware rendering regression
+  tests/integration/cli/rendered-command-shell-safety.integration.spec.ts,project,"real-shell paste-safety proof (sh, cmd.exe, pwsh)"
+  tests/integration/read-output/delivered-output-budget.integration.spec.ts,project,dialect-aware rendering regression
+  tests/unit/sdk/context-intent-contracts.spec.ts,project,dialect-aware rendering regression
+  tests/unit/sdk/tracked-runtime-cache.spec.ts,project,dialect-aware rendering regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/argv-utils.spec.ts tests/unit/core/shared/url-credentials.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/sdk/tracked-runtime-cache.spec.ts tests/integration/cli/rendered-command-shell-safety.integration.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts,project,900,"harness:claude-code","2026-11-24T10:34:35.599Z",local_mutation,fix/shell-dialect-recovery-claim-activity-release-scope
+docs[3]{path,scope}:
+  docs/CONFIGURATION.md,project
+  docs/SDK.md,project
+  docs/WORKSPACE_POSITION_AND_LIFECYCLE.md,project
+contract_change:
+  api: "Rendered recovery commands (suggested_retry, restore_with, next steps) and the SDK quoteCommandArg / renderPmCommand"
+  before: "Windows recovery commands were always CommandLineToArgvW double-quoted, so PowerShell expanded $, $(...) and backticks; the intent restore_with and the git rm --cached remediation always used POSIX single quotes"
+  after: "PM_COMMAND_SHELL declares posix, cmd or powershell (default cmd on Windows, posix elsewhere); powershell renders single-quoted literals; every rendered command, including the intent restore_with and the git remediation, follows the declared dialect"
+  migrate: Set PM_COMMAND_SHELL=powershell (or pwsh) when pasting pm recovery commands into PowerShell; SDK callers can pass a CommandShellDialect as the third argument of quoteCommandArg and renderPmCommand
 body: ""

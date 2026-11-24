@@ -2,11 +2,13 @@ id: pm-gh1774
 title: "GH-1774: parity review findings: cmd.exe-unsafe recovery commands, a claim with unreadable history reported as active, and a release after a force-claim clears the replacement holder"
 description: "GH-1774 (filed 2026-11-23 from the pm-rust parity review; the Rust port reproduces each byte for byte and waits for pm-cli's decision). (1) A Windows recovery command for a tracker path containing %TRACKER% (pm --pm-path \"C:\\repo\\%TRACKER%\\pm\" get item-1) is not safe to paste into cmd.exe, which expands %VAR% inside double quotes, so a pasted recovery can target another tracker; expected: escape % for cmd.exe or state that the command is for PowerShell only. pm-kjoudp (open) owns the PowerShell side of the same paste-safety contract. (2) Claiming an item whose holder's history is unreadable reports the holder as 'active under mutation_guard.stale_in_progress_hours=72' although activity could not be judged; expected: a distinct activity-unknown holder state. (3) After close, a force-claim by a second holder, then a release by the original holder clears the replacement holder (warn policy, with ownership_warning:assignee_conflict; strict policy with --force); expected: a release that ends a close releases only the holder that close ended. Duplicate check: searched cmd.exe recovery percent expansion, claim unreadable history activity unknown, release after force claim replacement holder; only pm-kjoudp overlaps (PowerShell quoting)."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[5]: agent-ux,concurrency,"gh:1774",recovery,windows
 created_at: "2026-11-23T17:23:27.678Z"
-updated_at: "2026-11-23T17:23:27.678Z"
+updated_at: "2026-11-24T11:06:37.813Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#c6c83012f9e42e8001963ef6"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Windows recovery commands are paste-safe in cmd.exe (percent expansion neutralized) or explicitly declared PowerShell-only, with a rendering test for a %VAR% path; A holder whose activity cannot be judged is reported with a distinct activity-unknown state in claim refusals; Releasing as the holder a close ended never clears a replacement holder under either ownership policy"
@@ -19,4 +21,35 @@ expected_result: "Recovery commands, holder activity and release ownership each 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1706,related,"2026-11-23T17:23:27.678Z","harness:claude-code","cli:create:dep",detected
   pm-kjoudp,related,"2026-11-23T17:23:27.678Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-24T10:35:19.142Z","harness:claude-code","Implementation decisions (2026-11-24), one per finding. pm-rust can mirror these byte for byte.\n\n(1) cmd.exe recovery commands. The win32 default dialect stays `cmd`; pm-kjoudp comment 2 has the full dialect decision. `quoteCmdCommandArg` keeps plain CommandLineToArgvW quoting unless the argument holds `%` or `\"`. Then every cmd.exe metacharacter `( ) ! ^ \" < > & |` gets a caret prefix, the quotes included, so cmd.exe never enters a quoted region. Each `%` is also followed directly by a caret (its own, or the one escaping the next metacharacter). Example: `pm --pm-path ^\"C:\\repo\\%^TRACKER%^\\pm^\" get item-1`. The caret goes AFTER the percent sign on purpose. cmd.exe resolves `%NAME:a=b%` / `%NAME:~0,1%` by the text before the colon, so `^%NAME:a=b^%` (caret before) still expands NAME, but `%^NAME:a=b%^` names the undefined variable `^NAME`. A quote inside an argument triggers the caret form for a second reason: `\"a\\\"b & calc\"` flips cmd.exe's quote state at the inner quote, so the `&` would split the pasted line.\n\n(2) Holder activity. `claim_activity.state` is `active | stale | unknown`. `unknown` exactly when the stale-work policy cannot judge the claim: history unreadable, `unproven_activity` set, or no valid activity time. The text line prints `; activity unknown under mutation_guard.stale_in_progress_hours=72 (history unreadable, last recorded activity 3h ago)` instead of `active under ...`. JSON stays additive: `stale_policy.stale` is unchanged.\n\n(3) Release after close plus force-claim. New store primitive `CallerClaimScope` (item-store `callerClaimScope`), evaluated under the item lock only when another principal holds the item. `pm release` passes `callerClaimEndedByClose`, a forward fold over the readable stream. Each record that moves the holder principal (claim_principal, else assignee, compared as the ownership guard compares it) away from the caller ends the caller's claim; a record making the caller the holder again starts a new one. The scope applies only when the record that last ended the caller's claim is a `close`. A scoped release then ignores the ownership policy and `--force`, leaves the holder untouched and writes nothing: no history entry and no updated_at bump, so the holder's activity clock is unchanged. It returns `previous_assignee: null`, warning `release_claim_ended_by_close:<id>:<holder>` and one suggestion. The general policy stays in force in four cases: a caller whose later claim a takeover ended, a caller that never held the item, an unreadable stream, and a `--handoff`/`--pause` or ownership-release-bypass release."
+files[17]{path,scope,note}:
+  sdk/public-surface.json,project,GH-1774 regression or contract
+  src/cli/error-guidance.ts,project,GH-1774 change
+  src/core/shared/command-line.ts,project,GH-1774 change
+  src/core/shared/errors.ts,project,GH-1774 change
+  src/core/shared/url-credentials.ts,project,GH-1774 change
+  src/core/store/item-store.ts,project,GH-1774 change
+  src/sdk/command-line.ts,project,GH-1774 change
+  src/sdk/index.ts,project,GH-1774 change
+  src/sdk/lifecycle/claim.ts,project,GH-1774 change
+  src/sdk/ownership-source.ts,project,GH-1774 change
+  src/sdk/runtime-primitives.ts,project,GH-1774 change
+  tests/integration/cli/rendered-command-shell-safety.integration.spec.ts,project,cmd.exe percent-expansion proof
+  tests/unit/cli/argv-utils.spec.ts,project,GH-1774 regression or contract
+  tests/unit/cli/error-guidance.spec.ts,project,GH-1774 regression or contract
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,GH-1774 regression or contract
+  tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts,project,GH-1774 regression or contract
+  tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts,project,GH-1774 regression or contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/argv-utils.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts tests/integration/cli/rendered-command-shell-safety.integration.spec.ts,project,900,"harness:claude-code","2026-11-24T10:34:33.382Z",local_mutation,fix/shell-dialect-recovery-claim-activity-release-scope
+docs[3]{path,scope}:
+  docs/AGENT_GUIDE.md,project
+  docs/CONFIGURATION.md,project
+  docs/SDK.md,project
+contract_change:
+  api: "pm release, pm claim refusals (claim_activity) and rendered recovery commands on Windows"
+  before: "A release by the holder a close ended cleared a later holder (warn policy, or strict with --force); claim_activity had no activity state and text refusals called an unjudgeable holder active; cmd.exe recovery commands left %VAR% and inner quotes live"
+  after: "That release writes nothing and warns release_claim_ended_by_close:<id>:<holder>; claim_activity.state is active, stale or unknown, and text refusals print activity unknown with its cause; an argument holding % or a double quote renders in the cmd.exe caret form"
+  migrate: "Read claim_activity.state instead of inferring activity from stale_policy.stale; treat release_claim_ended_by_close as a successful no-op; to take a later holder claim, use pm claim <id> --force and then release"
 body: ""

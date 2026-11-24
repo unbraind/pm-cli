@@ -119,7 +119,7 @@ describe("tracked runtime cache governance", () => {
       });
       expect(scan.git_workspace_root).toBe(context.tempRoot);
       expect(scan.remediation_command).toBe(
-        "git rm --cached -r -- ':(literal).agents/pm/runtime' ':(literal).agents/pm/search' ':(literal).agents/pm/locks' ':(literal).agents/pm/transactions' ':(literal).agents/pm/checkpoints'",
+        'git rm --cached -r -- ":(literal).agents/pm/runtime" ":(literal).agents/pm/search" ":(literal).agents/pm/locks" ":(literal).agents/pm/transactions" ":(literal).agents/pm/checkpoints"',
       );
 
       const health = await runHealth(
@@ -211,7 +211,7 @@ describe("tracked runtime cache governance", () => {
       ]);
       expect(
         (await scanTrackedRuntimeCache(customRoot)).remediation_command,
-      ).toContain("':(literal)tracker[cache]'\\''s pm/runtime'");
+      ).toContain(`"${":(literal)tracker[cache]'s pm/runtime"}"`);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

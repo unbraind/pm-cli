@@ -1,0 +1,20 @@
+id: pm-oq893h
+title: "POSIX recovery commands are not paste-safe in interactive bash or zsh: a ! inside the double-quoted form triggers history expansion"
+description: "Found 2026-11-24 while implementing the shell dialects for pm-kjoudp and GH-1774. The posix renderer in src/core/shared/command-line.ts escapes double quote, backslash, dollar and backtick inside double quotes, which is complete for sh -c and for scripts. An interactive bash with histexpand on (the default) or zsh still expands an exclamation mark inside double quotes: a pasted retry such as pm create --title \"Fix crash!now\" fails with event not found, or substitutes an earlier command. Single quotes suppress history expansion in both shells. Duplicate check: searched history expansion, exclamation, interactive bash, recovery quoting; pm-kjoudp and pm-gh1774 cover cmd.exe and PowerShell only."
+type: Issue
+status: open
+priority: 3
+tags[3]: agent-ux,posix,recovery
+created_at: "2026-11-24T10:36:48.721Z"
+updated_at: "2026-11-24T11:19:25.732Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "An argument containing an exclamation mark renders in a form interactive bash and zsh never history-expand, and the URL-credential span spellings register that form; The rendered-command shell-safety integration corpus runs that argument through an interactive bash with histexpand on"
+parent: pm-mpbb
+risk: low
+confidence: high
+expected_result: A pasted POSIX recovery command with an exclamation mark in an argument runs unchanged in interactive bash and zsh
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-kjoudp,discovered_from,"2026-11-24T10:36:48.721Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1774,related,"2026-11-24T11:19:25.506Z","harness:claude-code","cli:update:dep",detected
+body: ""
