@@ -18,6 +18,9 @@ describe("static extension inventory command routing", () => {
     expect(isStaticExtensionInventoryInvocation(["package", "explore"])).toBe(false);
     expect(isStaticExtensionInventoryInvocation([])).toBe(false);
     expect(isStaticExtensionInventoryInvocation(["package"])).toBe(false);
+    // A scope switch Commander accepts before the verb keeps the static path (Codex review round 1).
+    expect(isStaticExtensionInventoryInvocation(["package", "--global", "list"])).toBe(true);
+    expect(isStaticExtensionInventoryInvocation(["package", "--global", "explore"])).toBe(false);
   });
 
   it("dispatches source CLI inventory with scope and incomplete-read receipts", async () => {
@@ -44,10 +47,15 @@ describe("static extension inventory command routing", () => {
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ complete: true, scope: "global", extensions: [] });
         await expect(run(["extension", "inventory", "--global", "--local"])).rejects.toThrow(/mutually exclusive/);
         // pm-gh1777: list is the installed listing, with the update the last manage check observed for this version.
+        const installedAt = "2026-10-04T00:00:00.000Z";
+        await writeFile(path.join(pmPath, "extensions", ".managed-extensions.json"), JSON.stringify({
+          version: 1, updated_at: installedAt,
+          entries: [{ name: "source-probe", directory: "source-probe", scope: "project", manifest_version: "1.0.0", manifest_entry: "./index.mjs", capabilities: [], installed_at: installedAt, updated_at: installedAt, source: { kind: "npm", input: "npm:source-probe", location: "package", package: "source-probe", version: "1.0.0" } }],
+        }));
         await mkdir(path.join(pmPath, "runtime"), { recursive: true });
         await writeFile(path.join(pmPath, "runtime", "extension-update-observations.json"), JSON.stringify({
           version: 1,
-          observations: [{ name: "source-probe", installed_version: "1.0.0", remote_version: "1.2.0", update_available: true, checked_at: "2026-11-24T10:00:00.000Z" }],
+          observations: [{ name: "source-probe", installed_version: "1.0.0", installed_updated_at: installedAt, remote_version: "1.2.0", update_available: true, checked_at: "2026-11-24T10:00:00.000Z" }],
         }));
         await run(["package", "list"]);
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ updates_available: 1, extensions: [{ name: "source-probe", version: "1.0.0", update: "1.2.0" }] });

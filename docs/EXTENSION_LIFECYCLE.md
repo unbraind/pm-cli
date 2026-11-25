@@ -21,21 +21,31 @@ reported separately from an invalid one. `complete: false` and `errors` mean
 the list must not be treated as authoritative; the CLI also exits nonzero.
 
 Each installed row carries `update`: the newer version the last
-`pm package manage` freshness check observed for exactly that installed
-version, or `null` when none is known. `manage` records what each check
-answered in the untracked `runtime/extension-update-observations.json` of the
-scope (`.agents/pm/runtime/` or the global pm root); a check that timed out or
-failed records nothing and keeps the earlier observation, and an update or
-reinstall retires an observation because the installed version no longer
-matches. The record is derived state: a failed write is the warning
-`extension_update_observation_write_failed`, never a failed check.
+`pm package manage` freshness check observed for exactly that installation, or
+`null` when none is known. `manage` records what each check answered in the
+untracked `runtime/extension-update-observations.json` of the scope
+(`.agents/pm/runtime/` or the global pm root), merging under a per-scope lock so
+concurrent checks keep each other's answers and the later check wins for one
+package. A check that timed out or failed records nothing and keeps the earlier
+observation. An observation names the manifest version and the managed
+record's `updated_at` it was taken against, so any upgrade, including a
+commit-only reinstall of a repository source, retires it. A registry `latest`
+older than the installed version is recorded as no update, because upgrading
+to it would downgrade. Only a bounded regular file inside a real `runtime/`
+directory is read or written: a link or special file reads as no knowledge and
+is never written through. The record is derived state: a failed write is the
+warning `extension_update_observation_write_failed`, never a failed check.
 
 `pm context` reads the same observations offline for its `extension_health`
 block. Rows are `{name, scope, version, status, update, shadowed_by}`:
 `shadowed_by` names the scope whose same-named copy the runtime loads instead
 (project shadows global), so a copy installed in both scopes is told apart.
-`updates_available` counts loaded copies with a known update, and `next` names
-one `pm package upgrade` command per scope only when that count is above zero
+`updates_available` counts the copies the runtime loads (a shadowed or
+disabled copy keeps its row but is not counted) with a known update, and
+`next` names one `pm package upgrade` command per scope only when that count
+is above zero. The commands are rendered from argv for the caller's shell, a
+project command keeps the tracker the caller selected (`--pm-path`), and a
+package name is placed after `--` when it could read as an option
 ([pm-gh1778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1778.toon),
 tracker record excluded from npm).
 

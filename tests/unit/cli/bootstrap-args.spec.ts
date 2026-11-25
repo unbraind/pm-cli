@@ -346,6 +346,11 @@ describe("parseBootstrapCommandName", () => {
 });
 
 describe("normalizeLegacyExtensionActionSyntax", () => {
+  it("keeps a --fields projection on its explore or manage subcommand route (pm-gh1777)", () => {
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--fields", "name"])).toEqual(["extension", "explore", "--fields", "name"]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "manage", "--offline", "--fields=name"])).toEqual(["extension", "manage", "--offline", "--fields=name"]);
+  });
+
   it("converts 'extension install' to 'extension --install'", () => {
     const result = normalizeLegacyExtensionActionSyntax([
       "extension",

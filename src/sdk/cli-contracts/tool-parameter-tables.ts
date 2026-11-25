@@ -2087,11 +2087,12 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   fields: {
     description:
-      "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+      "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
     examples: [
       "id,title,status,parent,type",
       "id,title,score,matched_fields",
       "id,title,priority,deadline",
+      "name,version,activation_status",
     ],
   },
   groupBy: {

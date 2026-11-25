@@ -5,6 +5,7 @@ import {
   renderContextMarkdown,
   runContext,
 } from "../../../../src/sdk/query/context.js";
+import { renderPmCommand, resolvePmCommandScopeArgs } from "../../../../src/sdk/command-line.js";
 import { writeTestExtension } from "../../../helpers/extensions.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
@@ -121,11 +122,20 @@ describe("context extension health", () => {
       for (const name of ["pm-csv", "pm-todos"]) {
         await writeTestExtension({ root: path.join(globalRoot, "extensions"), directory: name, manifest: { ...manifest("1.0.0"), name }, entryFilename: "index.mjs", entrySource: "throw new Error('no import');\n" });
       }
-      const observation = (name: string, installed: string, remote: string) => ({ name, installed_version: installed, remote_version: remote, update_available: true, checked_at: "2026-11-24T10:00:00.000Z" });
+      const INSTALLED_AT = "2026-10-04T00:00:00.000Z";
+      const projectHint = (name: string) => renderPmCommand(["--pm-path", context.pmPath, "package", "upgrade", name, "--project"]);
+      const observation = (name: string, installed: string, remote: string) => ({ name, installed_version: installed, installed_updated_at: INSTALLED_AT, remote_version: remote, update_available: true, checked_at: "2026-11-24T10:00:00.000Z" });
       const write = async (root: string, observations: unknown[]) => {
         await fs.mkdir(path.join(root, "runtime"), { recursive: true });
         await fs.writeFile(path.join(root, "runtime", "extension-update-observations.json"), JSON.stringify({ version: 1, observations }));
       };
+      // Observations apply only to a managed installation; record each package's install in its scope.
+      const managedRecord = (name: string, scope: string, version: string) => ({
+        name, directory: name, scope, manifest_version: version, manifest_entry: "index.mjs", capabilities: ["commands"],
+        installed_at: INSTALLED_AT, updated_at: INSTALLED_AT, source: { kind: "npm", input: `npm:${name}`, location: "package", package: name, version },
+      });
+      await fs.writeFile(path.join(context.pmPath, "extensions", ".managed-extensions.json"), JSON.stringify({ version: 1, updated_at: INSTALLED_AT, entries: [managedRecord("pm-github", "project", "2026.10.4")] }));
+      await fs.writeFile(path.join(globalRoot, "extensions", ".managed-extensions.json"), JSON.stringify({ version: 1, updated_at: INSTALLED_AT, entries: [managedRecord("pm-github", "global", "2026.10.14"), managedRecord("pm-csv", "global", "1.0.0"), managedRecord("pm-todos", "global", "1.0.0")] }));
       // The project observation matches the installed version; the global one for pm-github is for the shadowed copy.
       await write(context.pmPath, [observation("pm-github", "2026.10.4", "2026.11.23")]);
       await write(globalRoot, [observation("pm-github", "2026.10.14", "2026.11.23"), observation("pm-csv", "1.0.0", "1.1.0"), observation("pm-todos", "0.9.0", "1.1.0")]);
@@ -136,7 +146,8 @@ describe("context extension health", () => {
         ok: 4,
         degraded: 0,
         updates_available: 2,
-        next: ["pm package upgrade pm-github --project", "pm package upgrade pm-csv --global"],
+        // A project hint keeps the tracker the caller selected; commands are rendered from argv for the shell.
+        next: [projectHint("pm-github"), "pm package upgrade pm-csv --global"],
         packages: [
           { name: "pm-csv", scope: "global", version: "1.0.0", status: "ok", update: "1.1.0", shadowed_by: null },
           { name: "pm-github", scope: "global", version: "2026.10.14", status: "ok", update: "2026.11.23", shadowed_by: "project" },
@@ -146,19 +157,44 @@ describe("context extension health", () => {
         ],
       });
       expect(renderContextMarkdown(result)).toContain(
-        "- extensions: 4 ok, 0 degraded, 2 with a known update (pm package upgrade pm-github --project; pm package upgrade pm-csv --global)",
+        `- extensions: 4 ok, 0 degraded, 2 with a known update (${projectHint("pm-github")}; pm package upgrade pm-csv --global)`,
       );
+
       // Only one scope with a known update: one hint.
       await write(globalRoot, []);
       expect((await runContext({ depth: "brief" }, { path: context.pmPath })).extension_health).toMatchObject({
         updates_available: 1,
-        next: ["pm package upgrade pm-github --project"],
+        next: [projectHint("pm-github")],
       });
       await write(globalRoot, [observation("pm-csv", "1.0.0", "1.1.0"), observation("pm-todos", "1.0.0", "1.1.0")]);
       expect((await runContext({ depth: "brief" }, { path: context.pmPath })).extension_health?.next).toEqual([
-        "pm package upgrade pm-github --project",
+        projectHint("pm-github"),
         "pm package upgrade --packages-only --global",
       ]);
+    });
+  });
+  it("gives a disabled copy no upgrade hint and keeps a dash-leading name from becoming an option (Codex review round 1)", async () => {
+    await withTempPmPath(async (context) => {
+      const INSTALLED_AT = "2026-10-04T00:00:00.000Z";
+      const names = ["pm-disabled", "-x"];
+      for (const name of names) {
+        await writeTestExtension({ root: path.join(context.pmPath, "extensions"), directory: name, manifest: { name, version: "1.0.0", entry: "index.mjs", capabilities: ["commands"] }, entryFilename: "index.mjs", entrySource: "throw new Error('no import');\n" });
+      }
+      await fs.writeFile(path.join(context.pmPath, "extensions", ".managed-extensions.json"), JSON.stringify({
+        version: 1, updated_at: INSTALLED_AT,
+        entries: names.map((name) => ({ name, directory: name, scope: "project", manifest_version: "1.0.0", manifest_entry: "index.mjs", capabilities: ["commands"], installed_at: INSTALLED_AT, updated_at: INSTALLED_AT, source: { kind: "npm", input: `npm:${name}`, location: "package", package: name, version: "1.0.0" } })),
+      }));
+      await fs.mkdir(path.join(context.pmPath, "runtime"), { recursive: true });
+      await fs.writeFile(path.join(context.pmPath, "runtime", "extension-update-observations.json"), JSON.stringify({
+        version: 1,
+        observations: names.map((name) => ({ name, installed_version: "1.0.0", installed_updated_at: INSTALLED_AT, remote_version: "1.1.0", update_available: true, checked_at: "2026-11-24T10:00:00.000Z" })),
+      }));
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await fs.readFile(settingsPath, "utf8"));
+      await fs.writeFile(settingsPath, JSON.stringify({ ...settings, extensions: { ...settings.extensions, disabled: ["pm-disabled"] } }));
+      const health = (await runContext({ depth: "brief" }, {})).extension_health;
+      expect(health?.packages.find((row) => row.name === "pm-disabled")).toMatchObject({ update: "1.1.0", shadowed_by: null });
+      expect(health).toMatchObject({ updates_available: 1, next: [renderPmCommand([...resolvePmCommandScopeArgs({}), "package", "upgrade", "--project", "--", "-x"])] });
     });
   });
 });

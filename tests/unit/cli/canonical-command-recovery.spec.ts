@@ -128,6 +128,9 @@ describe("canonical unknown-command recovery", () => {
     const plural = buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "list", "--json"]);
     expect(plural?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
     expect(plural?.unknownCommandNextSteps?.[0]).toMatch(/^Did you mean: package list/);
+    // Host flags and their values between the noun and its operand are skipped, not read as the path (Codex review round 1).
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "--json", "list"])?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["--author", "extensions", "extensions", "list"])?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
     // The noun alone still resolves; an operand that names nothing beneath it stops the path.
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "bogus"])?.suggestedRetryArgs).toEqual(["package", "--help"]);
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'contexts'", program, new Map(), ["contexts"])?.suggestedRetryArgs).toEqual(["context", "--help"]);

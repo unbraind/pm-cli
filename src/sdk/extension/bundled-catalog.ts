@@ -12,10 +12,8 @@ import {
 } from "../../core/packages/manifest.js";
 import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { splitCommaList } from "../../core/shared/split-comma-list.js";
+import { parseListingFields } from "./listing-fields.js";
 import { resolveExtensionRoots } from "../../core/extensions/loader.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { validateExtensionDirectory } from "./shared.js";
@@ -407,35 +405,11 @@ const PACKAGE_CATALOG_FIELD_KEYS = new Set([
   "display_name",
 ]);
 
+/** Validate catalog `--fields` with the shared listing contract, so a refusal carries the whole catalog domain (pm-gh1777). */
 function parsePackageCatalogFields(
   raw: string | undefined,
 ): string[] | undefined {
-  if (raw === undefined) {
-    return undefined;
-  }
-  const fields = splitCommaList(raw);
-  if (fields.length === 0) {
-    throw new PmCliError(
-      "Package catalog --fields requires a comma-separated list of field names",
-      EXIT_CODE.USAGE,
-    );
-  }
-  const unknown = fields.filter(
-    (field) => !PACKAGE_CATALOG_FIELD_KEYS.has(field),
-  );
-  if (unknown.length > 0) {
-    throw new PmCliError(
-      `Unknown package catalog --fields value(s): ${unknown.join(", ")}`,
-      EXIT_CODE.USAGE,
-      {
-        examples: [
-          "pm package catalog --project --fields alias,installed,install_command",
-          "pm package catalog --project --fields alias,package_name,category",
-        ],
-      },
-    );
-  }
-  return fields;
+  return parseListingFields(raw, [...PACKAGE_CATALOG_FIELD_KEYS], "catalog", "pm package catalog --project --fields alias,package_name,category");
 }
 
 function projectPackageCatalogEntry(

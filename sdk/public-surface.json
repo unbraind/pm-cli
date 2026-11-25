@@ -3597,7 +3597,7 @@
         "signature ./sdk:StaticExtensionInventoryResult"
       ],
       "package_version": "2026.11.25",
-      "reason": "pm-gh1777: StaticExtensionInventoryEntry gains the optional observed update column and StaticExtensionInventoryResult gains updates_available; both are additive read-model fields that pm package list and pm context read from the offline update observation record"
+      "reason": "pm-gh1777/pm-gh1778: StaticExtensionInventoryEntry gains the optional observed update column and StaticExtensionInventoryResult gains the optional updates_available count (always emitted by inspectStaticExtensionInventory); both are additive, optional read-model fields, so existing producers and fixtures still type-check"
     }
   ],
   "entrypoints": {
@@ -22670,7 +22670,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StaticExtensionInventoryResult",
-          "signature": "export interface StaticExtensionInventoryResult { scope: \"project\" | \"global\"; complete: boolean; settings_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; managed_state_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; updates_available: number; extensions: StaticExtensionInventoryEntry[]; errors: StaticExtensionInventoryError[]; }"
+          "signature": "export interface StaticExtensionInventoryResult { scope: \"project\" | \"global\"; complete: boolean; settings_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; managed_state_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; updates_available?: number; extensions: StaticExtensionInventoryEntry[]; errors: StaticExtensionInventoryError[]; }"
         },
         {
           "classification": "advanced_export",

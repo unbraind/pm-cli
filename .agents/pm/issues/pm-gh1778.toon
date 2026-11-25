@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,context,extensions,"gh:1778",packages,recovery
 created_at: "2026-11-25T05:51:21.704Z"
-updated_at: "2026-11-25T07:16:08.518Z"
+updated_at: "2026-11-25T08:10:28.117Z"
 closed_at: "2026-11-25T07:16:07.022Z"
 completed_at: "2026-11-25T07:16:07.022Z"
 author: "harness:claude-code"
@@ -22,8 +22,9 @@ expected_result: "pm context tells an agent which installed packages have known 
 actual_result: "The report's setup reproduced in a sandbox now reads global pm-github shadowed_by project, project pm-github update 2026.11.23, updates_available 1, next pm package upgrade pm-github --project; pm context --section bogus lists all 10 sections; orientation cost rose by 23 tokens per session, inside the declared 3,000-token context budget"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1777,related,"2026-11-25T06:35:23.669Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-25T06:39:22.966Z","harness:claude-code","Implementation: pm package manage records what each answered freshness check saw in the untracked runtime/extension-update-observations.json of its scope (failed or timed-out lookups record nothing and keep the earlier observation; a failed write only warns extension_update_observation_write_failed). pm context reads the observations offline: rows {name,scope,version,status,update,shadowed_by}, summary updates_available plus next (one pm package upgrade command per scope) only when the count is above zero; an observation applies only to the installed version it was taken against. Sandbox reproduction of the report (pm-github project 2026.10.4 + global 2026.10.14, observed 2026.11.23): global row shadowed_by project, project row update 2026.11.23, next pm package upgrade pm-github --project. Companion finding: human recovery prints a legal domain of 12 or fewer values whole at the unbudgeted limit, so pm context --section bogus lists all 10 sections; budgeted renderings keep their limits. Cost, from the context-intent calibration report (accepted update): context intent 770 to 793 tokens (2-item fixture) and 1,038 to 1,084 (2,243-item fixture), session orientation 3,495 to 3,518 and 8,182 to 8,205 of 20,000; context stays inside its declared 3,000-token budget."
+  "2026-11-25T08:10:08.011Z","harness:claude-code","Review round 1 (Codex gpt-6.2-sol xhigh: 2 P1, 9 P2, 3 P3; Greptile 4 P2; CodeRabbit 2 minor), all verified against the code and fixed. Observation identity: rows now carry installed_updated_at (the managed record updated_at, which install/upgrade advances whenever the version or source changes), so a commit-only GitHub upgrade retires the observation (Codex P2, Greptile, CodeRabbit). Downgrade guard: a registry latest not newer than the installed version (compareComparableVersions) is recorded as no update. Concurrency: the read-merge-write runs under a per-scope lock (locks/extension-update-observations.lock, 2 s wait, failure only warns) and the later checked_at wins per package (Codex P2, Greptile). File safety: only a bounded (1 MiB) regular file in a real runtime/ directory is read; a link, FIFO or non-directory runtime reads as no knowledge and is never written through (Codex P2). Context: updates_available and next count only the copy the runtime loads (effective layer+directory), so a disabled copy keeps its row but earns no hint (Codex P2, Greptile); hints are rendered from argv with renderPmCommand, keep the selected tracker via resolvePmCommandScopeArgs, and put a dash-leading name after -- (Codex P1 + P2). updates_available is optional on StaticExtensionInventoryResult (always emitted) so SDK fixtures keep type-checking (Codex P3)."
 files[8]{path,scope}:
   scripts/release/context-intent-calibration.json,project
   src/cli/error-guidance.ts,project
@@ -35,7 +36,8 @@ files[8]{path,scope}:
   tests/unit/extensions/package-listing-observations.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/package-listing-observations.spec.ts tests/unit/commands/query/context-extension-health.spec.ts tests/unit/cli/error-guidance.spec.ts,project,"harness:claude-code","2026-11-25T06:35:23.016Z",local_mutation,feat/package-listing-extension-health
-docs[2]{path,scope}:
+docs[3]{path,scope}:
+  docs/COMMANDS.md,project
   docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
   docs/EXTENSION_LIFECYCLE.md,project
 close_reason: "pm context extension_health reports known updates, scopes and shadowed copies offline, and small refused domains print whole"

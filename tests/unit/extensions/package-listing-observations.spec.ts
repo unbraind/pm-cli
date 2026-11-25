@@ -9,6 +9,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   EXPLORE_MANAGE_ROW_FIELDS,
+  parseExploreManageFields,
   parseListingFields,
   projectExploreManageRows,
   projectListingRows,
@@ -63,16 +64,28 @@ describe("package listing --fields contract", () => {
     ]);
   });
 
-  it("drops the embedded contributions map from default explore and manage rows, and returns it on request", () => {
+  it("validates explore and manage selections at admission and drops contributions from default rows", () => {
     const rows = [{ name: "pm-github", version: "1", contributions: { commands: ["github sync"] } }];
-    expect(projectExploreManageRows(rows, undefined, "manage")).toEqual([{ name: "pm-github", version: "1" }]);
-    expect(projectExploreManageRows(rows, "name,contributions", "explore")).toEqual([{ name: "pm-github", contributions: { commands: ["github sync"] } }]);
+    expect(() => parseExploreManageFields("name,bogus", "manage")).toThrow(/Package manage --fields must be one of name\|directory/);
+    expect(parseExploreManageFields(undefined, "explore")).toBeUndefined();
+    expect(projectExploreManageRows(rows, undefined)).toEqual([{ name: "pm-github", version: "1" }]);
+    expect(projectExploreManageRows(rows, parseExploreManageFields("name,contributions", "explore"))).toEqual([{ name: "pm-github", contributions: { commands: ["github sync"] } }]);
     expect(EXPLORE_MANAGE_ROW_FIELDS).toContain("last_update_remote_version");
   });
 });
 
+const observation = (overrides: Partial<ExtensionUpdateObservation> = {}): ExtensionUpdateObservation => ({
+  name: "pm-github",
+  installed_version: "2026.10.4",
+  installed_updated_at: "2026-10-04T00:00:00.000Z",
+  remote_version: "2026.11.23",
+  update_available: true,
+  checked_at: "2026-11-24T10:00:00.000Z",
+  ...overrides,
+});
+
 describe("extension update observations", () => {
-  it("records only answered checks, keeps earlier observations for unanswered packages, and reads them back", async () => {
+  it("records only answered checks, never a downgrade, keeps unanswered packages, and lets the later check win", async () => {
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
     await recordExtensionUpdateObservations(scopeRoot, []);
     await expect(fs.access(resolveExtensionUpdateObservationsPath(scopeRoot))).rejects.toThrow();
@@ -81,37 +94,47 @@ describe("extension update observations", () => {
       record({ name: "pm-github", last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "2026.11.23", update_available: true }),
       record({ name: "pm-csv", last_update_check_at: "2026-11-24T10:00:00.000Z", update_available: false }),
       record({ name: "pm-repo", last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_commit: "0123456789abcdef0123", update_available: true }),
+      // A registry latest older than the installed version is no update: upgrading to it would downgrade.
+      record({ name: "pm-ahead", manifest_version: "2.0.0", last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "1.0.0", update_available: true }),
+      record({ name: "pm-odd", manifest_version: "next", last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "1.0.0", update_available: true }),
       record({ name: "pm-timeout", last_update_check_at: "2026-11-24T10:00:00.000Z", update_error: "timeout", update_available: null }),
       record({ name: "pm-unchecked" }),
     ]);
-    expect(checked.map((entry) => [entry.name, entry.remote_version, entry.update_available])).toEqual([
-      ["pm-csv", null, false],
-      ["pm-github", "2026.11.23", true],
-      ["pm-repo", "0123456789ab", true],
+    expect(checked.map((entry) => [entry.name, entry.remote_version, entry.update_available, entry.installed_updated_at])).toEqual([
+      ["pm-ahead", "1.0.0", false, "2026-10-04T00:00:00.000Z"],
+      ["pm-csv", null, false, "2026-10-04T00:00:00.000Z"],
+      ["pm-github", "2026.11.23", true, "2026-10-04T00:00:00.000Z"],
+      ["pm-odd", "1.0.0", true, "2026-10-04T00:00:00.000Z"],
+      ["pm-repo", "0123456789ab", true, "2026-10-04T00:00:00.000Z"],
     ]);
     await recordExtensionUpdateObservations(scopeRoot, checked);
-    // A later check that only answers for pm-csv keeps what the earlier one learned about the others.
-    const later: ExtensionUpdateObservation = { name: "PM-CSV", installed_version: "2026.10.4", remote_version: "2026.11.22", update_available: true, checked_at: "2026-11-25T10:00:00.000Z" };
+    // A later check that only answers for pm-csv keeps what the earlier one learned about the others;
+    // an older answer for the same package does not replace a newer one.
+    const later = observation({ name: "PM-CSV", remote_version: "2026.11.22", checked_at: "2026-11-25T10:00:00.000Z" });
     await recordExtensionUpdateObservations(scopeRoot, [later]);
+    await recordExtensionUpdateObservations(scopeRoot, [observation({ name: "pm-csv", update_available: false, checked_at: "2026-11-23T10:00:00.000Z" })]);
     const stored = await readExtensionUpdateObservations(scopeRoot);
-    expect(stored.map((entry) => entry.name)).toEqual(["pm-github", "pm-repo", "PM-CSV"].sort((left, right) => left.localeCompare(right)));
-    expect(findApplicableUpdateObservation(stored, "pm-csv", "2026.10.4")).toEqual(later);
+    expect(stored.map((entry) => entry.name)).toEqual(["pm-ahead", "PM-CSV", "pm-github", "pm-odd", "pm-repo"]);
+    expect(findApplicableUpdateObservation(stored, { name: "pm-csv", version: "2026.10.4", updated_at: "2026-10-04T00:00:00.000Z" })).toEqual(later);
+    // The merge runs under a released per-scope lock.
+    await expect(fs.readdir(path.join(scopeRoot, "locks"))).resolves.not.toContain("extension-update-observations.lock");
   });
 
-  it("applies an observation only to the installed version it was taken against", () => {
-    const observations: ExtensionUpdateObservation[] = [
-      { name: "pm-github", installed_version: "2026.10.4", remote_version: "2026.11.23", update_available: true, checked_at: "2026-11-24T10:00:00.000Z" },
-      { name: "pm-repo", installed_version: "1.0.0", remote_version: null, update_available: true, checked_at: "2026-11-24T10:00:00.000Z" },
-    ];
-    expect(resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, "PM-GitHub", "2026.10.4"))).toBe("2026.11.23");
-    expect(findApplicableUpdateObservation(observations, "pm-github", "2026.11.23")).toBeUndefined();
-    expect(findApplicableUpdateObservation(observations, "pm-github", null)).toBeUndefined();
-    expect(resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, "pm-repo", "1.0.0"))).toBe("available");
-    expect(resolveObservedUpdateVersion({ ...observations[0], update_available: false })).toBeNull();
+  it("applies an observation only to the installation it was taken against", () => {
+    const observations = [observation(), observation({ name: "pm-repo", installed_version: "1.0.0", remote_version: null })];
+    const installed = { name: "PM-GitHub", version: "2026.10.4", updated_at: "2026-10-04T00:00:00.000Z" };
+    expect(resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, installed))).toBe("2026.11.23");
+    // An upgrade changes the version; a commit-only reinstall of a repository source rewrites the managed record.
+    expect(findApplicableUpdateObservation(observations, { ...installed, version: "2026.11.23" })).toBeUndefined();
+    expect(findApplicableUpdateObservation(observations, { ...installed, updated_at: "2026-11-25T00:00:00.000Z" })).toBeUndefined();
+    expect(findApplicableUpdateObservation(observations, { ...installed, version: null })).toBeUndefined();
+    expect(findApplicableUpdateObservation(observations, { ...installed, updated_at: undefined })).toBeUndefined();
+    expect(resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, { name: "pm-repo", version: "1.0.0", updated_at: "2026-10-04T00:00:00.000Z" }))).toBe("available");
+    expect(resolveObservedUpdateVersion(observation({ update_available: false }))).toBeNull();
     expect(resolveObservedUpdateVersion(undefined)).toBeNull();
   });
 
-  it("reads a malformed record as no knowledge and skips malformed rows", async () => {
+  it("reads a malformed, linked, special or oversized record as no knowledge", async () => {
     const file = resolveExtensionUpdateObservationsPath(scopeRoot);
     await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.writeFile(file, "{");
@@ -120,20 +143,31 @@ describe("extension update observations", () => {
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
     await fs.writeFile(file, JSON.stringify(null));
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+    const valid = observation({ name: "kept", remote_version: 7 as unknown as string });
     await fs.writeFile(file, JSON.stringify({
-      observations: [
-        null,
-        [],
-        { name: "", installed_version: "1", update_available: true, checked_at: "t" },
-        { name: "a", installed_version: "1", update_available: "yes", checked_at: "t" },
-        { name: "a", update_available: true, checked_at: "t" },
-        { name: "a", installed_version: "1", update_available: true },
-        { name: "kept", installed_version: "1", remote_version: 7, update_available: true, checked_at: "t" },
-      ],
+      observations: [null, [], { ...valid, name: "" }, { ...valid, update_available: "yes" }, { ...valid, installed_version: undefined }, { ...valid, installed_updated_at: undefined }, { ...valid, checked_at: undefined }, valid],
     }));
-    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([
-      { name: "kept", installed_version: "1", remote_version: null, update_available: true, checked_at: "t" },
-    ]);
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([{ ...valid, remote_version: null }]);
+    // A link to a record elsewhere is not followed.
+    const outside = path.join(scopeRoot, "outside.json");
+    await fs.writeFile(outside, JSON.stringify({ observations: [valid] }));
+    await fs.rm(file);
+    await fs.symlink(outside, file);
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+    await fs.rm(file);
+    // An oversized file is not one pm wrote.
+    await fs.writeFile(file, `{"observations":[],"pad":"${"x".repeat(1024 * 1024)}"}`);
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+  });
+
+  it("never reads or writes through a runtime path that is not a real directory", async () => {
+    const elsewhere = path.join(scopeRoot, "elsewhere");
+    await fs.mkdir(elsewhere);
+    await fs.writeFile(path.join(elsewhere, "extension-update-observations.json"), JSON.stringify({ observations: [observation()] }));
+    await fs.symlink(elsewhere, path.join(scopeRoot, "runtime"));
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+    await expect(recordExtensionUpdateObservations(scopeRoot, [observation()])).rejects.toThrow(/is not a directory/);
+    expect(JSON.parse(await fs.readFile(path.join(elsewhere, "extension-update-observations.json"), "utf8")).observations).toHaveLength(1);
   });
 
   it("records nothing for an offline check and reports a failed write as a warning code", async () => {

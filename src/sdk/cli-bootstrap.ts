@@ -387,6 +387,10 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   if (argv.includes("--help") || argv.includes("-h")) {
     return [...argv];
   }
+  // Row projection is a subcommand option (pm-gh1777): keep `pm extension explore --fields ...` on its subcommand route.
+  if (argv.some((token) => token === "--fields" || token.startsWith("--fields="))) {
+    return [...argv];
+  }
   const forcedActionFlag = `--${actionToken}`;
   if (argv.includes(forcedActionFlag)) {
     return [...argv];

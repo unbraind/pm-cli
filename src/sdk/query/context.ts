@@ -3,6 +3,7 @@
  *
  * Implements the pm context command surface and its agent-facing runtime behavior.
  */
+import path from "node:path";
 import type { PmReadOutputMetadata } from "../read-output-contracts.js";
 import { scanInProgressWork, type InProgressWorkScan } from "../governance/stale-work.js";
 import {
@@ -24,12 +25,13 @@ import {
   resolveItemTypeRegistry,
 } from "../runtime-primitives.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { resolveGlobalPmRoot } from "../../core/store/paths.js";
 import {
   findApplicableUpdateObservation,
   readExtensionUpdateObservations,
   resolveObservedUpdateVersion,
 } from "../extension/update-observations.js";
+import { readManagedExtensionState } from "../extension/managed-state.js";
+import { renderPmCommand, resolvePmCommandScopeArgs, type CommandScope } from "../command-line.js";
 import type { ItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   collectDependencyBlockedIds,
@@ -2877,6 +2879,7 @@ export async function resolveContextExtensionHealthProjection(
   omitted: boolean,
   pmRoot: string,
   settings: PmSettings,
+  scope: CommandScope = {},
 ): Promise<Pick<ContextResult, "extension_health">> {
   if (omitted) return {};
   const discovery = await discoverExtensions({
@@ -2887,49 +2890,70 @@ export async function resolveContextExtensionHealthProjection(
   });
   if (discovery.discovered.length === 0) return {};
   // Offline by design: updates come from what the last `pm package manage` check observed, never a network call.
-  const [projectObservations, globalObservations] = await Promise.all([
-    readExtensionUpdateObservations(pmRoot),
-    readExtensionUpdateObservations(resolveGlobalPmRoot(process.cwd())),
-  ]);
+  // Each scope's observations and managed records sit beside its extensions directory.
+  const scopes = await Promise.all((["project", "global"] as const).map(async (scope) => {
+    const extensionsRoot = discovery.roots[scope];
+    const [observations, managed] = await Promise.all([
+      readExtensionUpdateObservations(path.dirname(extensionsRoot)),
+      readManagedExtensionState(extensionsRoot),
+    ]);
+    return [scope, { observations, records: managed.state.entries }] as const;
+  }));
+  const scopeEvidence = new Map(scopes);
   const loadedScopeByName = new Map(discovery.effective.map((entry) => [entry.name, entry.layer]));
+  const loadedCopies = new Set(discovery.effective.map((entry) => `${entry.layer}:${entry.directory}`));
+  const loaded = new Set<ContextExtensionHealthRow>();
   const packages: ContextExtensionHealthRow[] = discovery.discovered
     .map((diagnostic) => {
       const name = diagnostic.name ?? diagnostic.directory;
       const loadedScope = diagnostic.name === null ? undefined : loadedScopeByName.get(diagnostic.name);
-      const observations = diagnostic.layer === "global" ? globalObservations : projectObservations;
-      return {
+      const evidence = scopeEvidence.get(diagnostic.layer)!;
+      const record = evidence.records.find((entry) => entry.directory === diagnostic.directory);
+      const row = {
         name,
         scope: diagnostic.layer,
         version: diagnostic.version,
         status: diagnostic.status === "ok" ? ("ok" as const) : ("degraded" as const),
-        update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, name, diagnostic.version)),
+        update: resolveObservedUpdateVersion(findApplicableUpdateObservation(evidence.observations, { name, version: diagnostic.version, updated_at: record?.updated_at })),
         shadowed_by: loadedScope !== undefined && loadedScope !== diagnostic.layer ? loadedScope : null,
       };
+      if (loadedCopies.has(`${diagnostic.layer}:${diagnostic.directory}`)) loaded.add(row);
+      return row;
     })
     .sort((left, right) => left.name.localeCompare(right.name) || left.scope.localeCompare(right.scope));
   const degraded = packages.filter(
     (entry) => entry.status === "degraded",
   ).length;
-  const updatable = packages.filter((entry) => typeof entry.update === "string" && entry.shadowed_by === null);
+  // Only the copy the runtime loads counts: a shadowed or disabled copy keeps its row but earns no upgrade hint.
+  const updatable = packages.filter((entry) => typeof entry.update === "string" && loaded.has(entry));
   return {
     extension_health: {
       total: packages.length,
       ok: packages.length - degraded,
       degraded,
       updates_available: updatable.length,
-      ...(updatable.length > 0 ? { next: buildExtensionUpgradeHints(updatable) } : {}),
+      ...(updatable.length > 0 ? { next: buildExtensionUpgradeHints(updatable, scope) } : {}),
       packages: packages.slice(0, 20),
       ...(packages.length > 20 ? { truncated: true } : {}),
     },
   };
 }
 
-/** One upgrade command per scope with a known update: the package by name when it is the only one, else every managed package. */
-function buildExtensionUpgradeHints(updatable: readonly ContextExtensionHealthRow[]): string[] {
-  return (["project", "global"] as const).flatMap((scope) => {
-    const names = updatable.filter((entry) => entry.scope === scope).map((entry) => entry.name);
+/**
+ * One upgrade command per scope with a known update: the package by name when it
+ * is the only one, else every managed package. Commands are rendered from argv for
+ * the caller's shell, a project command keeps the tracker the caller selected, and a
+ * manifest-controlled name can never become an option.
+ */
+function buildExtensionUpgradeHints(updatable: readonly ContextExtensionHealthRow[], scope: CommandScope): string[] {
+  return (["project", "global"] as const).flatMap((target) => {
+    const names = updatable.filter((entry) => entry.scope === target).map((entry) => entry.name);
     if (names.length === 0) return [];
-    return [names.length === 1 ? `pm package upgrade ${names[0]} --${scope}` : `pm package upgrade --packages-only --${scope}`];
+    const scopeArgs = target === "project" ? resolvePmCommandScopeArgs(scope) : [];
+    const targetArgs = names.length === 1
+      ? names[0].startsWith("-") ? [`--${target}`, "--", names[0]] : [names[0], `--${target}`]
+      : ["--packages-only", `--${target}`];
+    return [renderPmCommand([...scopeArgs, "package", "upgrade", ...targetArgs])];
   });
 }
 
@@ -2971,6 +2995,7 @@ export async function runContext(
     options.noExtensionHealth === true,
     pmRoot,
     runtime.settings,
+    global,
   );
   // Single shared edge-aware blocked classification (GH-578): resolved against
   // the full corpus so terminal blocker targets count as satisfied at every depth.

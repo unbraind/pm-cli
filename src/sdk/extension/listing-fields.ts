@@ -9,8 +9,8 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 
-/** Split `--fields` into distinct keys; undefined when the option is absent. */
-export function parseListingFields(raw: unknown, allowed: readonly string[], listing: string): string[] | undefined {
+/** Split `--fields` into distinct keys; undefined when the option is absent. `example` replaces the generated refusal example. */
+export function parseListingFields(raw: unknown, allowed: readonly string[], listing: string, example?: string): string[] | undefined {
   if (raw === undefined || raw === null || raw === false) return undefined;
   const fields = [...new Set(String(raw).split(",").map((field) => field.trim()).filter((field) => field.length > 0))];
   if (fields.length === 0) {
@@ -20,7 +20,7 @@ export function parseListingFields(raw: unknown, allowed: readonly string[], lis
   if (unknown.length > 0) {
     // The "must be one of a|b|c" spelling is what recovery reads the legal domain from.
     throw new PmCliError(`Package ${listing} --fields must be one of ${allowed.join("|")}; unknown: ${unknown.join(", ")}`, EXIT_CODE.USAGE, {
-      examples: [`pm package ${listing} --fields ${allowed.slice(0, 3).join(",")}`],
+      examples: [example ?? `pm package ${listing} --fields ${allowed.slice(0, 3).join(",")}`],
     });
   }
   return fields;
@@ -39,13 +39,18 @@ export const EXPLORE_MANAGE_ROW_FIELDS = [
   "contributions",
 ] as const;
 
+/** Validate an explore or manage `--fields` selection; called at admission, before any check or adoption runs. */
+export function parseExploreManageFields(rawFields: unknown, listing: string): string[] | undefined {
+  return parseListingFields(rawFields, EXPLORE_MANAGE_ROW_FIELDS, listing);
+}
+
 /**
- * Shape explore and manage rows: `--fields` selects any subset; without it the
- * embedded `contributions` map stays out, because `pm package describe` maps
- * every registered surface and the map dominated each row (pm-gh1777).
+ * Shape explore and manage rows from an admitted selection: `--fields` selects
+ * any subset; without it the embedded `contributions` map stays out, because
+ * `pm package describe` maps every registered surface and the map dominated each
+ * row (pm-gh1777).
  */
-export function projectExploreManageRows(rows: ReadonlyArray<object>, rawFields: unknown, listing: string): object[] {
-  const fields = parseListingFields(rawFields, EXPLORE_MANAGE_ROW_FIELDS, listing);
+export function projectExploreManageRows(rows: ReadonlyArray<object>, fields: readonly string[] | undefined): object[] {
   if (fields !== undefined) return projectListingRows(rows, fields);
   return rows.map((row) => {
     const { contributions: _contributions, ...rest } = row as Record<string, unknown>;

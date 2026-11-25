@@ -378,6 +378,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Prefer pm package doctor in new package-first workflows.",
     ],
   },
+  "extension inventory": {
+    why: "Compatibility view of the installed package inventory (alias: pm extension list); it reads manifests and saved state without activating extension code.",
+    examples: [
+      "pm package list",
+      "pm package list --global --fields name,version,update",
+    ],
+    tips: ["Prefer pm package list in new user-facing workflows."],
+  },
   "extension catalog": {
     why: "Compatibility view of bundled package catalog metadata.",
     examples: [

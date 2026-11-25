@@ -98,7 +98,7 @@ import {
 } from "./extension/update-check.js";
 import { refreshManagedExtensionUpdates } from "./extension/managed-update-status.js";
 import { recordCheckedUpdateObservations } from "./extension/update-observations.js";
-import { projectExploreManageRows } from "./extension/listing-fields.js";
+import { parseExploreManageFields, projectExploreManageRows } from "./extension/listing-fields.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
 import { buildBundledInstallReceipt } from "./extension/install-receipts.js";
 import { buildExtensionInstallPlan, type ExtensionInstallPlan, type ExtensionCopyPlanOptions } from "./extension/install-plan.js";
@@ -3629,6 +3629,8 @@ const runExtensionExploreManageAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
   const { action, scope, resolvedRoots, warnings, options, withResult } = ctx;
+  // Refuse an invalid row selection before adoption, remote checks or observation writes run (Codex review round 1).
+  const fields = parseExploreManageFields(options.fields, action);
   const settings = await readSettings(resolvedRoots.settings_root);
   const configuredPolicy = buildExtensionPolicyDetails(
     settings.extensions.policy,
@@ -3692,7 +3694,7 @@ const runExtensionExploreManageAction = async (
       .length,
     active_total: runtimeInstalledExtensions.filter((entry) => entry.active)
       .length,
-    extensions: projectExploreManageRows(runtimeInstalledExtensions, options.fields, action),
+    extensions: projectExploreManageRows(runtimeInstalledExtensions, fields),
     triage,
     policy: configuredPolicy,
   };

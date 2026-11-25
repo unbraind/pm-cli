@@ -8,7 +8,7 @@ import path from "node:path";
 import { resolveGlobalPmRoot } from "../../core/store/paths.js";
 import { normalizeManagedState, type ManagedExtensionRecord } from "./managed-state.js";
 import { normalizeExtensionNameForMatch, normalizeStringList, parseExtensionManifest } from "./shared.js";
-import { findApplicableUpdateObservation, readExtensionUpdateObservations, resolveObservedUpdateVersion } from "./update-observations.js";
+import { findApplicableUpdateObservation, readExtensionUpdateObservations, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
 
 /** One read failure or malformed document that prevents a complete inventory. */
 export interface StaticExtensionInventoryError {
@@ -64,8 +64,8 @@ export interface StaticExtensionInventoryResult {
   settings_status: "ok" | "absent" | "invalid" | "unreadable";
   /** Status of the managed install metadata. */
   managed_state_status: "ok" | "absent" | "invalid" | "unreadable";
-  /** Installed entries whose last observed check found a newer release. */
-  updates_available: number;
+  /** Installed entries whose last observed check found a newer release; always set by {@link inspectStaticExtensionInventory}. */
+  updates_available?: number;
   /** Installed entries, or one absent entry for a missing requested name. */
   extensions: StaticExtensionInventoryEntry[];
   /** Every failure that affected completeness. */
@@ -188,6 +188,13 @@ async function readManifest(manifestPath: string): Promise<{
   }
 }
 
+/** The managed install record of a package, matched by manifest name or directory. */
+function findManagedRecord(entries: readonly ManagedExtensionRecord[], name: string, directory: string): ManagedExtensionRecord | undefined {
+  return entries.find((entry) =>
+    normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(name) ||
+    normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(directory));
+}
+
 /** Project saved state without presenting it as runtime activation truth. */
 function projectConfiguredEntry(input: {
   directory: string;
@@ -201,9 +208,7 @@ function projectConfiguredEntry(input: {
   const disabled = new Set(normalizeStringList(input.settings.disabled));
   const configuredEnabled = !isTrustedSourceStatus(input.settings.status) || !input.manifest ? null :
     !disabled.has(name) && (enabled.size === 0 || enabled.has(name));
-  const managed = !isTrustedSourceStatus(input.managed.status) ? null : input.managed.entries.some((entry) =>
-    normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(name) ||
-    normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(input.directory));
+  const managed = !isTrustedSourceStatus(input.managed.status) ? null : findManagedRecord(input.managed.entries, name, input.directory) !== undefined;
   return {
     name,
     directory: input.directory,
@@ -215,6 +220,17 @@ function projectConfiguredEntry(input: {
     runtime_active: null,
     ...(input.manifest ? { version: input.manifest.version } : {}),
   };
+}
+
+/** Attach the update the last manage check observed for exactly this installation (pm-gh1778). */
+function withObservedUpdate(
+  entry: StaticExtensionInventoryEntry,
+  directory: string,
+  records: readonly ManagedExtensionRecord[],
+  observations: readonly ExtensionUpdateObservation[],
+): StaticExtensionInventoryEntry {
+  const installation = { name: entry.name, version: entry.version, updated_at: findManagedRecord(records, entry.name, directory)?.updated_at };
+  return { ...entry, update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, installation)) };
 }
 
 /** Read configured extension state through filesystem reads only. */
@@ -250,7 +266,7 @@ export async function inspectStaticExtensionInventory(options: {
     if (requested && ![entry.name, directory].some((value) => normalizeExtensionNameForMatch(value) === normalizeExtensionNameForMatch(requested))) {
       continue;
     }
-    extensions.push({ ...entry, update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, entry.name, entry.version)) });
+    extensions.push(withObservedUpdate(entry, directory, managed.entries, observations));
   }
   if (requested && extensions.length === 0 && errors.every((error) => error.code !== "extensions_unreadable")) {
     extensions.push({ name: requested, directory: null, scope, installed: false, status: "absent",

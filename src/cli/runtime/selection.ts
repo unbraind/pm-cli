@@ -23,10 +23,14 @@ import {
 
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 
-/** Recognize the read-only package inventory before extension bootstrap. */
+/** Lifecycle scope switches Commander accepts between the package noun and its verb (`pm package --global list`). */
+const LIFECYCLE_SCOPE_SWITCHES = new Set(["--project", "--local", "--global"]);
+
+/** Recognize the read-only package inventory (and its `list` alias) before extension bootstrap. */
 function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean {
-  const tokens = stripGlobalBootstrapTokens(invocationArgv);
-  return ["package", "packages", "extension"].includes(tokens[0] ?? "") && ["inventory", "list"].includes(tokens[1] ?? "");
+  const [noun, ...rest] = stripGlobalBootstrapTokens(invocationArgv);
+  const verb = rest.find((token) => !LIFECYCLE_SCOPE_SWITCHES.has(token));
+  return ["package", "packages", "extension"].includes(noun ?? "") && ["inventory", "list"].includes(verb ?? "");
 }
 
 /** Protect literal preview candidates in the item namespace until the real parser settles the selected action; host-owned global grammar also captures the tracker roots. */

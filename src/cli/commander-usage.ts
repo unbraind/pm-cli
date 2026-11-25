@@ -639,10 +639,8 @@ function resolveInflectedCommandPath(
   const alias = resolvePmCommandAlias(variant);
   const root = alias && commandPaths.includes(alias.canonical) ? alias.canonical : commandPaths.includes(variant) ? variant : undefined;
   if (root === undefined) return undefined;
-  const unknownIndex = invocationArgv.indexOf(primary);
-  const operands = [...typedRest, ...(unknownIndex >= 0 ? invocationArgv.slice(unknownIndex + 1 + typedRest.length) : [])];
   let path = root;
-  for (const operand of operands) {
+  for (const operand of [...typedRest, ...collectInvocationOperandsAfterCommand(invocationArgv, typedRest.length)]) {
     const next = `${path} ${operand}`;
     const nextAlias = resolvePmCommandAlias(next);
     if (!commandPaths.includes(next) && !(nextAlias !== undefined && !nextAlias.hidden && commandPaths.includes(nextAlias.canonical))) break;
@@ -671,6 +669,22 @@ function rankUnknownCommandSuggestions(
     ...(combinedCandidates.length > 0 ? combinedCandidates : fallback),
   ])].slice(0, 3);
   return { misnestedPath, hasConcreteCandidates, suggestedPaths };
+}
+
+/**
+ * The command operands an invocation typed after its command token, found with the
+ * bootstrap scanner so host flags and their values (`--json`, `--author <name>`)
+ * are skipped rather than ending the path or being read as the command.
+ */
+function collectInvocationOperandsAfterCommand(invocationArgv: readonly string[], skip: number): string[] {
+  const operands: string[] = [];
+  let index = findBootstrapCommandTokenIndex([...invocationArgv]);
+  while (index !== undefined) {
+    const offset = findBootstrapCommandTokenIndex(invocationArgv.slice(index + 1));
+    index = offset === undefined ? undefined : index + 1 + offset;
+    if (index !== undefined) operands.push(invocationArgv[index]);
+  }
+  return operands.slice(skip);
 }
 
 /** Offer each installed top-level namespace once when no concrete command candidate matches. */

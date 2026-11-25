@@ -513,7 +513,7 @@ describe("extension command runtime", () => {
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields(undefined)).toBeUndefined();
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields("alias, category,display_name")).toEqual(["alias", "category", "display_name"]);
     expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields(" ")).toThrow(/requires a comma-separated/);
-    expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields("alias,nope")).toThrow(/Unknown package catalog/);
+    expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields("alias,nope")).toThrow(/Package catalog --fields must be one of alias\|aliases\|.*; unknown: nope/);
     expect(
       _testOnlyBundledCatalog.projectPackageCatalogEntry(
         {
