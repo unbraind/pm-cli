@@ -44,6 +44,19 @@ export function isRegistryNpmSource(source: ManagedExtensionSource): boolean {
 }
 
 /**
+ * Whether a string is an exact npm version, by the rule the live freshness check applies to the registry's
+ * answer (npm-package-arg resolves it as a `version` spec), so the offline cache reader accepts exactly what
+ * the writer can produce, build metadata included (Codex review round 14).
+ */
+export function isExactNpmVersion(value: string): boolean {
+  try {
+    return npa.resolve("pm-version-probe", value).type === "version";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Whether a registry `latest` is an update for an installed version: newer under
  * SemVer precedence (a release is newer than its own prerelease; an older
  * `latest` is no update, because installing it would downgrade). Versions that

@@ -2872,6 +2872,7 @@ export async function resolveContextExtensionHealthProjection(
   omitted: boolean,
   pmRoot: string,
   settings: PmSettings,
+  noExtensions = false,
 ): Promise<Pick<ContextResult, "extension_health">> {
   if (omitted) return {};
   const discovery = await discoverExtensions({
@@ -2926,7 +2927,7 @@ export async function resolveContextExtensionHealthProjection(
       ok: packages.length - degraded,
       degraded,
       updates_available: updatable.length,
-      ...(updatable.length > 0 ? { next: buildExtensionUpgradeHints(updatable, pmRoot) } : {}),
+      ...(updatable.length > 0 ? { next: buildExtensionUpgradeHints(updatable, pmRoot, noExtensions) } : {}),
       packages: packages.slice(0, 20),
       ...(packages.length > 20 ? { truncated: true } : {}),
     },
@@ -2965,9 +2966,9 @@ function renderExtensionHealthRowMarkdown(row: ContextExtensionHealthRow): strin
   return `  - ${escapeMarkdownText(row.name)} (${row.scope ?? "unknown scope"}, ${escapeMarkdownText(row.version ?? "unknown version")}): ${facts.join(", ")}`;
 }
 
-/** Escape the inline Markdown syntax characters so a manifest-controlled name mid-line renders as literal text. */
+/** Escape the inline Markdown syntax characters and fold line breaks, so an untrusted label renders as one line of literal text. */
 function escapeMarkdownText(text: string): string {
-  return text.replace(/[\\`*_[\]<>|~]/gu, "\\$&");
+  return text.replace(/[\r\n]+/gu, " ").replace(/[\\`*_[\]<>|~]/gu, "\\$&");
 }
 
 /** Render a command as a fenced block whose fence no run of backticks inside it can close; it keeps line breaks and shell escapes verbatim. */
@@ -3015,6 +3016,7 @@ export async function runContext(
     options.noExtensionHealth === true,
     pmRoot,
     runtime.settings,
+    global.noExtensions === true,
   );
   // Single shared edge-aware blocked classification (GH-578): resolved against
   // the full corpus so terminal blocker targets count as satisfied at every depth.

@@ -15,12 +15,11 @@
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import semver from "semver";
 import { acquireLockLease } from "../../core/lock/lock.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { normalizeManagedState, resolveManagedExtensionStatePath, type ManagedExtensionRecord } from "./managed-state.js";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
-import { isNewerRegistryVersion, isRegistryNpmSource } from "./npm-spec.js";
+import { isExactNpmVersion, isNewerRegistryVersion, isRegistryNpmSource } from "./npm-spec.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 
 /** File name of the observation record under a scope's `runtime/` directory. */
@@ -182,13 +181,15 @@ export async function readBoundedRegularFile(file: string, limit: number, option
     // Read until end of file in bounded chunks, since one read may return fewer bytes (network filesystems) and a
     // small file should not allocate the whole ceiling (CodeRabbit review round 8); one byte past the limit proves
     // the file is too large, however it changed since it was opened.
+    // One scratch buffer is reused, and only the bytes each read returned are kept, so many short reads never pin
+    // a full chunk apiece (Greptile review round 9).
+    const scratch = Buffer.alloc(Math.min(READ_CHUNK_BYTES, limit + 1));
     const chunks: Buffer[] = [];
     let total = 0;
     while (total <= limit) {
-      const chunk = Buffer.alloc(Math.min(READ_CHUNK_BYTES, limit + 1 - total));
-      const { bytesRead } = await handle.read(chunk, 0, chunk.length, total);
+      const { bytesRead } = await handle.read(scratch, 0, Math.min(scratch.length, limit + 1 - total), total);
       if (bytesRead === 0) break;
-      chunks.push(chunk.subarray(0, bytesRead));
+      chunks.push(Buffer.from(scratch.subarray(0, bytesRead)));
       total += bytesRead;
     }
     return total > limit ? undefined : Buffer.concat(chunks, total).toString("utf8");
@@ -357,10 +358,11 @@ export function findApplicableUpdateObservation(
  */
 function isConsistentWithSource(observation: ExtensionUpdateObservation, source: ManagedExtensionRecord["source"] | undefined): boolean {
   if (source === undefined || observation.update_available === false) return true;
-  if (source.kind === "github") return true;
+  // A repository check records the short hexadecimal remote commit; anything else is not one it produced (round 14).
+  if (source.kind === "github") return observation.remote_version === null || /^[0-9a-f]{7,40}$/u.test(observation.remote_version);
   if (!isRegistryNpmSource(source)) return false;
-  // A registry version the live check would refuse (not exact SemVer) is not one it produced (Codex review round 13).
-  return observation.remote_version !== null && semver.valid(observation.remote_version) === observation.remote_version &&
+  // A registry version the live check would refuse is not one it produced (Codex review rounds 13 and 14).
+  return observation.remote_version !== null && isExactNpmVersion(observation.remote_version) &&
     isNewerRegistryVersion(observation.remote_version, source.version ?? observation.installed_version);
 }
 

@@ -223,13 +223,15 @@ describe("context extension health", () => {
         extension_health: {
           ...health!,
           degraded: 1,
-          packages: [...health!.packages, { name: "evil`name*", scope: "project", version: "1.0.0", status: "degraded", update: null, shadowed_by: null }, { name: "bare", status: "degraded" }],
+          packages: [...health!.packages, { name: "evil`name*", scope: "project", version: "1.0.0", status: "degraded", update: null, shadowed_by: null }, { name: "bare", status: "degraded" }, { name: "multi\nline", scope: "global", version: "1.0.0", status: "ok", update: "abc\n```sh\nrm -rf /", shadowed_by: null }],
           next: ["pm --pm-path \"/a\\$b\" package manage --project", "pm --pm-path \"/a\nb\" package manage --project", "pm --pm-path \"/x\n```\" package manage --project"],
         },
       });
       expect(rendered).toContain("degraded (evil\\`name\\*, bare), 1 with a known update (check with the commands below)");
       expect(rendered).toContain("  - evil\\`name\\* (project, 1.0.0): degraded");
       expect(rendered).toContain("  - bare (unknown scope, unknown version): degraded");
+      // Untrusted labels render as one line, so an edited cache cannot inject Markdown blocks (Codex review round 14).
+      expect(rendered).toContain("  - multi line (global, 1.0.0): ok, update abc \\`\\`\\`sh rm -rf /");
       expect(rendered).toContain("```sh\npm --pm-path \"/a\\$b\" package manage --project\n```");
       expect(rendered).toContain("```sh\npm --pm-path \"/a\nb\" package manage --project\n```");
       // A fence is always longer than any backtick run inside the command.
@@ -244,6 +246,8 @@ describe("context extension health", () => {
       renderPmCommand(["--pm-path", `${spaced}${path.sep}.`, "package", "manage", "--project"]),
     ]);
     expect(buildExtensionUpgradeHints([{ scope: "global" }], spaced)).toEqual(["pm package manage --global"]);
+    // A caller's explicit --no-extensions carries over: the live check runs before manage's activation probe (Codex review round 14).
+    expect(buildExtensionUpgradeHints([{ scope: "global" }], spaced, true)).toEqual(["pm --no-extensions package manage --global"]);
     expect(buildExtensionUpgradeHints([], spaced)).toEqual([]);
   });
   it("marks a same-scope copy that loses to a same-named one as shadowed (Codex review round 8)", async () => {

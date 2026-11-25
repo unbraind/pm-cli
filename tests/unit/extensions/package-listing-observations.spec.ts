@@ -28,7 +28,7 @@ import {
   type ExtensionUpdateObservation,
 } from "../../../src/sdk/extension/update-observations.js";
 import type { ManagedExtensionRecord } from "../../../src/sdk/extension/managed-state.js";
-import { isLocalNpmSpec, isNewerRegistryVersion, isRegistryNpmSource } from "../../../src/sdk/extension/npm-spec.js";
+import { isExactNpmVersion, isLocalNpmSpec, isNewerRegistryVersion, isRegistryNpmSource } from "../../../src/sdk/extension/npm-spec.js";
 import { acquireLock } from "../../../src/core/lock/lock.js";
 import { refreshManagedExtensionUpdates } from "../../../src/sdk/extension/managed-update-status.js";
 
@@ -268,9 +268,15 @@ describe("extension update observations", () => {
     // An edited row claiming an older npm release, or an update with no version, is not one a check produced.
     expect(findApplicableUpdateObservation([observation({ remote_version: "2026.1.1" })], { ...installed, source: npm })).toBeUndefined();
     expect(findApplicableUpdateObservation([observation({ remote_version: null })], { ...installed, source: npm })).toBeUndefined();
+    // Build metadata is part of an exact version the live check accepts, so the cache reader accepts it too (round 14).
+    expect(isExactNpmVersion("2.0.0+build.1")).toBe(true);
+    expect(isExactNpmVersion("^2.0.0")).toBe(false);
+    expect(isExactNpmVersion("@@")).toBe(false);
+    expect(findApplicableUpdateObservation([observation({ remote_version: "2026.11.23+build.1" })], { ...installed, source: npm })?.remote_version).toBe("2026.11.23+build.1");
     // A cached registry version the live check would refuse (not exact SemVer) is rejected (Codex review round 13).
     expect(findApplicableUpdateObservation([observation({ remote_version: "not-a-version" })], { ...installed, source: npm })).toBeUndefined();
-    expect(findApplicableUpdateObservation([observation({ remote_version: "v2026.11.23" })], { ...installed, source: npm })).toBeUndefined();
+    // npm resolves a leading-v version as exact, so the live check could record it, and the reader accepts it too.
+    expect(findApplicableUpdateObservation([observation({ remote_version: "v2026.11.23" })], { ...installed, source: npm })?.remote_version).toBe("v2026.11.23");
     // Without a recorded npm version, the manifest version the observation was taken against is compared.
     const { version: _version, ...unversioned } = npm;
     expect(findApplicableUpdateObservation([observation()], { ...installed, source: unversioned })?.remote_version).toBe("2026.11.23");
@@ -281,6 +287,9 @@ describe("extension update observations", () => {
     // A repository source reports commits, which carry no version order.
     const github = { kind: "github" as const, input: "o/r", location: "o/r" };
     expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789ab" })], { ...installed, source: github })).toBeDefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: null })], { ...installed, source: github })).toBeDefined();
+    // Anything but the hexadecimal commit a repository check records is rejected (Codex review round 14).
+    expect(findApplicableUpdateObservation([observation({ remote_version: "abc\n```sh" })], { ...installed, source: github })).toBeUndefined();
   });
 
   it("reads a malformed, linked, special or oversized record as no knowledge", async () => {

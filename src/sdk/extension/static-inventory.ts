@@ -56,6 +56,12 @@ export { parseListingFields, projectListingRows } from "./listing-fields.js";
  * `--offline` is absent on purpose: the listing never checks remotely, so it is already satisfied.
  */
 const STATIC_INVENTORY_FOREIGN_OPTIONS: ReadonlyArray<readonly [string, string]> = [
+  // Action selectors and their arguments the parent command accepts (Codex review round 14).
+  ["install", "--install"], ["uninstall", "--uninstall"], ["explore", "--explore"], ["list", "--list"], ["manage", "--manage"],
+  ["describe", "--describe"], ["markdown", "--markdown"], ["output", "--output"], ["reload", "--reload"], ["doctor", "--doctor"],
+  ["catalog", "--catalog"], ["adopt", "--adopt"], ["adoptAll", "--adopt-all"], ["activate", "--activate"],
+  ["deactivate", "--deactivate"], ["migrate", "--migrate"], ["init", "--init"], ["scaffold", "--scaffold"],
+  ["capability", "--capability"], ["declarative", "--declarative"], ["gh", "--gh"], ["github", "--github"], ["ref", "--ref"],
   ["fixManagedState", "--fix-managed-state"], ["runtimeProbe", "--runtime-probe"],
   ["trace", "--trace"], ["watch", "--watch"], ["strictExit", "--strict-exit"], ["failOnWarn", "--fail-on-warn"],
   ["isolated", "--isolated"], ["ignoreGlobal", "--ignore-global"], ["detail", "--detail"], ["dryRun", "--dry-run"],

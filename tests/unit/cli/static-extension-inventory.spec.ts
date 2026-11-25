@@ -14,6 +14,10 @@ describe("static inventory foreign lifecycle options", () => {
     expect(() => refuseStaticInventoryForeignOptions({ fixManagedState: false })).not.toThrow();
     expect(() => refuseStaticInventoryForeignOptions({ fixManagedState: true })).toThrow("--fix-managed-state does not apply to pm package list");
     expect(() => refuseStaticInventoryForeignOptions({ runtimeProbe: true, detail: "deep" })).toThrow("--runtime-probe, --detail do not apply");
+    // Action selectors and their arguments the parent command accepts are refused too (Codex review round 14).
+    expect(() => refuseStaticInventoryForeignOptions({ install: true, output: "report.md" })).toThrow("--install, --output do not apply");
+    // pm package --describe list reaches the list subcommand through Commander; it is refused, never silently listed (CodeRabbit review round 9).
+    expect(() => refuseStaticInventoryForeignOptions({ describe: true })).toThrow("--describe does not apply");
   });
 });
 
