@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
@@ -154,6 +154,18 @@ describe("static extension inventory command routing", () => {
         expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe" }]);
         await run(["package", "list", "--output-budget", "unbounded"]);
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ updates_available: 1 });
+        // Inventory matches observations against the same strict managed snapshot as pm context: a linked managed
+        // state file is not a snapshot, so no update is reported (Codex review round 12).
+        const managedPath = path.join(pmPath, "extensions", ".managed-extensions.json");
+        const managedText = await readFile(managedPath, "utf8");
+        const elsewhere = path.join(pmPath, "managed-elsewhere.json");
+        await writeFile(elsewhere, managedText);
+        await rm(managedPath);
+        await symlink(elsewhere, managedPath);
+        await run(["package", "list", "--fields", "name,update"]);
+        expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe", update: null }]);
+        await rm(managedPath);
+        await writeFile(managedPath, managedText);
         // A same-named copy in another directory does not borrow the managed copy's installation identity.
         const copyRoot = path.join(pmPath, "extensions", "source-probe-copy");
         await mkdir(copyRoot, { recursive: true });

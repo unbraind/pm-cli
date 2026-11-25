@@ -2907,7 +2907,7 @@ export async function resolveContextExtensionHealthProjection(
         scope: diagnostic.layer,
         version: diagnostic.version,
         status: diagnostic.status === "ok" ? ("ok" as const) : ("degraded" as const),
-        update: resolveObservedUpdateVersion(findApplicableUpdateObservation(evidence.observations, { name, version: diagnostic.version, updated_at: record?.updated_at })),
+        update: resolveObservedUpdateVersion(findApplicableUpdateObservation(evidence.observations, { name, version: diagnostic.version, updated_at: record?.updated_at, source: record?.source })),
         // Directory identity decides, so a losing copy in the same scope is marked too (Codex review round 8).
         shadowed_by: loadedScope !== undefined && !loadedCopies.has(`${diagnostic.layer}:${diagnostic.directory}`) ? loadedScope : null,
       };

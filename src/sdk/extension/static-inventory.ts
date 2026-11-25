@@ -10,7 +10,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { normalizeManagedState, type ManagedExtensionRecord } from "./managed-state.js";
 import { normalizeExtensionNameForMatch, normalizeStringList, parseExtensionManifest } from "./shared.js";
-import { findApplicableUpdateObservation, readBoundedRegularFile, readExtensionUpdateObservations, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
+import { findApplicableUpdateObservation, readBoundedRegularFile, readExtensionUpdateObservations, readStrictManagedRecords, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
 
 /** One read failure or malformed document that prevents a complete inventory. */
 export interface StaticExtensionInventoryError {
@@ -310,6 +310,19 @@ function projectConfiguredEntry(input: {
   };
 }
 
+/**
+ * The update evidence of a scope: its observations, and the managed records to match them against, read
+ * through the same guarded, strict snapshot pm context uses, so both offline readers agree (Codex review
+ * round 12); the inventory's own receipts keep reporting the managed state's completeness separately.
+ */
+async function readObservationEvidence(scopeRoot: string, extensionsRoot: string): Promise<{
+  observations: ExtensionUpdateObservation[];
+  records: ManagedExtensionRecord[];
+}> {
+  const [observations, records] = await Promise.all([readExtensionUpdateObservations(scopeRoot), readStrictManagedRecords(extensionsRoot)]);
+  return { observations, records: records ?? [] };
+}
+
 /** Attach the update the last manage check observed for exactly this installation (pm-gh1778). */
 function withObservedUpdate(
   entry: StaticExtensionInventoryEntry,
@@ -319,7 +332,7 @@ function withObservedUpdate(
 ): StaticExtensionInventoryEntry {
   // Bind the evidence to this directory's own managed record, so a same-named unmanaged copy never borrows it.
   const record = records.find((candidate) => candidate.directory === directory);
-  const installation = { name: entry.name, version: entry.version, updated_at: record?.updated_at };
+  const installation = { name: entry.name, version: entry.version, updated_at: record?.updated_at, source: record?.source };
   return { ...entry, update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, installation)) };
 }
 
@@ -346,7 +359,7 @@ export async function inspectStaticExtensionInventory(options: {
   }
 
   const requested = options.name?.trim();
-  const observations = await readExtensionUpdateObservations(selectedRoot);
+  const { observations, records: observationRecords } = await readObservationEvidence(selectedRoot, extensionsRoot);
   const extensions: StaticExtensionInventoryEntry[] = [];
   for (const directory of listed.directories) {
     const manifestPath = path.join(extensionsRoot, directory, "manifest.json");
@@ -356,7 +369,7 @@ export async function inspectStaticExtensionInventory(options: {
     if (requested && ![entry.name, directory].some((value) => normalizeExtensionNameForMatch(value) === normalizeExtensionNameForMatch(requested))) {
       continue;
     }
-    extensions.push(withObservedUpdate(entry, directory, managed.entries, observations));
+    extensions.push(withObservedUpdate(entry, directory, observationRecords, observations));
   }
   if (requested && extensions.length === 0 && errors.every((error) => error.code !== "extensions_unreadable")) {
     extensions.push({ name: requested, directory: null, scope, installed: false, status: "absent",

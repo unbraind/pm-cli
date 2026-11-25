@@ -312,6 +312,11 @@ describe("extension command runtime", () => {
       status: "skipped_non_github",
       reason: "managed_source_kind_local",
     });
+    // An MCP or SDK caller's declared scope selects the same scope as the CLI switches (Codex review round 12).
+    expect(extensionCommandTestOnly.resolveScope({ scope: "global" } as never)).toBe("global");
+    expect(extensionCommandTestOnly.resolveScope({ scope: "project" } as never)).toBe("project");
+    expect(extensionCommandTestOnly.resolveScope({ scope: "local" } as never)).toBe("project");
+    expect(() => extensionCommandTestOnly.resolveScope({ scope: "project", global: true } as never)).toThrow(/mutually exclusive/);
     // A local npm artifact is never compared with a registry release (pm-gh1778, Codex review round 6).
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({

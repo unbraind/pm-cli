@@ -19,7 +19,7 @@ import { acquireLockLease } from "../../core/lock/lock.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { normalizeManagedState, resolveManagedExtensionStatePath, type ManagedExtensionRecord } from "./managed-state.js";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
-import { isRegistryNpmSource } from "./npm-spec.js";
+import { isNewerRegistryVersion, isRegistryNpmSource } from "./npm-spec.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 
 /** File name of the observation record under a scope's `runtime/` directory. */
@@ -64,6 +64,8 @@ export interface ExtensionInstallationIdentity {
   version: string | null | undefined;
   /** `updated_at` of the current managed install record, when the package is managed. */
   updated_at: string | undefined;
+  /** Source of the current managed install record; when given, a cached verdict must be consistent with it. */
+  source?: ManagedExtensionRecord["source"];
 }
 
 /** Path of the observation record for a scope root (`.agents/pm` or the global pm root). */
@@ -278,7 +280,9 @@ export async function recordExtensionUpdateObservations(
   };
   await assertRuntimeDirectory();
   // maxWaitMs caps the wait even when PM_LOCK_WAIT_MS asks for longer: this derived write must never stall a manage call.
-  const lease = await acquireLockLease(scopeRoot, "extension-update-observations", 30, "pm package manage", false, true, OBSERVATION_LOCK_WAIT_MS, { maxWaitMs: OBSERVATION_LOCK_WAIT_MS });
+  // An expired lease of an interrupted check may be reclaimed (as session state does): the cache is derived, and the
+  // commit fence below keeps a resumed stale holder from overwriting its successor (Codex review round 12).
+  const lease = await acquireLockLease(scopeRoot, "extension-update-observations", 30, "pm package manage", false, false, OBSERVATION_LOCK_WAIT_MS, { maxWaitMs: OBSERVATION_LOCK_WAIT_MS });
   try {
     await assertRuntimeDirectory();
     const candidates = [...(await readExtensionUpdateObservations(scopeRoot)), ...observations];
@@ -328,10 +332,23 @@ export function findApplicableUpdateObservation(
 ): ExtensionUpdateObservation | undefined {
   if (typeof installation.version !== "string" || installation.updated_at === undefined) return undefined;
   const key = normalizeExtensionNameForMatch(installation.name);
-  return observations.find((entry) =>
+  const match = observations.find((entry) =>
     normalizeExtensionNameForMatch(entry.name) === key &&
     entry.installed_version === installation.version &&
     entry.installed_updated_at === installation.updated_at);
+  return match === undefined || isConsistentWithSource(match, installation.source) ? match : undefined;
+}
+
+/**
+ * Whether a cached verdict is one a check of this source could have produced, so an edited or corrupt row
+ * never marks a local artifact updatable or an older npm release newer (Codex review round 12): only GitHub
+ * and registry npm sources are checked, and an npm "update" must be newer under SemVer precedence.
+ */
+function isConsistentWithSource(observation: ExtensionUpdateObservation, source: ManagedExtensionRecord["source"] | undefined): boolean {
+  if (source === undefined || observation.update_available === false) return true;
+  if (source.kind === "github") return true;
+  if (!isRegistryNpmSource(source)) return false;
+  return observation.remote_version !== null && isNewerRegistryVersion(observation.remote_version, source.version ?? observation.installed_version);
 }
 
 /** The newer version an applicable observation reports (`available` when the provider named none), or null when none is known. */

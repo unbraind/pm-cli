@@ -961,8 +961,11 @@ const resolveAction = (
 
 /** Resolve project or global extension scope while rejecting conflicting scope flags. */
 const resolveScope = (options: ExtensionCommandOptions): ExtensionScope => {
-  const projectLike = options.project === true || options.local === true;
-  const global = options.global === true;
+  // MCP and SDK callers declare `scope`, which the tool schema advertises; it selects the same scope as the CLI
+  // switches, so a package-manage call for the global scope also records its observations there (Codex review round 12).
+  const declaredScope = (options as { scope?: unknown }).scope;
+  const projectLike = options.project === true || options.local === true || declaredScope === "project" || declaredScope === "local";
+  const global = options.global === true || declaredScope === "global";
   if (projectLike && global) {
     throw new PmCliError(
       'Options "--project/--local" and "--global" are mutually exclusive.',

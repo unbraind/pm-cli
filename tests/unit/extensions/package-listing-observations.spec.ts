@@ -256,6 +256,25 @@ describe("extension update observations", () => {
     expect(resolveObservedUpdateVersion(undefined)).toBeNull();
   });
 
+  it("rejects a cached verdict the current managed source could not have produced (Codex review round 12)", () => {
+    const npm = { kind: "npm" as const, input: "npm:pm-github", location: "package", package: "pm-github", version: "2026.10.4" };
+    const installed = { name: "pm-github", version: "2026.10.4", updated_at: "2026-10-04T00:00:00.000Z" };
+    expect(findApplicableUpdateObservation([observation()], { ...installed, source: npm })?.remote_version).toBe("2026.11.23");
+    // An edited row claiming an older npm release, or an update with no version, is not one a check produced.
+    expect(findApplicableUpdateObservation([observation({ remote_version: "2026.1.1" })], { ...installed, source: npm })).toBeUndefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: null })], { ...installed, source: npm })).toBeUndefined();
+    // Without a recorded npm version, the manifest version the observation was taken against is compared.
+    const { version: _version, ...unversioned } = npm;
+    expect(findApplicableUpdateObservation([observation()], { ...installed, source: unversioned })?.remote_version).toBe("2026.11.23");
+    // A local artifact is never checked, so a cached update for it is rejected; a "no update" row is harmless.
+    const local = { kind: "local" as const, input: "./pm-github", location: "/tmp/pm-github" };
+    expect(findApplicableUpdateObservation([observation()], { ...installed, source: local })).toBeUndefined();
+    expect(findApplicableUpdateObservation([observation({ update_available: false })], { ...installed, source: local })).toBeDefined();
+    // A repository source reports commits, which carry no version order.
+    const github = { kind: "github" as const, input: "o/r", location: "o/r" };
+    expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789ab" })], { ...installed, source: github })).toBeDefined();
+  });
+
   it("reads a malformed, linked, special or oversized record as no knowledge", async () => {
     const file = resolveExtensionUpdateObservationsPath(scopeRoot);
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
