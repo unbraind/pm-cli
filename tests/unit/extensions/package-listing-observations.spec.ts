@@ -211,9 +211,11 @@ describe("extension update observations", () => {
     expect(await readStrictManagedRecords(extensionsRoot())).toBeUndefined();
     await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github", checked_at: "2026-11-25T00:00:00.000Z" })]);
     expect((await readExtensionUpdateObservations(scopeRoot)).map((entry) => entry.name)).toEqual(["pm-csv", "pm-github"]);
-    // An absent file is a complete, empty snapshot.
+    // An absent file is a complete, empty snapshot; an unreadable one (here a directory) is no snapshot.
     await fs.rm(path.join(scopeRoot, "extensions", ".managed-extensions.json"));
     expect(await readStrictManagedRecords(extensionsRoot())).toEqual([]);
+    await fs.mkdir(path.join(scopeRoot, "extensions", ".managed-extensions.json"));
+    expect(await readStrictManagedRecords(extensionsRoot())).toBeUndefined();
   });
 
   it("skips the live registry lookup for a non-registry npm source", async () => {
@@ -261,6 +263,8 @@ describe("extension update observations", () => {
       observations: [
         // A wrong-typed remote version is not a row pm wrote, so it cannot count as an update (Codex review round 5).
         { ...valid, remote_version: { injected: true } }, { ...valid, remote_version: 7 },
+        // A field longer than any pm writes would fill the record and block later merges (Codex review round 7).
+        { ...valid, remote_version: "9".repeat(257) }, { ...valid, name: "n".repeat(257) },
         null, [], { ...valid, name: "" }, { ...valid, update_available: "yes" }, { ...valid, installed_version: undefined },
         { ...valid, installed_updated_at: undefined }, { ...valid, checked_at: undefined }, { ...valid, checked_at: "not a time" },
         // A check dated beyond the clock-skew tolerance would outrank every later check (Codex review round 4).
@@ -354,6 +358,17 @@ describe("extension update observations", () => {
     await fs.symlink(scopeRoot, path.join(scopeRoot, "runtime"));
     await release();
     expect(String(await settled)).toMatch(/is not a directory/);
+  });
+
+  it("keeps the typed reason of a failed write, such as a held lock, in the warning (Codex review round 7)", async () => {
+    const answered = [record({ last_update_check_at: "2026-11-24T10:00:00.000Z", update_available: true, last_update_remote_version: "2026.11.23" })];
+    await writeManagedState(answered);
+    const release = await acquireLock(scopeRoot, "extension-update-observations", 60, "another manage", false, true, 1_000);
+    try {
+      expect(await recordCheckedUpdateObservations(scopeRoot, extensionsRoot(), answered, false)).toMatch(/^extension_update_observation_write_failed:[a-z_]+$/u);
+    } finally {
+      await release();
+    }
   });
 
   it("records nothing for an offline check and reports a failed write as a warning code", async () => {

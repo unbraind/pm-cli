@@ -26,6 +26,17 @@ import {
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 
 /**
+ * Drop a terminator that stands before the command (`pm --json -- package list`), which
+ * Commander still routes to the command. The host-option grammar decides: when the scanner
+ * finds a command, any `--` before it was a flag value (`--pm-path --`) and stays.
+ */
+function removeLeadingTerminator(argv: string[]): string[] {
+  if (findBootstrapCommandTokenIndex(argv) !== undefined) return argv;
+  const terminator = argv.indexOf("--");
+  return terminator < 0 ? argv : [...argv.slice(0, terminator), ...argv.slice(terminator + 1)];
+}
+
+/**
  * Recognize the read-only package inventory (and its `list` alias) before
  * extension bootstrap. The noun is found with the host-option grammar
  * (`pm --no-changed-fields package list`), and the verb with the lifecycle
@@ -40,11 +51,7 @@ function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean
   } catch {
     return false;
   }
-  // A terminator before the command, after any host options (`pm --json -- package list`), still routes to it.
-  const terminator = normalized.indexOf("--");
-  const argv = terminator >= 0 && findBootstrapCommandTokenIndex(normalized.slice(0, terminator)) === undefined
-    ? [...normalized.slice(0, terminator), ...normalized.slice(terminator + 1)]
-    : normalized;
+  const argv = removeLeadingTerminator(normalized);
   const nounIndex = findBootstrapCommandTokenIndex(argv);
   if (nounIndex === undefined) return false;
   return ["package", "packages", "extension"].includes(argv[nounIndex]!) &&

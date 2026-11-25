@@ -57,6 +57,8 @@ describe("static extension inventory command routing", () => {
     expect(isStaticExtensionInventoryInvocation(["--", "package", "list"])).toBe(true);
     // A terminator after host options still routes to the command (Codex review round 6).
     expect(isStaticExtensionInventoryInvocation(["--json", "--", "package", "list"])).toBe(true);
+    // A -- that is a host option's value is not a terminator (Codex review round 7).
+    expect(isStaticExtensionInventoryInvocation(["--pm-path", "--", "package", "list"])).toBe(true);
     // An invocation normalization refuses is never treated as the static listing.
     expect(isStaticExtensionInventoryInvocation(["get", "pm-1", "--id", "pm-2"])).toBe(false);
   });

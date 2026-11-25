@@ -2939,32 +2939,27 @@ export async function resolveContextExtensionHealthProjection(
  * line breaks into spaces.
  */
 function renderExtensionHealthMarkdown(health: ContextExtensionHealth): string[] {
-  const degradedNames = health.packages.filter((entry) => entry.status === "degraded").map((entry) => entry.name);
+  // Manifest-controlled names are escaped as plain text, and each hint sits in its own fenced block after the
+  // line, so no name can open or close a code span around a command (Codex review round 7).
+  const degradedNames = health.packages.filter((entry) => entry.status === "degraded").map((entry) => escapeMarkdownText(entry.name));
   const next = health.next;
-  const inlineHints = next?.filter((hint) => !/[\r\n]/u.test(hint)) ?? [];
-  const fencedHints = next?.filter((hint) => /[\r\n]/u.test(hint)) ?? [];
-  const updates = next === undefined
-    ? ""
-    : `, ${String(health.updates_available)} with a known update (${[...inlineHints.map(renderMarkdownCodeSpan), ...(fencedHints.length > 0 ? ["see below"] : [])].join("; ")})`;
+  const updates = next === undefined ? "" : `, ${String(health.updates_available)} with a known update (check with the commands below)`;
   return [
     `- extensions: ${health.ok} ok, ${health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${updates}`,
-    ...fencedHints.map(renderMarkdownFence),
+    ...(next ?? []).map(renderMarkdownFence),
   ];
 }
 
-/** Render a multi-line command as a fenced block whose fence no run of backticks inside it can close. */
+/** Escape the inline Markdown syntax characters so a manifest-controlled name mid-line renders as literal text. */
+function escapeMarkdownText(text: string): string {
+  return text.replace(/[\\`*_[\]<>|~]/gu, "\\$&");
+}
+
+/** Render a command as a fenced block whose fence no run of backticks inside it can close; it keeps line breaks and shell escapes verbatim. */
 function renderMarkdownFence(text: string): string {
   const longestRun = Math.max(0, ...[...text.matchAll(/`+/gu)].map((match) => match[0].length));
   const fence = "`".repeat(Math.max(3, longestRun + 1));
   return `${fence}sh\n${text}\n${fence}`;
-}
-
-/** Render a command as a Markdown code span, so Markdown never consumes its shell escapes. */
-function renderMarkdownCodeSpan(text: string): string {
-  const longestRun = Math.max(0, ...[...text.matchAll(/`+/gu)].map((match) => match[0].length));
-  const fence = "`".repeat(longestRun + 1);
-  const padding = text.startsWith("`") || text.endsWith("`") ? " " : "";
-  return `${fence}${padding}${text}${padding}${fence}`;
 }
 
 async function resolveContextSemanticAffinity(

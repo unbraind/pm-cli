@@ -60,8 +60,9 @@ or lose its quoting, and the Markdown rendering puts each hint in a code span.
 A project hint names the absolute tracker the read served (`--pm-path`), and no
 hint inherits `--no-extensions`. An npm source that is not a registry install
 (classified with npm's own spec parser: a path, tarball, `file:`, git or URL
-spec) is never reported as having a registry update, because an upgrade
-reinstalls it as it is. Corrupt or unreadable managed metadata in a scope means unknown
+spec) is never compared with a registry release, by `manage` or by the offline
+readers; `pm package upgrade` reinstalls path, tarball and `file:` artifacts as
+they are. Corrupt or unreadable managed metadata in a scope means unknown
 updates there, never a failed `pm context`. `pm package list` refuses the
 row-shaping read-output controls it cannot apply (`read_output_surface_unsupported`) and
 keeps `--output-format` and an unbounded `--output-budget`

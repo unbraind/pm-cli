@@ -161,7 +161,7 @@ describe("context extension health", () => {
         ],
       });
       expect(renderContextMarkdown(result)).toContain(
-        `- extensions: 4 ok, 0 degraded, 2 with a known update (\`${manage("project")}\`; \`${manage("global")}\`)`,
+        `- extensions: 4 ok, 0 degraded, 2 with a known update (check with the commands below)\n\`\`\`sh\n${manage("project")}\n\`\`\`\n\`\`\`sh\n${manage("global")}\n\`\`\``,
       );
 
       // Only one scope with a known update: one hint.
@@ -207,16 +207,22 @@ describe("context extension health", () => {
       expect(health?.packages.find((row) => row.name === "pm-disabled")).toMatchObject({ update: "1.1.0", shadowed_by: null });
       expect(health).toMatchObject({ updates_available: 1, next: [renderPmCommand(["--pm-path", path.resolve(process.env.PM_PATH!), "package", "manage", "--project"])] });
       expect(JSON.stringify(health?.next)).not.toContain("-x");
-      // Markdown renders the hint as a code span, so it never consumes the shell quoting of a path.
-      expect(renderContextMarkdown({ ...(await runContext({ depth: "brief" }, {})), extension_health: { ...health!, next: ["pm --pm-path \"/a\\$b\" package manage --project", "`x`"] } })).toContain(
-        "(`pm --pm-path \"/a\\$b\" package manage --project`; `` `x` ``)",
-      );
-      // A hint holding a line break goes in a fenced block, because a code span would turn it into a space.
-      const multiline = renderContextMarkdown({ ...(await runContext({ depth: "brief" }, {})), extension_health: { ...health!, next: ["pm --pm-path \"/a\nb\" package manage --project", "pm --pm-path \"/x\n```\" package manage --project"] } });
-      expect(multiline).toContain("with a known update (see below)");
-      expect(multiline).toContain("```sh\npm --pm-path \"/a\nb\" package manage --project\n```");
+      // Markdown puts every hint in its own fenced block, so shell quoting, line breaks and backticks stay verbatim,
+      // and escapes manifest-controlled degraded names, so none can open a code span around a command (Codex review round 7).
+      const rendered = renderContextMarkdown({
+        ...(await runContext({ depth: "brief" }, {})),
+        extension_health: {
+          ...health!,
+          degraded: 1,
+          packages: [...health!.packages, { name: "evil`name*", scope: "project", version: "1.0.0", status: "degraded", update: null, shadowed_by: null }],
+          next: ["pm --pm-path \"/a\\$b\" package manage --project", "pm --pm-path \"/a\nb\" package manage --project", "pm --pm-path \"/x\n```\" package manage --project"],
+        },
+      });
+      expect(rendered).toContain("degraded (evil\\`name\\*), 1 with a known update (check with the commands below)");
+      expect(rendered).toContain("```sh\npm --pm-path \"/a\\$b\" package manage --project\n```");
+      expect(rendered).toContain("```sh\npm --pm-path \"/a\nb\" package manage --project\n```");
       // A fence is always longer than any backtick run inside the command.
-      expect(multiline).toContain("````sh\npm --pm-path \"/x\n```\" package manage --project\n````");
+      expect(rendered).toContain("````sh\npm --pm-path \"/x\n```\" package manage --project\n````");
     });
   });
   it("keeps a tracker path ending in whitespace intact through the trimmed --pm-path option (Codex review round 6)", () => {

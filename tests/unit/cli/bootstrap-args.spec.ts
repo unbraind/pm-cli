@@ -358,6 +358,11 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
     expect(normalizeLegacyExtensionActionSyntax(["extension", "manage", "--offline", "--fields=name"])).toEqual(["extension", "manage", "--offline", "--fields=name"]);
     // A bare fields= assignment is normalized to --fields later, so it keeps the subcommand route too (Codex review round 5).
     expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "fields=bogus"])).toEqual(["extension", "explore", "fields=bogus"]);
+    // Spellings normalize case-insensitively, so the route check does too (Codex review round 7).
+    for (const token of ["--FIELDS", "FIELDS=name"]) {
+      expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", token])).toEqual(["extension", "explore", token]);
+    }
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--fieldsx"])).toEqual(["extension", "--explore", "--fieldsx"]);
   });
 
   it("converts 'extension install' to 'extension --install'", () => {

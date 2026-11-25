@@ -17,7 +17,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { acquireLock } from "../../core/lock/lock.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { readManagedExtensionState, type ManagedExtensionRecord } from "./managed-state.js";
+import { normalizeManagedState, resolveManagedExtensionStatePath, type ManagedExtensionRecord } from "./managed-state.js";
+import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import { isRegistryNpmSource } from "./npm-spec.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 
@@ -67,10 +68,17 @@ export function resolveExtensionUpdateObservationsPath(scopeRoot: string): strin
   return path.join(scopeRoot, "runtime", EXTENSION_UPDATE_OBSERVATIONS_FILE);
 }
 
-/** A non-empty string field of a row, or undefined. */
+/** Longest field value pm writes (package names, versions, commits and ISO times are far shorter). */
+const MAX_OBSERVATION_FIELD_LENGTH = 256;
+
+/**
+ * A non-empty string field of a row within the field bound, or undefined. The bound
+ * keeps one corrupt row from filling the record and blocking every later merge
+ * (Codex review round 7).
+ */
 function readRowText(row: Record<string, unknown>, key: string): string | undefined {
   const value = row[key];
-  return typeof value === "string" && value.length > 0 ? value : undefined;
+  return typeof value === "string" && value.length > 0 && value.length <= MAX_OBSERVATION_FIELD_LENGTH ? value : undefined;
 }
 
 /**
@@ -205,12 +213,18 @@ export function collectExtensionUpdateObservations(entries: readonly ManagedExte
  * file invalid (Codex review round 6). An absent file is a valid empty snapshot.
  */
 export async function readStrictManagedRecords(extensionsRoot: string): Promise<ManagedExtensionRecord[] | undefined> {
+  // Parse, normalize and count the same bytes, so a file replaced between two reads can never pass (Codex review round 7).
+  let raw: string;
   try {
-    const managed = await readManagedExtensionState(extensionsRoot);
-    const raw = await fs.readFile(managed.path, "utf8").then((text) => JSON.parse(text) as unknown, () => ({ entries: [] }));
-    // The shared reader validated this file as an object; a file swapped since then fails here and reads as undefined.
-    const declared = (raw as { entries?: unknown }).entries;
-    return Array.isArray(declared) && declared.length === managed.state.entries.length ? managed.state.entries : undefined;
+    raw = await fs.readFile(resolveManagedExtensionStatePath(extensionsRoot), "utf8");
+  } catch (error: unknown) {
+    return isFileMissingError(error) ? [] : undefined;
+  }
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    const normalized = normalizeManagedState(parsed);
+    const declared = (parsed as { entries?: unknown }).entries;
+    return normalized !== null && Array.isArray(declared) && declared.length === normalized.entries.length ? normalized.entries : undefined;
   } catch {
     return undefined;
   }
@@ -290,8 +304,10 @@ export async function recordCheckedUpdateObservations(
   try {
     await recordExtensionUpdateObservations(scopeRoot, extensionsRoot, collectExtensionUpdateObservations(entries));
     return undefined;
-  } catch {
-    return "extension_update_observation_write_failed";
+  } catch (error: unknown) {
+    // Keep the typed reason (a stale lock left by a crashed process, say), so its own recovery guidance applies.
+    const code = (error as { context?: { code?: unknown } } | null)?.context?.code;
+    return typeof code === "string" && code.length > 0 ? `extension_update_observation_write_failed:${code}` : "extension_update_observation_write_failed";
   }
 }
 
