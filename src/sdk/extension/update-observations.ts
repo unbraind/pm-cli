@@ -28,6 +28,9 @@ export const EXTENSION_UPDATE_OBSERVATIONS_FILE = "extension-update-observations
 /** Envelope version of the observation record. */
 const OBSERVATIONS_RECORD_VERSION = 1;
 
+/** Ceiling for the managed install state read while merging (its contribution maps make it the largest input). */
+const MAX_MANAGED_STATE_BYTES = 16 * 1024 * 1024;
+
 /** A record larger than this is not one pm wrote, so it reads as no knowledge. */
 const MAX_OBSERVATIONS_BYTES = 1024 * 1024;
 
@@ -155,12 +158,12 @@ export function resolveGuardedReadFlags(constants: { O_RDONLY: number; O_NOFOLLO
 }
 
 /**
- * Read a file only when the opened descriptor is a regular file within the byte
+ * Read a file only when the entry and the opened descriptor are a regular file within the byte
  * limit. The open neither follows a final link nor blocks on a FIFO where the
  * platform supports it, and the checks run on the descriptor, so a file swapped
  * after a path check cannot widen the read.
  */
-async function readBoundedRegularFile(file: string, limit: number): Promise<string | undefined> {
+export async function readBoundedRegularFile(file: string, limit: number): Promise<string | undefined> {
   // The entry itself must be a regular file: where O_NOFOLLOW is undefined (Windows) the open would follow a final link.
   if (!(await fs.lstat(file)).isFile()) return undefined;
   const handle = await fs.open(file, resolveGuardedReadFlags());
@@ -216,13 +219,15 @@ export function collectExtensionUpdateObservations(entries: readonly ManagedExte
  * file invalid (Codex review round 6). An absent file is a valid empty snapshot.
  */
 export async function readStrictManagedRecords(extensionsRoot: string): Promise<ManagedExtensionRecord[] | undefined> {
-  // Parse, normalize and count the same bytes, so a file replaced between two reads can never pass (Codex review round 7).
-  let raw: string;
+  // Parse, normalize and count the same bytes, so a file replaced between two reads can never pass (Codex review round 7),
+  // read through the guarded bounded reader, so a FIFO or endless stream never holds the observation lease (round 11).
+  let raw: string | undefined;
   try {
-    raw = await fs.readFile(resolveManagedExtensionStatePath(extensionsRoot), "utf8");
+    raw = await readBoundedRegularFile(resolveManagedExtensionStatePath(extensionsRoot), MAX_MANAGED_STATE_BYTES);
   } catch (error: unknown) {
     return isFileMissingError(error) ? [] : undefined;
   }
+  if (raw === undefined) return undefined;
   try {
     const parsed: unknown = JSON.parse(raw);
     const normalized = normalizeManagedState(parsed);

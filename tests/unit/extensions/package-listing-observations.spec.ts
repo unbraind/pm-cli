@@ -219,6 +219,15 @@ describe("extension update observations", () => {
     expect(await readStrictManagedRecords(extensionsRoot())).toEqual([]);
     await fs.mkdir(path.join(scopeRoot, "extensions", ".managed-extensions.json"));
     expect(await readStrictManagedRecords(extensionsRoot())).toBeUndefined();
+    // A read that fails for any reason other than absence is no snapshot either.
+    await fs.rm(path.join(scopeRoot, "extensions", ".managed-extensions.json"), { recursive: true });
+    await writeManagedState([valid]);
+    const spy = vi.spyOn(fs, "open").mockRejectedValueOnce(Object.assign(new Error("denied"), { code: "EACCES" }));
+    try {
+      expect(await readStrictManagedRecords(extensionsRoot())).toBeUndefined();
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("skips the live registry lookup for a non-registry npm source", async () => {
@@ -330,6 +339,12 @@ describe("extension update observations", () => {
   it("opens without following a link or blocking where the platform supports it", () => {
     expect(resolveGuardedReadFlags({ O_RDONLY: 0 })).toBe(0);
     expect(resolveGuardedReadFlags({ O_RDONLY: 0, O_NOFOLLOW: 4, O_NONBLOCK: 8 })).toBe(12);
+  });
+
+  it.skipIf(process.platform === "win32")("never blocks on a FIFO in place of the managed state while merging (Codex review round 11)", async () => {
+    await fs.mkdir(path.join(scopeRoot, "extensions"), { recursive: true });
+    execFileSync("mkfifo", [path.join(scopeRoot, "extensions", ".managed-extensions.json")]);
+    expect(await readStrictManagedRecords(extensionsRoot())).toBeUndefined();
   });
 
   it.skipIf(process.platform === "win32")("never blocks on a FIFO at the record path", async () => {

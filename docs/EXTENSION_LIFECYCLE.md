@@ -56,7 +56,9 @@ disabled copy keeps its row but is not counted; this is static selection, not
 activation truth, since no package module is imported) with a known update, and
 `next` names one live check per scope with a known update, `pm package manage
 --<scope>`, only when that count is above zero; the check re-reads the
-registry and its remediation names the upgrade. The hint names no package, so
+registry and shows each package's update evidence (`update_available`,
+`last_update_remote_version`), and its remediation says to reinstall the
+updated sources (`pm package upgrade <name> --<scope>` upgrades one). The hint names no package, so
 no manifest-controlled name can select another installation, become an option,
 or lose its quoting, and the Markdown rendering puts each hint in a code span.
 A project hint names the absolute tracker the read served (`--pm-path`), and no

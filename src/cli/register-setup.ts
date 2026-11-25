@@ -43,8 +43,43 @@ import {
   parseListingFields,
   projectListingRows,
   readStaticDefaultOutputFormat,
+  readStaticDeprecationHints,
   refuseStaticInventoryReadOutputControls,
 } from "../sdk/extension/static-inventory.js";
+
+/**
+ * The static installed-package listing (`pm package list` / `inventory`): reads manifests and saved state only,
+ * never activates extension code, and applies the tracker's presentation defaults statically (pm-gh1777).
+ */
+async function runStaticInventoryCommand(name: string | undefined, command: Command, vocabulary: LifecycleCommandVocabulary): Promise<void> {
+  const baseGlobalOptions = getGlobalOptions(command);
+  const options = command.optsWithGlobals() as Record<string, unknown>;
+  const projectRoot = resolvePmRoot(process.cwd(), baseGlobalOptions.path);
+  // The deprecated extension spelling keeps its migration hint, read statically (Codex review round 11).
+  if (vocabulary === "extension" && (await readStaticDeprecationHints(projectRoot))) {
+    printError(renderPmCommandAliasMigrationHint(resolvePmCommandAlias("extension")!));
+  }
+  // The static route skips the host's default-format step, so it applies the tracker default itself, and only
+  // when the caller requested no encoding (Codex review rounds 9 and 11).
+  const globalOptions = baseGlobalOptions.json === true || options.outputFormat !== undefined ? baseGlobalOptions : {
+    ...baseGlobalOptions,
+    defaultOutputFormat: await readStaticDefaultOutputFormat(projectRoot),
+  };
+  if (options.global === true && (options.project === true || options.local === true)) {
+    throw new PmCliError("--global and --project/--local are mutually exclusive.", EXIT_CODE.USAGE);
+  }
+  refuseStaticInventoryReadOutputControls({ ...globalOptions, outputFormat: options.outputFormat });
+  const fields = parseListingFields(options.fields, INVENTORY_ROW_FIELDS, "list");
+  const result = await inspectStaticExtensionInventory({
+    pmRoot: projectRoot,
+    scope: options.global === true ? "global" : "project",
+    name,
+  });
+  printResult(fields === undefined ? result : { ...result, extensions: projectListingRows(result.extensions, fields) }, globalOptions);
+  if (!result.complete) {
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
+}
 
 type ExtensionSubcommandAction =
   | "init"
@@ -857,27 +892,7 @@ function registerLifecycleCommand(
       .description(`List installed ${plural} in the selected scope, with the last observed update, without activating extension code.`),
     vocabulary,
   ).action(async (name: string | undefined, _options: Record<string, unknown>, command) => {
-    const baseGlobalOptions = getGlobalOptions(command);
-    const options = command.optsWithGlobals() as Record<string, unknown>;
-    // The static route skips the host's default-format step, so it applies the tracker default itself.
-    const globalOptions = baseGlobalOptions.json === true ? baseGlobalOptions : {
-      ...baseGlobalOptions,
-      defaultOutputFormat: await readStaticDefaultOutputFormat(resolvePmRoot(process.cwd(), baseGlobalOptions.path)),
-    };
-    if (options.global === true && (options.project === true || options.local === true)) {
-      throw new PmCliError("--global and --project/--local are mutually exclusive.", EXIT_CODE.USAGE);
-    }
-    refuseStaticInventoryReadOutputControls({ ...globalOptions, outputFormat: options.outputFormat });
-    const fields = parseListingFields(options.fields, INVENTORY_ROW_FIELDS, "list");
-    const result = await inspectStaticExtensionInventory({
-      pmRoot: resolvePmRoot(process.cwd(), globalOptions.path),
-      scope: options.global === true ? "global" : "project",
-      name,
-    });
-    printResult(fields === undefined ? result : { ...result, extensions: projectListingRows(result.extensions, fields) }, globalOptions);
-    if (!result.complete) {
-      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-    }
+    await runStaticInventoryCommand(name, command, vocabulary);
   });
 
   addLifecycleScopeOptions(

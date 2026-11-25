@@ -10,7 +10,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { normalizeManagedState, type ManagedExtensionRecord } from "./managed-state.js";
 import { normalizeExtensionNameForMatch, normalizeStringList, parseExtensionManifest } from "./shared.js";
-import { findApplicableUpdateObservation, readExtensionUpdateObservations, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
+import { findApplicableUpdateObservation, readBoundedRegularFile, readExtensionUpdateObservations, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
 
 /** One read failure or malformed document that prevents a complete inventory. */
 export interface StaticExtensionInventoryError {
@@ -100,20 +100,41 @@ export function refuseStaticInventoryReadOutputControls(controls: StaticInventor
   );
 }
 
+/** A settings.json larger than this is not read for presentation defaults. */
+const MAX_STATIC_SETTINGS_BYTES = 4 * 1024 * 1024;
+
 /**
- * The tracker's configured default output format (`output.default_format`), read from
- * settings.json without the general settings reader, which may scaffold schema files,
- * so the static listing renders as every other command does (Codex review round 9).
- * Absent, unreadable or unknown values yield undefined.
+ * The parsed settings.json of a tracker, read through the guarded bounded reader and
+ * without the general settings reader, which may scaffold schema files; undefined when
+ * absent, unreadable, not a regular file or malformed.
  */
-export async function readStaticDefaultOutputFormat(pmRoot: string): Promise<"json" | "toon" | undefined> {
+async function readStaticSettingsDocument(pmRoot: string): Promise<Record<string, unknown> | undefined> {
   try {
-    const parsed: unknown = JSON.parse(await fs.readFile(path.join(pmRoot, "settings.json"), "utf8"));
-    const format = (parsed as { output?: { default_format?: unknown } }).output?.default_format;
-    return format === "json" || format === "toon" ? format : undefined;
+    const raw = await readBoundedRegularFile(path.join(pmRoot, "settings.json"), MAX_STATIC_SETTINGS_BYTES);
+    const parsed: unknown = raw === undefined ? undefined : JSON.parse(raw);
+    return typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : undefined;
   } catch {
     return undefined;
   }
+}
+
+/**
+ * The tracker's configured default output format (`output.default_format`), so the static
+ * listing renders as every other command does (Codex review round 9). Absent, unreadable or
+ * unknown values yield undefined.
+ */
+export async function readStaticDefaultOutputFormat(pmRoot: string): Promise<"json" | "toon" | undefined> {
+  const format = ((await readStaticSettingsDocument(pmRoot))?.output as { default_format?: unknown } | undefined)?.default_format;
+  return format === "json" || format === "toon" ? format : undefined;
+}
+
+/**
+ * Whether the tracker shows deprecation hints (`ux.deprecation_hints`, on by default), read
+ * statically so the deprecated `pm extension list` spelling keeps its migration hint without
+ * leaving the no-activation path (Codex review round 11).
+ */
+export async function readStaticDeprecationHints(pmRoot: string): Promise<boolean> {
+  return ((await readStaticSettingsDocument(pmRoot))?.ux as { deprecation_hints?: unknown } | undefined)?.deprecation_hints !== false;
 }
 
 /** Row keys `pm package list --fields` selects from, in their emitted order. */

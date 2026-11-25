@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
 import { isStaticExtensionInventoryInvocation, shouldRegisterDynamicExtensionPaths } from "../../../src/cli/runtime/selection.js";
 import { createPmCliProgram } from "../../../src/sdk/cli-program.js";
-import { readStaticDefaultOutputFormat, refuseStaticInventoryReadOutputControls } from "../../../src/sdk/extension/static-inventory.js";
+import { readStaticDefaultOutputFormat, readStaticDeprecationHints, refuseStaticInventoryReadOutputControls } from "../../../src/sdk/extension/static-inventory.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("static inventory read-output controls", () => {
@@ -124,6 +124,34 @@ describe("static extension inventory command routing", () => {
         expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe" }]);
         await writeFile(settingsPath, JSON.stringify(settings));
         expect(await readStaticDefaultOutputFormat(path.join(pmPath, "missing"))).toBeUndefined();
+        // A settings path that is not a regular file, or a document that is not an object, yields no defaults.
+        const odd = path.join(pmPath, "odd-root");
+        await mkdir(path.join(odd, "settings.json"), { recursive: true });
+        expect(await readStaticDefaultOutputFormat(odd)).toBeUndefined();
+        await rm(path.join(odd, "settings.json"), { recursive: true });
+        await writeFile(path.join(odd, "settings.json"), "null");
+        expect(await readStaticDefaultOutputFormat(odd)).toBeUndefined();
+        expect(await readStaticDeprecationHints(odd)).toBe(true);
+        // Deprecation hints default on and follow ux.deprecation_hints; the deprecated extension spelling prints one.
+        expect(await readStaticDeprecationHints(pmPath)).toBe(true);
+        const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        try {
+          await run(["extension", "list", "--fields", "name"]);
+          output.pop();
+          expect(stderr.mock.calls.map(([chunk]) => String(chunk)).join("")).toContain("extension");
+          stderr.mockClear();
+          await writeFile(settingsPath, JSON.stringify({ ...settings, ux: { ...settings.ux, deprecation_hints: false } }));
+          expect(await readStaticDeprecationHints(pmPath)).toBe(false);
+          await run(["extension", "list", "--fields", "name"]);
+          output.pop();
+          expect(stderr).not.toHaveBeenCalled();
+        } finally {
+          stderr.mockRestore();
+          await writeFile(settingsPath, JSON.stringify(settings));
+        }
+        // An explicit encoding never needs the settings default.
+        await run(["package", "list", "--output-format", "json", "--fields", "name"]);
+        expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe" }]);
         await run(["package", "list", "--output-budget", "unbounded"]);
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ updates_available: 1 });
         // A same-named copy in another directory does not borrow the managed copy's installation identity.
