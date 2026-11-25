@@ -182,6 +182,22 @@ describe("extension update observations", () => {
     await expect(fs.readdir(path.join(scopeRoot, "locks"))).resolves.not.toContain("extension-update-observations.lock");
   });
 
+  it("keeps new answers when the managed state is unreadable mid-write, and prunes on the next complete read (Codex review round 5)", async () => {
+    await writeManagedState([record({ name: "pm-github" })]);
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github" })]);
+    // A lifecycle write is half done: the merge keeps the stored answer and adds the new one.
+    await fs.writeFile(path.join(scopeRoot, "extensions", ".managed-extensions.json"), "{\"version\":1,\"entr");
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [
+      observation({ name: "pm-csv" }),
+      observation({ name: "pm-github", remote_version: "older", checked_at: "2026-11-01T00:00:00.000Z" }),
+    ]);
+    expect((await readExtensionUpdateObservations(scopeRoot)).map((entry) => [entry.name, entry.remote_version])).toEqual([["pm-csv", "2026.11.23"], ["pm-github", "2026.11.23"]]);
+    // Once the state is readable again, rows for packages no longer installed are dropped.
+    await writeManagedState([record({ name: "pm-github" })]);
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github", checked_at: "2026-11-25T00:00:00.000Z" })]);
+    expect((await readExtensionUpdateObservations(scopeRoot)).map((entry) => entry.name)).toEqual(["pm-github"]);
+  });
+
   it("refuses to write a record larger than the reader would accept", async () => {
     const records = Array.from({ length: 4000 }, (_, index) => record({ name: `pm-${"x".repeat(200)}-${index}`, directory: `d${index}` }));
     await writeManagedState(records);
@@ -212,19 +228,25 @@ describe("extension update observations", () => {
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
     await fs.writeFile(file, JSON.stringify(null));
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
-    const valid = observation({ name: "kept", remote_version: 7 as unknown as string });
+    // Another envelope version is not one this reader understands (Codex review round 5).
+    await fs.writeFile(file, JSON.stringify({ version: 2, observations: [observation()] }));
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+    const valid = observation({ name: "kept", remote_version: null });
     await fs.writeFile(file, JSON.stringify({
+      version: 1,
       observations: [
+        // A wrong-typed remote version is not a row pm wrote, so it cannot count as an update (Codex review round 5).
+        { ...valid, remote_version: { injected: true } }, { ...valid, remote_version: 7 },
         null, [], { ...valid, name: "" }, { ...valid, update_available: "yes" }, { ...valid, installed_version: undefined },
         { ...valid, installed_updated_at: undefined }, { ...valid, checked_at: undefined }, { ...valid, checked_at: "not a time" },
         // A check dated beyond the clock-skew tolerance would outrank every later check (Codex review round 4).
         { ...valid, checked_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() }, valid,
       ],
     }));
-    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([{ ...valid, remote_version: null }]);
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([valid]);
     // A link to a record elsewhere is not followed.
     const outside = path.join(scopeRoot, "outside.json");
-    await fs.writeFile(outside, JSON.stringify({ observations: [valid] }));
+    await fs.writeFile(outside, JSON.stringify({ version: 1, observations: [valid] }));
     await fs.rm(file);
     await fs.symlink(outside, file);
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
@@ -289,7 +311,7 @@ describe("extension update observations", () => {
   it("never reads or writes through a runtime path that is not a real directory", async () => {
     const elsewhere = path.join(scopeRoot, "elsewhere");
     await fs.mkdir(elsewhere);
-    await fs.writeFile(path.join(elsewhere, "extension-update-observations.json"), JSON.stringify({ observations: [observation()] }));
+    await fs.writeFile(path.join(elsewhere, "extension-update-observations.json"), JSON.stringify({ version: 1, observations: [observation()] }));
     await fs.symlink(elsewhere, path.join(scopeRoot, "runtime"));
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
     await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow(/is not a directory/);

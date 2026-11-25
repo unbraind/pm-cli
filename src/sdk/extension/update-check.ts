@@ -359,7 +359,8 @@ export async function checkNpmUpdate(
   npmRunner: UpdateQueryRunner = runNpmUpdateQuery,
   timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
 ): Promise<NpmUpdateStatus> {
-  const checkedAt = nowIso();
+  // checked_at is the completion time (the documented contract), so the newest-wins observation merge orders
+  // overlapping checks by when they finished, not when they started (CodeRabbit review round 4).
   try {
     if (source.kind !== "npm" || !source.package || !/^(?:@[a-zA-Z0-9._-]+\/)?[a-zA-Z0-9._-]+$/u.test(source.package)) {
       throw new Error("missing_or_invalid_npm_package_identity");
@@ -375,9 +376,9 @@ export async function checkNpmUpdate(
     const version: unknown = Array.isArray(output) && output.length === 1 ? output[0] : output;
     const latestVersion = resolveExactNpmVersion(source.package, version, "invalid_npm_registry_version");
     // One verdict for manage and the offline readers: newer under SemVer precedence, never a downgrade (pm-gh1778).
-    return { checked_at: checkedAt, available: isNewerRegistryVersion(latestVersion, installedVersion), remote_version: latestVersion };
+    return { checked_at: nowIso(), available: isNewerRegistryVersion(latestVersion, installedVersion), remote_version: latestVersion };
   } catch (error: unknown) {
-    return failedUpdateStatus(checkedAt, error);
+    return failedUpdateStatus(nowIso(), error);
   }
 }
 
@@ -426,10 +427,9 @@ export const checkGithubUpdate = async (
   gitCommandRunner: UpdateQueryRunner = runGitUpdateQuery,
   timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
 ): Promise<GithubUpdateStatus> => {
-  const checkedAt = nowIso();
   if (source.kind !== "github" || !source.repository) {
     return {
-      checked_at: checkedAt,
+      checked_at: nowIso(),
       available: null,
       error: "not_a_github_managed_source",
     };
@@ -440,8 +440,8 @@ export const checkGithubUpdate = async (
       ["ls-remote", source.repository, ref, `${ref}^{}`],
       timeoutMs,
     );
-    return resolveGithubUpdateOutput(output, source.commit, checkedAt);
+    return resolveGithubUpdateOutput(output, source.commit, nowIso());
   } catch (error: unknown) {
-    return failedUpdateStatus(checkedAt, error);
+    return failedUpdateStatus(nowIso(), error);
   }
 };

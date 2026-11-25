@@ -49,6 +49,11 @@ describe("static extension inventory command routing", () => {
     // Inherited host options between the noun and the verb skip their values (Codex review round 4).
     expect(isStaticExtensionInventoryInvocation(["package", "--pm-path", "/work/tracker", "list"])).toBe(true);
     expect(isStaticExtensionInventoryInvocation(["package", "--output-budget", "unbounded", "list"])).toBe(true);
+    // Decided on the invocation Commander parses: a runner-injected pm token and a leading -- (Codex review round 5).
+    expect(isStaticExtensionInventoryInvocation(["pm", "package", "list"])).toBe(true);
+    expect(isStaticExtensionInventoryInvocation(["--", "package", "list"])).toBe(true);
+    // An invocation normalization refuses is never treated as the static listing.
+    expect(isStaticExtensionInventoryInvocation(["get", "pm-1", "--id", "pm-2"])).toBe(false);
   });
 
   it("dispatches source CLI inventory with scope and incomplete-read receipts", async () => {

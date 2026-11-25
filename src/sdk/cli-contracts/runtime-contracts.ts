@@ -879,6 +879,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   // The `list` alias of the installed-package inventory (pm-gh1777), discoverable under the spelling agents use.
   ["package list", EXTENSION_INVENTORY_FLAG_CONTRACTS],
   ["packages list", EXTENSION_INVENTORY_FLAG_CONTRACTS],
+  ["extension list", EXTENSION_INVENTORY_FLAG_CONTRACTS],
   ["init", INIT_FLAG_CONTRACTS],
   ["config", CONFIG_FLAG_CONTRACTS],
   ["extension", EXTENSION_FLAG_CONTRACTS],

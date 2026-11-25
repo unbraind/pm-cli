@@ -356,6 +356,8 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
   it("keeps a --fields projection on its explore or manage subcommand route (pm-gh1777)", () => {
     expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--fields", "name"])).toEqual(["extension", "explore", "--fields", "name"]);
     expect(normalizeLegacyExtensionActionSyntax(["extension", "manage", "--offline", "--fields=name"])).toEqual(["extension", "manage", "--offline", "--fields=name"]);
+    // A bare fields= assignment is normalized to --fields later, so it keeps the subcommand route too (Codex review round 5).
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "fields=bogus"])).toEqual(["extension", "explore", "fields=bogus"]);
   });
 
   it("converts 'extension install' to 'extension --install'", () => {

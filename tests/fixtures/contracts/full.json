@@ -1877,11 +1877,24 @@
     },
     {
       "aliases": [
+        "extension list",
         "package list",
         "packages list"
       ],
       "canonical": "package inventory",
       "contracts": [
+        {
+          "alias": "extension list",
+          "canonical": "package inventory",
+          "canonical_argv": [
+            "package",
+            "inventory"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-gh1777",
+          "registration": "commander"
+        },
         {
           "alias": "package list",
           "canonical": "package inventory",
@@ -2119,6 +2132,7 @@
           "extension init",
           "extension install",
           "extension inventory",
+          "extension list",
           "extension manage",
           "extension migrate",
           "extension reload",
@@ -4799,6 +4813,33 @@
     },
     {
       "command": "extension inventory",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "extension list",
       "flags": [
         {
           "flag": "--project"
@@ -14275,6 +14316,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "extension list",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension list",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "extension manage",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -18481,6 +18549,19 @@
       "intent_source": "generated"
     },
     {
+      "command": "extension list",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "List extension.",
+      "intent_source": "generated"
+    },
+    {
       "command": "extension manage",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
@@ -21477,6 +21558,7 @@
     "extension init",
     "extension install",
     "extension inventory",
+    "extension list",
     "extension manage",
     "extension migrate",
     "extension reload",
@@ -31582,6 +31664,14 @@
         "target": "package"
       },
       {
+        "command": "extension list",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "extension manage",
         "disposition": "consolidation",
         "noun": "package",
@@ -33862,6 +33952,18 @@
       },
       {
         "command": "extension inventory",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension list",
         "slots": [
           {
             "name": "name",

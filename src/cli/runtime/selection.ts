@@ -32,10 +32,19 @@ const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
  * parser flag normalization uses (`pm package --offline list`).
  */
 function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean {
-  const nounIndex = findBootstrapCommandTokenIndex(invocationArgv);
+  // Decide on the invocation Commander will parse: a runner-injected `pm` token is stripped by normalization,
+  // and operands after a leading `--` still route to the command (Codex review round 5).
+  let normalized: string[];
+  try {
+    normalized = normalizeBootstrapInvocation(invocationArgv).argv;
+  } catch {
+    return false;
+  }
+  const argv = normalized[0] === "--" ? normalized.slice(1) : normalized;
+  const nounIndex = findBootstrapCommandTokenIndex(argv);
   if (nounIndex === undefined) return false;
-  return ["package", "packages", "extension"].includes(invocationArgv[nounIndex]!) &&
-    ["inventory", "list"].includes(resolveLifecycleVerb(invocationArgv.slice(nounIndex + 1)) ?? "");
+  return ["package", "packages", "extension"].includes(argv[nounIndex]!) &&
+    ["inventory", "list"].includes(resolveLifecycleVerb(argv.slice(nounIndex + 1)) ?? "");
 }
 
 /** Protect literal preview candidates in the item namespace until the real parser settles the selected action; host-owned global grammar also captures the tracker roots. */

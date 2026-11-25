@@ -24,6 +24,9 @@ import { normalizeExtensionNameForMatch } from "./shared.js";
 /** File name of the observation record under a scope's `runtime/` directory. */
 export const EXTENSION_UPDATE_OBSERVATIONS_FILE = "extension-update-observations.json";
 
+/** Envelope version of the observation record. */
+const OBSERVATIONS_RECORD_VERSION = 1;
+
 /** A record larger than this is not one pm wrote, so it reads as no knowledge. */
 const MAX_OBSERVATIONS_BYTES = 1024 * 1024;
 
@@ -64,25 +67,44 @@ export function resolveExtensionUpdateObservationsPath(scopeRoot: string): strin
   return path.join(scopeRoot, "runtime", EXTENSION_UPDATE_OBSERVATIONS_FILE);
 }
 
+/** A non-empty string field of a row, or undefined. */
+function readRowText(row: Record<string, unknown>, key: string): string | undefined {
+  const value = row[key];
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+/**
+ * Whether a recorded check time can order observations: it must parse, and lie no
+ * further in the future than the clock-skew tolerance (a check saved while the
+ * clock ran ahead would otherwise outrank every later check).
+ */
+function isUsableCheckTime(checkedAt: string): boolean {
+  const checkedAtMs = Date.parse(checkedAt);
+  return Number.isFinite(checkedAtMs) && checkedAtMs <= Date.now() + MAX_FUTURE_CHECK_SKEW_MS;
+}
+
+/** The remote version of a row: a non-empty string or null, or undefined when the value is not one pm writes. */
+function readRowRemoteVersion(row: Record<string, unknown>): string | null | undefined {
+  if (row.remote_version === undefined || row.remote_version === null) return null;
+  return readRowText(row, "remote_version");
+}
+
 /** Keep only well-formed rows; a malformed record reads as no knowledge, never as a refusal. */
 function parseObservation(value: unknown): ExtensionUpdateObservation | undefined {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
   const row = value as Record<string, unknown>;
-  const text = (key: string): string | undefined => (typeof row[key] === "string" && (row[key] as string).length > 0 ? (row[key] as string) : undefined);
-  const name = text("name");
-  const installedVersion = text("installed_version");
-  const installedUpdatedAt = text("installed_updated_at");
-  const checkedAt = text("checked_at");
-  if (name === undefined || installedVersion === undefined || installedUpdatedAt === undefined || checkedAt === undefined || typeof row.update_available !== "boolean") return undefined;
-  // Ordering compares check times, so a row whose time does not parse is not one pm wrote, and one dated
-  // beyond the clock-skew tolerance (a check saved while the clock ran ahead) would outrank every later check.
-  const checkedAtMs = Date.parse(checkedAt);
-  if (!Number.isFinite(checkedAtMs) || checkedAtMs > Date.now() + MAX_FUTURE_CHECK_SKEW_MS) return undefined;
+  const name = readRowText(row, "name");
+  const installedVersion = readRowText(row, "installed_version");
+  const installedUpdatedAt = readRowText(row, "installed_updated_at");
+  const checkedAt = readRowText(row, "checked_at");
+  const remoteVersion = readRowRemoteVersion(row);
+  if (name === undefined || installedVersion === undefined || installedUpdatedAt === undefined || remoteVersion === undefined) return undefined;
+  if (checkedAt === undefined || !isUsableCheckTime(checkedAt) || typeof row.update_available !== "boolean") return undefined;
   return {
     name,
     installed_version: installedVersion,
     installed_updated_at: installedUpdatedAt,
-    remote_version: text("remote_version") ?? null,
+    remote_version: remoteVersion,
     update_available: row.update_available,
     checked_at: checkedAt,
   };
@@ -110,9 +132,9 @@ export async function readExtensionUpdateObservations(scopeRoot: string): Promis
     const raw = await readBoundedRegularFile(file, MAX_OBSERVATIONS_BYTES);
     if (raw === undefined) return [];
     const parsed: unknown = JSON.parse(raw);
-    const rows = typeof parsed === "object" && parsed !== null && Array.isArray((parsed as { observations?: unknown }).observations)
-      ? (parsed as { observations: unknown[] }).observations
-      : [];
+    // Only the envelope version this reader understands is read; another version reads as no knowledge.
+    const envelope = typeof parsed === "object" && parsed !== null ? (parsed as { version?: unknown; observations?: unknown }) : {};
+    const rows = envelope.version === OBSERVATIONS_RECORD_VERSION && Array.isArray(envelope.observations) ? envelope.observations : [];
     return rows.flatMap((row) => parseObservation(row) ?? []);
   } catch {
     return [];
@@ -175,6 +197,17 @@ export function collectExtensionUpdateObservations(entries: readonly ManagedExte
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+/** The latest observation for each installation (name, manifest version, managed record) among candidates. */
+function latestPerInstallation(candidates: readonly ExtensionUpdateObservation[]): ExtensionUpdateObservation[] {
+  const latest = new Map<string, ExtensionUpdateObservation>();
+  for (const entry of candidates) {
+    const key = `${normalizeExtensionNameForMatch(entry.name)}\u0000${entry.installed_version}\u0000${entry.installed_updated_at}`;
+    const current = latest.get(key);
+    if (current === undefined || Date.parse(current.checked_at) <= Date.parse(entry.checked_at)) latest.set(key, entry);
+  }
+  return [...latest.values()];
+}
+
 /** Whether an observation was taken against this managed installation. */
 function describesInstallation(entry: ExtensionUpdateObservation, record: ManagedExtensionRecord): boolean {
   return normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(record.name) &&
@@ -208,13 +241,14 @@ export async function recordExtensionUpdateObservations(
   try {
     await assertRuntimeDirectory();
     const candidates = [...(await readExtensionUpdateObservations(scopeRoot)), ...observations];
-    const rows = (await readManagedExtensionState(extensionsRoot)).state.entries.flatMap((record) => {
-      const latest = candidates
-        .filter((entry) => describesInstallation(entry, record))
-        .sort((left, right) => Date.parse(right.checked_at) - Date.parse(left.checked_at))[0];
-      return latest === undefined ? [] : [latest];
-    }).sort((left, right) => left.name.localeCompare(right.name));
-    const serialized = `${JSON.stringify({ version: 1, observations: rows }, null, 2)}\n`;
+    const records = await readManagedExtensionState(extensionsRoot).then((managed) => managed.state.entries, () => undefined);
+    const rows = (records === undefined
+      // Managed state unreadable at this moment (a lifecycle write in progress): keep every answer, the latest per
+      // installation, and leave pruning to the next merge that reads a complete snapshot (Codex review round 5).
+      ? latestPerInstallation(candidates)
+      : records.flatMap((record) => latestPerInstallation(candidates.filter((entry) => describesInstallation(entry, record))))
+    ).sort((left, right) => left.name.localeCompare(right.name));
+    const serialized = `${JSON.stringify({ version: OBSERVATIONS_RECORD_VERSION, observations: rows }, null, 2)}\n`;
     if (Buffer.byteLength(serialized, "utf8") > MAX_OBSERVATIONS_BYTES) throw new Error("update observation record exceeds its size limit");
     await writeFileAtomic(file, serialized);
   } finally {

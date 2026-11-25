@@ -388,7 +388,8 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
     return [...argv];
   }
   // Row projection is a subcommand option (pm-gh1777): keep `pm extension explore --fields ...` on its subcommand route.
-  if (argv.some((token) => token === "--fields" || token.startsWith("--fields="))) {
+  // A bare `fields=...` assignment is normalized to --fields later, so it counts too (Codex review round 5).
+  if (argv.some((token) => token === "--fields" || token.startsWith("--fields=") || token.startsWith("fields="))) {
     return [...argv];
   }
   const forcedActionFlag = `--${actionToken}`;
