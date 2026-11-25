@@ -72,7 +72,7 @@ describe("action-scoped MCP schema parity", () => {
     }
   });
   it("versions additive lifecycle and focus contracts", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.28.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.28.1");
     expect(PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("1.12.0");
     const release = _testOnlyCliContracts.buildActionScopedToolSchema("release") as SchemaWithProperties & { allOf: Array<{ if?: { required?: string[] }; then?: unknown }> };
     expect(release.properties?.handoff).toMatchObject({ type: "string" });

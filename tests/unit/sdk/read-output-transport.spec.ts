@@ -458,6 +458,8 @@ describe("universal read-output transport contracts", () => {
     for (const action of ["package", "extension"]) {
       expect(optionsWithAuthor({ fields: "name,version" }, action)).toMatchObject({ fields: "name,version" });
       expect(optionsWithAuthor({ fields: "name", options: { fields: "version" } }, action)).toMatchObject({ fields: "version" });
+      // A flat scope selects the lifecycle scope too (Codex review round 13).
+      expect(optionsWithAuthor({ scope: "global" }, action)).toMatchObject({ scope: "global" });
     }
   });
 

@@ -56,9 +56,10 @@ export async function refreshManagedExtensionUpdates(
   // teardown.
   const providers = createPermits(MANAGED_UPDATE_CHECK_CONCURRENCY);
   const entries = await mapWithFixedConcurrency(state.entries, MANAGED_UPDATE_CHECK_CONCURRENCY, async (entry) => {
-    // A non-registry npm source (a local path, tarball, git or URL artifact) has no registry release to compare.
-    if (!["github", "npm"].includes(entry.source.kind) || (entry.source.kind === "npm" && !isRegistryNpmSource(entry.source))) return entry;
-    if (offline) return withUpdateCheckTimeout({
+    if (!["github", "npm"].includes(entry.source.kind)) return entry;
+    // A non-registry npm source (a local path, tarball, git or URL artifact) has no registry release to compare, and
+    // never exposes a stored verdict either, online or offline (CodeRabbit review round 8).
+    if (offline || (entry.source.kind === "npm" && !isRegistryNpmSource(entry.source))) return withUpdateCheckTimeout({
       ...entry, last_update_check_at: undefined, last_update_remote_commit: undefined,
       last_update_remote_version: undefined, update_available: null, update_error: undefined,
     }, undefined);

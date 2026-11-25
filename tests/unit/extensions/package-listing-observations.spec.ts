@@ -230,10 +230,15 @@ describe("extension update observations", () => {
     }
   });
 
-  it("skips the live registry lookup for a non-registry npm source", async () => {
-    const tarball = record({ name: "pm-tarball", source: { kind: "npm", input: "npm:./pm-tarball-1.0.0.tgz", location: ".", package: "pm-tarball", version: "1.0.0" } });
+  it("skips the live registry lookup for a non-registry npm source and clears any stored verdict (CodeRabbit review round 8)", async () => {
+    const tarball = record({
+      name: "pm-tarball", source: { kind: "npm", input: "npm:./pm-tarball-1.0.0.tgz", location: ".", package: "pm-tarball", version: "1.0.0" },
+      last_update_check_at: "2026-11-01T00:00:00.000Z", last_update_remote_version: "2.0.0", update_available: true,
+    });
     const refreshed = await refreshManagedExtensionUpdates({ version: 1, updated_at: "2026-10-04T00:00:00.000Z", entries: [tarball] });
-    expect(refreshed.entries).toEqual([tarball]);
+    expect(refreshed.entries[0]).toMatchObject({ name: "pm-tarball", update_available: null });
+    expect(refreshed.entries[0]?.last_update_check_at).toBeUndefined();
+    expect(refreshed.entries[0]?.last_update_remote_version).toBeUndefined();
   });
 
   it("refuses to write a record larger than the reader would accept", async () => {
@@ -263,6 +268,9 @@ describe("extension update observations", () => {
     // An edited row claiming an older npm release, or an update with no version, is not one a check produced.
     expect(findApplicableUpdateObservation([observation({ remote_version: "2026.1.1" })], { ...installed, source: npm })).toBeUndefined();
     expect(findApplicableUpdateObservation([observation({ remote_version: null })], { ...installed, source: npm })).toBeUndefined();
+    // A cached registry version the live check would refuse (not exact SemVer) is rejected (Codex review round 13).
+    expect(findApplicableUpdateObservation([observation({ remote_version: "not-a-version" })], { ...installed, source: npm })).toBeUndefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: "v2026.11.23" })], { ...installed, source: npm })).toBeUndefined();
     // Without a recorded npm version, the manifest version the observation was taken against is compared.
     const { version: _version, ...unversioned } = npm;
     expect(findApplicableUpdateObservation([observation()], { ...installed, source: unversioned })?.remote_version).toBe("2026.11.23");
@@ -358,6 +366,9 @@ describe("extension update observations", () => {
   it("opens without following a link or blocking where the platform supports it", () => {
     expect(resolveGuardedReadFlags({ O_RDONLY: 0 })).toBe(0);
     expect(resolveGuardedReadFlags({ O_RDONLY: 0, O_NOFOLLOW: 4, O_NONBLOCK: 8 })).toBe(12);
+    // A reader that honors links keeps only the non-blocking flag.
+    expect(resolveGuardedReadFlags({ O_RDONLY: 0, O_NOFOLLOW: 4, O_NONBLOCK: 8 }, true)).toBe(8);
+    expect(resolveGuardedReadFlags({ O_RDONLY: 0 }, true)).toBe(0);
   });
 
   it.skipIf(process.platform === "win32")("never blocks on a FIFO in place of the managed state while merging (Codex review round 11)", async () => {

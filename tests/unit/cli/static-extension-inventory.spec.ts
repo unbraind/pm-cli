@@ -1,11 +1,21 @@
-import { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import fs, { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
 import { isStaticExtensionInventoryInvocation, shouldRegisterDynamicExtensionPaths } from "../../../src/cli/runtime/selection.js";
 import { createPmCliProgram } from "../../../src/sdk/cli-program.js";
-import { readStaticDefaultOutputFormat, readStaticDeprecationHints, refuseStaticInventoryReadOutputControls } from "../../../src/sdk/extension/static-inventory.js";
+import { inspectStaticExtensionInventory, readStaticDefaultOutputFormat, readStaticDeprecationHints, refuseStaticInventoryForeignOptions, refuseStaticInventoryReadOutputControls } from "../../../src/sdk/extension/static-inventory.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+
+describe("static inventory foreign lifecycle options", () => {
+  it("refuses options of other package actions and accepts the already-satisfied --offline (Codex review round 13)", () => {
+    expect(() => refuseStaticInventoryForeignOptions({ offline: true, fields: "name", global: true })).not.toThrow();
+    expect(() => refuseStaticInventoryForeignOptions({ fixManagedState: false })).not.toThrow();
+    expect(() => refuseStaticInventoryForeignOptions({ fixManagedState: true })).toThrow("--fix-managed-state does not apply to pm package list");
+    expect(() => refuseStaticInventoryForeignOptions({ runtimeProbe: true, detail: "deep" })).toThrow("--runtime-probe, --detail do not apply");
+  });
+});
 
 describe("static inventory read-output controls", () => {
   it("refuses every row-shaping control and keeps format and an unbounded budget", () => {
@@ -166,6 +176,7 @@ describe("static extension inventory command routing", () => {
         expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe", update: null }]);
         await rm(managedPath);
         await writeFile(managedPath, managedText);
+        await expect(run(["package", "list", "--fix-managed-state"])).rejects.toThrow("--fix-managed-state does not apply");
         // A same-named copy in another directory does not borrow the managed copy's installation identity.
         const copyRoot = path.join(pmPath, "extensions", "source-probe-copy");
         await mkdir(copyRoot, { recursive: true });
@@ -186,6 +197,33 @@ describe("static extension inventory command routing", () => {
       } finally {
         process.exitCode = previousExitCode;
         stdout.mockRestore();
+      }
+    });
+  });
+});
+
+describe("static inventory manifest reads", () => {
+  it.skipIf(process.platform === "win32")("reports a FIFO manifest as unreadable instead of hanging, and still follows a linked manifest (Codex review round 13)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const fifoRoot = path.join(pmPath, "extensions", "fifo-probe");
+      const linkRoot = path.join(pmPath, "extensions", "link-probe");
+      await mkdir(fifoRoot, { recursive: true });
+      await mkdir(linkRoot, { recursive: true });
+      execFileSync("mkfifo", [path.join(fifoRoot, "manifest.json")]);
+      const real = path.join(pmPath, "link-probe-manifest.json");
+      await writeFile(real, JSON.stringify({ name: "link-probe", version: "1.0.0", entry: "./index.mjs", manifest_version: 1, capabilities: [] }));
+      await symlink(real, path.join(linkRoot, "manifest.json"));
+      const result = await inspectStaticExtensionInventory({ pmPath, pmRoot: pmPath } as never);
+      expect(result.complete).toBe(false);
+      expect(result.errors).toContainEqual({ code: "manifest_unreadable", path: path.join(fifoRoot, "manifest.json") });
+      expect(result.extensions.find((entry) => entry.directory === "link-probe")).toMatchObject({ name: "link-probe", status: "installed" });
+      // A manifest read that fails for a reason other than absence is unreadable, not invalid.
+      const spy = vi.spyOn(fs, "open").mockRejectedValue(Object.assign(new Error("denied"), { code: "EACCES" }));
+      try {
+        const denied = await inspectStaticExtensionInventory({ pmRoot: pmPath, name: "link-probe" });
+        expect(denied.errors).toContainEqual({ code: "manifest_unreadable", path: path.join(linkRoot, "manifest.json") });
+      } finally {
+        spy.mockRestore();
       }
     });
   });

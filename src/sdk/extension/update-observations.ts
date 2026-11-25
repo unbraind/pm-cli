@@ -15,6 +15,7 @@
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import semver from "semver";
 import { acquireLockLease } from "../../core/lock/lock.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { normalizeManagedState, resolveManagedExtensionStatePath, type ManagedExtensionRecord } from "./managed-state.js";
@@ -27,6 +28,9 @@ export const EXTENSION_UPDATE_OBSERVATIONS_FILE = "extension-update-observations
 
 /** Envelope version of the observation record. */
 const OBSERVATIONS_RECORD_VERSION = 1;
+
+/** Size of each read of a guarded file; a small file never allocates its ceiling. */
+const READ_CHUNK_BYTES = 64 * 1024;
 
 /** Ceiling for the managed install state read while merging (its contribution maps make it the largest input). */
 const MAX_MANAGED_STATE_BYTES = 16 * 1024 * 1024;
@@ -154,9 +158,12 @@ export async function readExtensionUpdateObservations(scopeRoot: string): Promis
   }
 }
 
-/** Open flags that neither follow a final link nor block on a FIFO, where the platform defines them (Windows has neither). */
-export function resolveGuardedReadFlags(constants: { O_RDONLY: number; O_NOFOLLOW?: number; O_NONBLOCK?: number } = fsConstants): number {
-  return constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+/** Open flags that never block on a FIFO and, unless links are followed, never follow a final link, where the platform defines them (Windows has neither). */
+export function resolveGuardedReadFlags(
+  constants: { O_RDONLY: number; O_NOFOLLOW?: number; O_NONBLOCK?: number } = fsConstants,
+  followLinks = false,
+): number {
+  return constants.O_RDONLY | (followLinks ? 0 : (constants.O_NOFOLLOW ?? 0)) | (constants.O_NONBLOCK ?? 0);
 }
 
 /**
@@ -165,22 +172,26 @@ export function resolveGuardedReadFlags(constants: { O_RDONLY: number; O_NOFOLLO
  * platform supports it, and the checks run on the descriptor, so a file swapped
  * after a path check cannot widen the read.
  */
-export async function readBoundedRegularFile(file: string, limit: number): Promise<string | undefined> {
+export async function readBoundedRegularFile(file: string, limit: number, options: { followLinks?: boolean } = {}): Promise<string | undefined> {
   // The entry itself must be a regular file: where O_NOFOLLOW is undefined (Windows) the open would follow a final link.
-  if (!(await fs.lstat(file)).isFile()) return undefined;
-  const handle = await fs.open(file, resolveGuardedReadFlags());
+  // A caller that honors links (installed manifests, as the runtime loader does) still gets a non-blocking, bounded read.
+  if (options.followLinks !== true && !(await fs.lstat(file)).isFile()) return undefined;
+  const handle = await fs.open(file, resolveGuardedReadFlags(fsConstants, options.followLinks === true));
   try {
     if (!(await handle.stat()).isFile()) return undefined;
-    // Read until end of file, since one read may return fewer bytes (network filesystems); one byte past
-    // the limit proves the file is too large, however it changed since it was opened.
-    const buffer = Buffer.alloc(limit + 1);
+    // Read until end of file in bounded chunks, since one read may return fewer bytes (network filesystems) and a
+    // small file should not allocate the whole ceiling (CodeRabbit review round 8); one byte past the limit proves
+    // the file is too large, however it changed since it was opened.
+    const chunks: Buffer[] = [];
     let total = 0;
     while (total <= limit) {
-      const { bytesRead } = await handle.read(buffer, total, limit + 1 - total, total);
+      const chunk = Buffer.alloc(Math.min(READ_CHUNK_BYTES, limit + 1 - total));
+      const { bytesRead } = await handle.read(chunk, 0, chunk.length, total);
       if (bytesRead === 0) break;
+      chunks.push(chunk.subarray(0, bytesRead));
       total += bytesRead;
     }
-    return total > limit ? undefined : buffer.subarray(0, total).toString("utf8");
+    return total > limit ? undefined : Buffer.concat(chunks, total).toString("utf8");
   } finally {
     await handle.close();
   }
@@ -348,7 +359,9 @@ function isConsistentWithSource(observation: ExtensionUpdateObservation, source:
   if (source === undefined || observation.update_available === false) return true;
   if (source.kind === "github") return true;
   if (!isRegistryNpmSource(source)) return false;
-  return observation.remote_version !== null && isNewerRegistryVersion(observation.remote_version, source.version ?? observation.installed_version);
+  // A registry version the live check would refuse (not exact SemVer) is not one it produced (Codex review round 13).
+  return observation.remote_version !== null && semver.valid(observation.remote_version) === observation.remote_version &&
+    isNewerRegistryVersion(observation.remote_version, source.version ?? observation.installed_version);
 }
 
 /** The newer version an applicable observation reports (`available` when the provider named none), or null when none is known. */

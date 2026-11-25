@@ -51,6 +51,31 @@ export interface StaticExtensionInventoryEntry {
 /** The `--fields` contract every package listing shares (pm-gh1777), published with the listing it serves. */
 export { parseListingFields, projectListingRows } from "./listing-fields.js";
 
+/**
+ * Lifecycle options of other package actions, which the static listing never applies, with their flag spelling.
+ * `--offline` is absent on purpose: the listing never checks remotely, so it is already satisfied.
+ */
+const STATIC_INVENTORY_FOREIGN_OPTIONS: ReadonlyArray<readonly [string, string]> = [
+  ["fixManagedState", "--fix-managed-state"], ["runtimeProbe", "--runtime-probe"],
+  ["trace", "--trace"], ["watch", "--watch"], ["strictExit", "--strict-exit"], ["failOnWarn", "--fail-on-warn"],
+  ["isolated", "--isolated"], ["ignoreGlobal", "--ignore-global"], ["detail", "--detail"], ["dryRun", "--dry-run"],
+];
+
+/**
+ * Refuse a lifecycle option another package action owns. Commander accepts these on the parent command, so
+ * without this check `pm package list --fix-managed-state` would succeed without adopting anything, and a
+ * caller could mistake the listing for the operation it asked for (Codex review round 13).
+ */
+export function refuseStaticInventoryForeignOptions(options: Record<string, unknown>): void {
+  const present = STATIC_INVENTORY_FOREIGN_OPTIONS.filter(([key]) => options[key] !== undefined && options[key] !== false).map(([, flag]) => flag);
+  if (present.length === 0) return;
+  throw new PmCliError(`${present.join(", ")} ${present.length === 1 ? "does" : "do"} not apply to pm package list, a read that changes nothing.`, EXIT_CODE.USAGE, {
+    code: "invalid_argument_value",
+    required: "Drop the option, or run the package action that owns it (pm package manage, pm package doctor, pm package reload).",
+    examples: ["pm package manage --fix-managed-state", "pm package list --fields name,version,update"],
+  });
+}
+
 /** The read-output controls a caller passed, by their global-option keys. */
 export interface StaticInventoryReadOutputControls {
   /** Row cap a read would apply; the inventory cannot page, so any value is refused. */
@@ -99,6 +124,9 @@ export function refuseStaticInventoryReadOutputControls(controls: StaticInventor
     },
   );
 }
+
+/** A manifest larger than this is not one pm can read statically. */
+const MAX_STATIC_MANIFEST_BYTES = 1024 * 1024;
 
 /** A settings.json larger than this is not read for presentation defaults. */
 const MAX_STATIC_SETTINGS_BYTES = 4 * 1024 * 1024;
@@ -259,15 +287,18 @@ async function readManifest(manifestPath: string): Promise<{
   manifest: ReturnType<typeof parseExtensionManifest>;
   error?: StaticExtensionInventoryError;
 }> {
-  let raw: string;
+  let raw: string | undefined;
   try {
-    raw = await fs.readFile(manifestPath, "utf8");
+    // A bounded, non-blocking read that still follows links: a FIFO or endless stream in place of a manifest is
+    // unreadable, never a hang (Codex review round 13).
+    raw = await readBoundedRegularFile(manifestPath, MAX_STATIC_MANIFEST_BYTES, { followLinks: true });
   } catch (error: unknown) {
     if (isMissing(error)) {
       return { manifest: null, error: { code: "manifest_invalid", path: manifestPath } };
     }
     return { manifest: null, error: { code: "manifest_unreadable", path: manifestPath } };
   }
+  if (raw === undefined) return { manifest: null, error: { code: "manifest_unreadable", path: manifestPath } };
   try {
     const manifest = parseExtensionManifest(JSON.parse(raw) as unknown);
     return manifest ? { manifest } : { manifest: null, error: { code: "manifest_invalid", path: manifestPath } };

@@ -203,6 +203,8 @@ export type ExtensionActivationStatus =
 
 /** Documents the extension command options payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCommandOptions {
+  /** Declared lifecycle scope from MCP and SDK callers; selects the same scope as the `project`/`local`/`global` switches. */
+  scope?: "project" | "local" | "global";
   /** Value that configures or reports install for this contract. */
   install?: boolean;
   /** Value that configures or reports uninstall for this contract. */
@@ -963,7 +965,7 @@ const resolveAction = (
 const resolveScope = (options: ExtensionCommandOptions): ExtensionScope => {
   // MCP and SDK callers declare `scope`, which the tool schema advertises; it selects the same scope as the CLI
   // switches, so a package-manage call for the global scope also records its observations there (Codex review round 12).
-  const declaredScope = (options as { scope?: unknown }).scope;
+  const declaredScope = options.scope;
   const projectLike = options.project === true || options.local === true || declaredScope === "project" || declaredScope === "local";
   const global = options.global === true || declaredScope === "global";
   if (projectLike && global) {

@@ -2945,10 +2945,24 @@ function renderExtensionHealthMarkdown(health: ContextExtensionHealth): string[]
   const degradedNames = health.packages.filter((entry) => entry.status === "degraded").map((entry) => escapeMarkdownText(entry.name));
   const next = health.next;
   const updates = next === undefined ? "" : `, ${String(health.updates_available)} with a known update (check with the commands below)`;
+  // Copies that carry more than "ok" (degraded, a known update, or shadowed by another scope) get their own line,
+  // so a Markdown reader can tell same-named copies apart (CodeRabbit review round 8).
+  const notable = health.packages.filter((row) => row.status === "degraded" || typeof row.update === "string" || typeof row.shadowed_by === "string");
   return [
     `- extensions: ${health.ok} ok, ${health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${updates}`,
+    ...notable.map(renderExtensionHealthRowMarkdown),
     ...(next ?? []).map(renderMarkdownFence),
   ];
+}
+
+/** One notable extension copy as a nested Markdown list item, its manifest-controlled name escaped. */
+function renderExtensionHealthRowMarkdown(row: ContextExtensionHealthRow): string {
+  const facts = [
+    row.status,
+    ...(typeof row.update === "string" ? [`update ${escapeMarkdownText(row.update)}`] : []),
+    ...(typeof row.shadowed_by === "string" ? [`shadowed by ${row.shadowed_by}`] : []),
+  ];
+  return `  - ${escapeMarkdownText(row.name)} (${row.scope ?? "unknown scope"}, ${escapeMarkdownText(row.version ?? "unknown version")}): ${facts.join(", ")}`;
 }
 
 /** Escape the inline Markdown syntax characters so a manifest-controlled name mid-line renders as literal text. */

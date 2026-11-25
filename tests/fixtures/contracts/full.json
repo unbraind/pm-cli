@@ -68844,10 +68844,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.28.0"
+    "x-schema-version": "4.28.1"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.28.0",
+  "schema_version": "4.28.1",
   "selected": {
     "action": null,
     "availability_only": false,

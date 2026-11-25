@@ -161,7 +161,15 @@ describe("context extension health", () => {
         ],
       });
       expect(renderContextMarkdown(result)).toContain(
-        `- extensions: 4 ok, 0 degraded, 2 with a known update (check with the commands below)\n\`\`\`sh\n${manage("project")}\n\`\`\`\n\`\`\`sh\n${manage("global")}\n\`\`\``,
+        [
+          "- extensions: 4 ok, 0 degraded, 2 with a known update (check with the commands below)",
+          // Copies that carry more than "ok" get their own line, so same-named copies are told apart (CodeRabbit review round 8).
+          "  - pm-csv (global, 1.0.0): ok, update 1.1.0",
+          "  - pm-github (global, 2026.10.14): ok, update 2026.11.23, shadowed by project",
+          "  - pm-github (project, 2026.10.4): ok, update 2026.11.23",
+          `\`\`\`sh\n${manage("project")}\n\`\`\``,
+          `\`\`\`sh\n${manage("global")}\n\`\`\``,
+        ].join("\n"),
       );
 
       // Only one scope with a known update: one hint.
@@ -215,11 +223,13 @@ describe("context extension health", () => {
         extension_health: {
           ...health!,
           degraded: 1,
-          packages: [...health!.packages, { name: "evil`name*", scope: "project", version: "1.0.0", status: "degraded", update: null, shadowed_by: null }],
+          packages: [...health!.packages, { name: "evil`name*", scope: "project", version: "1.0.0", status: "degraded", update: null, shadowed_by: null }, { name: "bare", status: "degraded" }],
           next: ["pm --pm-path \"/a\\$b\" package manage --project", "pm --pm-path \"/a\nb\" package manage --project", "pm --pm-path \"/x\n```\" package manage --project"],
         },
       });
-      expect(rendered).toContain("degraded (evil\\`name\\*), 1 with a known update (check with the commands below)");
+      expect(rendered).toContain("degraded (evil\\`name\\*, bare), 1 with a known update (check with the commands below)");
+      expect(rendered).toContain("  - evil\\`name\\* (project, 1.0.0): degraded");
+      expect(rendered).toContain("  - bare (unknown scope, unknown version): degraded");
       expect(rendered).toContain("```sh\npm --pm-path \"/a\\$b\" package manage --project\n```");
       expect(rendered).toContain("```sh\npm --pm-path \"/a\nb\" package manage --project\n```");
       // A fence is always longer than any backtick run inside the command.
