@@ -6,6 +6,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveGlobalPmRoot } from "../../core/store/paths.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import { normalizeManagedState, type ManagedExtensionRecord } from "./managed-state.js";
 import { normalizeExtensionNameForMatch, normalizeStringList, parseExtensionManifest } from "./shared.js";
 import { findApplicableUpdateObservation, readExtensionUpdateObservations, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
@@ -48,6 +50,49 @@ export interface StaticExtensionInventoryEntry {
 
 /** The `--fields` contract every package listing shares (pm-gh1777), published with the listing it serves. */
 export { parseListingFields, projectListingRows } from "./listing-fields.js";
+
+/** The read-output controls a caller passed, by their global-option keys. */
+export interface StaticInventoryReadOutputControls {
+  /** Row cap a read would apply; the inventory cannot page, so any value is refused. */
+  outputLimit?: string;
+  /** Projection mode a read would apply; the inventory projects with `--fields` instead, so any value is refused. */
+  outputInclude?: string;
+  /** Read session that would suppress repeated rows across calls; refused because the inventory keeps no session. */
+  outputSession?: string;
+  /** Continuation token of an earlier page; refused because the inventory returns every row at once. */
+  outputCursor?: string;
+  /** Request for the per-row identity contract; refused when true because inventory rows carry none. */
+  outputRowContract?: boolean;
+  /** Byte budget for the rendered result; only `unbounded` is accepted, since the inventory cannot trim rows to fit. */
+  outputBudget?: string;
+}
+
+/**
+ * The static inventory returns every installed package and applies no read-output
+ * row controls, so those controls are refused instead of silently ignored; the
+ * output format and an unbounded budget still apply (Codex review round 2).
+ */
+export function refuseStaticInventoryReadOutputControls(controls: StaticInventoryReadOutputControls): void {
+  const unsupported = [
+    ["--output-limit", controls.outputLimit],
+    ["--output-include", controls.outputInclude],
+    ["--output-session", controls.outputSession],
+    ["--output-cursor", controls.outputCursor],
+    ["--output-row-contract", controls.outputRowContract === true ? "true" : undefined],
+    ["--output-budget", controls.outputBudget === "unbounded" ? undefined : controls.outputBudget],
+  ].filter((entry): entry is [string, string] => typeof entry[1] === "string").map(([flag]) => flag);
+  if (unsupported.length === 0) return;
+  throw new PmCliError(
+    `pm package list does not apply ${unsupported.join(", ")}: it returns every installed package. Narrow rows with --fields, or use pm package manage or pm package catalog for read-output controls.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "read_output_surface_unsupported",
+      details: { command: "package list", output_option_keys: unsupported },
+      required: "Drop the row-shaping output controls; pm package list keeps --output-format and an unbounded --output-budget.",
+      examples: ["pm package list --fields name,version,update"],
+    },
+  );
+}
 
 /** Row keys `pm package list --fields` selects from, in their emitted order. */
 export const INVENTORY_ROW_FIELDS = [
@@ -229,7 +274,9 @@ function withObservedUpdate(
   records: readonly ManagedExtensionRecord[],
   observations: readonly ExtensionUpdateObservation[],
 ): StaticExtensionInventoryEntry {
-  const installation = { name: entry.name, version: entry.version, updated_at: findManagedRecord(records, entry.name, directory)?.updated_at };
+  // Bind the evidence to this directory's own managed record, so a same-named unmanaged copy never borrows it.
+  const record = records.find((candidate) => normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(directory));
+  const installation = { name: entry.name, version: entry.version, updated_at: record?.updated_at };
   return { ...entry, update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, installation)) };
 }
 

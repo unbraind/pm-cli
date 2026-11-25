@@ -346,6 +346,10 @@ describe("parseBootstrapCommandName", () => {
 });
 
 describe("normalizeLegacyExtensionActionSyntax", () => {
+  it("merges repeated --fields on a package verb that follows a scope switch (Codex review round 2)", () => {
+    expect(normalizeBootstrapInvocation(["package", "--project", "list", "--fields", "name", "--fields", "status"]).argv).toEqual(["package", "--project", "list", "--fields=name,status"]);
+  });
+
   it("keeps a --fields projection on its explore or manage subcommand route (pm-gh1777)", () => {
     expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--fields", "name"])).toEqual(["extension", "explore", "--fields", "name"]);
     expect(normalizeLegacyExtensionActionSyntax(["extension", "manage", "--offline", "--fields=name"])).toEqual(["extension", "manage", "--offline", "--fields=name"]);

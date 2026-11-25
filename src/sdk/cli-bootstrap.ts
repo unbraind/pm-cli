@@ -1229,10 +1229,16 @@ export function normalizeBootstrapInvocation(
 }
 
 /** Resolve the command leaf needed for option normalization before full Commander registration is available. */
+/** Lifecycle scope switches accepted between a package noun and its verb. */
+const LIFECYCLE_SCOPE_SWITCH_TOKENS = new Set(["--project", "--local", "--global"]);
+
 function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   const stripped = stripGlobalBootstrapTokens(argv);
   const first = stripped[0]?.trim().toLowerCase();
-  const second = stripped[1]?.trim().toLowerCase();
+  // A lifecycle scope switch may precede the package verb (`pm package --project list`); the leaf is the verb (Codex review round 2).
+  const second = (first === "extension" || first === "package" || first === "packages"
+    ? stripped.slice(1).find((token) => !LIFECYCLE_SCOPE_SWITCH_TOKENS.has(token))
+    : stripped[1])?.trim().toLowerCase();
   const namespaced = findPmNamespacedCommand(stripped);
   if (namespaced) return namespaced.canonical;
   if (

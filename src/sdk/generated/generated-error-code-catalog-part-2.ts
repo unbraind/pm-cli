@@ -396,7 +396,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
     code: "read_output_surface_unsupported",
     exit_code: 2,
-    sources: ["sdk/read-output-contracts.ts"],
+    sources: ["sdk/extension/static-inventory.ts", "sdk/read-output-contracts.ts"],
   },
   {
     code: "recovery_kind_mismatch",

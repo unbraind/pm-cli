@@ -5,7 +5,7 @@ import {
   renderContextMarkdown,
   runContext,
 } from "../../../../src/sdk/query/context.js";
-import { renderPmCommand, resolvePmCommandScopeArgs } from "../../../../src/sdk/command-line.js";
+import { renderPmCommand } from "../../../../src/sdk/command-line.js";
 import { writeTestExtension } from "../../../helpers/extensions.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
@@ -123,7 +123,9 @@ describe("context extension health", () => {
         await writeTestExtension({ root: path.join(globalRoot, "extensions"), directory: name, manifest: { ...manifest("1.0.0"), name }, entryFilename: "index.mjs", entrySource: "throw new Error('no import');\n" });
       }
       const INSTALLED_AT = "2026-10-04T00:00:00.000Z";
-      const projectHint = (name: string) => renderPmCommand(["--pm-path", context.pmPath, "package", "upgrade", name, "--project"]);
+      const hint = (scope: "project" | "global", name: string) => renderPmCommand([
+        ...(scope === "project" ? ["--pm-path", path.resolve(context.pmPath)] : []), "package", "upgrade", `--${scope}`, "--packages-only", "--", name,
+      ]);
       const observation = (name: string, installed: string, remote: string) => ({ name, installed_version: installed, installed_updated_at: INSTALLED_AT, remote_version: remote, update_available: true, checked_at: "2026-11-24T10:00:00.000Z" });
       const write = async (root: string, observations: unknown[]) => {
         await fs.mkdir(path.join(root, "runtime"), { recursive: true });
@@ -146,8 +148,8 @@ describe("context extension health", () => {
         ok: 4,
         degraded: 0,
         updates_available: 2,
-        // A project hint keeps the tracker the caller selected; commands are rendered from argv for the shell.
-        next: [projectHint("pm-github"), "pm package upgrade pm-csv --global"],
+        // One targeted command per package, rendered from argv; a project command names the absolute tracker.
+        next: [hint("global", "pm-csv"), hint("project", "pm-github")],
         packages: [
           { name: "pm-csv", scope: "global", version: "1.0.0", status: "ok", update: "1.1.0", shadowed_by: null },
           { name: "pm-github", scope: "global", version: "2026.10.14", status: "ok", update: "2026.11.23", shadowed_by: "project" },
@@ -157,20 +159,28 @@ describe("context extension health", () => {
         ],
       });
       expect(renderContextMarkdown(result)).toContain(
-        `- extensions: 4 ok, 0 degraded, 2 with a known update (${projectHint("pm-github")}; pm package upgrade pm-csv --global)`,
+        `- extensions: 4 ok, 0 degraded, 2 with a known update (${hint("global", "pm-csv")}; ${hint("project", "pm-github")})`,
       );
 
       // Only one scope with a known update: one hint.
       await write(globalRoot, []);
       expect((await runContext({ depth: "brief" }, { path: context.pmPath })).extension_health).toMatchObject({
         updates_available: 1,
-        next: [projectHint("pm-github")],
+        next: [hint("project", "pm-github")],
       });
       await write(globalRoot, [observation("pm-csv", "1.0.0", "1.1.0"), observation("pm-todos", "1.0.0", "1.1.0")]);
+      // Two updates in one scope are still two targeted commands, never a scope-wide upgrade of every package.
       expect((await runContext({ depth: "brief" }, { path: context.pmPath })).extension_health?.next).toEqual([
-        projectHint("pm-github"),
-        "pm package upgrade --packages-only --global",
+        hint("global", "pm-csv"),
+        hint("project", "pm-github"),
+        hint("global", "pm-todos"),
       ]);
+      // Corrupt managed metadata in one scope means unknown updates there, never a failed context read.
+      await fs.writeFile(path.join(globalRoot, "extensions", ".managed-extensions.json"), "{");
+      expect((await runContext({ depth: "brief" }, { path: context.pmPath })).extension_health).toMatchObject({
+        updates_available: 1,
+        next: [hint("project", "pm-github")],
+      });
     });
   });
   it("gives a disabled copy no upgrade hint and keeps a dash-leading name from becoming an option (Codex review round 1)", async () => {
@@ -194,7 +204,8 @@ describe("context extension health", () => {
       await fs.writeFile(settingsPath, JSON.stringify({ ...settings, extensions: { ...settings.extensions, disabled: ["pm-disabled"] } }));
       const health = (await runContext({ depth: "brief" }, {})).extension_health;
       expect(health?.packages.find((row) => row.name === "pm-disabled")).toMatchObject({ update: "1.1.0", shadowed_by: null });
-      expect(health).toMatchObject({ updates_available: 1, next: [renderPmCommand([...resolvePmCommandScopeArgs({}), "package", "upgrade", "--project", "--", "-x"])] });
+      // The name sits after -- and --packages-only keeps a lost target from upgrading the CLI.
+      expect(health).toMatchObject({ updates_available: 1, next: [renderPmCommand(["--pm-path", path.resolve(process.env.PM_PATH!), "package", "upgrade", "--project", "--packages-only", "--", "-x"])] });
     });
   });
 });

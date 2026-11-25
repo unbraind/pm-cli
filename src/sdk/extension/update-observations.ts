@@ -12,12 +12,13 @@
  * reinstall rewrites that record, so it retires the observation, including a
  * commit-only upgrade of a repository source that keeps its manifest version.
  */
+import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import semver from "semver";
 import { acquireLock } from "../../core/lock/lock.js";
-import { compareComparableVersions } from "../../core/extensions/version-compat.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
-import type { ManagedExtensionRecord } from "./managed-state.js";
+import { readManagedExtensionState, type ManagedExtensionRecord } from "./managed-state.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 
 /** File name of the observation record under a scope's `runtime/` directory. */
@@ -70,6 +71,8 @@ function parseObservation(value: unknown): ExtensionUpdateObservation | undefine
   const installedUpdatedAt = text("installed_updated_at");
   const checkedAt = text("checked_at");
   if (name === undefined || installedVersion === undefined || installedUpdatedAt === undefined || checkedAt === undefined || typeof row.update_available !== "boolean") return undefined;
+  // Ordering compares check times, so a row whose time does not parse is not one pm wrote.
+  if (!Number.isFinite(Date.parse(checkedAt))) return undefined;
   return {
     name,
     installed_version: installedVersion,
@@ -99,9 +102,9 @@ export async function readExtensionUpdateObservations(scopeRoot: string): Promis
   const file = resolveExtensionUpdateObservationsPath(scopeRoot);
   try {
     if (await isNonDirectoryEntry(path.dirname(file))) return [];
-    const stat = await fs.lstat(file);
-    if (!stat.isFile() || stat.size > MAX_OBSERVATIONS_BYTES) return [];
-    const parsed: unknown = JSON.parse(await fs.readFile(file, "utf8"));
+    const raw = await readBoundedRegularFile(file, MAX_OBSERVATIONS_BYTES);
+    if (raw === undefined) return [];
+    const parsed: unknown = JSON.parse(raw);
     const rows = typeof parsed === "object" && parsed !== null && Array.isArray((parsed as { observations?: unknown }).observations)
       ? (parsed as { observations: unknown[] }).observations
       : [];
@@ -111,16 +114,41 @@ export async function readExtensionUpdateObservations(scopeRoot: string): Promis
   }
 }
 
+/** Open flags that neither follow a final link nor block on a FIFO, where the platform defines them (Windows has neither). */
+export function resolveGuardedReadFlags(constants: { O_RDONLY: number; O_NOFOLLOW?: number; O_NONBLOCK?: number } = fsConstants): number {
+  return constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+}
+
+/**
+ * Read a file only when the opened descriptor is a regular file within the byte
+ * limit. The open neither follows a final link nor blocks on a FIFO where the
+ * platform supports it, and the checks run on the descriptor, so a file swapped
+ * after a path check cannot widen the read.
+ */
+async function readBoundedRegularFile(file: string, limit: number): Promise<string | undefined> {
+  const handle = await fs.open(file, resolveGuardedReadFlags());
+  try {
+    if (!(await handle.stat()).isFile()) return undefined;
+    // One byte past the limit proves the file is too large, however it changed since it was opened.
+    const buffer = Buffer.alloc(limit + 1);
+    const { bytesRead } = await handle.read(buffer, 0, limit + 1, 0);
+    return bytesRead > limit ? undefined : buffer.subarray(0, bytesRead).toString("utf8");
+  } finally {
+    await handle.close();
+  }
+}
+
 /**
  * Whether a check that reported "available" saw a release that is actually
- * newer. A registry `latest` older than (or equal to) the installed version is
- * no update: following the upgrade hint would downgrade. Versions that do not
- * compare, and repository sources that report only a commit, keep the
- * provider's verdict.
+ * newer. The registry `latest` is compared with the installed npm version under
+ * SemVer precedence (a prerelease sorts before its release), so a `latest` that
+ * is not newer is no update: following the upgrade hint would downgrade.
+ * Versions that are not valid SemVer, and repository sources that report only a
+ * commit, keep the provider's verdict.
  */
 function isNewerRelease(installedVersion: string, remoteVersion: string | undefined): boolean {
-  const order = remoteVersion === undefined ? null : compareComparableVersions(remoteVersion, installedVersion);
-  return order === null || order === 1;
+  if (remoteVersion === undefined || semver.valid(remoteVersion) === null || semver.valid(installedVersion) === null) return true;
+  return semver.gt(remoteVersion, installedVersion);
 }
 
 /**
@@ -137,36 +165,54 @@ export function collectExtensionUpdateObservations(entries: readonly ManagedExte
             installed_version: entry.manifest_version,
             installed_updated_at: entry.updated_at,
             remote_version: entry.last_update_remote_version ?? entry.last_update_remote_commit?.slice(0, 12) ?? null,
-            update_available: entry.update_available && isNewerRelease(entry.manifest_version, entry.last_update_remote_version),
+            update_available: entry.update_available && isNewerRelease(entry.source.version ?? entry.manifest_version, entry.last_update_remote_version),
             checked_at: entry.last_update_check_at,
           }]
         : [])
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+/** Whether an observation was taken against this managed installation. */
+function describesInstallation(entry: ExtensionUpdateObservation, record: ManagedExtensionRecord): boolean {
+  return normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(record.name) &&
+    entry.installed_version === record.manifest_version &&
+    entry.installed_updated_at === record.updated_at;
+}
+
 /**
- * Merge a check's observations into a scope's record under a per-scope lock, so
- * two concurrent checks never drop each other's answers. Packages the check did
- * not answer for keep their earlier observation, and when both name the same
- * package the later check wins. The record is written only into a real
- * `runtime/` directory, never through a link.
+ * Merge a check's observations into a scope's record. Under a per-scope lock the
+ * record is rebuilt from the managed state on disk at that moment: each current
+ * installation keeps the latest observation taken against it, from this check
+ * or an earlier one, and everything else is dropped. So two concurrent checks
+ * keep each other's answers, an answer for an installation that has since been
+ * replaced never displaces one for the current installation, and the record
+ * never outgrows the managed packages it describes. The record is written only
+ * into a real `runtime/` directory, never through a link.
  */
-export async function recordExtensionUpdateObservations(scopeRoot: string, observations: readonly ExtensionUpdateObservation[]): Promise<void> {
+export async function recordExtensionUpdateObservations(
+  scopeRoot: string,
+  extensionsRoot: string,
+  observations: readonly ExtensionUpdateObservation[],
+): Promise<void> {
   if (observations.length === 0) return;
   const file = resolveExtensionUpdateObservationsPath(scopeRoot);
-  if (await isNonDirectoryEntry(path.dirname(file))) {
-    throw new Error(`${path.dirname(file)} is not a directory`);
-  }
+  const assertRuntimeDirectory = async (): Promise<void> => {
+    if (await isNonDirectoryEntry(path.dirname(file))) throw new Error(`${path.dirname(file)} is not a directory`);
+  };
+  await assertRuntimeDirectory();
   const release = await acquireLock(scopeRoot, "extension-update-observations", 30, "pm package manage", false, true, OBSERVATION_LOCK_WAIT_MS);
   try {
-    const merged = new Map<string, ExtensionUpdateObservation>();
-    for (const entry of [...(await readExtensionUpdateObservations(scopeRoot)), ...observations]) {
-      const key = normalizeExtensionNameForMatch(entry.name);
-      const current = merged.get(key);
-      if (current === undefined || current.checked_at <= entry.checked_at) merged.set(key, entry);
-    }
-    const rows = [...merged.values()].sort((left, right) => left.name.localeCompare(right.name));
-    await writeFileAtomic(file, `${JSON.stringify({ version: 1, observations: rows }, null, 2)}\n`);
+    await assertRuntimeDirectory();
+    const candidates = [...(await readExtensionUpdateObservations(scopeRoot)), ...observations];
+    const rows = (await readManagedExtensionState(extensionsRoot)).state.entries.flatMap((record) => {
+      const latest = candidates
+        .filter((entry) => describesInstallation(entry, record))
+        .sort((left, right) => Date.parse(right.checked_at) - Date.parse(left.checked_at))[0];
+      return latest === undefined ? [] : [latest];
+    }).sort((left, right) => left.name.localeCompare(right.name));
+    const serialized = `${JSON.stringify({ version: 1, observations: rows }, null, 2)}\n`;
+    if (Buffer.byteLength(serialized, "utf8") > MAX_OBSERVATIONS_BYTES) throw new Error("update observation record exceeds its size limit");
+    await writeFileAtomic(file, serialized);
   } finally {
     await release();
   }
@@ -179,12 +225,13 @@ export async function recordExtensionUpdateObservations(scopeRoot: string, obser
  */
 export async function recordCheckedUpdateObservations(
   scopeRoot: string,
+  extensionsRoot: string,
   entries: readonly ManagedExtensionRecord[],
   offline: boolean,
 ): Promise<string | undefined> {
   if (offline) return undefined;
   try {
-    await recordExtensionUpdateObservations(scopeRoot, collectExtensionUpdateObservations(entries));
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot, collectExtensionUpdateObservations(entries));
     return undefined;
   } catch {
     return "extension_update_observation_write_failed";

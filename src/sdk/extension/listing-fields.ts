@@ -20,7 +20,10 @@ export function parseListingFields(raw: unknown, allowed: readonly string[], lis
   if (unknown.length > 0) {
     // The "must be one of a|b|c" spelling is what recovery reads the legal domain from.
     throw new PmCliError(`Package ${listing} --fields must be one of ${allowed.join("|")}; unknown: ${unknown.join(", ")}`, EXIT_CODE.USAGE, {
+      code: "invalid_argument_value",
       examples: [example ?? `pm package ${listing} --fields ${allowed.slice(0, 3).join(",")}`],
+      // SDK and MCP callers read the whole domain here instead of parsing the message.
+      recovery: { allowed_values: [...allowed], provided_fields: ["--fields"] },
     });
   }
   return fields;

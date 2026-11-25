@@ -24,16 +24,20 @@ Each installed row carries `update`: the newer version the last
 `pm package manage` freshness check observed for exactly that installation, or
 `null` when none is known. `manage` records what each check answered in the
 untracked `runtime/extension-update-observations.json` of the scope
-(`.agents/pm/runtime/` or the global pm root), merging under a per-scope lock so
-concurrent checks keep each other's answers and the later check wins for one
-package. A check that timed out or failed records nothing and keeps the earlier
-observation. An observation names the manifest version and the managed
-record's `updated_at` it was taken against, so any upgrade, including a
-commit-only reinstall of a repository source, retires it. A registry `latest`
-older than the installed version is recorded as no update, because upgrading
-to it would downgrade. Only a bounded regular file inside a real `runtime/`
-directory is read or written: a link or special file reads as no knowledge and
-is never written through. The record is derived state: a failed write is the
+(`.agents/pm/runtime/` or the global pm root). Under a per-scope lock the
+record is rebuilt from the managed state on disk at that moment: each current
+installation keeps the latest observation taken against it, from this check or
+an earlier one, and rows for replaced or removed installations are dropped, so
+concurrent checks keep each other's answers and the record never outgrows the
+managed packages. A check that timed out or failed records nothing for that
+package. An observation names the manifest version and the managed record's
+`updated_at` it was taken against, so any upgrade, including a commit-only
+reinstall of a repository source, retires it. A registry `latest` that is not
+newer than the installed npm version under SemVer precedence is recorded as no
+update, because upgrading to it would downgrade. Only a bounded (1 MiB) regular
+file inside a real `runtime/` directory is read or written, checked on the
+opened descriptor: a link, FIFO or oversized file reads as no knowledge and is
+never written through. The record is derived state: a failed write is the
 warning `extension_update_observation_write_failed`, never a failed check.
 
 `pm context` reads the same observations offline for its `extension_health`
@@ -42,10 +46,16 @@ block. Rows are `{name, scope, version, status, update, shadowed_by}`:
 (project shadows global), so a copy installed in both scopes is told apart.
 `updates_available` counts the copies the runtime loads (a shadowed or
 disabled copy keeps its row but is not counted) with a known update, and
-`next` names one `pm package upgrade` command per scope only when that count
-is above zero. The commands are rendered from argv for the caller's shell, a
-project command keeps the tracker the caller selected (`--pm-path`), and a
-package name is placed after `--` when it could read as an option
+`next` lists one targeted `pm package upgrade --<scope> --packages-only --
+<name>` command per such package (at most five) only when that count is above
+zero, never a scope-wide upgrade. The commands are rendered from argv for the
+caller's shell, the name after `--` can never become an option, a project
+command names the absolute tracker the read served (`--pm-path`), and no
+command inherits `--no-extensions`, which would fail the upgrade's activation
+check. Corrupt or unreadable managed metadata in a scope means unknown updates
+there, never a failed `pm context`. `pm package list` refuses the row-shaping
+read-output controls it cannot apply (`read_output_surface_unsupported`) and
+keeps `--output-format` and an unbounded `--output-budget`
 ([pm-gh1778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1778.toon),
 tracker record excluded from npm).
 

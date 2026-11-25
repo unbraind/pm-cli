@@ -31,7 +31,7 @@ import {
   resolveObservedUpdateVersion,
 } from "../extension/update-observations.js";
 import { readManagedExtensionState } from "../extension/managed-state.js";
-import { renderPmCommand, resolvePmCommandScopeArgs, type CommandScope } from "../command-line.js";
+import { renderPmCommand } from "../command-line.js";
 import type { ItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   collectDependencyBlockedIds,
@@ -387,7 +387,7 @@ export interface ContextExtensionHealth {
   degraded: number;
   /** Active copies whose last observed `pm package manage` check found a newer release (pm-gh1778). */
   updates_available?: number;
-  /** Upgrade commands, one per scope with a known update; present only when `updates_available` is above zero. */
+  /** Targeted upgrade commands (at most five), one per loaded package with a known update; present only when `updates_available` is above zero. */
   next?: string[];
   /** Per-package static discovery health. */
   packages: ContextExtensionHealthRow[];
@@ -2879,7 +2879,6 @@ export async function resolveContextExtensionHealthProjection(
   omitted: boolean,
   pmRoot: string,
   settings: PmSettings,
-  scope: CommandScope = {},
 ): Promise<Pick<ContextResult, "extension_health">> {
   if (omitted) return {};
   const discovery = await discoverExtensions({
@@ -2893,11 +2892,12 @@ export async function resolveContextExtensionHealthProjection(
   // Each scope's observations and managed records sit beside its extensions directory.
   const scopes = await Promise.all((["project", "global"] as const).map(async (scope) => {
     const extensionsRoot = discovery.roots[scope];
-    const [observations, managed] = await Promise.all([
+    // Managed metadata is optional evidence here: a corrupt or unreadable file means unknown updates, never a failed context read.
+    const [observations, records] = await Promise.all([
       readExtensionUpdateObservations(path.dirname(extensionsRoot)),
-      readManagedExtensionState(extensionsRoot),
+      readManagedExtensionState(extensionsRoot).then((managed) => managed.state.entries, () => []),
     ]);
-    return [scope, { observations, records: managed.state.entries }] as const;
+    return [scope, { observations, records }] as const;
   }));
   const scopeEvidence = new Map(scopes);
   const loadedScopeByName = new Map(discovery.effective.map((entry) => [entry.name, entry.layer]));
@@ -2932,29 +2932,31 @@ export async function resolveContextExtensionHealthProjection(
       ok: packages.length - degraded,
       degraded,
       updates_available: updatable.length,
-      ...(updatable.length > 0 ? { next: buildExtensionUpgradeHints(updatable, scope) } : {}),
+      ...(updatable.length > 0 ? { next: buildExtensionUpgradeHints(updatable, pmRoot) } : {}),
       packages: packages.slice(0, 20),
       ...(packages.length > 20 ? { truncated: true } : {}),
     },
   };
 }
 
+/** At most this many upgrade commands are listed; `updates_available` still counts every update. */
+const MAX_EXTENSION_UPGRADE_HINTS = 5;
+
 /**
- * One upgrade command per scope with a known update: the package by name when it
- * is the only one, else every managed package. Commands are rendered from argv for
- * the caller's shell, a project command keeps the tracker the caller selected, and a
- * manifest-controlled name can never become an option.
+ * One targeted upgrade command per package with a known update, never an
+ * untargeted scope-wide upgrade (that would reinstall packages nobody reported).
+ * Each command is rendered from argv for the caller's shell; the package name sits
+ * after `--` so no manifest-controlled name can become an option or a key=value
+ * flag, and `--packages-only` keeps a lost target from upgrading the CLI. A project
+ * command names the absolute tracker this read served, so it runs against the same
+ * tracker from any directory, and never inherits `--no-extensions`, which would
+ * make the upgrade's activation verification fail.
  */
-function buildExtensionUpgradeHints(updatable: readonly ContextExtensionHealthRow[], scope: CommandScope): string[] {
-  return (["project", "global"] as const).flatMap((target) => {
-    const names = updatable.filter((entry) => entry.scope === target).map((entry) => entry.name);
-    if (names.length === 0) return [];
-    const scopeArgs = target === "project" ? resolvePmCommandScopeArgs(scope) : [];
-    const targetArgs = names.length === 1
-      ? names[0].startsWith("-") ? [`--${target}`, "--", names[0]] : [names[0], `--${target}`]
-      : ["--packages-only", `--${target}`];
-    return [renderPmCommand([...scopeArgs, "package", "upgrade", ...targetArgs])];
-  });
+function buildExtensionUpgradeHints(updatable: readonly ContextExtensionHealthRow[], pmRoot: string): string[] {
+  return updatable.slice(0, MAX_EXTENSION_UPGRADE_HINTS).map((entry) => renderPmCommand([
+    ...(entry.scope === "project" ? ["--pm-path", path.resolve(pmRoot)] : []),
+    "package", "upgrade", `--${entry.scope}`, "--packages-only", "--", entry.name,
+  ]));
 }
 
 async function resolveContextSemanticAffinity(
@@ -2995,7 +2997,6 @@ export async function runContext(
     options.noExtensionHealth === true,
     pmRoot,
     runtime.settings,
-    global,
   );
   // Single shared edge-aware blocked classification (GH-578): resolved against
   // the full corpus so terminal blocker targets count as satisfied at every depth.

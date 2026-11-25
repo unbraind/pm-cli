@@ -42,6 +42,7 @@ import {
   inspectStaticExtensionInventory,
   parseListingFields,
   projectListingRows,
+  refuseStaticInventoryReadOutputControls,
 } from "../sdk/extension/static-inventory.js";
 
 type ExtensionSubcommandAction =
@@ -860,6 +861,7 @@ function registerLifecycleCommand(
     if (options.global === true && (options.project === true || options.local === true)) {
       throw new PmCliError("--global and --project/--local are mutually exclusive.", EXIT_CODE.USAGE);
     }
+    refuseStaticInventoryReadOutputControls(globalOptions);
     const fields = parseListingFields(options.fields, INVENTORY_ROW_FIELDS, "list");
     const result = await inspectStaticExtensionInventory({
       pmRoot: resolvePmRoot(process.cwd(), globalOptions.path),

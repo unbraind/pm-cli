@@ -3549,7 +3549,7 @@ const prepareExploreManageState = async (
       !locked,
     );
     // Offline reads report what this check learned (pm-gh1778); the record is derived, so a failed write only warns.
-    const observationWarning = await recordCheckedUpdateObservations(ctx.resolvedRoots.settings_root, state.entries, ctx.options.offline === true);
+    const observationWarning = await recordCheckedUpdateObservations(ctx.resolvedRoots.settings_root, ctx.resolvedRoots.selected_root, state.entries, ctx.options.offline === true);
     if (observationWarning) ctx.warnings.push(observationWarning);
   }
   return { state, fix };

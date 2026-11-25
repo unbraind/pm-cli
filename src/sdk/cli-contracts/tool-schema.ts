@@ -484,6 +484,7 @@ const MANAGED_EXTENSION_PACKAGE_OPTION_KEYS = [
   "watch",
   "strictExit",
   "failOnWarn",
+  "fields",
 ];
 
 function managedLifecycleSchemaContracts(

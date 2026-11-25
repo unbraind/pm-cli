@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,docs,extensions,"gh:1780",sdk,testing
 created_at: "2026-11-25T05:50:53.377Z"
-updated_at: "2026-11-25T07:15:56.793Z"
+updated_at: "2026-11-25T08:52:12.408Z"
 closed_at: "2026-11-25T07:15:55.479Z"
 completed_at: "2026-11-25T07:15:55.479Z"
 author: "harness:claude-code"
@@ -37,6 +37,11 @@ tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
 docs[1]{path,scope}:
   docs/SDK.md,project
 close_reason: "The harness runCommand contract now states that undeclared keys are refused on commands that declare flags, and names the three cases that still pass them through"
+contract_change:
+  api: @unbrained/pm-cli/sdk/testing runRegisteredCommandForTest (harness.runCommand) option contract documentation
+  before: "The published doc said undeclared option keys pass through, while the harness has refused them since the host alignment of 2026.11.14"
+  after: "The doc states the shipped rule: on a command that declares flags an undeclared key is refused with unknown_option before dispatch and an array for a scalar flag with extension_flag_value_invalid; undeclared keys pass through only for a zero-flag command, a hand-built registry and a native core path"
+  migrate: "Package tests that pass undeclared keys to a command declaring flags either declare those flags or call the handler function directly; pass scalars, not arrays, to flags that are not list or repeatable (unknown_option and extension_flag_value_invalid are the two refusal codes)"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
