@@ -10,6 +10,7 @@ import { isMainThread } from "node:worker_threads";
 import npa from "npm-package-arg";
 import { killProcessTree } from "../../core/shared/process-tree.js";
 import type { ManagedExtensionSource } from "./managed-state.js";
+import { isNewerRegistryVersion } from "./npm-spec.js";
 import { resolveNpmCommandName, shouldRunNpmCommandInShell } from "./install-sources.js";
 
 /** Environment variable that overrides the per-lookup update-check budget. */
@@ -373,7 +374,8 @@ export async function checkNpmUpdate(
     }
     const version: unknown = Array.isArray(output) && output.length === 1 ? output[0] : output;
     const latestVersion = resolveExactNpmVersion(source.package, version, "invalid_npm_registry_version");
-    return { checked_at: checkedAt, available: latestVersion !== installedVersion, remote_version: latestVersion };
+    // One verdict for manage and the offline readers: newer under SemVer precedence, never a downgrade (pm-gh1778).
+    return { checked_at: checkedAt, available: isNewerRegistryVersion(latestVersion, installedVersion), remote_version: latestVersion };
   } catch (error: unknown) {
     return failedUpdateStatus(checkedAt, error);
   }

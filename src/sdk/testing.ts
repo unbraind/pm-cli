@@ -1131,7 +1131,9 @@ export async function deactivateExtensionForTest(
  * folds into the handler key `statusFilter`, declared defaults and value
  * coercion apply, and two spellings with different values are refused with
  * `extension_option_spelling_conflict`. On a command that declares flags, an
- * undeclared key is refused with `unknown_option` (exit 2) before the handler
+ * undeclared key with a defined value is refused with `unknown_option` (exit 2)
+ * before the handler (a key whose value is `undefined` counts as omitted and is
+ * forwarded as it is)
  * runs, exactly as the CLI refuses an unknown flag, and an array for a flag
  * that is not `list` or `repeatable` is refused with
  * `extension_flag_value_invalid` (pm-gh1726, pm-gh1727). Host-owned keys (the

@@ -1877,6 +1877,39 @@
     },
     {
       "aliases": [
+        "package list",
+        "packages list"
+      ],
+      "canonical": "package inventory",
+      "contracts": [
+        {
+          "alias": "package list",
+          "canonical": "package inventory",
+          "canonical_argv": [
+            "package",
+            "inventory"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-gh1777",
+          "registration": "commander"
+        },
+        {
+          "alias": "packages list",
+          "canonical": "package inventory",
+          "canonical_argv": [
+            "package",
+            "inventory"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-gh1777",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "upgrade"
       ],
       "canonical": "package upgrade",
@@ -2085,6 +2118,7 @@
           "extension explore",
           "extension init",
           "extension install",
+          "extension inventory",
           "extension manage",
           "extension migrate",
           "extension reload",
@@ -2150,6 +2184,8 @@
           "package explore",
           "package init",
           "package install",
+          "package inventory",
+          "package list",
           "package manage",
           "package migrate",
           "package reload",
@@ -2166,6 +2202,8 @@
           "packages explore",
           "packages init",
           "packages install",
+          "packages inventory",
+          "packages list",
           "packages manage",
           "packages migrate",
           "packages reload",
@@ -4747,6 +4785,33 @@
         },
         {
           "flag": "--ref"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "extension inventory",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
         },
         {
           "aliases": [
@@ -7931,6 +7996,60 @@
       "provider": "core"
     },
     {
+      "command": "package inventory",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "package list",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "package manage",
       "flags": [
         {
@@ -8486,6 +8605,60 @@
         },
         {
           "flag": "--ref"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "packages inventory",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "packages list",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
         },
         {
           "aliases": [
@@ -14075,6 +14248,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "extension inventory",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension inventory",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "extension manage",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -15830,6 +16030,60 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "package inventory",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package inventory",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package list",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package list",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "package manage",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -16253,6 +16507,60 @@
       "envelope": {
         "cardinality": "none",
         "command": "packages install",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages inventory",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages inventory",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages list",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages list",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -18160,6 +18468,19 @@
       "intent_source": "generated"
     },
     {
+      "command": "extension inventory",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Run extension inventory.",
+      "intent_source": "generated"
+    },
+    {
       "command": "extension manage",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
@@ -18940,6 +19261,32 @@
       "intent_source": "generated"
     },
     {
+      "command": "package inventory",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Run package inventory.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package list",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "List package.",
+      "intent_source": "generated"
+    },
+    {
       "command": "package manage",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
@@ -19106,6 +19453,32 @@
         "toon": 3000
       },
       "intent": "Install packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages inventory",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Run packages inventory.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages list",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "List packages.",
       "intent_source": "generated"
     },
     {
@@ -21103,6 +21476,7 @@
     "extension explore",
     "extension init",
     "extension install",
+    "extension inventory",
     "extension manage",
     "extension migrate",
     "extension reload",
@@ -21168,6 +21542,8 @@
     "package explore",
     "package init",
     "package install",
+    "package inventory",
+    "package list",
     "package manage",
     "package migrate",
     "package reload",
@@ -21184,6 +21560,8 @@
     "packages explore",
     "packages init",
     "packages install",
+    "packages inventory",
+    "packages list",
     "packages manage",
     "packages migrate",
     "packages reload",
@@ -31196,6 +31574,14 @@
         "target": "package"
       },
       {
+        "command": "extension inventory",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "extension manage",
         "disposition": "consolidation",
         "noun": "package",
@@ -33471,6 +33857,18 @@
             "required": false,
             "value_kind": "string",
             "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "extension inventory",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
           }
         ]
       },

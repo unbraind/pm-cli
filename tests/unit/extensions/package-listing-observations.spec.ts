@@ -27,7 +27,7 @@ import {
   type ExtensionUpdateObservation,
 } from "../../../src/sdk/extension/update-observations.js";
 import type { ManagedExtensionRecord } from "../../../src/sdk/extension/managed-state.js";
-import { isLocalNpmSpec, isRegistryNpmSource } from "../../../src/sdk/extension/npm-spec.js";
+import { isLocalNpmSpec, isNewerRegistryVersion, isRegistryNpmSource } from "../../../src/sdk/extension/npm-spec.js";
 import { acquireLock } from "../../../src/core/lock/lock.js";
 
 let scopeRoot: string;
@@ -52,17 +52,36 @@ const record = (overrides: Partial<ManagedExtensionRecord>): ManagedExtensionRec
 } as ManagedExtensionRecord);
 
 describe("npm install source classification", () => {
-  it("separates registry installs from local paths and file: artifacts", () => {
+  it("separates registry installs from local, tarball, file:, git and URL specs with npm's own parser", () => {
     expect(isLocalNpmSpec("/tmp/pkg")).toBe(true);
     expect(isLocalNpmSpec("./pkg.tgz")).toBe(true);
     expect(isLocalNpmSpec("file:../pkg")).toBe(true);
+    // A bare tarball and a name@file: alias are local even without a leading path (Codex review round 4).
+    expect(isLocalNpmSpec("package-1.0.0.tgz")).toBe(true);
+    expect(isLocalNpmSpec("name@file:../x")).toBe(true);
+    // An unprefixed relative archive path is local too (CodeRabbit review round 4).
+    expect(isLocalNpmSpec("artifacts/pkg.tgz")).toBe(true);
+    expect(isLocalNpmSpec("artifacts/pkg.TAR.GZ")).toBe(true);
     expect(isLocalNpmSpec("@scope/pkg")).toBe(false);
+    expect(isLocalNpmSpec("@@not a spec")).toBe(false);
     const npm = (input: string) => ({ kind: "npm" as const, input, location: "package" });
     expect(isRegistryNpmSource(npm("npm:@scope/pkg@1.0.0"))).toBe(true);
     expect(isRegistryNpmSource(npm("pm-github"))).toBe(true);
-    expect(isRegistryNpmSource(npm("npm:./pkg.tgz"))).toBe(false);
-    expect(isRegistryNpmSource(npm("file:/abs/pkg"))).toBe(false);
+    expect(isRegistryNpmSource(npm("npm:pm-github@latest"))).toBe(true);
+    expect(isRegistryNpmSource(npm("npm:alias@npm:pm-github@1.0.0"))).toBe(true);
+    for (const local of ["npm:artifacts/pkg.tgz", "npm:./pkg.tgz", "file:/abs/pkg", "npm:package-1.0.0.tgz", "npm:name@file:../x", "npm:github:o/r", "npm:https://x/y.tgz", "npm:@@not a spec"]) {
+      expect(isRegistryNpmSource(npm(local)), local).toBe(false);
+    }
     expect(isRegistryNpmSource({ kind: "github", input: "o/r", location: "o/r" })).toBe(false);
+  });
+
+  it("judges a registry latest by SemVer precedence, never as a downgrade", () => {
+    expect(isNewerRegistryVersion("2026.11.23", "2026.10.4")).toBe(true);
+    expect(isNewerRegistryVersion("1.0.0", "2.0.0")).toBe(false);
+    expect(isNewerRegistryVersion("1.0.0", "1.0.0")).toBe(false);
+    expect(isNewerRegistryVersion("1.2.0", "1.2.0-rc.1")).toBe(true);
+    expect(isNewerRegistryVersion("next", "1.0.0")).toBe(true);
+    expect(isNewerRegistryVersion("next", "next")).toBe(false);
   });
 });
 
@@ -118,31 +137,21 @@ async function writeManagedState(records: ManagedExtensionRecord[]): Promise<voi
 const extensionsRoot = (): string => path.join(scopeRoot, "extensions");
 
 describe("extension update observations", () => {
-  it("records only answered checks and never records a downgrade", () => {
+  it("records only answered registry checks, as the provider judged them", () => {
     const checked = collectExtensionUpdateObservations([
       record({ name: "pm-github", last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "2026.11.23", update_available: true }),
       record({ name: "pm-csv", last_update_check_at: "2026-11-24T10:00:00.000Z", update_available: false }),
       record({ name: "pm-repo", source: { kind: "github", input: "o/r", location: "o/r" } as ManagedExtensionRecord["source"], last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_commit: "0123456789abcdef0123", update_available: true }),
-      // A registry latest older than the installed npm version is no update: upgrading to it would downgrade.
-      record({ name: "pm-ahead", manifest_version: "2.0.0", source: { kind: "npm", input: "npm:pm-ahead", location: "package", package: "pm-ahead", version: "2.0.0" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "1.0.0", update_available: true }),
-      // SemVer precedence: a release is newer than its own prerelease.
-      record({ name: "pm-rc", manifest_version: "1.2.0-rc.1", source: { kind: "npm", input: "npm:pm-rc", location: "package", package: "pm-rc", version: "1.2.0-rc.1" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "1.2.0", update_available: true }),
-      // The installed npm version decides, not a manifest version that differs from it.
-      record({ name: "pm-skew", manifest_version: "9.0.0", source: { kind: "npm", input: "npm:pm-skew", location: "package", package: "pm-skew", version: "1.0.0" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "1.1.0", update_available: true }),
-      record({ name: "pm-odd", manifest_version: "next", source: { kind: "npm", input: "npm:pm-odd", location: "package", package: "pm-odd" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "1.0.0", update_available: true }),
       record({ name: "pm-timeout", last_update_check_at: "2026-11-24T10:00:00.000Z", update_error: "timeout", update_available: null }),
       // A local npm artifact is reinstalled as it is, so a registry release is never an update for it.
       record({ name: "pm-tarball", source: { kind: "npm", input: "npm:./pm-tarball-1.0.0.tgz", location: "package", package: "pm-tarball", version: "1.0.0" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "2.0.0", update_available: true }),
       record({ name: "pm-unchecked" }),
     ]);
+    // The provider verdict (SemVer-aware for npm, see isNewerRegistryVersion) is recorded as it is.
     expect(checked.map((entry) => [entry.name, entry.remote_version, entry.update_available])).toEqual([
-      ["pm-ahead", "1.0.0", false],
       ["pm-csv", null, false],
       ["pm-github", "2026.11.23", true],
-      ["pm-odd", "1.0.0", true],
-      ["pm-rc", "1.2.0", true],
       ["pm-repo", "0123456789ab", true],
-      ["pm-skew", "1.1.0", true],
     ]);
   });
 
@@ -207,7 +216,9 @@ describe("extension update observations", () => {
     await fs.writeFile(file, JSON.stringify({
       observations: [
         null, [], { ...valid, name: "" }, { ...valid, update_available: "yes" }, { ...valid, installed_version: undefined },
-        { ...valid, installed_updated_at: undefined }, { ...valid, checked_at: undefined }, { ...valid, checked_at: "not a time" }, valid,
+        { ...valid, installed_updated_at: undefined }, { ...valid, checked_at: undefined }, { ...valid, checked_at: "not a time" },
+        // A check dated beyond the clock-skew tolerance would outrank every later check (Codex review round 4).
+        { ...valid, checked_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() }, valid,
       ],
     }));
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([{ ...valid, remote_version: null }]);

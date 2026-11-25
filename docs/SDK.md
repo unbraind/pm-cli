@@ -995,8 +995,10 @@ same normalizer as CLI dispatch and `PmClient.run`: `"status-filter"` reaches
 the handler as `statusFilter`, declared defaults and coercion apply, and two
 spellings with different values are refused (see
 [Handler keys and ownership](#handler-keys-and-ownership)). On a command that
-declares flags, an undeclared key is refused with `unknown_option` (exit 2)
-before the handler runs, exactly as the CLI refuses an unknown flag, and an
+declares flags, an undeclared key with a defined value is refused with
+`unknown_option` (exit 2) before the handler runs, exactly as the CLI refuses
+an unknown flag (a key whose value is `undefined` counts as omitted and is
+forwarded as it is), and an
 array for a flag that is not `list` or `repeatable` is refused with
 `extension_flag_value_invalid`; host-owned keys (the reserved host flags such
 as `json` or `quiet`) pass through unchanged. Undeclared keys pass through

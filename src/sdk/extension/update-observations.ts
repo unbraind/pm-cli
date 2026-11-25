@@ -15,7 +15,6 @@
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import semver from "semver";
 import { acquireLock } from "../../core/lock/lock.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { readManagedExtensionState, type ManagedExtensionRecord } from "./managed-state.js";
@@ -27,6 +26,9 @@ export const EXTENSION_UPDATE_OBSERVATIONS_FILE = "extension-update-observations
 
 /** A record larger than this is not one pm wrote, so it reads as no knowledge. */
 const MAX_OBSERVATIONS_BYTES = 1024 * 1024;
+
+/** How far in the future a recorded check time may lie before it reads as a clock error. */
+const MAX_FUTURE_CHECK_SKEW_MS = 5 * 60 * 1000;
 
 /** How long a manage check waits for a concurrent check's merge before warning instead. */
 const OBSERVATION_LOCK_WAIT_MS = 2_000;
@@ -72,8 +74,10 @@ function parseObservation(value: unknown): ExtensionUpdateObservation | undefine
   const installedUpdatedAt = text("installed_updated_at");
   const checkedAt = text("checked_at");
   if (name === undefined || installedVersion === undefined || installedUpdatedAt === undefined || checkedAt === undefined || typeof row.update_available !== "boolean") return undefined;
-  // Ordering compares check times, so a row whose time does not parse is not one pm wrote.
-  if (!Number.isFinite(Date.parse(checkedAt))) return undefined;
+  // Ordering compares check times, so a row whose time does not parse is not one pm wrote, and one dated
+  // beyond the clock-skew tolerance (a check saved while the clock ran ahead) would outrank every later check.
+  const checkedAtMs = Date.parse(checkedAt);
+  if (!Number.isFinite(checkedAtMs) || checkedAtMs > Date.now() + MAX_FUTURE_CHECK_SKEW_MS) return undefined;
   return {
     name,
     installed_version: installedVersion,
@@ -148,19 +152,6 @@ async function readBoundedRegularFile(file: string, limit: number): Promise<stri
 }
 
 /**
- * Whether a check that reported "available" saw a release that is actually
- * newer. The registry `latest` is compared with the installed npm version under
- * SemVer precedence (a prerelease sorts before its release), so a `latest` that
- * is not newer is no update: following the upgrade hint would downgrade.
- * Versions that are not valid SemVer, and repository sources that report only a
- * commit, keep the provider's verdict.
- */
-function isNewerRelease(installedVersion: string, remoteVersion: string | undefined): boolean {
-  if (remoteVersion === undefined || semver.valid(remoteVersion) === null || semver.valid(installedVersion) === null) return true;
-  return semver.gt(remoteVersion, installedVersion);
-}
-
-/**
  * Project the managed entries a freshness check just settled into observations:
  * an entry counts only when the provider answered (a check time, no error and a
  * boolean verdict), so a timed-out or failed lookup never reads as up to date.
@@ -176,7 +167,8 @@ export function collectExtensionUpdateObservations(entries: readonly ManagedExte
             installed_version: entry.manifest_version,
             installed_updated_at: entry.updated_at,
             remote_version: entry.last_update_remote_version ?? entry.last_update_remote_commit?.slice(0, 12) ?? null,
-            update_available: entry.update_available && isNewerRelease(entry.source.version ?? entry.manifest_version, entry.last_update_remote_version),
+            // The provider's verdict already applies SemVer precedence, so manage and the offline readers agree.
+            update_available: entry.update_available,
             checked_at: entry.last_update_check_at,
           }]
         : [])

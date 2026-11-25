@@ -34,27 +34,34 @@ package. An observation names the manifest version and the managed record's
 `updated_at` it was taken against, so any upgrade, including a commit-only
 reinstall of a repository source, retires it. A registry `latest` that is not
 newer than the installed npm version under SemVer precedence is recorded as no
-update, because upgrading to it would downgrade. Only a bounded (1 MiB) regular
-file inside a real `runtime/` directory is read or written, checked on the
-opened descriptor: a link, FIFO or oversized file reads as no knowledge and is
-never written through. The record is derived state: a failed write is the
+update, because upgrading to it would downgrade; `pm package manage` applies the
+same verdict. A bounded (1 MiB) regular file is read only when the record
+entry is a regular file and the opened descriptor is one too, and nothing is
+written while `runtime/` is a link or not a directory (checked before and after
+the lock is taken): a link, FIFO or oversized file reads as no knowledge. Node
+has no directory-relative file API, so a process that can replace the
+tracker's own `runtime/` between that check and the write could redirect it;
+such a process already controls the tracker state the record describes. A
+check time more than five minutes in the future reads as a clock error. The record is derived state: a failed write is the
 warning `extension_update_observation_write_failed`, never a failed check.
 
 `pm context` reads the same observations offline for its `extension_health`
 block. Rows are `{name, scope, version, status, update, shadowed_by}`:
 `shadowed_by` names the scope whose same-named copy the runtime loads instead
 (project shadows global), so a copy installed in both scopes is told apart.
-`updates_available` counts the copies the runtime loads (a shadowed or
-disabled copy keeps its row but is not counted) with a known update, and
+`updates_available` counts the copies static discovery selects (a shadowed or
+disabled copy keeps its row but is not counted; this is static selection, not
+activation truth, since no package module is imported) with a known update, and
 `next` names one live check per scope with a known update, `pm package manage
 --<scope>`, only when that count is above zero; the check re-reads the
 registry and its remediation names the upgrade. The hint names no package, so
 no manifest-controlled name can select another installation, become an option,
 or lose its quoting, and the Markdown rendering puts each hint in a code span.
 A project hint names the absolute tracker the read served (`--pm-path`), and no
-hint inherits `--no-extensions`. A local npm artifact (a path or `file:` spec)
-is never reported as having a registry update, because an upgrade reinstalls it
-as it is. Corrupt or unreadable managed metadata in a scope means unknown
+hint inherits `--no-extensions`. An npm source that is not a registry install
+(classified with npm's own spec parser: a path, tarball, `file:`, git or URL
+spec) is never reported as having a registry update, because an upgrade
+reinstalls it as it is. Corrupt or unreadable managed metadata in a scope means unknown
 updates there, never a failed `pm context`. `pm package list` refuses the
 row-shaping read-output controls it cannot apply (`read_output_surface_unsupported`) and
 keeps `--output-format` and an unbounded `--output-budget`

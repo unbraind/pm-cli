@@ -133,6 +133,8 @@ describe("canonical unknown-command recovery", () => {
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["--author", "extensions", "extensions", "list"])?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
     // A package root takes its verb with the lifecycle grammar, skipping a valued root option (Codex review round 3).
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "--ref", "v1", "list"])?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
+    // An inherited host option between the noun and the verb skips its value too (CodeRabbit review round 4).
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "--author", "Ada", "list"])?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
     // The noun alone still resolves; an operand that names nothing beneath it stops the path.
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "bogus"])?.suggestedRetryArgs).toEqual(["package", "--help"]);
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'contexts'", program, new Map(), ["contexts"])?.suggestedRetryArgs).toEqual(["context", "--help"]);

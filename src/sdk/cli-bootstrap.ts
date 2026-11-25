@@ -1235,7 +1235,8 @@ const LIFECYCLE_ROOT_VALUE_OPTIONS = new Set(["--capability", "--gh", "--github"
 /**
  * The verb of a package invocation, given the tokens after its noun: root
  * switches Commander accepts before the verb are skipped (`--global`,
- * `--offline`), a valued root option skips its value (`--ref v1`), and the first
+ * `--offline`), a valued root or inherited host option skips its value
+ * (`--ref v1`, `--pm-path <dir>`), and the first
  * remaining operand is the verb. The one parser static selection, flag
  * normalization and recovery share, so every spelling Commander routes to a
  * verb resolves to the same leaf contract.
@@ -1244,7 +1245,8 @@ export function resolveLifecycleVerb(tokens: readonly string[]): string | undefi
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index]!;
     if (!token.startsWith("-")) return token;
-    if (LIFECYCLE_ROOT_VALUE_OPTIONS.has(token)) index += 1;
+    // Inherited host options take values too (`pm package --pm-path /work list`, `--output-budget unbounded list`).
+    if (LIFECYCLE_ROOT_VALUE_OPTIONS.has(token) || GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) index += 1;
   }
   return undefined;
 }

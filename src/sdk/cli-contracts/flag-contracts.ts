@@ -817,7 +817,7 @@ export const EXTENSION_EXPLORE_FLAG_CONTRACTS: CliFlagContract[] = [
   EXTENSION_LISTING_FIELDS_FLAG_CONTRACT,
 ];
 /** Flags of `package inventory` and its `list` alias: scope plus the listing row projection. */
-const EXTENSION_INVENTORY_FLAG_CONTRACTS: CliFlagContract[] = [
+export const EXTENSION_INVENTORY_FLAG_CONTRACTS: CliFlagContract[] = [
   ...EXTENSION_SCOPE_FLAG_CONTRACTS,
   EXTENSION_LISTING_FIELDS_FLAG_CONTRACT,
 ];

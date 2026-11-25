@@ -46,6 +46,9 @@ describe("static extension inventory command routing", () => {
     expect(isStaticExtensionInventoryInvocation(["--no-changed-fields", "package", "list"])).toBe(true);
     expect(isStaticExtensionInventoryInvocation(["--pm-path", "/x", "--author", "a", "packages", "inventory"])).toBe(true);
     expect(isStaticExtensionInventoryInvocation(["--json"])).toBe(false);
+    // Inherited host options between the noun and the verb skip their values (Codex review round 4).
+    expect(isStaticExtensionInventoryInvocation(["package", "--pm-path", "/work/tracker", "list"])).toBe(true);
+    expect(isStaticExtensionInventoryInvocation(["package", "--output-budget", "unbounded", "list"])).toBe(true);
   });
 
   it("dispatches source CLI inventory with scope and incomplete-read receipts", async () => {

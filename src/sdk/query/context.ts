@@ -385,7 +385,7 @@ export interface ContextExtensionHealth {
   ok: number;
   /** Number of degraded installed extensions. */
   degraded: number;
-  /** Active copies whose last observed `pm package manage` check found a newer release (pm-gh1778). */
+  /** Copies static discovery selects (not activation truth; no module is imported) whose last observed `pm package manage` check found a newer release (pm-gh1778). */
   updates_available?: number;
   /** One live `pm package manage --<scope>` check per scope with a known update, whose remediation names the upgrade; present only when `updates_available` is above zero. */
   next?: string[];
@@ -407,7 +407,7 @@ export interface ContextExtensionHealthRow {
   status: "ok" | "degraded";
   /** Newer version the last `pm package manage` check observed for this installed version; null when none is known. */
   update?: string | null;
-  /** Scope of the same-named copy the runtime loads instead of this one; null when this copy is the one loaded. */
+  /** Scope of the same-named copy static discovery selects instead of this one; null when this copy is the selected one. Static selection, not activation truth. */
   shadowed_by?: "project" | "global" | null;
 }
 
@@ -2065,14 +2065,7 @@ export function renderContextMarkdown(result: ContextResult): string {
     `- blocked_fallback_used: ${result.summary.blocked_fallback_used}`,
   );
   if (result.extension_health) {
-    const degradedNames = result.extension_health.packages
-      .filter((entry) => entry.status === "degraded")
-      .map((entry) => entry.name);
-    // next is present exactly when updates_available is above zero.
-    const next = result.extension_health.next;
-    lines.push(
-      `- extensions: ${result.extension_health.ok} ok, ${result.extension_health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${next === undefined ? "" : `, ${String(result.extension_health.updates_available)} with a known update (${next.map(renderMarkdownCodeSpan).join("; ")})`}`,
-    );
+    lines.push(...renderExtensionHealthMarkdown(result.extension_health));
   }
   const renderedSections = result.sections_included.filter(
     (section) => section !== "blockers" || (result.blockers?.length ?? 0) > 0,
@@ -2954,6 +2947,33 @@ function buildExtensionUpgradeHints(updatable: readonly ContextExtensionHealthRo
       ...(scope === "project" ? ["--pm-path", path.resolve(pmRoot)] : []),
       "package", "manage", `--${scope}`,
     ]));
+}
+
+/**
+ * The Markdown summary line of `extension_health`. `next` is present exactly when
+ * `updates_available` is above zero; a hint holding a line break (a tracker path may
+ * contain one) goes in a fenced block after the line, because a code span turns
+ * line breaks into spaces.
+ */
+function renderExtensionHealthMarkdown(health: ContextExtensionHealth): string[] {
+  const degradedNames = health.packages.filter((entry) => entry.status === "degraded").map((entry) => entry.name);
+  const next = health.next;
+  const inlineHints = next?.filter((hint) => !/[\r\n]/u.test(hint)) ?? [];
+  const fencedHints = next?.filter((hint) => /[\r\n]/u.test(hint)) ?? [];
+  const updates = next === undefined
+    ? ""
+    : `, ${String(health.updates_available)} with a known update (${[...inlineHints.map(renderMarkdownCodeSpan), ...(fencedHints.length > 0 ? ["see below"] : [])].join("; ")})`;
+  return [
+    `- extensions: ${health.ok} ok, ${health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${updates}`,
+    ...fencedHints.map(renderMarkdownFence),
+  ];
+}
+
+/** Render a multi-line command as a fenced block whose fence no run of backticks inside it can close. */
+function renderMarkdownFence(text: string): string {
+  const longestRun = Math.max(0, ...[...text.matchAll(/`+/gu)].map((match) => match[0].length));
+  const fence = "`".repeat(Math.max(3, longestRun + 1));
+  return `${fence}sh\n${text}\n${fence}`;
 }
 
 /** Render a command as a Markdown code span, so Markdown never consumes its shell escapes. */
