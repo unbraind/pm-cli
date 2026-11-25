@@ -146,6 +146,8 @@ describe("extension update observations", () => {
       record({ name: "pm-csv", last_update_check_at: "2026-11-24T10:00:00.000Z", update_available: false }),
       record({ name: "pm-repo", source: { kind: "github", input: "o/r", location: "o/r" } as ManagedExtensionRecord["source"], last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_commit: "0123456789abcdef0123", update_available: true }),
       record({ name: "pm-timeout", last_update_check_at: "2026-11-24T10:00:00.000Z", update_error: "timeout", update_available: null }),
+      // A field longer than the reader accepts is never written, so writer and reader agree (Codex review round 10).
+      record({ name: "pm-long", manifest_version: "1".repeat(257), last_update_check_at: "2026-11-24T10:00:00.000Z", update_available: true }),
       // A local npm artifact is reinstalled as it is, so a registry release is never an update for it.
       record({ name: "pm-tarball", source: { kind: "npm", input: "npm:./pm-tarball-1.0.0.tgz", location: "package", package: "pm-tarball", version: "1.0.0" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "2.0.0", update_available: true }),
       record({ name: "pm-unchecked" }),
@@ -350,15 +352,28 @@ describe("extension update observations", () => {
   it("rechecks the runtime directory once the lock is held", async () => {
     await writeManagedState([record({})]);
     await fs.mkdir(path.join(scopeRoot, "runtime"));
-    // Hold the lock, let the writer pass its first check and wait, then swap runtime/ for a link before releasing.
+    // Hold the lock; once the writer's first runtime/ check has returned a directory (an explicit barrier, not a delay),
+    // swap runtime/ for a link and release, so only the post-lock recheck can refuse (CodeRabbit review round 7).
+    const runtimeDir = path.join(scopeRoot, "runtime");
     const release = await acquireLock(scopeRoot, "extension-update-observations", 30, "test holder", false, true, 1_000);
-    const pending = recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()]);
-    const settled = pending.then(() => "resolved", (error: unknown) => error);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    await fs.rm(path.join(scopeRoot, "runtime"), { recursive: true });
-    await fs.symlink(scopeRoot, path.join(scopeRoot, "runtime"));
-    await release();
-    expect(String(await settled)).toMatch(/is not a directory/);
+    let firstCheckPassed!: () => void;
+    const barrier = new Promise<void>((resolve) => { firstCheckPassed = resolve; });
+    const realLstat = fs.lstat.bind(fs);
+    const spy = vi.spyOn(fs, "lstat").mockImplementation(async (...args: Parameters<typeof fs.lstat>) => {
+      const stat = await realLstat(...args);
+      if (String(args[0]) === runtimeDir) firstCheckPassed();
+      return stat;
+    });
+    try {
+      const settled = recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()]).then(() => "resolved", (error: unknown) => error);
+      await barrier;
+      await fs.rm(runtimeDir, { recursive: true });
+      await fs.symlink(scopeRoot, runtimeDir);
+      await release();
+      expect(String(await settled)).toMatch(/is not a directory/);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("keeps the typed reason of a failed write, such as a held lock, in the warning (Codex review round 7)", async () => {

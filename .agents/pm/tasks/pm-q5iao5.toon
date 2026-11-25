@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: agent-ux,consolidation,extensions,packages,token-efficiency
 created_at: "2026-11-25T06:17:32.914Z"
-updated_at: "2026-11-25T14:20:48.663Z"
+updated_at: "2026-11-25T17:33:05.273Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "One installed-package listing takes --depth brief|standard|deep, where brief reads only manifests and saved state, standard adds the runtime activation probe, and deep adds the live registry check; The SDK list target, the CLI list subcommand and the MCP package tool resolve to the same listing; explore and manage keep working as compatibility spellings with unchanged output"
@@ -16,7 +16,8 @@ confidence: medium
 expected_result: "An agent asks for installed packages once, chooses how much evidence to pay for with --depth, and gets the same listing from the CLI, the SDK and MCP"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1777,discovered_from,"2026-11-25T06:17:32.914Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-25T09:56:50.605Z","harness:claude-code","Scope note from the PR #1782 review (Codex round 3): the CLI list alias now serves the static inventory, but PmClient.run('package list') is refused, the MCP pm_run action enum has no package-inventory, and PmClient.packageList() still runs the runtime explore listing (so --fields update is refused there). This item owns aligning those: add a canonical static listing action with the same --fields contract to the SDK and MCP dispatch, and document packageList() as the explore listing until the --depth listing lands."
   "2026-11-25T14:20:48.663Z","harness:claude-code","More scope from the PR #1782 review (Codex round 7): the command_output_contracts entry for package list/inventory inherits the package root's 3,000-token TOON budget (budgets are keyed by root command), while the static inventory applies no read-output controls; the --depth listing should declare its own budget per depth (brief unbudgeted, standard/deep budgeted), and the SDK packageList/extensionList helpers plus the native package target list should either route to the static listing or be documented as explore compatibility routes."
+  "2026-11-25T17:33:05.272Z","harness:claude-code","More listing-surface scope from the PR #1782 review (Codex round 10): accept the --fields projection in the published inspectStaticExtensionInventory (so SDK hosts need not re-implement it, with the CLI delegating to it), and complete --fields on the package listing leaves (list, inventory, explore, manage, catalog) in bash, zsh and fish from the leaf flag contracts; completion currently takes package flags from the root contract only, which already left catalog --fields uncompleted on main."
 body: ""

@@ -15,7 +15,7 @@
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { acquireLock } from "../../core/lock/lock.js";
+import { acquireLockLease } from "../../core/lock/lock.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { normalizeManagedState, resolveManagedExtensionStatePath, type ManagedExtensionRecord } from "./managed-state.js";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
@@ -192,7 +192,9 @@ export function collectExtensionUpdateObservations(entries: readonly ManagedExte
       // Only sources a check actually queries are recorded: a GitHub repository or a registry npm package. A local
       // artifact is reinstalled as it is, and a stale verdict left on a record the refresh skips is not an answer.
       typeof entry.last_update_check_at === "string" && entry.update_error === undefined && typeof entry.update_available === "boolean" &&
-      (entry.source.kind === "github" || isRegistryNpmSource(entry.source))
+      (entry.source.kind === "github" || isRegistryNpmSource(entry.source)) &&
+      // The writer applies the reader's field bound, so a row the reader would drop is never written (Codex review round 10).
+      [entry.name, entry.manifest_version, entry.updated_at, entry.last_update_remote_version ?? ""].every((value) => value.length <= MAX_OBSERVATION_FIELD_LENGTH)
         ? [{
             name: entry.name,
             installed_version: entry.manifest_version,
@@ -271,7 +273,7 @@ export async function recordExtensionUpdateObservations(
   };
   await assertRuntimeDirectory();
   // maxWaitMs caps the wait even when PM_LOCK_WAIT_MS asks for longer: this derived write must never stall a manage call.
-  const release = await acquireLock(scopeRoot, "extension-update-observations", 30, "pm package manage", false, true, OBSERVATION_LOCK_WAIT_MS, { maxWaitMs: OBSERVATION_LOCK_WAIT_MS });
+  const lease = await acquireLockLease(scopeRoot, "extension-update-observations", 30, "pm package manage", false, true, OBSERVATION_LOCK_WAIT_MS, { maxWaitMs: OBSERVATION_LOCK_WAIT_MS });
   try {
     await assertRuntimeDirectory();
     const candidates = [...(await readExtensionUpdateObservations(scopeRoot)), ...observations];
@@ -284,9 +286,11 @@ export async function recordExtensionUpdateObservations(
     ).sort((left, right) => left.name.localeCompare(right.name));
     const serialized = `${JSON.stringify({ version: OBSERVATIONS_RECORD_VERSION, observations: rows }, null, 2)}\n`;
     if (Buffer.byteLength(serialized, "utf8") > MAX_OBSERVATIONS_BYTES) throw new Error("update observation record exceeds its size limit");
-    await writeFileAtomic(file, serialized);
+    // Publish only while this lease still owns the lock: a writer whose expired lease was reclaimed refuses with
+    // lock_lost instead of overwriting the newer answers its successor saved (Codex review round 10).
+    await lease.fence(() => writeFileAtomic(file, serialized));
   } finally {
-    await release();
+    await lease.release();
   }
 }
 
