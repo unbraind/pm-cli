@@ -1,0 +1,67 @@
+id: pm-gh1777
+title: "GH-1777: pm package list prints the bundled catalog instead of the installed packages, and the four package listings take different --fields contracts"
+description: "GH-1777 (filed 2026-11-24 from a project with two npm-installed packages). pm package list, pm packages list and pm extension list are Commander aliases of pm package catalog (alias contract owner pm-ya7x55), so the most natural question an agent asks, which packages does this tracker have, prints the 13 bundled first-party packages (11,976 B toon on this repo) with installed=false rows and none of the packages actually installed. The installed set is spread across explore (5,991 B), manage (6,018 B, each row embeds the full contributions JSON and it is the only listing with update metadata) and inventory (526 B, static, one line per package). catalog accepts --fields; manage, explore and inventory refuse it with unknown_option. pm extensions list (plural) is refused as an unknown command and the did-you-mean suggests package, package activate, package adopt, none of which lists anything. Reproduced on 2026.11.25 in this repo. The report's hub ran seven-week-old extensions because only manage --json exposes update_available. pm-fr6u17 (closed, GH-937) fixed alias rows inside the catalog, not which listing list names. Duplicate check: searched package list installed catalog inventory, extension list did you mean, package manage fields; no open owner."
+type: Issue
+status: closed
+priority: 2
+tags[5]: agent-ux,extensions,"gh:1777",packages,token-efficiency
+created_at: "2026-11-25T05:51:18.663Z"
+updated_at: "2026-11-25T07:34:18.679Z"
+closed_at: "2026-11-25T07:16:03.640Z"
+completed_at: "2026-11-25T07:16:03.640Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "pm package list (and pm packages list, pm extension list) lists the packages installed in the selected scope, and pm package catalog keeps listing the bundled catalog; the alias contract, help, completion and contracts agree; Each package listing (list/inventory, explore, manage, catalog) accepts the same --fields contract and refuses an unknown field with the allowed values; pm package manage rows leave the embedded contributions map out unless requested with --fields, because pm package describe maps them; pm extensions list suggests pm package list"
+parent: pm-ugqx
+risk: medium
+confidence: medium
+reporter: unbraind
+severity: medium
+resolution: "pm package list, pm packages list and pm extension list are now aliases of the static inventory (installed packages in the selected scope, no extension code activated), with an update column from the last pm package manage observation and an updates_available count; pm package catalog keeps the bundled catalog. list, explore, manage and catalog share one --fields contract on the CLI and in the MCP/SDK explore and manage action schemas; an unknown key is refused with the listing's whole domain. Default explore and manage rows leave out the embedded contributions map. pm extensions list now suggests package list with an executable help retry, through a new singular/plural noun step that leaves real commands and aliases to the existing ranking. Alias contracts, grammar rows, flag contracts, help, completion, the static fast path, the dogfood script and the contracts fixture agree."
+expected_result: "An agent that runs pm package list sees exactly the installed packages in a few hundred bytes, and every listing answers --fields the same way"
+actual_result: "On this repo pm package list prints the 4 installed packages in 574 B (was 11,976 B of catalog); explore and manage rows dropped from about 6.0 KB to 3.8 KB; --fields works on all four listings and refuses unknown keys with the domain; pm extensions list suggests package list"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fr6u17,related,"2026-11-25T05:51:18.663Z","harness:claude-code","cli:create:dep",detected
+  pm-ya7x55,related,"2026-11-25T05:51:18.663Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-25T06:39:21.754Z","harness:claude-code","Implementation: pm package list, pm packages list and pm extension list are now aliases of pm package inventory (Commander alias moved off catalog; alias contracts owner pm-gh1777, extension list targets package inventory because the deprecated extension vocabulary has no live-contract inventory row); catalog keeps the bundled catalog. Inventory rows gain update (last observed newer version for the installed version) and the result gains updates_available. One --fields contract (parseListingFields/projectListingRows, published with the inventory reader so the CLI stays on the SDK export closure) on list, explore, manage and catalog; unknown keys are refused as 'must be one of a|b|c', which recovery turns into allowed_values. Default explore/manage rows drop the embedded contributions map (--fields ...,contributions restores it). pm extensions list now suggests package list with an executable --help retry: a singular/plural slip of a noun that is neither a command nor an alias resolves through the alias contracts, then follows typed operands. Measured on this repo: package list 574 B (was 11,976 B, the catalog); explore 5,991 to 3,837 B; manage 6,018 to 3,864 B. Static fast path covers list. Gates: grammar, flag contracts, contracts fixture, completion, SDK surface (two additive inventory type changes acknowledged), static chain green."
+files[19]{path,scope}:
+  scripts/dogfood-package-first.mjs,project
+  sdk/public-surface.json,project
+  src/cli/commander-usage.ts,project
+  src/cli/help-content.ts,project
+  src/cli/register-setup.ts,project
+  src/cli/runtime/selection.ts,project
+  src/sdk/cli-contracts/command-aliases.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/grammar-contracts.ts,project
+  src/sdk/completion/shared.ts,project
+  src/sdk/extension.ts,project
+  src/sdk/extension/bundled-catalog.ts,project
+  src/sdk/extension/listing-fields.ts,project
+  src/sdk/extension/static-inventory.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/cli/canonical-command-recovery.spec.ts,project
+  tests/unit/cli/static-extension-inventory.spec.ts,project
+  tests/unit/extensions/package-listing-observations.spec.ts,project
+  tests/unit/scripts/dogfood-package-first.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/package-listing-observations.spec.ts tests/unit/cli/static-extension-inventory.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,"harness:claude-code","2026-11-25T06:35:22.333Z",local_mutation,feat/package-listing-extension-health
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/EXTENSION_LIFECYCLE.md,project
+close_reason: "pm package list lists the installed packages, and every package listing takes one --fields contract"
+contract_change:
+  api: "pm package list / pm packages list / pm extension list, pm package explore and manage rows, and the SDK StaticExtensionInventoryEntry/StaticExtensionInventoryResult types"
+  before: pm package list was an alias of pm package catalog and returned the bundled catalog (details.packages); explore and manage rows embedded the full contributions map; inventory rows had no update column
+  after: "pm package list is an alias of pm package inventory and returns the installed packages of the selected scope (extensions[] with an update column, plus updates_available); pm package catalog returns the bundled catalog; explore and manage rows leave contributions out unless --fields asks for it; list, explore, manage and catalog share one --fields contract"
+  migrate: "Scripts that read the bundled catalog from pm package list switch to pm package catalog (same rows and --fields); readers of contributions in explore or manage rows pass --fields with contributions, or use pm package describe"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1777
+  gate_id: package-listing-installed-rows
+  negative_control: "tests/unit/cli/static-extension-inventory.spec.ts runs pm package list and expects the installed inventory rows with the observed update column and the shared --fields refusal; on 2026.11.25 pm package list resolves to the bundled catalog (13 rows, installed=false, no installed packages) and --fields on inventory is refused as unknown_option; tests/unit/cli/canonical-command-recovery.spec.ts pins pm extensions list suggesting package list"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/cli/static-extension-inventory.spec.ts tests/unit/extensions/package-listing-observations.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

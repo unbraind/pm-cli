@@ -10,11 +10,14 @@ describe("static extension inventory command routing", () => {
   it("selects static invocations before dynamic extension registration", () => {
     const program = createPmCliProgram("test");
     for (const name of ["package", "packages", "extension"]) {
-      expect(isStaticExtensionInventoryInvocation(["--json", name, "inventory"])).toBe(true);
-      expect(shouldRegisterDynamicExtensionPaths(program, [name, "inventory"])).toBe(false);
+      for (const verb of ["inventory", "list"]) {
+        expect(isStaticExtensionInventoryInvocation(["--json", name, verb])).toBe(true);
+        expect(shouldRegisterDynamicExtensionPaths(program, [name, verb])).toBe(false);
+      }
     }
     expect(isStaticExtensionInventoryInvocation(["package", "explore"])).toBe(false);
     expect(isStaticExtensionInventoryInvocation([])).toBe(false);
+    expect(isStaticExtensionInventoryInvocation(["package"])).toBe(false);
   });
 
   it("dispatches source CLI inventory with scope and incomplete-read receipts", async () => {
@@ -40,6 +43,21 @@ describe("static extension inventory command routing", () => {
         await run(["packages", "inventory", "--global"]);
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ complete: true, scope: "global", extensions: [] });
         await expect(run(["extension", "inventory", "--global", "--local"])).rejects.toThrow(/mutually exclusive/);
+        // pm-gh1777: list is the installed listing, with the update the last manage check observed for this version.
+        await mkdir(path.join(pmPath, "runtime"), { recursive: true });
+        await writeFile(path.join(pmPath, "runtime", "extension-update-observations.json"), JSON.stringify({
+          version: 1,
+          observations: [{ name: "source-probe", installed_version: "1.0.0", remote_version: "1.2.0", update_available: true, checked_at: "2026-11-24T10:00:00.000Z" }],
+        }));
+        await run(["package", "list"]);
+        expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ updates_available: 1, extensions: [{ name: "source-probe", version: "1.0.0", update: "1.2.0" }] });
+        await run(["package", "list", "--fields", "name,update"]);
+        expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe", update: "1.2.0" }]);
+        await expect(run(["package", "list", "--fields", "name,alias"])).rejects.toThrow("Package list --fields must be one of name|directory|scope|installed|status|configured_enabled|managed|runtime_active|version|update; unknown: alias");
+        await run(["package", "list", "absent-probe"]);
+        const absent = JSON.parse(output.pop() ?? "{}");
+        expect(absent).toMatchObject({ updates_available: 0, extensions: [{ name: "absent-probe", installed: false }] });
+        expect(absent.extensions[0]).not.toHaveProperty("update");
         await writeFile(manifestPath, "{");
         await run(["package", "inventory"]);
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ complete: false, errors: [{ code: "manifest_invalid" }] });

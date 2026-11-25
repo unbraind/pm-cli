@@ -72,6 +72,12 @@ metadata described above. An absent `refusal` therefore
 does not prove that the producer supplied no legal domain. The original SDK
 error context retains the producer's complete domain; CLI JSON has its own
 ceiling and is not an unlimited restoration channel.
+Human text lists at most eight legal values and counts the rest as
+`allowed_values_omitted`, except that a domain of twelve or fewer values prints
+whole when no token budget is tightening the rendering, because a CLI agent
+cannot read the SDK error context the omission notice points to
+([pm-gh1778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1778.toon),
+tracker record excluded from npm).
 For malformed producer domains, text prioritizes the incomplete-domain notice
 and a bounded preview of whole usable choices even when producer next steps,
 verification errors, or recovery coordinates are oversized. An oversized close

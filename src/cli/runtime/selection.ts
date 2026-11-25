@@ -26,7 +26,7 @@ const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 /** Recognize the read-only package inventory before extension bootstrap. */
 function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean {
   const tokens = stripGlobalBootstrapTokens(invocationArgv);
-  return ["package", "packages", "extension"].includes(tokens[0] ?? "") && tokens[1] === "inventory";
+  return ["package", "packages", "extension"].includes(tokens[0] ?? "") && ["inventory", "list"].includes(tokens[1] ?? "");
 }
 
 /** Protect literal preview candidates in the item namespace until the real parser settles the selected action; host-owned global grammar also captures the tracker roots. */

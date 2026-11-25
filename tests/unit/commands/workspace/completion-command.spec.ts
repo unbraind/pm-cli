@@ -446,7 +446,7 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("package|packages)");
     expect(script).toContain(
-      "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate migrate upgrade",
+      "init scaffold install uninstall list inventory explore manage describe reload doctor catalog adopt adopt-all activate deactivate migrate upgrade",
     );
     expect(script).toContain("--declarative");
     expect(script).toContain("--catalog");
@@ -972,7 +972,7 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("package|packages)");
     expect(script).toContain(
-      "1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate migrate upgrade)",
+      "1:package_action:(init scaffold install uninstall list inventory explore manage describe reload doctor catalog adopt adopt-all activate deactivate migrate upgrade)",
     );
     expect(script).toContain(
       "--declarative[Generate a composeExtension blueprint starter]",

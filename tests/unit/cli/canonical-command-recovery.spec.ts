@@ -119,4 +119,23 @@ describe("canonical unknown-command recovery", () => {
     expect(JSON.stringify(guidance)).not.toContain("suggested command paths above");
   });
 
+  it("maps a plural or singular slip of a command noun to the command it meant (pm-gh1777)", () => {
+    const program = new Command().name("pm");
+    const packageCommand = program.command("package");
+    packageCommand.command("inventory");
+    packageCommand.command("catalog");
+    program.command("context");
+    const plural = buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "list", "--json"]);
+    expect(plural?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
+    expect(plural?.unknownCommandNextSteps?.[0]).toMatch(/^Did you mean: package list/);
+    // The noun alone still resolves; an operand that names nothing beneath it stops the path.
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "bogus"])?.suggestedRetryArgs).toEqual(["package", "--help"]);
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'contexts'", program, new Map(), ["contexts"])?.suggestedRetryArgs).toEqual(["context", "--help"]);
+    // A singular slip resolves to the plural command when one exists; nothing resolves for an unrelated word.
+    program.command("widgets");
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'widget'", program, new Map(), [])?.suggestedRetryArgs).toEqual(["widgets", "--help"]);
+    // A typed noun that is itself an alias (note -> item notes) keeps the alias-aware ranking.
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'note'", program, new Map(), ["note"])?.suggestedRetryArgs).toBeUndefined();
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'zzz'", program, new Map(), ["zzz"])?.suggestedRetryArgs).toBeUndefined();
+  });
 });

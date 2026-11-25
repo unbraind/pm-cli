@@ -313,11 +313,24 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       "pm package catalog --project",
       "pm package catalog --project --fields alias,installed,install_command",
-      "pm package list --project --fields alias,package_name,category",
+      "pm package catalog --project --fields alias,package_name,category",
     ],
     tips: [
       "Use --fields for low-token package discovery in agent loops.",
+      "pm package list shows the packages installed in the selected scope; catalog shows what pm bundles.",
       "External npm package discovery still belongs to npm search.",
+    ],
+  },
+  "package inventory": {
+    why: "Lists the packages installed in the selected scope (alias: pm package list) from manifests and saved state, without activating extension code, with the newer version the last pm package manage check observed.",
+    examples: [
+      "pm package list",
+      "pm package list --global --fields name,version,update",
+      "pm package list pm-changelog",
+    ],
+    tips: [
+      "update is null until pm package manage has checked the registry for that installed version; manage is the live check.",
+      "Use pm package catalog for the bundled first-party packages and pm package describe to map what a package registers.",
     ],
   },
   "extension init": {

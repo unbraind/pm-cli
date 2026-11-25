@@ -3590,6 +3590,14 @@
       ],
       "package_version": "2026.11.24",
       "reason": "pm-gh1774 and pm-kjoudp: every signature change is additive and source-compatible. quoteCommandArg and renderPmCommand gain an optional third CommandShellDialect parameter. ItemMutationLocation gains the optional callerClaimScoped flag. mutateItem and mutateItemWithHistoryContext gain the optional callerClaimScope hook. PmCliErrorContext.claim_activity gains the optional state field (active, stale or unknown); the CLI always populates it, and readers derive it when an older producer omits it. No parameter, field or export is removed or narrowed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:StaticExtensionInventoryEntry",
+        "signature ./sdk:StaticExtensionInventoryResult"
+      ],
+      "package_version": "2026.11.25",
+      "reason": "pm-gh1777: StaticExtensionInventoryEntry gains the optional observed update column and StaticExtensionInventoryResult gains updates_available; both are additive read-model fields that pm package list and pm context read from the offline update observation record"
     }
   ],
   "entrypoints": {
@@ -22650,7 +22658,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StaticExtensionInventoryEntry",
-          "signature": "export interface StaticExtensionInventoryEntry { name: string; directory: string | null; scope: \"project\" | \"global\"; installed: boolean; status: \"installed\" | \"inactive\" | \"absent\" | \"malformed_manifest\"; configured_enabled: boolean | null; managed: boolean | null; runtime_active: null; version?: string; }"
+          "signature": "export interface StaticExtensionInventoryEntry { name: string; directory: string | null; scope: \"project\" | \"global\"; installed: boolean; status: \"installed\" | \"inactive\" | \"absent\" | \"malformed_manifest\"; configured_enabled: boolean | null; managed: boolean | null; runtime_active: null; version?: string; update?: string | null; }"
         },
         {
           "classification": "advanced_export",
@@ -22662,7 +22670,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StaticExtensionInventoryResult",
-          "signature": "export interface StaticExtensionInventoryResult { scope: \"project\" | \"global\"; complete: boolean; settings_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; managed_state_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; extensions: StaticExtensionInventoryEntry[]; errors: StaticExtensionInventoryError[]; }"
+          "signature": "export interface StaticExtensionInventoryResult { scope: \"project\" | \"global\"; complete: boolean; settings_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; managed_state_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; updates_available: number; extensions: StaticExtensionInventoryEntry[]; errors: StaticExtensionInventoryError[]; }"
         },
         {
           "classification": "advanced_export",

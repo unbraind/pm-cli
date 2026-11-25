@@ -8,6 +8,7 @@ import path from "node:path";
 import { resolveGlobalPmRoot } from "../../core/store/paths.js";
 import { normalizeManagedState, type ManagedExtensionRecord } from "./managed-state.js";
 import { normalizeExtensionNameForMatch, normalizeStringList, parseExtensionManifest } from "./shared.js";
+import { findApplicableUpdateObservation, readExtensionUpdateObservations, resolveObservedUpdateVersion } from "./update-observations.js";
 
 /** One read failure or malformed document that prevents a complete inventory. */
 export interface StaticExtensionInventoryError {
@@ -37,7 +38,21 @@ export interface StaticExtensionInventoryEntry {
   runtime_active: null;
   /** Manifest version when available. */
   version?: string;
+  /**
+   * Newer version the last `pm package manage` check observed for this installed
+   * version, or null when none is known (pm-gh1777); absent on a row for a
+   * requested package that is not installed.
+   */
+  update?: string | null;
 }
+
+/** The `--fields` contract every package listing shares (pm-gh1777), published with the listing it serves. */
+export { parseListingFields, projectListingRows } from "./listing-fields.js";
+
+/** Row keys `pm package list --fields` selects from, in their emitted order. */
+export const INVENTORY_ROW_FIELDS = [
+  "name", "directory", "scope", "installed", "status", "configured_enabled", "managed", "runtime_active", "version", "update",
+] as const;
 
 /** A read-only inventory with explicit completeness and source receipts. */
 export interface StaticExtensionInventoryResult {
@@ -49,6 +64,8 @@ export interface StaticExtensionInventoryResult {
   settings_status: "ok" | "absent" | "invalid" | "unreadable";
   /** Status of the managed install metadata. */
   managed_state_status: "ok" | "absent" | "invalid" | "unreadable";
+  /** Installed entries whose last observed check found a newer release. */
+  updates_available: number;
   /** Installed entries, or one absent entry for a missing requested name. */
   extensions: StaticExtensionInventoryEntry[];
   /** Every failure that affected completeness. */
@@ -223,6 +240,7 @@ export async function inspectStaticExtensionInventory(options: {
   }
 
   const requested = options.name?.trim();
+  const observations = await readExtensionUpdateObservations(selectedRoot);
   const extensions: StaticExtensionInventoryEntry[] = [];
   for (const directory of listed.directories) {
     const manifestPath = path.join(extensionsRoot, directory, "manifest.json");
@@ -232,7 +250,7 @@ export async function inspectStaticExtensionInventory(options: {
     if (requested && ![entry.name, directory].some((value) => normalizeExtensionNameForMatch(value) === normalizeExtensionNameForMatch(requested))) {
       continue;
     }
-    extensions.push(entry);
+    extensions.push({ ...entry, update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, entry.name, entry.version)) });
   }
   if (requested && extensions.length === 0 && errors.every((error) => error.code !== "extensions_unreadable")) {
     extensions.push({ name: requested, directory: null, scope, installed: false, status: "absent",
@@ -240,5 +258,6 @@ export async function inspectStaticExtensionInventory(options: {
       managed: isTrustedSourceStatus(managed.status) ? false : null,
       runtime_active: null });
   }
-  return { scope, complete: errors.length === 0, settings_status: settings.status, managed_state_status: managed.status, extensions, errors };
+  const updatesAvailable = extensions.filter((entry) => typeof entry.update === "string").length;
+  return { scope, complete: errors.length === 0, settings_status: settings.status, managed_state_status: managed.status, updates_available: updatesAvailable, extensions, errors };
 }

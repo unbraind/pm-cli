@@ -1,0 +1,19 @@
+id: pm-q5iao5
+title: "Fold pm package explore, inventory and manage into one installed-package listing with --depth brief|standard|deep, and align the SDK list target and the MCP package tool with it"
+description: "Follow-up to pm-gh1777, which made pm package list an alias of the static inventory, gave every listing one --fields contract and dropped contributions from default explore/manage rows. Three listings of the same installed set remain, with different costs and evidence: inventory (static, offline, last observed update), explore (runtime-probed activation) and manage (runtime probe plus a live registry check that records update observations). The report's third suggestion was one command with --depth brief|standard|deep, as pm context does: brief = inventory rows, standard = explore activation status, deep = manage freshness. Two inconsistencies to settle in the same change: the SDK runExtension positional target list still maps to explore (src/sdk/extension.ts IMPLICIT_EXTENSION_ACTIONS), while the CLI list subcommand is the inventory; and the MCP pm_package tool exposes catalog/explore/manage but no inventory action (PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS). Keep explore and manage as compatibility spellings. Duplicate check: searched fold package explore inventory manage depth listing; no open owner."
+type: Task
+status: open
+priority: 3
+tags[5]: agent-ux,consolidation,extensions,packages,token-efficiency
+created_at: "2026-11-25T06:17:32.914Z"
+updated_at: "2026-11-25T06:32:33.335Z"
+author: "harness:claude-code"
+estimated_minutes: 360
+acceptance_criteria: "One installed-package listing takes --depth brief|standard|deep, where brief reads only manifests and saved state, standard adds the runtime activation probe, and deep adds the live registry check; The SDK list target, the CLI list subcommand and the MCP package tool resolve to the same listing; explore and manage keep working as compatibility spellings with unchanged output"
+parent: pm-ugqx
+risk: medium
+confidence: medium
+expected_result: "An agent asks for installed packages once, chooses how much evidence to pay for with --depth, and gets the same listing from the CLI, the SDK and MCP"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1777,discovered_from,"2026-11-25T06:17:32.914Z","harness:claude-code","cli:create:dep",detected
+body: ""

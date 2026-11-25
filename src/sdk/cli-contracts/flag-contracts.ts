@@ -809,9 +809,18 @@ export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for extension uninstall flag contracts, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_UNINSTALL_FLAG_CONTRACTS: CliFlagContract[] =
   EXTENSION_SCOPE_FLAG_CONTRACTS;
+/** Row projection every package listing accepts (pm-gh1777). */
+const EXTENSION_LISTING_FIELDS_FLAG_CONTRACT: CliFlagContract = { flag: "--fields", list: true };
 /** Public contract for extension explore flag contracts, shared by SDK and presentation-layer consumers. */
-export const EXTENSION_EXPLORE_FLAG_CONTRACTS: CliFlagContract[] =
-  EXTENSION_SCOPE_FLAG_CONTRACTS;
+export const EXTENSION_EXPLORE_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
+  EXTENSION_LISTING_FIELDS_FLAG_CONTRACT,
+];
+/** Flags of `package inventory` and its `list` alias: scope plus the listing row projection. */
+const EXTENSION_INVENTORY_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
+  EXTENSION_LISTING_FIELDS_FLAG_CONTRACT,
+];
 /** Public contract for extension describe flag contracts, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_DESCRIBE_FLAG_CONTRACTS: CliFlagContract[] = [
   ...EXTENSION_SCOPE_FLAG_CONTRACTS,
@@ -839,6 +848,7 @@ export const EXTENSION_MANAGE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--offline", value_type: "boolean" },
   { flag: "--runtime-probe" },
   { flag: "--fix-managed-state" },
+  EXTENSION_LISTING_FIELDS_FLAG_CONTRACT,
 ];
 
 /** Public contract for extension reload flag contracts, shared by SDK and presentation-layer consumers. */
@@ -862,7 +872,7 @@ export const EXTENSION_DOCTOR_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for extension catalog flag contracts, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_CATALOG_FLAG_CONTRACTS: CliFlagContract[] = [
   ...EXTENSION_SCOPE_FLAG_CONTRACTS,
-  { flag: "--fields", list: true },
+  EXTENSION_LISTING_FIELDS_FLAG_CONTRACT,
 ];
 
 /** Public contract for extension adopt flag contracts, shared by SDK and presentation-layer consumers. */
@@ -2171,7 +2181,8 @@ const EXTENSION_LIFECYCLE_FLAG_CONTRACTS_BY_SUBCOMMAND = new Map<
   ["reload", EXTENSION_RELOAD_FLAG_CONTRACTS],
   ["doctor", EXTENSION_DOCTOR_FLAG_CONTRACTS],
   ["catalog", EXTENSION_CATALOG_FLAG_CONTRACTS],
-  ["list", EXTENSION_CATALOG_FLAG_CONTRACTS],
+  ["inventory", EXTENSION_INVENTORY_FLAG_CONTRACTS],
+  ["list", EXTENSION_INVENTORY_FLAG_CONTRACTS],
   ["adopt", EXTENSION_ADOPT_FLAG_CONTRACTS],
   ["adopt-all", EXTENSION_ADOPT_ALL_FLAG_CONTRACTS],
   ["activate", EXTENSION_ACTIVATE_FLAG_CONTRACTS],

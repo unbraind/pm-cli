@@ -97,6 +97,8 @@ import {
   withUpdateCheckTeardownScope,
 } from "./extension/update-check.js";
 import { refreshManagedExtensionUpdates } from "./extension/managed-update-status.js";
+import { recordCheckedUpdateObservations } from "./extension/update-observations.js";
+import { projectExploreManageRows } from "./extension/listing-fields.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
 import { buildBundledInstallReceipt } from "./extension/install-receipts.js";
 import { buildExtensionInstallPlan, type ExtensionInstallPlan, type ExtensionCopyPlanOptions } from "./extension/install-plan.js";
@@ -3546,6 +3548,9 @@ const prepareExploreManageState = async (
       locked ? EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS : resolveExtensionUpdateCheckTimeoutMs(),
       !locked,
     );
+    // Offline reads report what this check learned (pm-gh1778); the record is derived, so a failed write only warns.
+    const observationWarning = await recordCheckedUpdateObservations(ctx.resolvedRoots.settings_root, state.entries, ctx.options.offline === true);
+    if (observationWarning) ctx.warnings.push(observationWarning);
   }
   return { state, fix };
 };
@@ -3687,7 +3692,7 @@ const runExtensionExploreManageAction = async (
       .length,
     active_total: runtimeInstalledExtensions.filter((entry) => entry.active)
       .length,
-    extensions: runtimeInstalledExtensions,
+    extensions: projectExploreManageRows(runtimeInstalledExtensions, options.fields, action),
     triage,
     policy: configuredPolicy,
   };

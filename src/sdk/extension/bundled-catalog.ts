@@ -429,7 +429,7 @@ function parsePackageCatalogFields(
       EXIT_CODE.USAGE,
       {
         examples: [
-          "pm package list --project --fields alias,installed,install_command",
+          "pm package catalog --project --fields alias,installed,install_command",
           "pm package catalog --project --fields alias,package_name,category",
         ],
       },

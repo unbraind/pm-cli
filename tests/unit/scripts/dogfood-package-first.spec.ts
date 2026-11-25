@@ -156,8 +156,8 @@ function handlePackageCommand(pmArgs: string[]): SpawnResult | undefined {
   }
   if (sub === "list") {
     return pmJson({
-      action: "catalog",
-      details: { total: PACKAGE_CATALOG_ROWS.length },
+      complete: true,
+      extensions: PACKAGE_CATALOG_ROWS.map((row) => ({ name: row.alias, installed: true })),
     });
   }
   if (sub === "doctor") {

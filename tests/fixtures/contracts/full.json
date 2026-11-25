@@ -4684,6 +4684,10 @@
           "flag": "--global"
         },
         {
+          "flag": "--fields",
+          "list": true
+        },
+        {
           "aliases": [
             "--format"
           ],
@@ -4776,6 +4780,10 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--fields",
+          "list": true
         },
         {
           "aliases": [
@@ -7844,6 +7852,10 @@
           "flag": "--global"
         },
         {
+          "flag": "--fields",
+          "list": true
+        },
+        {
           "aliases": [
             "--format"
           ],
@@ -7939,6 +7951,10 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--fields",
+          "list": true
         },
         {
           "aliases": [
@@ -8404,6 +8420,10 @@
           "flag": "--global"
         },
         {
+          "flag": "--fields",
+          "list": true
+        },
+        {
           "aliases": [
             "--format"
           ],
@@ -8499,6 +8519,10 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--fields",
+          "list": true
         },
         {
           "aliases": [
@@ -18109,6 +18133,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Explore extension.",
       "intent_source": "generated"
     },
@@ -18139,6 +18166,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Manage extension.",
       "intent_source": "generated"
     },
@@ -18883,6 +18913,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Explore package.",
       "intent_source": "generated"
     },
@@ -18913,6 +18946,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Manage package.",
       "intent_source": "generated"
     },
@@ -19046,6 +19082,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Explore packages.",
       "intent_source": "generated"
     },
@@ -19076,6 +19115,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Manage packages.",
       "intent_source": "generated"
     },
@@ -33284,7 +33326,15 @@
       },
       {
         "command": "package list",
-        "slots": []
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "package manage",
@@ -33560,7 +33610,15 @@
       },
       {
         "command": "packages list",
-        "slots": []
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "packages manage",
@@ -47781,6 +47839,15 @@
             "const": "extension-explore",
             "description": "Tool action to execute."
           },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
+            ],
+            "type": "string"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -47853,6 +47920,15 @@
           "action": {
             "const": "extension-manage",
             "description": "Tool action to execute."
+          },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
+            ],
+            "type": "string"
           },
           "fixManagedState": {
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
@@ -48935,6 +49011,15 @@
             "const": "package-explore",
             "description": "Tool action to execute."
           },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
+            ],
+            "type": "string"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -49007,6 +49092,15 @@
           "action": {
             "const": "package-manage",
             "description": "Tool action to execute."
+          },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
+            ],
+            "type": "string"
           },
           "fixManagedState": {
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",

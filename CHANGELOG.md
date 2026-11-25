@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- GH-1777: pm package list prints the bundled catalog instead of the installed packages, and the four package listings take different --fields contracts: pm package list was an alias of pm package catalog and returned the bundled catalog (details.packages); explore and manage rows embedded the full contributions map; inventory rows had no update column → pm package list is an alias of pm package inventory and returns the installed packages of the selected scope (extensions\[\] with an update column, plus updates_available); pm package catalog returns the bundled catalog; explore and manage rows leave contributions out unless --fields asks for it; list, explore, manage and catalog share one --fields contract. Migrate: Scripts that read the bundled catalog from pm package list switch to pm package catalog (same rows and --fields); readers of contributions in explore or manage rows pass --fields with contributions, or use pm package describe ([pm-gh1777](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1777.toon))
+
+### Fixed
+
+- GH-1778: pm context extension_health reports ok for packages with a known update and prints same-named project and global copies as identical rows ([pm-gh1778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1778.toon))
+- GH-1780: the runRegisteredCommandForTest doc says undeclared option keys pass through, but the harness refuses them with unknown_option on a command that declares flags ([pm-gh1780](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1780.toon))
+
 ## 2026.11.25 - 2026-11-25
 
 ### Changed (SDK contract)

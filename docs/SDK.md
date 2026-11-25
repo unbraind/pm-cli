@@ -994,8 +994,21 @@ _behavior_ (`result.result`) rather than only that the command is wired. The
 same normalizer as CLI dispatch and `PmClient.run`: `"status-filter"` reaches
 the handler as `statusFilter`, declared defaults and coercion apply, and two
 spellings with different values are refused (see
-[Handler keys and ownership](#handler-keys-and-ownership)). A hand-built
-registry has no declared flags, so its options pass through verbatim. A clean
+[Handler keys and ownership](#handler-keys-and-ownership)). On a command that
+declares flags, an undeclared key is refused with `unknown_option` (exit 2)
+before the handler runs, exactly as the CLI refuses an unknown flag, and an
+array for a flag that is not `list` or `repeatable` is refused with
+`extension_flag_value_invalid`; host-owned keys (the reserved host flags such
+as `json` or `quiet`) pass through unchanged. Undeclared keys pass through
+verbatim in three cases only: a command that declares no flags
+([pm-4of199](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4of199.toon),
+tracker record excluded from npm, owns that refusal), a hand-built registry
+with no flag registrations, and a native command path such as `list` that an
+extension extends or overrides. To unit-test a handler with a free option bag,
+call the handler function directly; to exercise the dispatch contract, declare
+every option the test passes
+([pm-gh1780](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1780.toon),
+tracker record excluded from npm). A clean
 run yields `{ handled: true, result, warnings: [] }`; a handler that throws a
 non-exit error yields `{ handled: false, warnings: [code], errorMessage }` so the
 failure can be asserted. Returned objects may declare `exit_code` from `1`

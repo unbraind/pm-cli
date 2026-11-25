@@ -503,9 +503,9 @@ function managedLifecycleSchemaContracts(
       anyOfRequired: [["target"], ["github"]],
     },
     [`${prefix}-uninstall`]: { required: ["target"], optional: ["scope"] },
-    [`${prefix}-explore`]: { optional: ["scope"] },
+    [`${prefix}-explore`]: { optional: ["scope", "fields"] },
     [`${prefix}-manage`]: {
-      optional: ["scope", "runtimeProbe", "fixManagedState", "offline"],
+      optional: ["scope", "runtimeProbe", "fixManagedState", "offline", "fields"],
     },
     [`${prefix}-describe`]: {
       optional: ["target", "scope", "markdown", "output"],

@@ -115,8 +115,10 @@ Use `--with-packages` for one-step agent setup when bundled package commands sho
 
 ```bash
 pm package                     # bare command defaults to --explore (list installed)
+pm package list                # installed packages in the selected scope, offline
+pm package list --global --fields name,version,update
 pm package install '*' --project
-pm package catalog --project
+pm package catalog --project   # bundled first-party catalog
 pm package manage --project --output-format json
 pm package install npm:@scope/pm-package --project
 pm package describe --project   # by-name surface map of every loaded package
@@ -130,6 +132,17 @@ pm package upgrade --cli-only --repair
 ```
 
 `pm package` is the canonical package-first workflow. `pm package` and the hidden `pm extension` alias default to `--explore` on a bare invocation so agents can list installed packages without remembering an action flag. `pm package install '*'`, shell-expanded `pm package install *`, and `pm package install all` install bundled first-party packages. `pm install`, `pm upgrade`, and `pm extension` remain executable as deprecated compatibility spellings declared in `PM_COMMAND_ALIAS_CONTRACTS`; they emit a migration hint and must not appear in documentation or skills as instructions.
+`pm package list` (an alias of `pm package inventory`) lists the packages
+installed in the selected scope without activating their code, with an `update`
+column holding the newer version the last `pm package manage` check observed for
+that installed version (`null` when none is known), and an `updates_available`
+count. `pm package catalog` lists what pm bundles. `list`, `explore`, `manage`
+and `catalog` take the same `--fields` contract: a comma-separated subset of the
+row keys, and an unknown key is refused with the listing's whole domain.
+`explore` and `manage` rows leave the embedded `contributions` map out unless
+`--fields` asks for it; `pm package describe` maps every registered surface
+([pm-gh1777](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1777.toon),
+tracker record excluded from npm).
 `pm package catalog` emits one row per package, with every resolvable bundled
 alias preserved in `aliases`; totals therefore measure packages rather than
 alias-index entries. `pm package manage` participates in the universal read

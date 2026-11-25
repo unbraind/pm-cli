@@ -621,6 +621,58 @@ function resolveUnknownCommandCandidates(params: {
   ], params.commandPaths, params.primaryToken).filter((path) => !params.normalizedUnknown.includes(" ") || path !== params.normalizedUnknown);
 }
 
+/**
+ * Map a singular or plural slip of a command noun (`pm extensions list`) to the
+ * command it meant (`package list`, pm-gh1777): the inflected noun resolves
+ * through a command or alias to a canonical root, then the operands typed after
+ * it extend that root while they name a command or a visible alias beneath it.
+ */
+function resolveInflectedCommandPath(
+  normalizedUnknown: string,
+  invocationArgv: readonly string[],
+  commandPaths: readonly string[],
+): string | undefined {
+  const [primary, ...typedRest] = normalizedUnknown.split(" ");
+  // A typed noun that is already a command or an alias is ranked by the alias-aware scorer instead.
+  if (commandPaths.includes(primary) || resolvePmCommandAlias(primary) !== undefined) return undefined;
+  const variant = primary.endsWith("s") ? primary.slice(0, -1) : `${primary}s`;
+  const alias = resolvePmCommandAlias(variant);
+  const root = alias && commandPaths.includes(alias.canonical) ? alias.canonical : commandPaths.includes(variant) ? variant : undefined;
+  if (root === undefined) return undefined;
+  const unknownIndex = invocationArgv.indexOf(primary);
+  const operands = [...typedRest, ...(unknownIndex >= 0 ? invocationArgv.slice(unknownIndex + 1 + typedRest.length) : [])];
+  let path = root;
+  for (const operand of operands) {
+    const next = `${path} ${operand}`;
+    const nextAlias = resolvePmCommandAlias(next);
+    if (!commandPaths.includes(next) && !(nextAlias !== undefined && !nextAlias.hidden && commandPaths.includes(nextAlias.canonical))) break;
+    path = next;
+  }
+  return path;
+}
+
+/**
+ * Order the paths an unknown command suggests: a misnested or inflected path
+ * first (it also becomes the executable retry), then the ranked candidates, or
+ * the top-level namespaces when nothing concrete matched.
+ */
+function rankUnknownCommandSuggestions(
+  normalizedUnknown: string,
+  invocationArgv: readonly string[],
+  commandPaths: string[],
+  combinedCandidates: string[],
+): { misnestedPath: string | undefined; hasConcreteCandidates: boolean; suggestedPaths: string[] } {
+  const inflectedPath = resolveInflectedCommandPath(normalizedUnknown, invocationArgv, commandPaths);
+  const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths) ?? inflectedPath;
+  const hasConcreteCandidates = combinedCandidates.length > 0 || inflectedPath !== undefined;
+  const fallback = hasConcreteCandidates ? [] : canonicalizeCommandSuggestions(resolveUnknownCommandFallbacks(commandPaths), commandPaths);
+  const suggestedPaths = [...new Set([
+    ...(misnestedPath ? [misnestedPath] : []),
+    ...(combinedCandidates.length > 0 ? combinedCandidates : fallback),
+  ])].slice(0, 3);
+  return { misnestedPath, hasConcreteCandidates, suggestedPaths };
+}
+
 /** Offer each installed top-level namespace once when no concrete command candidate matches. */
 function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
   const topLevel = [
@@ -722,19 +774,19 @@ export function buildUnknownCommandGuidanceFromRuntime(
     primaryToken,
     extensionDescriptors,
   });
-  const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
-  const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths);
+  const { misnestedPath, hasConcreteCandidates, suggestedPaths } = rankUnknownCommandSuggestions(
+    normalizedUnknown,
+    invocationArgv,
+    commandPaths,
+    combinedCandidates,
+  );
   const retryArgs = buildCanonicalHelpRetryArgs(misnestedPath, invocationArgv);
-  const suggestedPaths = [...new Set([
-    ...(misnestedPath ? [misnestedPath] : []),
-    ...(combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)),
-  ])].slice(0, 3);
   const examples = buildUnknownCommandExamples(
     suggestedPaths,
-    combinedCandidates.length > 0,
+    hasConcreteCandidates,
   );
   const didYouMean =
-    combinedCandidates.length > 0
+    hasConcreteCandidates
       ? `Did you mean: ${suggestedPaths.join(", ")}?`
       : null;
 

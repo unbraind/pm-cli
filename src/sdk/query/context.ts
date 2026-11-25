@@ -24,6 +24,12 @@ import {
   resolveItemTypeRegistry,
 } from "../runtime-primitives.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { resolveGlobalPmRoot } from "../../core/store/paths.js";
+import {
+  findApplicableUpdateObservation,
+  readExtensionUpdateObservations,
+  resolveObservedUpdateVersion,
+} from "../extension/update-observations.js";
 import type { ItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   collectDependencyBlockedIds,
@@ -377,10 +383,30 @@ export interface ContextExtensionHealth {
   ok: number;
   /** Number of degraded installed extensions. */
   degraded: number;
+  /** Active copies whose last observed `pm package manage` check found a newer release (pm-gh1778). */
+  updates_available?: number;
+  /** Upgrade commands, one per scope with a known update; present only when `updates_available` is above zero. */
+  next?: string[];
   /** Per-package static discovery health. */
-  packages: Array<{ name: string; status: "ok" | "degraded" }>;
+  packages: ContextExtensionHealthRow[];
   /** Whether package rows were capped. */
   truncated?: true;
+}
+
+/** One installed copy in `extension_health` (pm-gh1778). */
+export interface ContextExtensionHealthRow {
+  /** Manifest name, or the directory name when the manifest is unreadable. */
+  name: string;
+  /** Storage scope of this copy. */
+  scope?: "project" | "global";
+  /** Manifest version, or null when unreadable. */
+  version?: string | null;
+  /** Static discovery health of this copy. */
+  status: "ok" | "degraded";
+  /** Newer version the last `pm package manage` check observed for this installed version; null when none is known. */
+  update?: string | null;
+  /** Scope of the same-named copy the runtime loads instead of this one; null when this copy is the one loaded. */
+  shadowed_by?: "project" | "global" | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -2040,8 +2066,10 @@ export function renderContextMarkdown(result: ContextResult): string {
     const degradedNames = result.extension_health.packages
       .filter((entry) => entry.status === "degraded")
       .map((entry) => entry.name);
+    // next is present exactly when updates_available is above zero.
+    const next = result.extension_health.next;
     lines.push(
-      `- extensions: ${result.extension_health.ok} ok, ${result.extension_health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}`,
+      `- extensions: ${result.extension_health.ok} ok, ${result.extension_health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${next === undefined ? "" : `, ${String(result.extension_health.updates_available)} with a known update (${next.join("; ")})`}`,
     );
   }
   const renderedSections = result.sections_included.filter(
@@ -2857,26 +2885,52 @@ export async function resolveContextExtensionHealthProjection(
     cwd: process.cwd(),
     noExtensions: false,
   });
-  const packages = discovery.discovered
-    .map((diagnostic) => ({
-      name: diagnostic.name ?? diagnostic.directory,
-      status:
-        diagnostic.status === "ok" ? ("ok" as const) : ("degraded" as const),
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  if (discovery.discovered.length === 0) return {};
+  // Offline by design: updates come from what the last `pm package manage` check observed, never a network call.
+  const [projectObservations, globalObservations] = await Promise.all([
+    readExtensionUpdateObservations(pmRoot),
+    readExtensionUpdateObservations(resolveGlobalPmRoot(process.cwd())),
+  ]);
+  const loadedScopeByName = new Map(discovery.effective.map((entry) => [entry.name, entry.layer]));
+  const packages: ContextExtensionHealthRow[] = discovery.discovered
+    .map((diagnostic) => {
+      const name = diagnostic.name ?? diagnostic.directory;
+      const loadedScope = diagnostic.name === null ? undefined : loadedScopeByName.get(diagnostic.name);
+      const observations = diagnostic.layer === "global" ? globalObservations : projectObservations;
+      return {
+        name,
+        scope: diagnostic.layer,
+        version: diagnostic.version,
+        status: diagnostic.status === "ok" ? ("ok" as const) : ("degraded" as const),
+        update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, name, diagnostic.version)),
+        shadowed_by: loadedScope !== undefined && loadedScope !== diagnostic.layer ? loadedScope : null,
+      };
+    })
+    .sort((left, right) => left.name.localeCompare(right.name) || left.scope.localeCompare(right.scope));
   const degraded = packages.filter(
     (entry) => entry.status === "degraded",
   ).length;
-  if (packages.length === 0) return {};
+  const updatable = packages.filter((entry) => typeof entry.update === "string" && entry.shadowed_by === null);
   return {
     extension_health: {
       total: packages.length,
       ok: packages.length - degraded,
       degraded,
+      updates_available: updatable.length,
+      ...(updatable.length > 0 ? { next: buildExtensionUpgradeHints(updatable) } : {}),
       packages: packages.slice(0, 20),
       ...(packages.length > 20 ? { truncated: true } : {}),
     },
   };
+}
+
+/** One upgrade command per scope with a known update: the package by name when it is the only one, else every managed package. */
+function buildExtensionUpgradeHints(updatable: readonly ContextExtensionHealthRow[]): string[] {
+  return (["project", "global"] as const).flatMap((scope) => {
+    const names = updatable.filter((entry) => entry.scope === scope).map((entry) => entry.name);
+    if (names.length === 0) return [];
+    return [names.length === 1 ? `pm package upgrade ${names[0]} --${scope}` : `pm package upgrade --packages-only --${scope}`];
+  });
 }
 
 async function resolveContextSemanticAffinity(

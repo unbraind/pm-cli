@@ -1129,8 +1129,20 @@ export async function deactivateExtensionForTest(
  * through the same definition-driven normalizer as CLI dispatch and
  * `PmClient.run` (pm-gh1665): a declared CLI spelling such as `status-filter`
  * folds into the handler key `statusFilter`, declared defaults and value
- * coercion apply, two spellings with different values are refused with
- * `extension_option_spelling_conflict`, and undeclared keys pass through.
+ * coercion apply, and two spellings with different values are refused with
+ * `extension_option_spelling_conflict`. On a command that declares flags, an
+ * undeclared key is refused with `unknown_option` (exit 2) before the handler
+ * runs, exactly as the CLI refuses an unknown flag, and an array for a flag
+ * that is not `list` or `repeatable` is refused with
+ * `extension_flag_value_invalid` (pm-gh1726, pm-gh1727). Host-owned keys (the
+ * reserved host flags such as `json` or `quiet`) pass through unchanged. Undeclared keys
+ * still pass through verbatim in three cases only: a command that declares no
+ * flags (pm-4of199 owns that refusal), a hand-built registry with no flag
+ * registrations, and a native command path such as `list` that an extension
+ * extends or overrides, whose native contract owns every other key (pm-gh1780).
+ * To unit-test a handler with a free option bag, call the handler function
+ * directly; to exercise the dispatch contract, declare every option the test
+ * passes.
  *
  * Throws a descriptive error (listing the available handler command paths) when
  * no handler is registered for `command`, since that is a wiring/typo bug in the

@@ -10,14 +10,34 @@ Verified replacements and disabled compatibility findings are tracked by
 
 ## Read-only configured inventory
 
-Use `pm package inventory --project --json` (or `--global`) for a host GET route
-or agent read. Pass a name to receive an explicit `absent` row. The public SDK
+Use `pm package list --project --json` (an alias of `pm package inventory`; or
+`--global`) for a host GET route or agent read. Pass a name to receive an
+explicit `absent` row, and `--fields name,version,update` for compact rows. The public SDK
 equivalent is `inspectStaticExtensionInventory({ pmRoot, scope, name })` from
 `@unbrained/pm-cli/sdk`. Both read settings, managed metadata, and manifests
 without importing package entrypoints, running hooks, checking for updates,
 adopting installs, or writing workspace files. An absent managed-state file is
 reported separately from an invalid one. `complete: false` and `errors` mean
 the list must not be treated as authoritative; the CLI also exits nonzero.
+
+Each installed row carries `update`: the newer version the last
+`pm package manage` freshness check observed for exactly that installed
+version, or `null` when none is known. `manage` records what each check
+answered in the untracked `runtime/extension-update-observations.json` of the
+scope (`.agents/pm/runtime/` or the global pm root); a check that timed out or
+failed records nothing and keeps the earlier observation, and an update or
+reinstall retires an observation because the installed version no longer
+matches. The record is derived state: a failed write is the warning
+`extension_update_observation_write_failed`, never a failed check.
+
+`pm context` reads the same observations offline for its `extension_health`
+block. Rows are `{name, scope, version, status, update, shadowed_by}`:
+`shadowed_by` names the scope whose same-named copy the runtime loads instead
+(project shadows global), so a copy installed in both scopes is told apart.
+`updates_available` counts loaded copies with a known update, and `next` names
+one `pm package upgrade` command per scope only when that count is above zero
+([pm-gh1778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1778.toon),
+tracker record excluded from npm).
 
 `configured_enabled` is the effective saved enablement setting, while
 `runtime_active` is always `null`. The static read does not prove that a package
