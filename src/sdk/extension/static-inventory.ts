@@ -10,7 +10,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { normalizeManagedState, type ManagedExtensionRecord } from "./managed-state.js";
 import { normalizeExtensionNameForMatch, normalizeStringList, parseExtensionManifest } from "./shared.js";
-import { findApplicableUpdateObservation, readBoundedRegularFile, readExtensionUpdateObservations, readStrictManagedRecords, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
+import { findApplicableUpdateObservation, readBoundedRegularFile, readExtensionUpdateObservations, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
 
 /** One read failure or malformed document that prevents a complete inventory. */
 export interface StaticExtensionInventoryError {
@@ -131,6 +131,9 @@ export function refuseStaticInventoryReadOutputControls(controls: StaticInventor
   );
 }
 
+/** Ceiling for the managed install state the static inventory reads. */
+const MAX_STATIC_MANAGED_STATE_BYTES = 16 * 1024 * 1024;
+
 /** A manifest larger than this is not one pm can read statically. */
 const MAX_STATIC_MANIFEST_BYTES = 1024 * 1024;
 
@@ -246,9 +249,11 @@ async function readManagedRecords(managedPath: string): Promise<{
   entries: ManagedExtensionRecord[];
   error?: StaticExtensionInventoryError;
 }> {
-  let raw: string;
+  let raw: string | undefined;
   try {
-    raw = await fs.readFile(managedPath, "utf8");
+    // Bounded and non-blocking, following links as the runtime loader does; this one snapshot serves both the
+    // receipt and the observation matching (Codex review round 15).
+    raw = await readBoundedRegularFile(managedPath, MAX_STATIC_MANAGED_STATE_BYTES, { followLinks: true });
   } catch (error: unknown) {
     if (isMissing(error)) {
       try {
@@ -261,6 +266,7 @@ async function readManagedRecords(managedPath: string): Promise<{
     }
     return { status: "unreadable", entries: [], error: { code: "managed_state_unreadable", path: managedPath } };
   }
+  if (raw === undefined) return { status: "unreadable", entries: [], error: { code: "managed_state_unreadable", path: managedPath } };
   try {
     const parsed: unknown = JSON.parse(raw);
     const normalized = normalizeManagedState(parsed);
@@ -347,19 +353,6 @@ function projectConfiguredEntry(input: {
   };
 }
 
-/**
- * The update evidence of a scope: its observations, and the managed records to match them against, read
- * through the same guarded, strict snapshot pm context uses, so both offline readers agree (Codex review
- * round 12); the inventory's own receipts keep reporting the managed state's completeness separately.
- */
-async function readObservationEvidence(scopeRoot: string, extensionsRoot: string): Promise<{
-  observations: ExtensionUpdateObservation[];
-  records: ManagedExtensionRecord[];
-}> {
-  const [observations, records] = await Promise.all([readExtensionUpdateObservations(scopeRoot), readStrictManagedRecords(extensionsRoot)]);
-  return { observations, records: records ?? [] };
-}
-
 /** Attach the update the last manage check observed for exactly this installation (pm-gh1778). */
 function withObservedUpdate(
   entry: StaticExtensionInventoryEntry,
@@ -396,7 +389,10 @@ export async function inspectStaticExtensionInventory(options: {
   }
 
   const requested = options.name?.trim();
-  const { observations, records: observationRecords } = await readObservationEvidence(selectedRoot, extensionsRoot);
+  const observations = await readExtensionUpdateObservations(selectedRoot);
+  // The same snapshot the receipt came from; an absent, unreadable or invalid file carries no entries, so it
+  // contributes no update evidence.
+  const observationRecords = managed.entries;
   const extensions: StaticExtensionInventoryEntry[] = [];
   for (const directory of listed.directories) {
     const manifestPath = path.join(extensionsRoot, directory, "manifest.json");

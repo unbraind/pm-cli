@@ -126,6 +126,15 @@ function parseObservation(value: unknown): ExtensionUpdateObservation | undefine
   };
 }
 
+/** Whether a path exists as something other than a regular file (a FIFO, a directory, a link). */
+async function isNonRegularEntry(target: string): Promise<boolean> {
+  try {
+    return !(await fs.lstat(target)).isFile();
+  } catch {
+    return false;
+  }
+}
+
 /** Whether a path exists as something other than a real directory (a link, a file, a FIFO). */
 async function isNonDirectoryEntry(target: string): Promise<boolean> {
   try {
@@ -237,7 +246,8 @@ export async function readStrictManagedRecords(extensionsRoot: string): Promise<
   // read through the guarded bounded reader, so a FIFO or endless stream never holds the observation lease (round 11).
   let raw: string | undefined;
   try {
-    raw = await readBoundedRegularFile(resolveManagedExtensionStatePath(extensionsRoot), MAX_MANAGED_STATE_BYTES);
+    // Follows links like the static inventory, so both offline readers judge the same file the same way (round 15).
+    raw = await readBoundedRegularFile(resolveManagedExtensionStatePath(extensionsRoot), MAX_MANAGED_STATE_BYTES, { followLinks: true });
   } catch (error: unknown) {
     return isFileMissingError(error) ? [] : undefined;
   }
@@ -292,6 +302,11 @@ export async function recordExtensionUpdateObservations(
   };
   await assertRuntimeDirectory();
   // maxWaitMs caps the wait even when PM_LOCK_WAIT_MS asks for longer: this derived write must never stall a manage call.
+  // The core lock reader blocks on a FIFO, so a lock path that is not a regular file refuses this derived write up front
+  // instead of hanging a successful check (Codex review round 15).
+  if (await isNonRegularEntry(path.join(scopeRoot, "locks", "extension-update-observations.lock"))) {
+    throw new Error("update observation lock path is not a regular file");
+  }
   // An expired lease of an interrupted check may be reclaimed (as session state does): the cache is derived, and the
   // commit fence below keeps a resumed stale holder from overwriting its successor (Codex review round 12).
   const lease = await acquireLockLease(scopeRoot, "extension-update-observations", 30, "pm package manage", false, false, OBSERVATION_LOCK_WAIT_MS, { maxWaitMs: OBSERVATION_LOCK_WAIT_MS });
@@ -303,7 +318,8 @@ export async function recordExtensionUpdateObservations(
       // Managed state unreadable at this moment (a lifecycle write in progress): keep every answer, the latest per
       // installation, and leave pruning to the next merge that reads a complete snapshot (Codex review round 5).
       ? latestPerInstallation(candidates)
-      : records.flatMap((record) => latestPerInstallation(candidates.filter((entry) => describesInstallation(entry, record))))
+      // A candidate the current source could not have produced never wins the newest-first pick (Codex review round 15).
+      : records.flatMap((record) => latestPerInstallation(candidates.filter((entry) => describesInstallation(entry, record) && isConsistentWithSource(entry, record.source))))
     ).sort((left, right) => left.name.localeCompare(right.name));
     const serialized = `${JSON.stringify({ version: OBSERVATIONS_RECORD_VERSION, observations: rows }, null, 2)}\n`;
     if (Buffer.byteLength(serialized, "utf8") > MAX_OBSERVATIONS_BYTES) throw new Error("update observation record exceeds its size limit");
@@ -358,8 +374,9 @@ export function findApplicableUpdateObservation(
  */
 function isConsistentWithSource(observation: ExtensionUpdateObservation, source: ManagedExtensionRecord["source"] | undefined): boolean {
   if (source === undefined || observation.update_available === false) return true;
-  // A repository check records the short hexadecimal remote commit; anything else is not one it produced (round 14).
-  if (source.kind === "github") return observation.remote_version === null || /^[0-9a-f]{7,40}$/u.test(observation.remote_version);
+  // A positive repository check always records the short hexadecimal remote commit; anything else, a missing commit
+  // included, is not one it produced (Codex review round 14, CodeRabbit review round 10).
+  if (source.kind === "github") return observation.remote_version !== null && /^[0-9a-f]{7,40}$/u.test(observation.remote_version);
   if (!isRegistryNpmSource(source)) return false;
   // A registry version the live check would refuse is not one it produced (Codex review rounds 13 and 14).
   return observation.remote_version !== null && isExactNpmVersion(observation.remote_version) &&

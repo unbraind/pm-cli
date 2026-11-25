@@ -126,7 +126,8 @@ describe("context extension health", () => {
       const INSTALLED_AT = "2026-10-04T00:00:00.000Z";
       // The hint is the live, scoped manage check; it names no package, so no manifest name can steer it.
       const manage = (scope: "project" | "global") => renderPmCommand([
-        ...(scope === "project" ? ["--pm-path", path.resolve(context.pmPath)] : []), "package", "manage", `--${scope}`,
+        // Every hint names the tracker: manage's activation probe resolves it even for a global check (Codex review round 15).
+        "--pm-path", path.resolve(context.pmPath), "package", "manage", `--${scope}`,
       ]);
       const observation = (name: string, installed: string, remote: string) => ({ name, installed_version: installed, installed_updated_at: INSTALLED_AT, remote_version: remote, update_available: true, checked_at: "2026-11-24T10:00:00.000Z" });
       const write = async (root: string, observations: unknown[]) => {
@@ -245,9 +246,13 @@ describe("context extension health", () => {
     expect(buildExtensionUpgradeHints([{ scope: "project" }, { scope: "project" }], spaced)).toEqual([
       renderPmCommand(["--pm-path", `${spaced}${path.sep}.`, "package", "manage", "--project"]),
     ]);
-    expect(buildExtensionUpgradeHints([{ scope: "global" }], spaced)).toEqual(["pm package manage --global"]);
+    expect(buildExtensionUpgradeHints([{ scope: "global" }], spaced)).toEqual([
+      renderPmCommand(["--pm-path", `${spaced}${path.sep}.`, "package", "manage", "--global"]),
+    ]);
     // A caller's explicit --no-extensions carries over: the live check runs before manage's activation probe (Codex review round 14).
-    expect(buildExtensionUpgradeHints([{ scope: "global" }], spaced, true)).toEqual(["pm --no-extensions package manage --global"]);
+    expect(buildExtensionUpgradeHints([{ scope: "global" }], "/plain/tracker", true)).toEqual([
+      renderPmCommand(["--pm-path", path.resolve("/plain/tracker"), "--no-extensions", "package", "manage", "--global"]),
+    ]);
     expect(buildExtensionUpgradeHints([], spaced)).toEqual([]);
   });
   it("marks a same-scope copy that loses to a same-named one as shadowed (Codex review round 8)", async () => {

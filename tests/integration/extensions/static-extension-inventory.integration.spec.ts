@@ -98,6 +98,15 @@ describe("read-only configured extension inventory", () => {
     });
   });
 
+  it("reports a managed-state entry that is not a regular file as unreadable, without blocking (Codex review round 15)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await mkdir(path.join(pmPath, "extensions", ".managed-extensions.json"), { recursive: true });
+      const result = await inspectStaticExtensionInventory({ pmRoot: pmPath });
+      expect(result).toMatchObject({ complete: false, managed_state_status: "unreadable" });
+      expect(result.errors.map((error) => error.code)).toContain("managed_state_unreadable");
+    });
+  });
+
   it("reports a managed-state read error when its parent inspection is denied", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const extensionsRoot = path.join(pmPath, "extensions");

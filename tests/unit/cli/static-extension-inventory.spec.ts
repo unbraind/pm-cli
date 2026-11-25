@@ -168,8 +168,8 @@ describe("static extension inventory command routing", () => {
         expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe" }]);
         await run(["package", "list", "--output-budget", "unbounded"]);
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ updates_available: 1 });
-        // Inventory matches observations against the same strict managed snapshot as pm context: a linked managed
-        // state file is not a snapshot, so no update is reported (Codex review round 12).
+        // The receipt and the update evidence come from one managed-state snapshot, read the way the runtime loader
+        // reads it (following a link), so a linked file reports the same update in both (Codex review round 15).
         const managedPath = path.join(pmPath, "extensions", ".managed-extensions.json");
         const managedText = await readFile(managedPath, "utf8");
         const elsewhere = path.join(pmPath, "managed-elsewhere.json");
@@ -177,7 +177,7 @@ describe("static extension inventory command routing", () => {
         await rm(managedPath);
         await symlink(elsewhere, managedPath);
         await run(["package", "list", "--fields", "name,update"]);
-        expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe", update: null }]);
+        expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe", update: "1.2.0" }]);
         await rm(managedPath);
         await writeFile(managedPath, managedText);
         await expect(run(["package", "list", "--fix-managed-state"])).rejects.toThrow("--fix-managed-state does not apply");

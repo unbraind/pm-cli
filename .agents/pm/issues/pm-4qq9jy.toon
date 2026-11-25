@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: extensions,packages,provenance,update-check
 created_at: "2026-11-25T12:13:07.978Z"
-updated_at: "2026-11-25T15:20:06.568Z"
+updated_at: "2026-11-25T22:39:58.258Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "An npm install that resolves to a local directory records that resolution on the managed source; Live update checks, offline observations and upgrade source selection read the recorded resolution, with the spec rule as the fallback for older records; A test installs npm:<name> from a local directory whose name is also a published package and proves no registry update is reported and upgrade reinstalls the local copy"
@@ -18,6 +18,7 @@ expected_result: "A locally resolved npm install is never compared with, reporte
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1778,discovered_from,"2026-11-25T12:13:07.978Z","harness:claude-code","cli:create:dep",detected
   pm-u83w,related,"2026-11-25T12:13:07.978Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-25T15:20:06.567Z","harness:claude-code","Scope from the PR #1782 review (Codex round 8): besides the resolution kind, record which npm registry a freshness check used. pm package manage runs npm view from the caller's working directory, so with --pm-path from another directory a project .npmrc registry is not applied, and the observation can store the wrong registry's version. Resolve the registry from the tracker's workspace (or record it at install time) and use it for live checks and upgrades."
+  "2026-11-25T22:39:58.258Z","harness:claude-code","Codex review round 15 on PR #1782 repeated this: npm:<name> that resolved to a local directory is classified as a registry source by isRegistryNpmSource, so manage can record an unrelated registry version as an update; record the installer's resolved provenance and use it for freshness and upgrade."
 body: ""

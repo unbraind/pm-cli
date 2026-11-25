@@ -83,6 +83,9 @@ describe("npm install source classification", () => {
     expect(isNewerRegistryVersion("2026.11.23", "2026.10.4")).toBe(true);
     expect(isNewerRegistryVersion("1.0.0", "2.0.0")).toBe(false);
     expect(isNewerRegistryVersion("1.0.0", "1.0.0")).toBe(false);
+    // Loose exact versions npm admits compare by precedence, never by string inequality (Codex review round 15).
+    expect(isNewerRegistryVersion("01.0.0", "2.0.0")).toBe(false);
+    expect(isNewerRegistryVersion("2.0.1", "02.0.0")).toBe(true);
     expect(isNewerRegistryVersion("1.2.0", "1.2.0-rc.1")).toBe(true);
     expect(isNewerRegistryVersion("next", "1.0.0")).toBe(true);
     expect(isNewerRegistryVersion("next", "next")).toBe(false);
@@ -172,19 +175,27 @@ describe("extension update observations", () => {
     await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github" })]);
     await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "PM-CSV", remote_version: "2026.11.22" })]);
     expect((await readExtensionUpdateObservations(scopeRoot)).map((entry) => entry.name)).toEqual(["PM-CSV", "pm-github"]);
+    // A cached answer the current source could not have produced never wins the newest-first pick (Codex review round 15).
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-csv", remote_version: "not-a-version", checked_at: "2026-11-30T00:00:00.000Z" })]);
+    expect(findApplicableUpdateObservation(await readExtensionUpdateObservations(scopeRoot), { name: "pm-csv", version: "2026.10.4", updated_at: csv.updated_at })?.remote_version).toBe("2026.11.22");
     // An older answer for the same installation does not replace a newer one; a later one does.
-    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-csv", remote_version: "old", checked_at: "2026-11-01T00:00:00.000Z" })]);
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-csv", remote_version: "2026.11.1", checked_at: "2026-11-01T00:00:00.000Z" })]);
     expect(findApplicableUpdateObservation(await readExtensionUpdateObservations(scopeRoot), { name: "pm-csv", version: "2026.10.4", updated_at: csv.updated_at })?.remote_version).toBe("2026.11.22");
     // A reinstall replaced pm-github; a slow check answering for the old installation is dropped, not recorded over it.
     const reinstalled = { ...github, updated_at: "2026-11-25T00:00:00.000Z" };
     await writeManagedState([reinstalled]);
     await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [
-      observation({ name: "pm-github", installed_updated_at: reinstalled.updated_at, remote_version: "current" }),
+      observation({ name: "pm-github", installed_updated_at: reinstalled.updated_at, remote_version: "2026.11.24" }),
     ]);
-    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github", remote_version: "stale", checked_at: "2026-12-01T00:00:00.000Z" })]);
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github", remote_version: "2026.12.1", checked_at: "2026-12-01T00:00:00.000Z" })]);
     const stored = await readExtensionUpdateObservations(scopeRoot);
     // pm-csv was uninstalled, so its row is gone too: the record never outgrows the managed packages.
-    expect(stored.map((entry) => [entry.name, entry.remote_version])).toEqual([["pm-github", "current"]]);
+    expect(stored.map((entry) => [entry.name, entry.remote_version])).toEqual([["pm-github", "2026.11.24"]]);
+    // A lock path that is not a regular file refuses the derived write instead of hanging on it (Codex review round 15).
+    const lockPath = path.join(scopeRoot, "locks", "extension-update-observations.lock");
+    await fs.mkdir(lockPath, { recursive: true });
+    await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow("not a regular file");
+    await fs.rm(lockPath, { recursive: true });
     // The merge runs under a released per-scope lock.
     await expect(fs.readdir(path.join(scopeRoot, "locks"))).resolves.not.toContain("extension-update-observations.lock");
   });
@@ -287,7 +298,10 @@ describe("extension update observations", () => {
     // A repository source reports commits, which carry no version order.
     const github = { kind: "github" as const, input: "o/r", location: "o/r" };
     expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789ab" })], { ...installed, source: github })).toBeDefined();
-    expect(findApplicableUpdateObservation([observation({ remote_version: null })], { ...installed, source: github })).toBeDefined();
+    // A positive verdict without the remote commit the live check always records is rejected (CodeRabbit review round 10);
+    // a negative one needs no commit.
+    expect(findApplicableUpdateObservation([observation({ remote_version: null })], { ...installed, source: github })).toBeUndefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: null, update_available: false })], { ...installed, source: github })).toBeDefined();
     // Anything but the hexadecimal commit a repository check records is rejected (Codex review round 14).
     expect(findApplicableUpdateObservation([observation({ remote_version: "abc\n```sh" })], { ...installed, source: github })).toBeUndefined();
   });

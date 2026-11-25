@@ -63,6 +63,10 @@ export function isExactNpmVersion(value: string): boolean {
  * are not valid SemVer count as an update whenever they differ.
  */
 export function isNewerRegistryVersion(latest: string, installed: string): boolean {
-  if (semver.valid(latest) === null || semver.valid(installed) === null) return latest !== installed;
-  return semver.gt(latest, installed);
+  // Parsed loosely, as npm-package-arg admits them (`01.0.0`), so an admitted version always compares by precedence
+  // instead of falling back to string inequality (Codex review round 15).
+  const latestParsed = semver.parse(latest, { loose: true });
+  const installedParsed = semver.parse(installed, { loose: true });
+  if (latestParsed === null || installedParsed === null) return latest !== installed;
+  return semver.gt(latestParsed, installedParsed);
 }

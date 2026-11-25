@@ -60,9 +60,12 @@ registry and shows each package's update evidence (`update_available`,
 `last_update_remote_version`), and its remediation says to reinstall the
 updated sources (`pm package upgrade <name> --<scope>` upgrades one). The hint names no package, so
 no manifest-controlled name can select another installation, become an option,
-or lose its quoting, and the Markdown rendering puts each hint in a code span.
-A project hint names the absolute tracker the read served (`--pm-path`), and no
-hint inherits `--no-extensions`. A global hint assumes the caller's
+or lose its quoting, and the Markdown rendering puts each hint in its own fenced
+block, which keeps line breaks and shell escapes verbatim. Every hint names the
+absolute tracker the read served (`--pm-path`), because manage's activation
+probe resolves it even for a global check, and a caller's explicit
+`--no-extensions` carries over, because manage's live check runs before that
+probe. A global hint assumes the caller's
 environment, like any command: under a relative `PM_GLOBAL_PATH`, run it from
 the same directory. An npm source that is not a registry install
 (classified with npm's own spec parser: a path, tarball, `file:`, git or URL
