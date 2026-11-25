@@ -235,4 +235,13 @@ describe("context extension health", () => {
     expect(buildExtensionUpgradeHints([{ scope: "global" }], spaced)).toEqual(["pm package manage --global"]);
     expect(buildExtensionUpgradeHints([], spaced)).toEqual([]);
   });
+  it("marks a same-scope copy that loses to a same-named one as shadowed (Codex review round 8)", async () => {
+    await withTempPmPath(async (context) => {
+      for (const directory of ["a-first", "b-second"]) {
+        await writeTestExtension({ root: path.join(context.pmPath, "extensions"), directory, manifest: { name: "pm-same", version: "1.0.0", entry: "index.mjs", capabilities: ["commands"] }, entryFilename: "index.mjs", entrySource: "throw new Error('no import');\n" });
+      }
+      const rows = (await runContext({ depth: "brief" }, { path: context.pmPath })).extension_health?.packages ?? [];
+      expect(rows.map((row) => row.shadowed_by).sort()).toEqual([null, "project"]);
+    });
+  });
 });

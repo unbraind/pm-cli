@@ -93,9 +93,8 @@ describe("package listing --fields contract", () => {
   it("treats an absent option as no projection and refuses an empty or unknown selection with the whole domain", () => {
     for (const absent of [undefined, null, false]) expect(parseListingFields(absent, ["name"], "list")).toBeUndefined();
     expect(() => parseListingFields(" , ", ["name"], "list")).toThrow("Package list --fields requires a comma-separated list of field names");
-    expect(() => parseListingFields("name,bogus", ["name", "version"], "manage")).toThrow(
-      "Package manage --fields must be one of name|version; unknown: bogus",
-    );
+    // The legal domain travels in recovery.allowed_values only, so renderers bound it (Codex review round 8).
+    expect(() => parseListingFields("name,bogus", ["name", "version"], "manage")).toThrow("Package manage --fields has unknown field(s): bogus");
     expect(parseListingFields(" version ,name,version", ["name", "version"], "list")).toEqual(["version", "name"]);
     // SDK and MCP callers get the whole domain as structured recovery, not only in the message.
     try {
@@ -115,7 +114,7 @@ describe("package listing --fields contract", () => {
 
   it("validates explore and manage selections at admission and drops contributions from default rows", () => {
     const rows = [{ name: "pm-github", version: "1", contributions: { commands: ["github sync"] } }];
-    expect(() => parseExploreManageFields("name,bogus", "manage")).toThrow(/Package manage --fields must be one of name\|directory/);
+    expect(() => parseExploreManageFields("name,bogus", "manage")).toThrow("Package manage --fields has unknown field(s): bogus");
     expect(parseExploreManageFields(undefined, "explore")).toBeUndefined();
     expect(projectExploreManageRows(rows, undefined)).toEqual([{ name: "pm-github", version: "1" }]);
     expect(projectExploreManageRows(rows, parseExploreManageFields("name,contributions", "explore"))).toEqual([{ name: "pm-github", contributions: { commands: ["github sync"] } }]);
@@ -150,6 +149,8 @@ describe("extension update observations", () => {
       // A local npm artifact is reinstalled as it is, so a registry release is never an update for it.
       record({ name: "pm-tarball", source: { kind: "npm", input: "npm:./pm-tarball-1.0.0.tgz", location: "package", package: "pm-tarball", version: "1.0.0" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "2.0.0", update_available: true }),
       record({ name: "pm-unchecked" }),
+      // A source kind the refresh skips keeps any stale verdict out of the record (Codex review round 8).
+      record({ name: "pm-local", source: { kind: "local", input: "./pm-local", location: "/tmp/pm-local" }, last_update_check_at: "2026-11-24T10:00:00.000Z", update_available: true }),
     ]);
     // The provider verdict (SemVer-aware for npm, see isNewerRegistryVersion) is recorded as it is.
     expect(checked.map((entry) => [entry.name, entry.remote_version, entry.update_available])).toEqual([

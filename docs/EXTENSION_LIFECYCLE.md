@@ -31,8 +31,10 @@ an earlier one, and rows for replaced or removed installations are dropped, so
 concurrent checks keep each other's answers and the record never outgrows the
 managed packages. A check that timed out or failed records nothing for that
 package. An observation names the manifest version and the managed record's
-`updated_at` it was taken against, so any upgrade, including a commit-only
-reinstall of a repository source, retires it. A registry `latest` that is not
+`updated_at` it was taken against, so any install that changes the version or
+the source, including a commit-only reinstall of a repository source, retires
+it; reinstalling the identical version from the identical source keeps it,
+because its answer still applies. A registry `latest` that is not
 newer than the installed npm version under SemVer precedence is recorded as no
 update, because upgrading to it would downgrade; `pm package manage` applies the
 same verdict. A bounded (1 MiB) regular file is read only when the record
@@ -58,7 +60,9 @@ registry and its remediation names the upgrade. The hint names no package, so
 no manifest-controlled name can select another installation, become an option,
 or lose its quoting, and the Markdown rendering puts each hint in a code span.
 A project hint names the absolute tracker the read served (`--pm-path`), and no
-hint inherits `--no-extensions`. An npm source that is not a registry install
+hint inherits `--no-extensions`. A global hint assumes the caller's
+environment, like any command: under a relative `PM_GLOBAL_PATH`, run it from
+the same directory. An npm source that is not a registry install
 (classified with npm's own spec parser: a path, tarball, `file:`, git or URL
 spec) is never compared with a registry release, by `manage` or by the offline
 readers; `pm package upgrade` reinstalls path, tarball and `file:` artifacts as

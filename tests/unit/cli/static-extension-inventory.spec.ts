@@ -101,7 +101,10 @@ describe("static extension inventory command routing", () => {
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ updates_available: 1, extensions: [{ name: "source-probe", version: "1.0.0", update: "1.2.0" }] });
         await run(["package", "list", "--fields", "name,update"]);
         expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe", update: "1.2.0" }]);
-        await expect(run(["package", "list", "--fields", "name,alias"])).rejects.toThrow("Package list --fields must be one of name|directory|scope|installed|status|configured_enabled|managed|runtime_active|version|update; unknown: alias");
+        await expect(run(["package", "list", "--fields", "name,alias"])).rejects.toMatchObject({
+          message: "Package list --fields has unknown field(s): alias",
+          context: { recovery: { allowed_values: ["name", "directory", "scope", "installed", "status", "configured_enabled", "managed", "runtime_active", "version", "update"] } },
+        });
         // The static listing applies no row-shaping output controls, so it refuses them instead of ignoring them.
         await expect(run(["package", "list", "--output-limit", "1"])).rejects.toMatchObject({ context: { code: "read_output_surface_unsupported", details: { output_option_keys: ["--output-limit"] } } });
         await run(["package", "list", "--output-budget", "unbounded"]);

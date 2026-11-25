@@ -390,7 +390,8 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   // Row projection is a subcommand option (pm-gh1777): keep `pm extension explore --fields ...` on its subcommand route.
   // A bare `fields=...` assignment is normalized to --fields later, so it counts too (Codex review round 5).
   // Spellings normalize case-insensitively later (`--FIELDS`, `FIELDS=`), so the check does too (Codex review round 7).
-  if (argv.some((token) => /^(?:--)?fields(?:=|$)/iu.test(token))) {
+  // The bare-key parser accepts both `fields=` and `fields:` (CodeRabbit review round 6).
+  if (argv.some((token) => /^(?:--)?fields(?:[=:]|$)/iu.test(token))) {
     return [...argv];
   }
   const forcedActionFlag = `--${actionToken}`;

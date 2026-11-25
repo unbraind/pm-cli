@@ -189,9 +189,10 @@ async function readBoundedRegularFile(file: string, limit: number): Promise<stri
 export function collectExtensionUpdateObservations(entries: readonly ManagedExtensionRecord[]): ExtensionUpdateObservation[] {
   return entries
     .flatMap((entry) =>
-      // A local npm artifact is reinstalled as it is, so a registry release is never an update for it.
+      // Only sources a check actually queries are recorded: a GitHub repository or a registry npm package. A local
+      // artifact is reinstalled as it is, and a stale verdict left on a record the refresh skips is not an answer.
       typeof entry.last_update_check_at === "string" && entry.update_error === undefined && typeof entry.update_available === "boolean" &&
-      (entry.source.kind !== "npm" || isRegistryNpmSource(entry.source))
+      (entry.source.kind === "github" || isRegistryNpmSource(entry.source))
         ? [{
             name: entry.name,
             installed_version: entry.manifest_version,
