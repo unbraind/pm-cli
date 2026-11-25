@@ -3,8 +3,8 @@
  *
  * Implements the pm upgrade command surface and its agent-facing runtime behavior.
  */
+import { isLocalNpmSpec } from "../extension/npm-spec.js";
 import { execFile } from "node:child_process";
-import path from "node:path";
 import { promisify } from "node:util";
 import { renderPmCommand } from "../command-line.js";
 import {
@@ -308,15 +308,6 @@ async function upgradeCli(
       error: error instanceof Error ? error.message : String(error),
     };
   }
-}
-
-function isLocalNpmSpec(spec: string): boolean {
-  return (
-    path.isAbsolute(spec) ||
-    spec.startsWith(".") ||
-    spec.startsWith("..") ||
-    spec.startsWith("file:")
-  );
 }
 
 function resolvePackageInstallSource(

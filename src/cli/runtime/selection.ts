@@ -12,9 +12,11 @@ import {
 } from "../../sdk/runtime-primitives.js";
 import { redactSensitiveCommandArgs,renderPmCommand } from "../argv-utils.js";
 import {
+  findBootstrapCommandTokenIndex,
   normalizeBootstrapInvocation,
   parseBootstrapCommandName,
   parseBootstrapHelpRequest,
+  resolveLifecycleVerb,
   stripGlobalBootstrapTokens
 } from "../bootstrap-args.js";
 import {
@@ -23,26 +25,17 @@ import {
 
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 
-/** Options of the package root command that consume the next token as their value. */
-const LIFECYCLE_ROOT_VALUE_OPTIONS = new Set(["--capability", "--gh", "--github", "--ref", "--output", "--detail"]);
-
 /**
- * The verb of a package invocation, skipping the root options Commander accepts
- * before it (`pm package --global list`, `pm package --offline list`, `pm package --ref v1 list`).
+ * Recognize the read-only package inventory (and its `list` alias) before
+ * extension bootstrap. The noun is found with the host-option grammar
+ * (`pm --no-changed-fields package list`), and the verb with the lifecycle
+ * parser flag normalization uses (`pm package --offline list`).
  */
-function resolveLifecycleVerb(tokens: readonly string[]): string | undefined {
-  for (let index = 0; index < tokens.length; index += 1) {
-    const token = tokens[index]!;
-    if (!token.startsWith("-")) return token;
-    if (LIFECYCLE_ROOT_VALUE_OPTIONS.has(token)) index += 1;
-  }
-  return undefined;
-}
-
-/** Recognize the read-only package inventory (and its `list` alias) before extension bootstrap. */
 function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean {
-  const [noun, ...rest] = stripGlobalBootstrapTokens(invocationArgv);
-  return ["package", "packages", "extension"].includes(noun ?? "") && ["inventory", "list"].includes(resolveLifecycleVerb(rest) ?? "");
+  const nounIndex = findBootstrapCommandTokenIndex(invocationArgv);
+  if (nounIndex === undefined) return false;
+  return ["package", "packages", "extension"].includes(invocationArgv[nounIndex]!) &&
+    ["inventory", "list"].includes(resolveLifecycleVerb(invocationArgv.slice(nounIndex + 1)) ?? "");
 }
 
 /** Protect literal preview candidates in the item namespace until the real parser settles the selected action; host-owned global grammar also captures the tracker roots. */

@@ -7,7 +7,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   EXPLORE_MANAGE_ROW_FIELDS,
   parseExploreManageFields,
@@ -27,6 +27,7 @@ import {
   type ExtensionUpdateObservation,
 } from "../../../src/sdk/extension/update-observations.js";
 import type { ManagedExtensionRecord } from "../../../src/sdk/extension/managed-state.js";
+import { isLocalNpmSpec, isRegistryNpmSource } from "../../../src/sdk/extension/npm-spec.js";
 import { acquireLock } from "../../../src/core/lock/lock.js";
 
 let scopeRoot: string;
@@ -49,6 +50,21 @@ const record = (overrides: Partial<ManagedExtensionRecord>): ManagedExtensionRec
   source: { kind: "npm", input: "npm:pm-github", location: "package", package: "pm-github", version: "2026.10.4" },
   ...overrides,
 } as ManagedExtensionRecord);
+
+describe("npm install source classification", () => {
+  it("separates registry installs from local paths and file: artifacts", () => {
+    expect(isLocalNpmSpec("/tmp/pkg")).toBe(true);
+    expect(isLocalNpmSpec("./pkg.tgz")).toBe(true);
+    expect(isLocalNpmSpec("file:../pkg")).toBe(true);
+    expect(isLocalNpmSpec("@scope/pkg")).toBe(false);
+    const npm = (input: string) => ({ kind: "npm" as const, input, location: "package" });
+    expect(isRegistryNpmSource(npm("npm:@scope/pkg@1.0.0"))).toBe(true);
+    expect(isRegistryNpmSource(npm("pm-github"))).toBe(true);
+    expect(isRegistryNpmSource(npm("npm:./pkg.tgz"))).toBe(false);
+    expect(isRegistryNpmSource(npm("file:/abs/pkg"))).toBe(false);
+    expect(isRegistryNpmSource({ kind: "github", input: "o/r", location: "o/r" })).toBe(false);
+  });
+});
 
 describe("package listing --fields contract", () => {
   it("treats an absent option as no projection and refuses an empty or unknown selection with the whole domain", () => {
@@ -115,6 +131,8 @@ describe("extension update observations", () => {
       record({ name: "pm-skew", manifest_version: "9.0.0", source: { kind: "npm", input: "npm:pm-skew", location: "package", package: "pm-skew", version: "1.0.0" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "1.1.0", update_available: true }),
       record({ name: "pm-odd", manifest_version: "next", source: { kind: "npm", input: "npm:pm-odd", location: "package", package: "pm-odd" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "1.0.0", update_available: true }),
       record({ name: "pm-timeout", last_update_check_at: "2026-11-24T10:00:00.000Z", update_error: "timeout", update_available: null }),
+      // A local npm artifact is reinstalled as it is, so a registry release is never an update for it.
+      record({ name: "pm-tarball", source: { kind: "npm", input: "npm:./pm-tarball-1.0.0.tgz", location: "package", package: "pm-tarball", version: "1.0.0" }, last_update_check_at: "2026-11-24T10:00:00.000Z", last_update_remote_version: "2.0.0", update_available: true }),
       record({ name: "pm-unchecked" }),
     ]);
     expect(checked.map((entry) => [entry.name, entry.remote_version, entry.update_available])).toEqual([
@@ -206,6 +224,43 @@ describe("extension update observations", () => {
     await fs.rm(file, { recursive: true });
     await fs.writeFile(file, `{"observations":[],"pad":"${"x".repeat(1024 * 1024)}"}`);
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+  });
+
+  it("reads the whole record when the filesystem returns it in pieces (Greptile review round 3)", async () => {
+    await writeManagedState([record({})]);
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()]);
+    const realOpen = fs.open.bind(fs);
+    const spy = vi.spyOn(fs, "open").mockImplementation(async (...args: Parameters<typeof fs.open>) => {
+      const handle = await realOpen(...args);
+      const realRead = handle.read.bind(handle);
+      // Return at most 7 bytes per read, as a network filesystem may.
+      (handle as unknown as { read: unknown }).read = (buffer: Buffer, offset: number, length: number, position: number) => realRead(buffer, offset, Math.min(length, 7), position);
+      return handle;
+    });
+    try {
+      expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([observation()]);
+      expect(spy).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("rechecks the opened descriptor, so an entry swapped after the path check is not read", async () => {
+    await writeManagedState([record({})]);
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()]);
+    const realOpen = fs.open.bind(fs);
+    const spy = vi.spyOn(fs, "open").mockImplementation(async (...args: Parameters<typeof fs.open>) => {
+      const handle = await realOpen(...args);
+      // The descriptor now names something that is not a regular file.
+      (handle as unknown as { stat: unknown }).stat = async () => ({ isFile: () => false });
+      return handle;
+    });
+    try {
+      expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+      expect(spy).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("opens without following a link or blocking where the platform supports it", () => {

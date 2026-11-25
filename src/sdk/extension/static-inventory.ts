@@ -275,7 +275,7 @@ function withObservedUpdate(
   observations: readonly ExtensionUpdateObservation[],
 ): StaticExtensionInventoryEntry {
   // Bind the evidence to this directory's own managed record, so a same-named unmanaged copy never borrows it.
-  const record = records.find((candidate) => normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(directory));
+  const record = records.find((candidate) => candidate.directory === directory);
   const installation = { name: entry.name, version: entry.version, updated_at: record?.updated_at };
   return { ...entry, update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, installation)) };
 }

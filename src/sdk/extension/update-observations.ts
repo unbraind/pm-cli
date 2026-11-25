@@ -19,6 +19,7 @@ import semver from "semver";
 import { acquireLock } from "../../core/lock/lock.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { readManagedExtensionState, type ManagedExtensionRecord } from "./managed-state.js";
+import { isRegistryNpmSource } from "./npm-spec.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 
 /** File name of the observation record under a scope's `runtime/` directory. */
@@ -126,13 +127,21 @@ export function resolveGuardedReadFlags(constants: { O_RDONLY: number; O_NOFOLLO
  * after a path check cannot widen the read.
  */
 async function readBoundedRegularFile(file: string, limit: number): Promise<string | undefined> {
+  // The entry itself must be a regular file: where O_NOFOLLOW is undefined (Windows) the open would follow a final link.
+  if (!(await fs.lstat(file)).isFile()) return undefined;
   const handle = await fs.open(file, resolveGuardedReadFlags());
   try {
     if (!(await handle.stat()).isFile()) return undefined;
-    // One byte past the limit proves the file is too large, however it changed since it was opened.
+    // Read until end of file, since one read may return fewer bytes (network filesystems); one byte past
+    // the limit proves the file is too large, however it changed since it was opened.
     const buffer = Buffer.alloc(limit + 1);
-    const { bytesRead } = await handle.read(buffer, 0, limit + 1, 0);
-    return bytesRead > limit ? undefined : buffer.subarray(0, bytesRead).toString("utf8");
+    let total = 0;
+    while (total <= limit) {
+      const { bytesRead } = await handle.read(buffer, total, limit + 1 - total, total);
+      if (bytesRead === 0) break;
+      total += bytesRead;
+    }
+    return total > limit ? undefined : buffer.subarray(0, total).toString("utf8");
   } finally {
     await handle.close();
   }
@@ -159,7 +168,9 @@ function isNewerRelease(installedVersion: string, remoteVersion: string | undefi
 export function collectExtensionUpdateObservations(entries: readonly ManagedExtensionRecord[]): ExtensionUpdateObservation[] {
   return entries
     .flatMap((entry) =>
-      typeof entry.last_update_check_at === "string" && entry.update_error === undefined && typeof entry.update_available === "boolean"
+      // A local npm artifact is reinstalled as it is, so a registry release is never an update for it.
+      typeof entry.last_update_check_at === "string" && entry.update_error === undefined && typeof entry.update_available === "boolean" &&
+      (entry.source.kind !== "npm" || isRegistryNpmSource(entry.source))
         ? [{
             name: entry.name,
             installed_version: entry.manifest_version,
@@ -200,7 +211,8 @@ export async function recordExtensionUpdateObservations(
     if (await isNonDirectoryEntry(path.dirname(file))) throw new Error(`${path.dirname(file)} is not a directory`);
   };
   await assertRuntimeDirectory();
-  const release = await acquireLock(scopeRoot, "extension-update-observations", 30, "pm package manage", false, true, OBSERVATION_LOCK_WAIT_MS);
+  // maxWaitMs caps the wait even when PM_LOCK_WAIT_MS asks for longer: this derived write must never stall a manage call.
+  const release = await acquireLock(scopeRoot, "extension-update-observations", 30, "pm package manage", false, true, OBSERVATION_LOCK_WAIT_MS, { maxWaitMs: OBSERVATION_LOCK_WAIT_MS });
   try {
     await assertRuntimeDirectory();
     const candidates = [...(await readExtensionUpdateObservations(scopeRoot)), ...observations];

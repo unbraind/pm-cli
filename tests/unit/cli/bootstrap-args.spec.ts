@@ -348,6 +348,9 @@ describe("parseBootstrapCommandName", () => {
 describe("normalizeLegacyExtensionActionSyntax", () => {
   it("merges repeated --fields on a package verb that follows a scope switch (Codex review round 2)", () => {
     expect(normalizeBootstrapInvocation(["package", "--project", "list", "--fields", "name", "--fields", "status"]).argv).toEqual(["package", "--project", "list", "--fields=name,status"]);
+    // Any accepted root option before the verb, including a valued one, resolves the same leaf (Codex review round 3).
+    expect(normalizeBootstrapInvocation(["package", "--offline", "list", "example", "--fields=name", "--fields=version"]).argv).toEqual(["package", "--offline", "list", "example", "--fields=name,version"]);
+    expect(normalizeBootstrapInvocation(["package", "--ref", "v1", "list", "--fields", "a", "--fields", "b"]).argv).toEqual(["package", "--ref", "v1", "list", "--fields=a,b"]);
   });
 
   it("keeps a --fields projection on its explore or manage subcommand route (pm-gh1777)", () => {

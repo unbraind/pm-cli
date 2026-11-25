@@ -42,6 +42,10 @@ describe("static extension inventory command routing", () => {
     expect(isStaticExtensionInventoryInvocation(["package", "--ref", "v1", "list"])).toBe(true);
     expect(isStaticExtensionInventoryInvocation(["package", "--ref", "list"])).toBe(false);
     expect(isStaticExtensionInventoryInvocation(["package", "--global"])).toBe(false);
+    // Host flags before the noun are skipped with the host-option grammar (Codex review round 3).
+    expect(isStaticExtensionInventoryInvocation(["--no-changed-fields", "package", "list"])).toBe(true);
+    expect(isStaticExtensionInventoryInvocation(["--pm-path", "/x", "--author", "a", "packages", "inventory"])).toBe(true);
+    expect(isStaticExtensionInventoryInvocation(["--json"])).toBe(false);
   });
 
   it("dispatches source CLI inventory with scope and incomplete-read receipts", async () => {

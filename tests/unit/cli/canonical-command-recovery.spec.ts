@@ -131,12 +131,18 @@ describe("canonical unknown-command recovery", () => {
     // Host flags and their values between the noun and its operand are skipped, not read as the path (Codex review round 1).
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "--json", "list"])?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["--author", "extensions", "extensions", "list"])?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
+    // A package root takes its verb with the lifecycle grammar, skipping a valued root option (Codex review round 3).
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "--ref", "v1", "list"])?.suggestedRetryArgs).toEqual(["package", "list", "--help"]);
     // The noun alone still resolves; an operand that names nothing beneath it stops the path.
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), ["extensions", "bogus"])?.suggestedRetryArgs).toEqual(["package", "--help"]);
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'contexts'", program, new Map(), ["contexts"])?.suggestedRetryArgs).toEqual(["context", "--help"]);
     // A singular slip resolves to the plural command when one exists; nothing resolves for an unrelated word.
-    program.command("widgets");
+    program.command("widgets").command("list");
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'widget'", program, new Map(), [])?.suggestedRetryArgs).toEqual(["widgets", "--help"]);
+    // A non-package root follows host-option arity to its operands.
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'widget'", program, new Map(), ["widget", "--json", "list"])?.suggestedRetryArgs).toEqual(["widgets", "list", "--help"]);
+    // A package noun with no recorded invocation still resolves to the package root.
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'extensions'", program, new Map(), [])?.suggestedRetryArgs).toEqual(["package", "--help"]);
     // A typed noun that is itself an alias (note -> item notes) keeps the alias-aware ranking.
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'note'", program, new Map(), ["note"])?.suggestedRetryArgs).toBeUndefined();
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'zzz'", program, new Map(), ["zzz"])?.suggestedRetryArgs).toBeUndefined();

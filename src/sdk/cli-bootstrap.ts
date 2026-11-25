@@ -1229,15 +1229,32 @@ export function normalizeBootstrapInvocation(
 }
 
 /** Resolve the command leaf needed for option normalization before full Commander registration is available. */
-/** Lifecycle scope switches accepted between a package noun and its verb. */
-const LIFECYCLE_SCOPE_SWITCH_TOKENS = new Set(["--project", "--local", "--global"]);
+/** Options of the package root command that consume the next token as their value. */
+const LIFECYCLE_ROOT_VALUE_OPTIONS = new Set(["--capability", "--gh", "--github", "--ref", "--output", "--detail"]);
+
+/**
+ * The verb of a package invocation, given the tokens after its noun: root
+ * switches Commander accepts before the verb are skipped (`--global`,
+ * `--offline`), a valued root option skips its value (`--ref v1`), and the first
+ * remaining operand is the verb. The one parser static selection, flag
+ * normalization and recovery share, so every spelling Commander routes to a
+ * verb resolves to the same leaf contract.
+ */
+export function resolveLifecycleVerb(tokens: readonly string[]): string | undefined {
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index]!;
+    if (!token.startsWith("-")) return token;
+    if (LIFECYCLE_ROOT_VALUE_OPTIONS.has(token)) index += 1;
+  }
+  return undefined;
+}
 
 function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   const stripped = stripGlobalBootstrapTokens(argv);
   const first = stripped[0]?.trim().toLowerCase();
-  // A lifecycle scope switch may precede the package verb (`pm package --project list`); the leaf is the verb (Codex review round 2).
+  // Root options may precede the package verb (`pm package --project list`, `--offline list`); the leaf is the verb (Codex review rounds 2-3).
   const second = (first === "extension" || first === "package" || first === "packages"
-    ? stripped.slice(1).find((token) => !LIFECYCLE_SCOPE_SWITCH_TOKENS.has(token))
+    ? resolveLifecycleVerb(stripped.slice(1))
     : stripped[1])?.trim().toLowerCase();
   const namespaced = findPmNamespacedCommand(stripped);
   if (namespaced) return namespaced.canonical;

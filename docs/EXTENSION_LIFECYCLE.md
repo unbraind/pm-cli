@@ -46,15 +46,17 @@ block. Rows are `{name, scope, version, status, update, shadowed_by}`:
 (project shadows global), so a copy installed in both scopes is told apart.
 `updates_available` counts the copies the runtime loads (a shadowed or
 disabled copy keeps its row but is not counted) with a known update, and
-`next` lists one targeted `pm package upgrade --<scope> --packages-only --
-<name>` command per such package (at most five) only when that count is above
-zero, never a scope-wide upgrade. The commands are rendered from argv for the
-caller's shell, the name after `--` can never become an option, a project
-command names the absolute tracker the read served (`--pm-path`), and no
-command inherits `--no-extensions`, which would fail the upgrade's activation
-check. Corrupt or unreadable managed metadata in a scope means unknown updates
-there, never a failed `pm context`. `pm package list` refuses the row-shaping
-read-output controls it cannot apply (`read_output_surface_unsupported`) and
+`next` names one live check per scope with a known update, `pm package manage
+--<scope>`, only when that count is above zero; the check re-reads the
+registry and its remediation names the upgrade. The hint names no package, so
+no manifest-controlled name can select another installation, become an option,
+or lose its quoting, and the Markdown rendering puts each hint in a code span.
+A project hint names the absolute tracker the read served (`--pm-path`), and no
+hint inherits `--no-extensions`. A local npm artifact (a path or `file:` spec)
+is never reported as having a registry update, because an upgrade reinstalls it
+as it is. Corrupt or unreadable managed metadata in a scope means unknown
+updates there, never a failed `pm context`. `pm package list` refuses the
+row-shaping read-output controls it cannot apply (`read_output_surface_unsupported`) and
 keeps `--output-format` and an unbounded `--output-budget`
 ([pm-gh1778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1778.toon),
 tracker record excluded from npm).

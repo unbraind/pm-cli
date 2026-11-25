@@ -387,7 +387,7 @@ export interface ContextExtensionHealth {
   degraded: number;
   /** Active copies whose last observed `pm package manage` check found a newer release (pm-gh1778). */
   updates_available?: number;
-  /** Targeted upgrade commands (at most five), one per loaded package with a known update; present only when `updates_available` is above zero. */
+  /** One live `pm package manage --<scope>` check per scope with a known update, whose remediation names the upgrade; present only when `updates_available` is above zero. */
   next?: string[];
   /** Per-package static discovery health. */
   packages: ContextExtensionHealthRow[];
@@ -2071,7 +2071,7 @@ export function renderContextMarkdown(result: ContextResult): string {
     // next is present exactly when updates_available is above zero.
     const next = result.extension_health.next;
     lines.push(
-      `- extensions: ${result.extension_health.ok} ok, ${result.extension_health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${next === undefined ? "" : `, ${String(result.extension_health.updates_available)} with a known update (${next.join("; ")})`}`,
+      `- extensions: ${result.extension_health.ok} ok, ${result.extension_health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${next === undefined ? "" : `, ${String(result.extension_health.updates_available)} with a known update (${next.map(renderMarkdownCodeSpan).join("; ")})`}`,
     );
   }
   const renderedSections = result.sections_included.filter(
@@ -2939,24 +2939,29 @@ export async function resolveContextExtensionHealthProjection(
   };
 }
 
-/** At most this many upgrade commands are listed; `updates_available` still counts every update. */
-const MAX_EXTENSION_UPGRADE_HINTS = 5;
-
 /**
- * One targeted upgrade command per package with a known update, never an
- * untargeted scope-wide upgrade (that would reinstall packages nobody reported).
- * Each command is rendered from argv for the caller's shell; the package name sits
- * after `--` so no manifest-controlled name can become an option or a key=value
- * flag, and `--packages-only` keeps a lost target from upgrading the CLI. A project
- * command names the absolute tracker this read served, so it runs against the same
- * tracker from any directory, and never inherits `--no-extensions`, which would
- * make the upgrade's activation verification fail.
+ * One live freshness check per scope with a known update: `pm package manage
+ * --<scope>`, which re-checks the registry and names the upgrade in its
+ * remediation. The hint names no package, so no manifest-controlled name can
+ * select another installation, become an option, or lose its quoting; a project
+ * command names the absolute tracker this read served, so it runs against the
+ * same tracker from any directory, and no hint inherits `--no-extensions`.
  */
 function buildExtensionUpgradeHints(updatable: readonly ContextExtensionHealthRow[], pmRoot: string): string[] {
-  return updatable.slice(0, MAX_EXTENSION_UPGRADE_HINTS).map((entry) => renderPmCommand([
-    ...(entry.scope === "project" ? ["--pm-path", path.resolve(pmRoot)] : []),
-    "package", "upgrade", `--${entry.scope}`, "--packages-only", "--", entry.name,
-  ]));
+  return (["project", "global"] as const)
+    .filter((scope) => updatable.some((entry) => entry.scope === scope))
+    .map((scope) => renderPmCommand([
+      ...(scope === "project" ? ["--pm-path", path.resolve(pmRoot)] : []),
+      "package", "manage", `--${scope}`,
+    ]));
+}
+
+/** Render a command as a Markdown code span, so Markdown never consumes its shell escapes. */
+function renderMarkdownCodeSpan(text: string): string {
+  const longestRun = Math.max(0, ...[...text.matchAll(/`+/gu)].map((match) => match[0].length));
+  const fence = "`".repeat(longestRun + 1);
+  const padding = text.startsWith("`") || text.endsWith("`") ? " " : "";
+  return `${fence}${padding}${text}${padding}${fence}`;
 }
 
 async function resolveContextSemanticAffinity(

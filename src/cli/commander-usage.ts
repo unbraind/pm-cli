@@ -37,6 +37,7 @@ import {
   parseBootstrapHelpRequest,
   parseBootstrapGlobalOptions,
   parseBootstrapCommandName,
+  resolveLifecycleVerb,
 } from "./bootstrap-args.js";
 import {
   extractProvidedOptionFlags,
@@ -640,7 +641,11 @@ function resolveInflectedCommandPath(
   const root = alias && commandPaths.includes(alias.canonical) ? alias.canonical : commandPaths.includes(variant) ? variant : undefined;
   if (root === undefined) return undefined;
   let path = root;
-  for (const operand of [...typedRest, ...collectInvocationOperandsAfterCommand(invocationArgv, typedRest.length)]) {
+  // A package root takes its verb with the lifecycle grammar (`--ref v1 list`); other roots follow host-option arity.
+  const followingOperands = ["package", "packages", "extension"].includes(root)
+    ? [resolveLifecycleVerb(collectTokensAfterCommand(invocationArgv)) ?? ""].filter((token) => token.length > 0)
+    : collectInvocationOperandsAfterCommand(invocationArgv, typedRest.length);
+  for (const operand of [...typedRest, ...followingOperands]) {
     const next = `${path} ${operand}`;
     const nextAlias = resolvePmCommandAlias(next);
     if (!commandPaths.includes(next) && !(nextAlias !== undefined && !nextAlias.hidden && commandPaths.includes(nextAlias.canonical))) break;
@@ -669,6 +674,12 @@ function rankUnknownCommandSuggestions(
     ...(combinedCandidates.length > 0 ? combinedCandidates : fallback),
   ])].slice(0, 3);
   return { misnestedPath, hasConcreteCandidates, suggestedPaths };
+}
+
+/** The raw tokens an invocation typed after its command token. */
+function collectTokensAfterCommand(invocationArgv: readonly string[]): string[] {
+  const index = findBootstrapCommandTokenIndex([...invocationArgv]);
+  return index === undefined ? [] : invocationArgv.slice(index + 1);
 }
 
 /**
