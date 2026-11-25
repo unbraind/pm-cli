@@ -138,7 +138,9 @@ column holding the newer version the last `pm package manage` check observed for
 that installed version (`null` when none is known), and an `updates_available`
 count. `pm package catalog` lists what pm bundles. `list`, `explore`, `manage`
 and `catalog` take the same `--fields` contract: a comma-separated subset of the
-row keys, and an unknown key is refused with the listing's whole domain.
+row keys. An unknown key is refused with the listing's legal domain: human text
+bounds a long domain, and `--json` carries all of it in
+`recovery.allowed_values` and `refusal.legal_domain`.
 `explore` and `manage` rows leave the embedded `contributions` map out unless
 `--fields` asks for it; `pm package describe` maps every registered surface
 ([pm-gh1777](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1777.toon),

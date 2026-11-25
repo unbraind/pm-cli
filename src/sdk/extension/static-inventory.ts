@@ -100,6 +100,22 @@ export function refuseStaticInventoryReadOutputControls(controls: StaticInventor
   );
 }
 
+/**
+ * The tracker's configured default output format (`output.default_format`), read from
+ * settings.json without the general settings reader, which may scaffold schema files,
+ * so the static listing renders as every other command does (Codex review round 9).
+ * Absent, unreadable or unknown values yield undefined.
+ */
+export async function readStaticDefaultOutputFormat(pmRoot: string): Promise<"json" | "toon" | undefined> {
+  try {
+    const parsed: unknown = JSON.parse(await fs.readFile(path.join(pmRoot, "settings.json"), "utf8"));
+    const format = (parsed as { output?: { default_format?: unknown } }).output?.default_format;
+    return format === "json" || format === "toon" ? format : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Row keys `pm package list --fields` selects from, in their emitted order. */
 export const INVENTORY_ROW_FIELDS = [
   "name", "directory", "scope", "installed", "status", "configured_enabled", "managed", "runtime_active", "version", "update",

@@ -16,6 +16,7 @@ import {
   normalizeBootstrapInvocation,
   parseBootstrapCommandName,
   parseBootstrapHelpRequest,
+  removeLeadingCommandTerminator,
   resolveLifecycleVerb,
   stripGlobalBootstrapTokens
 } from "../bootstrap-args.js";
@@ -24,17 +25,6 @@ import {
 } from "../help-content.js";
 
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
-
-/**
- * Drop a terminator that stands before the command (`pm --json -- package list`), which
- * Commander still routes to the command. The host-option grammar decides: when the scanner
- * finds a command, any `--` before it was a flag value (`--pm-path --`) and stays.
- */
-function removeLeadingTerminator(argv: string[]): string[] {
-  if (findBootstrapCommandTokenIndex(argv) !== undefined) return argv;
-  const terminator = argv.indexOf("--");
-  return terminator < 0 ? argv : [...argv.slice(0, terminator), ...argv.slice(terminator + 1)];
-}
 
 /**
  * Recognize the read-only package inventory (and its `list` alias) before
@@ -51,7 +41,7 @@ function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean
   } catch {
     return false;
   }
-  const argv = removeLeadingTerminator(normalized);
+  const argv = removeLeadingCommandTerminator(normalized);
   const nounIndex = findBootstrapCommandTokenIndex(argv);
   if (nounIndex === undefined) return false;
   return ["package", "packages", "extension"].includes(argv[nounIndex]!) &&

@@ -1,10 +1,10 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
 import { isStaticExtensionInventoryInvocation, shouldRegisterDynamicExtensionPaths } from "../../../src/cli/runtime/selection.js";
 import { createPmCliProgram } from "../../../src/sdk/cli-program.js";
-import { refuseStaticInventoryReadOutputControls } from "../../../src/sdk/extension/static-inventory.js";
+import { readStaticDefaultOutputFormat, refuseStaticInventoryReadOutputControls } from "../../../src/sdk/extension/static-inventory.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("static inventory read-output controls", () => {
@@ -59,6 +59,8 @@ describe("static extension inventory command routing", () => {
     expect(isStaticExtensionInventoryInvocation(["--json", "--", "package", "list"])).toBe(true);
     // A -- that is a host option's value is not a terminator (Codex review round 7).
     expect(isStaticExtensionInventoryInvocation(["--pm-path", "--", "package", "list"])).toBe(true);
+    // The first -- is the path value, the second ends option parsing (Codex review round 9).
+    expect(isStaticExtensionInventoryInvocation(["--pm-path", "--", "--json", "--", "package", "list"])).toBe(true);
     // An invocation normalization refuses is never treated as the static listing.
     expect(isStaticExtensionInventoryInvocation(["get", "pm-1", "--id", "pm-2"])).toBe(false);
   });
@@ -107,6 +109,21 @@ describe("static extension inventory command routing", () => {
         });
         // The static listing applies no row-shaping output controls, so it refuses them instead of ignoring them.
         await expect(run(["package", "list", "--output-limit", "1"])).rejects.toMatchObject({ context: { code: "read_output_surface_unsupported", details: { output_option_keys: ["--output-limit"] } } });
+        // The tracker's configured default format applies to the static listing too (Codex review round 9).
+        const settingsPath = path.join(pmPath, "settings.json");
+        const settings = JSON.parse(await readFile(settingsPath, "utf8"));
+        await writeFile(settingsPath, JSON.stringify({ ...settings, output: { ...settings.output, default_format: "toon" } }));
+        expect(await readStaticDefaultOutputFormat(pmPath)).toBe("toon");
+        await writeFile(settingsPath, JSON.stringify({ ...settings, output: { ...settings.output, default_format: "yaml" } }));
+        expect(await readStaticDefaultOutputFormat(pmPath)).toBeUndefined();
+        // Without --json the listing renders in the tracker's default format.
+        await writeFile(settingsPath, JSON.stringify({ ...settings, output: { ...settings.output, default_format: "json" } }));
+        const program = createPmCliProgram("test");
+        registerSetupCommands(program);
+        await program.parseAsync(["--pm-path", pmPath, "package", "list", "--fields", "name"], { from: "user" });
+        expect(JSON.parse(output.pop() ?? "{}").extensions).toEqual([{ name: "source-probe" }]);
+        await writeFile(settingsPath, JSON.stringify(settings));
+        expect(await readStaticDefaultOutputFormat(path.join(pmPath, "missing"))).toBeUndefined();
         await run(["package", "list", "--output-budget", "unbounded"]);
         expect(JSON.parse(output.pop() ?? "{}")).toMatchObject({ updates_available: 1 });
         // A same-named copy in another directory does not borrow the managed copy's installation identity.

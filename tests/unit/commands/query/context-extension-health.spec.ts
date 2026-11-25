@@ -206,7 +206,8 @@ describe("context extension health", () => {
       const health = (await runContext({ depth: "brief" }, {})).extension_health;
       expect(health?.packages.find((row) => row.name === "pm-disabled")).toMatchObject({ update: "1.1.0", shadowed_by: null });
       expect(health).toMatchObject({ updates_available: 1, next: [renderPmCommand(["--pm-path", path.resolve(process.env.PM_PATH!), "package", "manage", "--project"])] });
-      expect(JSON.stringify(health?.next)).not.toContain("-x");
+      // No hint carries the package name as a token (a random temp path may contain "-x" as a substring).
+      expect(health?.next?.some((hint) => hint.split(" ").includes("-x"))).toBe(false);
       // Markdown puts every hint in its own fenced block, so shell quoting, line breaks and backticks stay verbatim,
       // and escapes manifest-controlled degraded names, so none can open a code span around a command (Codex review round 7).
       const rendered = renderContextMarkdown({

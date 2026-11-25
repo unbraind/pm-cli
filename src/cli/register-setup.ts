@@ -42,6 +42,7 @@ import {
   inspectStaticExtensionInventory,
   parseListingFields,
   projectListingRows,
+  readStaticDefaultOutputFormat,
   refuseStaticInventoryReadOutputControls,
 } from "../sdk/extension/static-inventory.js";
 
@@ -856,8 +857,13 @@ function registerLifecycleCommand(
       .description(`List installed ${plural} in the selected scope, with the last observed update, without activating extension code.`),
     vocabulary,
   ).action(async (name: string | undefined, _options: Record<string, unknown>, command) => {
-    const globalOptions = getGlobalOptions(command);
+    const baseGlobalOptions = getGlobalOptions(command);
     const options = command.optsWithGlobals() as Record<string, unknown>;
+    // The static route skips the host's default-format step, so it applies the tracker default itself.
+    const globalOptions = baseGlobalOptions.json === true ? baseGlobalOptions : {
+      ...baseGlobalOptions,
+      defaultOutputFormat: await readStaticDefaultOutputFormat(resolvePmRoot(process.cwd(), baseGlobalOptions.path)),
+    };
     if (options.global === true && (options.project === true || options.local === true)) {
       throw new PmCliError("--global and --project/--local are mutually exclusive.", EXIT_CODE.USAGE);
     }

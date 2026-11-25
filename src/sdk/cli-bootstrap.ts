@@ -1254,6 +1254,22 @@ export function resolveLifecycleVerb(tokens: readonly string[]): string | undefi
   return undefined;
 }
 
+/**
+ * Drop a terminator that stands before the command (`pm --json -- package list`), which
+ * Commander still routes to the command. Host options are walked with their arity, so a
+ * `--` that is a flag value (`--pm-path --`) stays a value and the first bare `--` is the
+ * terminator (Codex review rounds 7 and 9).
+ */
+export function removeLeadingCommandTerminator(argv: readonly string[]): string[] {
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index]!;
+    if (token === "--") return [...argv.slice(0, index), ...argv.slice(index + 1)];
+    if (!token.startsWith("-")) break;
+    if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) index += 1;
+  }
+  return [...argv];
+}
+
 function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   const stripped = stripGlobalBootstrapTokens(argv);
   const first = stripped[0]?.trim().toLowerCase();
