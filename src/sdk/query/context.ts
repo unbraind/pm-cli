@@ -28,10 +28,10 @@ import { getActiveExtensionRegistrations } from "../../core/extensions/index.js"
 import {
   findApplicableUpdateObservation,
   readExtensionUpdateObservations,
+  readStrictManagedRecords,
   resolveObservedUpdateVersion,
 } from "../extension/update-observations.js";
-import { readManagedExtensionState } from "../extension/managed-state.js";
-import { renderPmCommand } from "../command-line.js";
+import { buildExtensionUpgradeHints } from "../extension/upgrade-hints.js";
 import type { ItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   collectDependencyBlockedIds,
@@ -2888,7 +2888,7 @@ export async function resolveContextExtensionHealthProjection(
     // Managed metadata is optional evidence here: a corrupt or unreadable file means unknown updates, never a failed context read.
     const [observations, records] = await Promise.all([
       readExtensionUpdateObservations(path.dirname(extensionsRoot)),
-      readManagedExtensionState(extensionsRoot).then((managed) => managed.state.entries, () => []),
+      readStrictManagedRecords(extensionsRoot).then((records) => records ?? []),
     ]);
     return [scope, { observations, records }] as const;
   }));
@@ -2930,23 +2930,6 @@ export async function resolveContextExtensionHealthProjection(
       ...(packages.length > 20 ? { truncated: true } : {}),
     },
   };
-}
-
-/**
- * One live freshness check per scope with a known update: `pm package manage
- * --<scope>`, which re-checks the registry and names the upgrade in its
- * remediation. The hint names no package, so no manifest-controlled name can
- * select another installation, become an option, or lose its quoting; a project
- * command names the absolute tracker this read served, so it runs against the
- * same tracker from any directory, and no hint inherits `--no-extensions`.
- */
-function buildExtensionUpgradeHints(updatable: readonly ContextExtensionHealthRow[], pmRoot: string): string[] {
-  return (["project", "global"] as const)
-    .filter((scope) => updatable.some((entry) => entry.scope === scope))
-    .map((scope) => renderPmCommand([
-      ...(scope === "project" ? ["--pm-path", path.resolve(pmRoot)] : []),
-      "package", "manage", `--${scope}`,
-    ]));
 }
 
 /**

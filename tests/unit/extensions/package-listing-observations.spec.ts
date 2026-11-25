@@ -20,6 +20,7 @@ import {
   findApplicableUpdateObservation,
   readExtensionUpdateObservations,
   recordCheckedUpdateObservations,
+  readStrictManagedRecords,
   recordExtensionUpdateObservations,
   resolveExtensionUpdateObservationsPath,
   resolveGuardedReadFlags,
@@ -29,6 +30,7 @@ import {
 import type { ManagedExtensionRecord } from "../../../src/sdk/extension/managed-state.js";
 import { isLocalNpmSpec, isNewerRegistryVersion, isRegistryNpmSource } from "../../../src/sdk/extension/npm-spec.js";
 import { acquireLock } from "../../../src/core/lock/lock.js";
+import { refreshManagedExtensionUpdates } from "../../../src/sdk/extension/managed-update-status.js";
 
 let scopeRoot: string;
 beforeEach(async () => {
@@ -63,6 +65,8 @@ describe("npm install source classification", () => {
     expect(isLocalNpmSpec("artifacts/pkg.tgz")).toBe(true);
     expect(isLocalNpmSpec("artifacts/pkg.TAR.GZ")).toBe(true);
     expect(isLocalNpmSpec("@scope/pkg")).toBe(false);
+    // npm's registry verdict wins over the archive suffix for a scoped name (Codex review round 6).
+    expect(isLocalNpmSpec("@scope/plugin.tgz")).toBe(false);
     expect(isLocalNpmSpec("@@not a spec")).toBe(false);
     const npm = (input: string) => ({ kind: "npm" as const, input, location: "package" });
     expect(isRegistryNpmSource(npm("npm:@scope/pkg@1.0.0"))).toBe(true);
@@ -196,6 +200,26 @@ describe("extension update observations", () => {
     await writeManagedState([record({ name: "pm-github" })]);
     await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github", checked_at: "2026-11-25T00:00:00.000Z" })]);
     expect((await readExtensionUpdateObservations(scopeRoot)).map((entry) => entry.name)).toEqual(["pm-github"]);
+  });
+
+  it("does not prune against a managed state with a malformed entry, and reads it as unknown (Codex review round 6)", async () => {
+    await writeManagedState([record({ name: "pm-github" }), record({ name: "pm-csv", directory: "pm-csv" })]);
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github" }), observation({ name: "pm-csv" })]);
+    // One entry turns malformed: the shared reader would drop it silently, so the snapshot is not complete.
+    const valid = record({ name: "pm-github" });
+    await fs.writeFile(path.join(scopeRoot, "extensions", ".managed-extensions.json"), JSON.stringify({ version: 1, updated_at: "2026-10-04T00:00:00.000Z", entries: [valid, { name: 42 }] }));
+    expect(await readStrictManagedRecords(extensionsRoot())).toBeUndefined();
+    await recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation({ name: "pm-github", checked_at: "2026-11-25T00:00:00.000Z" })]);
+    expect((await readExtensionUpdateObservations(scopeRoot)).map((entry) => entry.name)).toEqual(["pm-csv", "pm-github"]);
+    // An absent file is a complete, empty snapshot.
+    await fs.rm(path.join(scopeRoot, "extensions", ".managed-extensions.json"));
+    expect(await readStrictManagedRecords(extensionsRoot())).toEqual([]);
+  });
+
+  it("skips the live registry lookup for a non-registry npm source", async () => {
+    const tarball = record({ name: "pm-tarball", source: { kind: "npm", input: "npm:./pm-tarball-1.0.0.tgz", location: ".", package: "pm-tarball", version: "1.0.0" } });
+    const refreshed = await refreshManagedExtensionUpdates({ version: 1, updated_at: "2026-10-04T00:00:00.000Z", entries: [tarball] });
+    expect(refreshed.entries).toEqual([tarball]);
   });
 
   it("refuses to write a record larger than the reader would accept", async () => {

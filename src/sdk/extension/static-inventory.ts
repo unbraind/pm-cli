@@ -65,6 +65,8 @@ export interface StaticInventoryReadOutputControls {
   outputRowContract?: boolean;
   /** Byte budget for the rendered result; only `unbounded` is accepted, since the inventory cannot trim rows to fit. */
   outputBudget?: string;
+  /** Raw `--output-format` value as typed; only `toon` and `json` are formats, anything else is refused. */
+  outputFormat?: unknown;
 }
 
 /**
@@ -73,6 +75,10 @@ export interface StaticInventoryReadOutputControls {
  * output format and an unbounded budget still apply (Codex review round 2).
  */
 export function refuseStaticInventoryReadOutputControls(controls: StaticInventoryReadOutputControls): void {
+  // The same format refusal every read applies, before host option parsing could drop an unknown value (Codex review round 6).
+  if (controls.outputFormat !== undefined && controls.outputFormat !== "json" && controls.outputFormat !== "toon") {
+    throw new PmCliError("--output-format must be toon or json.", EXIT_CODE.USAGE, { code: "invalid_argument_value" });
+  }
   const unsupported = [
     ["--output-limit", controls.outputLimit],
     ["--output-include", controls.outputInclude],

@@ -99,6 +99,7 @@ import {
 import { refreshManagedExtensionUpdates } from "./extension/managed-update-status.js";
 import { recordCheckedUpdateObservations } from "./extension/update-observations.js";
 import { parseExploreManageFields, projectExploreManageRows } from "./extension/listing-fields.js";
+import { isRegistryNpmSource } from "./extension/npm-spec.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
 import { buildBundledInstallReceipt } from "./extension/install-receipts.js";
 import { buildExtensionInstallPlan, type ExtensionInstallPlan, type ExtensionCopyPlanOptions } from "./extension/install-plan.js";
@@ -990,6 +991,11 @@ const EXTENSION_UPDATE_CHECK_RESOLVERS: ExtensionUpdateCheckResolver[] = [
           status: "skipped_non_github",
           reason: `managed_source_kind_${managedEntry.source.kind}`,
         }
+      : null,
+  // A local npm artifact is reinstalled as it is, so no registry release is compared with it (pm-gh1778).
+  (managedEntry) =>
+    managedEntry?.source.kind === "npm" && !isRegistryNpmSource(managedEntry.source)
+      ? { status: "skipped_non_github", reason: "managed_npm_source_not_registry" }
       : null,
   (managedEntry) => {
     const updateError =

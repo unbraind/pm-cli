@@ -40,7 +40,11 @@ function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean
   } catch {
     return false;
   }
-  const argv = normalized[0] === "--" ? normalized.slice(1) : normalized;
+  // A terminator before the command, after any host options (`pm --json -- package list`), still routes to it.
+  const terminator = normalized.indexOf("--");
+  const argv = terminator >= 0 && findBootstrapCommandTokenIndex(normalized.slice(0, terminator)) === undefined
+    ? [...normalized.slice(0, terminator), ...normalized.slice(terminator + 1)]
+    : normalized;
   const nounIndex = findBootstrapCommandTokenIndex(argv);
   if (nounIndex === undefined) return false;
   return ["package", "packages", "extension"].includes(argv[nounIndex]!) &&

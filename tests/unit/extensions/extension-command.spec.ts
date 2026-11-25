@@ -312,6 +312,12 @@ describe("extension command runtime", () => {
       status: "skipped_non_github",
       reason: "managed_source_kind_local",
     });
+    // A local npm artifact is never compared with a registry release (pm-gh1778, Codex review round 6).
+    expect(
+      extensionCommandTestOnly.resolveUpdateCheckResolution({
+        source: { kind: "npm", input: "npm:./pkg-1.0.0.tgz", location: ".", package: "pkg", version: "1.0.0" },
+      } as never),
+    ).toEqual({ status: "skipped_non_github", reason: "managed_npm_source_not_registry" });
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({
         source: {

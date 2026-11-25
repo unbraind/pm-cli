@@ -197,6 +197,25 @@ export function collectExtensionUpdateObservations(entries: readonly ManagedExte
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+/**
+ * The managed install records of a scope when every entry is valid, else
+ * undefined. The shared state reader drops a malformed entry silently; pruning
+ * against such a partial snapshot would delete that package's observation, and
+ * reporting from it would disagree with the static inventory, which marks the
+ * file invalid (Codex review round 6). An absent file is a valid empty snapshot.
+ */
+export async function readStrictManagedRecords(extensionsRoot: string): Promise<ManagedExtensionRecord[] | undefined> {
+  try {
+    const managed = await readManagedExtensionState(extensionsRoot);
+    const raw = await fs.readFile(managed.path, "utf8").then((text) => JSON.parse(text) as unknown, () => ({ entries: [] }));
+    // The shared reader validated this file as an object; a file swapped since then fails here and reads as undefined.
+    const declared = (raw as { entries?: unknown }).entries;
+    return Array.isArray(declared) && declared.length === managed.state.entries.length ? managed.state.entries : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** The latest observation for each installation (name, manifest version, managed record) among candidates. */
 function latestPerInstallation(candidates: readonly ExtensionUpdateObservation[]): ExtensionUpdateObservation[] {
   const latest = new Map<string, ExtensionUpdateObservation>();
@@ -241,7 +260,7 @@ export async function recordExtensionUpdateObservations(
   try {
     await assertRuntimeDirectory();
     const candidates = [...(await readExtensionUpdateObservations(scopeRoot)), ...observations];
-    const records = await readManagedExtensionState(extensionsRoot).then((managed) => managed.state.entries, () => undefined);
+    const records = await readStrictManagedRecords(extensionsRoot);
     const rows = (records === undefined
       // Managed state unreadable at this moment (a lifecycle write in progress): keep every answer, the latest per
       // installation, and leave pruning to the next merge that reads a complete snapshot (Codex review round 5).

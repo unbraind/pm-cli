@@ -10,6 +10,9 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 describe("static inventory read-output controls", () => {
   it("refuses every row-shaping control and keeps format and an unbounded budget", () => {
     expect(() => refuseStaticInventoryReadOutputControls({})).not.toThrow();
+    // The raw format is validated before host option parsing could drop it (Codex review round 6).
+    expect(() => refuseStaticInventoryReadOutputControls({ outputFormat: "json" })).not.toThrow();
+    expect(() => refuseStaticInventoryReadOutputControls({ outputFormat: "jsno" })).toThrow("--output-format must be toon or json.");
     expect(() => refuseStaticInventoryReadOutputControls({ outputBudget: "unbounded", outputRowContract: false })).not.toThrow();
     expect(() => refuseStaticInventoryReadOutputControls({
       outputLimit: "1", outputInclude: "name", outputSession: "s", outputCursor: "c", outputRowContract: true, outputBudget: "100",
@@ -52,6 +55,8 @@ describe("static extension inventory command routing", () => {
     // Decided on the invocation Commander parses: a runner-injected pm token and a leading -- (Codex review round 5).
     expect(isStaticExtensionInventoryInvocation(["pm", "package", "list"])).toBe(true);
     expect(isStaticExtensionInventoryInvocation(["--", "package", "list"])).toBe(true);
+    // A terminator after host options still routes to the command (Codex review round 6).
+    expect(isStaticExtensionInventoryInvocation(["--json", "--", "package", "list"])).toBe(true);
     // An invocation normalization refuses is never treated as the static listing.
     expect(isStaticExtensionInventoryInvocation(["get", "pm-1", "--id", "pm-2"])).toBe(false);
   });

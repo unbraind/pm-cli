@@ -1020,6 +1020,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
       "sdk/context-intent-contracts.ts",
       "sdk/dependencies.ts",
       "sdk/extension/listing-fields.ts",
+      "sdk/extension/static-inventory.ts",
       "sdk/governance/assurance-mutation-error.ts",
       "sdk/history-redact.ts",
       "sdk/lifecycle/create.ts",

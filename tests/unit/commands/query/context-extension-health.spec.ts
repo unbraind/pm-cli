@@ -6,6 +6,7 @@ import {
   runContext,
 } from "../../../../src/sdk/query/context.js";
 import { renderPmCommand } from "../../../../src/sdk/command-line.js";
+import { buildExtensionUpgradeHints, renderTrimSafeTrackerPath } from "../../../../src/sdk/extension/upgrade-hints.js";
 import { writeTestExtension } from "../../../helpers/extensions.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
@@ -217,5 +218,15 @@ describe("context extension health", () => {
       // A fence is always longer than any backtick run inside the command.
       expect(multiline).toContain("````sh\npm --pm-path \"/x\n```\" package manage --project\n````");
     });
+  });
+  it("keeps a tracker path ending in whitespace intact through the trimmed --pm-path option (Codex review round 6)", () => {
+    const spaced = path.resolve("tracker ");
+    expect(renderTrimSafeTrackerPath(spaced)).toBe(`${spaced}${path.sep}.`);
+    expect(renderTrimSafeTrackerPath("/plain/tracker")).toBe(path.resolve("/plain/tracker"));
+    expect(buildExtensionUpgradeHints([{ scope: "project" }, { scope: "project" }], spaced)).toEqual([
+      renderPmCommand(["--pm-path", `${spaced}${path.sep}.`, "package", "manage", "--project"]),
+    ]);
+    expect(buildExtensionUpgradeHints([{ scope: "global" }], spaced)).toEqual(["pm package manage --global"]);
+    expect(buildExtensionUpgradeHints([], spaced)).toEqual([]);
   });
 });

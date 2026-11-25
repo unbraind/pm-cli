@@ -28,10 +28,11 @@ function parseNpmSpecType(spec: string): string | undefined {
 /** Whether a raw npm spec names a local path, tarball or `file:` artifact rather than a registry package. */
 export function isLocalNpmSpec(spec: string): boolean {
   if (path.isAbsolute(spec) || spec.startsWith(".") || spec.startsWith("file:")) return true;
-  // An archive path such as `artifacts/pkg.tgz` is local even without a leading `./`, as the installer reads it.
-  if (/\.(?:tgz|tar\.gz|tar)$/iu.test(spec)) return true;
   const type = parseNpmSpecType(spec);
-  return type === "file" || type === "directory";
+  // npm's own registry verdict wins (`@scope/plugin.tgz` is a registry package name, Codex review round 6).
+  if (type !== undefined && REGISTRY_SPEC_TYPES.has(type)) return false;
+  // An archive path such as `artifacts/pkg.tgz` is local even without a leading `./`, as the installer reads it.
+  return type === "file" || type === "directory" || /\.(?:tgz|tar\.gz|tar)$/iu.test(spec);
 }
 
 /** Whether a managed source installs from the npm registry, so a newer registry release can replace it. */
