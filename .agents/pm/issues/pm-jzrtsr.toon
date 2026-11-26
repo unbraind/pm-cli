@@ -6,7 +6,9 @@ status: open
 priority: 1
 tags[6]: ci,macos,nightly,regression,shell,windows
 created_at: "2026-11-26T11:22:56.337Z"
-updated_at: "2026-11-26T11:22:56.337Z"
+updated_at: "2026-11-26T15:30:19.034Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#bde5973a64851be416b1c911"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Windows recovery-text tests derive their expectations from the dialect renderer instead of a POSIX literal; The rendered-command safety test passes under bash 3.2 with history expansion, including non-ASCII arguments; A dispatched Nightly Validation run is green on every leg"
@@ -19,4 +21,9 @@ actual_result: Windows legs fail on POSIX-spelled expectations and the macOS leg
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-kjoudp,discovered_from,"2026-11-26T11:22:56.337Z","harness:claude-code","cli:create:dep",detected
   pm-oq893h,discovered_from,"2026-11-26T11:22:56.337Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-26T14:36:44.652Z","harness:claude-code","Root cause (macOS leg), reproduced in the official bash:3.2 image (3.2.57, same as macOS) and read in its lib/readline/histexpand.c and parse.y: history_expand first runs a quote tracker that, inside double quotes, skips the character after any backslash that precedes a double quote without pairing backslashes, so the rendered \\\\\" that ends a double-quoted argument with a trailing backslash (C:\\Program Files\\pm\\ in the fixture) leaves it inside double quotes; the later single-quoted '!bang!' then looks live and the expansion pass runs, and that pass breaks out of its loop after the first multibyte character (the U+2019 in smart’s), so the line is cut and bash reads the next physical line as the continuation of an open double quote: 12 arguments instead of 25. parse.y inhibits history expansion on a continuation line only inside a single-quoted string, so a double-quoted argument holding a line break is a second trigger (event not found, even without non-ASCII text); bash 5.3 handles both. Fix: quotePosixCommandArg single-quotes an argument holding !, CR or LF, or ending in a backslash; every other spelling is unchanged."
+files[2]{path,scope,note}:
+  src/core/shared/command-line.ts,project,"POSIX_SINGLE_QUOTED: !, CR or LF, or a trailing backslash"
+  tests/integration/cli/rendered-command-shell-safety.integration.spec.ts,project,bash 3.2 history-expansion fixture
 body: ""

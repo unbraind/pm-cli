@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:release",auto-release,"gh:1788",reliability
 created_at: "2026-11-26T14:22:25.576Z"
-updated_at: "2026-11-26T14:22:38.718Z"
+updated_at: "2026-11-26T15:30:18.450Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#bde5973a64851be416b1c911"
 author: "harness:claude-code"
@@ -19,4 +19,7 @@ expected_result: "A producer binding listed in the complete inventory is downloa
 actual_result: "gh run download answered HTTP 404 1.5 s after the upload finalized, and the gate refused the release"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-jvb9pk,discovered_from,"2026-11-26T14:22:25.576Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope,note}:
+  scripts/release/release-tag-provenance.mjs,project,downloadProducerBinding retries an HTTP 404 within the bounded wait
+  tests/unit/scripts/release/release-tag-provenance.spec.ts,project,"trailing, persistent and non-404 download failures"
 body: ""

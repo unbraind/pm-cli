@@ -1,7 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { EXIT_CODE, PmClient } from "../../../src/sdk/index.js";
+import { EXIT_CODE, PmClient, quoteCommandArg, resolveLinkedResourcePositionalRecovery } from "../../../src/sdk/index.js";
 import { runLinkedTests, runTest } from "../../../src/sdk/test/execution.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { overwriteTaskTests, setTestResultTracking } from "../../helpers/pmWorkspace.js";
@@ -131,7 +131,10 @@ describe("linked-resource admission and recovery", () => {
         expect(refused.code).toBe(2);
         const error = JSON.parse(refused.stderr) as { required: string; recovery: { suggested_retry_args?: string[] } };
         expect(error.recovery.suggested_retry_args).toBeUndefined();
-        expect(error.required).toContain("command=<actual command>");
+        // The CLI quotes the template for its declared shell, the cmd dialect on Windows (pm-jzrtsr).
+        const template = resolveLinkedResourcePositionalRecovery("test", ["test", id, value, "--json"])?.templateArgs?.find((arg) => arg.startsWith("command=<actual command>"));
+        expect(template).toBeDefined();
+        expect(error.required).toContain(quoteCommandArg(template!));
         expect(error.required).toContain(`test ${id}`);
         expect(await capture(context)).toEqual(before);
       }

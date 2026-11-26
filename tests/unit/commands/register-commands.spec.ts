@@ -2902,7 +2902,7 @@ describe("mutation command actions", () => {
     expect(transposedFile).toMatchObject<Partial<PmCliError>>({
       context: {
         recovery: {
-          suggested_retry: 'pm notes pm-1 --file "notes file.md"',
+          suggested_retry: renderPmCommand(["notes", "pm-1", "--file", "notes file.md"]),
         },
       },
     });
@@ -2916,10 +2916,8 @@ describe("mutation command actions", () => {
     expect(transposedShellText).toMatchObject<Partial<PmCliError>>({
       context: {
         recovery: {
-          suggested_retry:
-            process.platform === "win32"
-              ? 'pm notes pm-1 --add "$(touch /tmp/should-not-run) `echo unsafe` \\"$TOKEN\\""'
-              : 'pm notes pm-1 --add "\\$(touch /tmp/should-not-run) \\`echo unsafe\\` \\"\\$TOKEN\\""',
+          // Quoted for the declared shell: the cmd dialect on Windows, POSIX elsewhere (pm-jzrtsr).
+          suggested_retry: renderPmCommand(["notes", "pm-1", "--add", '$(touch /tmp/should-not-run) `echo unsafe` "$TOKEN"']),
         },
       },
     });
