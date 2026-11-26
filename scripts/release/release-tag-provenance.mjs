@@ -1,6 +1,6 @@
 /** Preserve upstream release declarations in content-addressed Git tag objects. */
 import { execFileSync } from "node:child_process";
-import { lstatSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { registerTempCleanup } from "../temp-lifecycle.mjs";
@@ -78,7 +78,8 @@ function selectProducerBindingArtifact(pages, source, defaultBranch) {
   return matching[0];
 }
 
-const INVENTORY_REREAD_DELAYS_MS = [1000, 2000, 4000, 8000, 15_000];
+/** Waits before each repeated provider read; the artifacts API trails a just-finalized upload. */
+const PROVIDER_REREAD_DELAYS_MS = [1000, 2000, 4000, 8000, 15_000];
 
 /** Block this synchronous gate without spinning. */
 function pauseSync(milliseconds) {
@@ -100,12 +101,36 @@ function readProducerBindingInventory(execute, options, source, defaultBranch, p
     return !complete && matching.length === 1 && isDeclaredProducerBinding(matching[0], source, defaultBranch);
   };
   let pages = read();
-  for (const delay of INVENTORY_REREAD_DELAYS_MS) {
+  for (const delay of PROVIDER_REREAD_DELAYS_MS) {
     if (!trailing(pages)) break;
     pause(delay);
     pages = read();
   }
   return pages;
+}
+
+/** Whether a failed provider command reported that the requested resource does not exist (yet). */
+function isProviderNotFound(error) {
+  return /\bHTTP 404\b/u.test(String(error?.stderr ?? ""));
+}
+
+/**
+ * Download the selected binding. Its archive can still answer 404 moments after a complete
+ * inventory lists it, so only a 404 is retried within the bounded wait, each attempt into a fresh
+ * directory; any other failure, or a 404 that outlasts the wait, is the provider's own refusal.
+ */
+function downloadProducerBinding(execute, options, source, artifact, directory, pause) {
+  for (let attempt = 0; ; attempt += 1) {
+    const target = path.join(directory, String(attempt));
+    mkdirSync(target);
+    try {
+      execute("gh", ["run", "download", String(source.run_id), "--repo", source.repository, "--name", artifact.name, "--dir", target], options);
+      return target;
+    } catch (error) {
+      if (attempt === PROVIDER_REREAD_DELAYS_MS.length || !isProviderNotFound(error)) throw error;
+      pause(PROVIDER_REREAD_DELAYS_MS[attempt]);
+    }
+  }
 }
 
 /** Validate a bounded regular producer document against every actual Git identity and declaration. */
@@ -137,8 +162,7 @@ export function recordReleasePublicationOrigin(env = process.env, cwd = process.
     const directory = mkdtempSync(path.join(tmpdir(), "pm-producer-binding-"));
     const releaseCleanup = registerTempCleanup(directory);
     try {
-      execute("gh", ["run", "download", String(source.run_id), "--repo", source.repository, "--name", artifact.name, "--dir", directory], options);
-      verifyProducerBindingFile(directory, report);
+      verifyProducerBindingFile(downloadProducerBinding(execute, options, source, artifact, directory, pause), report);
       report.source_run_verified = true;
       report.producer_binding_verified = true;
     } finally {

@@ -117,6 +117,35 @@ describe("tag-carried release provenance", () => {
       pauses.length = 0;
       expect(publication).toMatchObject({ source_run_verified: true, recovery_origin: null, publication_event: "push", provenance: { trigger_origin: "morning_dispatcher" } });
       expect(JSON.parse(readFileSync(output, "utf8"))).toEqual(publication);
+      // The archive of a listed binding can still answer 404: only that answer is downloaded again, each time into a fresh directory.
+      const notFound = Object.assign(new Error("Command failed: gh run download"), { stderr: "error downloading release-producer-binding-1: HTTP 404: Not Found (https://api.github.com/repos/o/r/actions/artifacts/7/zip)\n" });
+      const downloadFailures: unknown[] = [notFound, notFound];
+      const downloadDirectories: string[] = [];
+      const trailingDownload = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command !== "gh" || args[0] !== "run") return execute(command, args, options);
+        downloadDirectories.push(args[args.indexOf("--dir") + 1]);
+        const failure = downloadFailures.shift();
+        if (failure !== undefined) throw failure;
+        return execute(command, args, options);
+      }) as typeof execFileSync;
+      expect(recordReleasePublicationOrigin(publicationEnv, root, trailingDownload, pause)).toMatchObject({ producer_binding_verified: true });
+      expect(pauses).toEqual([1000, 2000]);
+      expect(new Set(downloadDirectories).size).toBe(3);
+      // A 404 that outlasts the wait is the provider's own refusal.
+      pauses.length = 0;
+      downloadFailures.push(...Array.from({ length: 6 }, () => notFound));
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, trailingDownload, pause)).toThrow("Command failed: gh run download");
+      expect(pauses).toEqual([1000, 2000, 4000, 8000, 15_000]);
+      expect(downloadFailures).toEqual([]);
+      expect(JSON.parse(readFileSync(output, "utf8")).producer_binding_verified).toBe(false);
+      // Any other failure, with or without provider output, is refused at once.
+      for (const failure of [Object.assign(new Error("Command failed: gh run download"), { stderr: "HTTP 403: Forbidden\n" }), new Error("spawnSync gh ETIMEDOUT"), null]) {
+        pauses.length = 0;
+        downloadFailures.push(failure);
+        expect(() => recordReleasePublicationOrigin(publicationEnv, root, trailingDownload, pause)).toThrow();
+        expect(pauses).toEqual([]);
+        expect(downloadFailures).toEqual([]);
+      }
       git(["commit", "--allow-empty", "-m", "Unrelated descendant"]);
       const copiedTag = "v2026.10.11";
       const copiedTarget = git(["rev-parse", "HEAD"]);
