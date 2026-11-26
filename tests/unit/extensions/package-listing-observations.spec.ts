@@ -324,10 +324,11 @@ describe("extension update observations", () => {
     // A repository source reports commits, which carry no version order.
     const github = { kind: "github" as const, input: "o/r", location: "o/r" };
     expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789ab" })], { ...installed, source: github })).toBeDefined();
-    // A positive verdict without the remote commit the live check always records is rejected (CodeRabbit review round 10);
-    // a negative one needs no commit.
+    // A verdict without the remote commit the live check always records is rejected, positive (CodeRabbit review round 10)
+    // or negative (Codex review round 20), so a commit-less negative row cannot mask a valid update.
     expect(findApplicableUpdateObservation([observation({ remote_version: null })], { ...installed, source: github })).toBeUndefined();
-    expect(findApplicableUpdateObservation([observation({ remote_version: null, update_available: false })], { ...installed, source: github })).toBeDefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: null, update_available: false })], { ...installed, source: github })).toBeUndefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789ab", update_available: false })], { ...installed, source: github })?.update_available).toBe(false);
     // Anything but the hexadecimal commit a repository check records is rejected (Codex review round 14).
     expect(findApplicableUpdateObservation([observation({ remote_version: "abc\n```sh" })], { ...installed, source: github })).toBeUndefined();
   });

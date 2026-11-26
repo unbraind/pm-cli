@@ -63,7 +63,9 @@ registry and shows each package's update evidence (`update_available`,
 updated sources (`pm package upgrade <name> --<scope>` upgrades one). The hint names no package, so
 no manifest-controlled name can select another installation, become an option,
 or lose its quoting, and the Markdown rendering puts each hint in its own fenced
-block, which keeps line breaks and shell escapes verbatim. Every hint names the
+block, which keeps line breaks and shell escapes verbatim (a tracker path with
+any other terminal control character is not written raw; the Markdown points to
+the exact JSON `next` value instead). Every hint names the
 absolute tracker the read served (`--pm-path`), because manage's activation
 probe resolves it even for a global check, and a caller's explicit
 `--no-extensions` carries over, because manage's live check runs before that

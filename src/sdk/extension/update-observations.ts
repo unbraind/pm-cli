@@ -388,9 +388,9 @@ export function findApplicableUpdateObservation(
  */
 function isConsistentWithSource(observation: ExtensionUpdateObservation, source: ManagedExtensionRecord["source"] | undefined): boolean {
   if (source === undefined) return true;
-  // A positive repository check always records the short hexadecimal remote commit; anything else, a missing commit
-  // included, is not one it produced (Codex review round 14, CodeRabbit review round 10).
-  if (source.kind === "github") return observation.update_available === false || (observation.remote_version !== null && /^[0-9a-f]{7,40}$/u.test(observation.remote_version));
+  // A repository check that answered always records the short hexadecimal remote commit, whatever its verdict; anything
+  // else, a missing commit included, is not one it produced (Codex review rounds 14 and 20, CodeRabbit review round 10).
+  if (source.kind === "github") return observation.remote_version !== null && /^[0-9a-f]{7,40}$/u.test(observation.remote_version);
   if (!isRegistryNpmSource(source)) return observation.update_available === false;
   // A registry verdict, positive or negative, must be the one the live check's comparison gives for an exact version
   // it accepts, so an edited row can neither invent an update nor hide one (Codex review rounds 13, 14 and 19).

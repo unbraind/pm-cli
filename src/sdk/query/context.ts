@@ -2952,8 +2952,19 @@ function renderExtensionHealthMarkdown(health: ContextExtensionHealth): string[]
   return [
     `- extensions: ${health.ok} ok, ${health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${updates}`,
     ...notable.map(renderExtensionHealthRowMarkdown),
-    ...(next ?? []).map(renderMarkdownFence),
+    ...(next ?? []).map(renderExtensionHintMarkdown),
   ];
+}
+
+/**
+ * A live-check hint as a fenced command, unless its tracker path carries a terminal control character other than a
+ * line break or tab: such a path cannot be shown without driving the terminal, so the reader is pointed at the exact
+ * structured `next` value instead (Codex review round 20).
+ */
+function renderExtensionHintMarkdown(hint: string): string {
+  return /\p{Cc}/u.test(hint.replace(/[\n\t]/gu, ""))
+    ? "- a live check command is not shown because the tracker path contains terminal control characters; read it from the JSON `next` field"
+    : renderMarkdownFence(hint);
 }
 
 /** One notable extension copy as a nested Markdown list item, its manifest-controlled name escaped. */
