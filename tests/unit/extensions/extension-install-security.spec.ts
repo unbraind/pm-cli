@@ -318,7 +318,7 @@ describe("local npm package archives", () => {
       await copyFile(safe.archive, path.join(packDirectory, "git.tgz"));
       return JSON.stringify([{ name, filename: "git.tgz" }]);
     };
-    for (const spec of ["github:owner/repo", "https://example.org/demo.tgz"]) {
+    for (const spec of ["github:owner/repo", "https://example.org/demo.tgz", "git@github.com:owner/repo.git"]) {
       const gitResolved = await _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
         { kind: "npm", input: `npm:${spec}`, spec },
         packNamed("pm-archive-demo"),

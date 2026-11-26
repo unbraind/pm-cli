@@ -415,8 +415,11 @@ function npmPackageNameFromSpec(spec: string): string {
   return unscoped?.[1] ?? withoutAlias;
 }
 
-/** An explicitly qualified git or URL spec: a hosted-git scheme, a `git`/`git+` transport, or a URL. */
-const QUALIFIED_REMOTE_NPM_SPEC = /^(?:(?:github|gitlab|bitbucket|gist):|git(?:\+[a-z]+)?:|[a-z][a-z0-9+.-]*:\/\/)/iu;
+/**
+ * An explicitly qualified git or URL spec: a hosted-git scheme, a `git`/`git+` transport, a URL, or an scp-style SSH
+ * source such as `git@github.com:owner/repo.git` (Greptile review round 10).
+ */
+const QUALIFIED_REMOTE_NPM_SPEC = /^(?:(?:github|gitlab|bitbucket|gist):|git(?:\+[a-z]+)?:|[a-z][a-z0-9+.-]*:\/\/|[\w.-]+@[\w.-]+:)/iu;
 
 /**
  * The package name an npm pack receipt must carry for a spec, or undefined when the spec names none: a complete

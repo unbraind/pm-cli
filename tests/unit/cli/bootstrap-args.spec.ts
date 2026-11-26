@@ -367,6 +367,11 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
       expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", token])).toEqual(["extension", "explore", token]);
     }
     expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--fieldsx"])).toEqual(["extension", "--explore", "--fieldsx"]);
+    // A fields token that is a host flag's value, belongs to another action, or follows a terminator never changes the
+    // route, so pm --author fields extension install a b keeps the single-target action route (Codex review round 23).
+    expect(normalizeLegacyExtensionActionSyntax(["--author", "fields", "extension", "install", "a", "b"])).toEqual(["--author", "fields", "extension", "--install", "a", "b"]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "install", "a", "--fields", "name"])).toEqual(["extension", "--install", "a", "--fields", "name"]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--", "fields"])).toEqual(["extension", "--explore", "--", "fields"]);
   });
 
   it("converts 'extension install' to 'extension --install'", () => {

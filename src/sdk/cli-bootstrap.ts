@@ -367,6 +367,12 @@ const EXTENSION_ACTION_SYNTAX_TOKENS = new Set<ExtensionSubcommandAction>([
   "deactivate",
 ]);
 
+/** Whether the tokens after a listing action carry a `--fields` projection (or its bare `fields=` form) before any `--`. */
+function hasListingProjectionToken(tokens: readonly string[]): boolean {
+  const terminator = tokens.indexOf("--");
+  return (terminator === -1 ? tokens : tokens.slice(0, terminator)).some((token) => /^(?:--)?fields(?:[=:]|$)/iu.test(token));
+}
+
 /** Implements normalize legacy extension action syntax for the public runtime surface of this module. */
 export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   const extensionIndex = findBootstrapCommandTokenIndex(argv);
@@ -391,7 +397,9 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   // A bare `fields=...` assignment is normalized to --fields later, so it counts too (Codex review round 5).
   // Spellings normalize case-insensitively later (`--FIELDS`, `FIELDS=`), so the check does too (Codex review round 7).
   // The bare-key parser accepts both `fields=` and `fields:` (CodeRabbit review round 6).
-  if (argv.some((token) => /^(?:--)?fields(?:[=:]|$)/iu.test(token))) {
+  // Only the listings take a projection, and only tokens after the action count, up to a terminator, so a host flag's
+  // value (`--author fields`) can never change another action's route (Codex review round 23).
+  if ((actionToken === "explore" || actionToken === "manage") && hasListingProjectionToken(argv.slice(extensionIndex + 2))) {
     return [...argv];
   }
   const forcedActionFlag = `--${actionToken}`;
