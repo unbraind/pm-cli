@@ -1245,7 +1245,8 @@ function lexStep(lexer: StringLexer): number {
  */
 function openOrDecline(lexer: StringLexer, kind: number, index: number): void {
   const { content } = lexer;
-  if (index > 0 && WORD_CHARACTER.test(content[index - 1]!) && !PYTHON_STRING_PREFIX.test(content.slice(Math.max(0, index - 3), index))) {
+  const prefix = PYTHON_STRING_PREFIX.exec(content.slice(Math.max(0, index - 3), index))?.[1].length ?? 0;
+  if (prefix === 0 && index > 0 && WORD_CHARACTER.test(content[index - 1]!)) {
     // `'can\'t'`: the string closed at an escaped apostrophe and this quote ends the word right after
     // it, so under Python's reading it is that string's own closing quote, not a shell segment.
     if (kind === SINGLE_STRING && closesEscapedWord(lexer, index)) return;
@@ -1255,8 +1256,9 @@ function openOrDecline(lexer: StringLexer, kind: number, index: number): void {
   }
   lexer.state = kind;
   lexer.opener = index;
-  // An ANSI-C `$'…'` string escapes like a double-quoted one.
-  lexer.escapes = kind === DOUBLE_STRING || content[index - 1] === "$" || opensAfterContainer(content, index);
+  // An ANSI-C `$'…'` string escapes like a double-quoted one; a prefixed one judges the container
+  // context before its prefix (`{'label': r'…'}`).
+  lexer.escapes = kind === DOUBLE_STRING || content[index - 1] === "$" || opensAfterContainer(content, index - prefix);
 }
 
 /** Whether only word characters stand between a single-quoted string's escaped-looking closing quote and the quote at `index`. */
@@ -1268,7 +1270,7 @@ function closesEscapedWord(lexer: StringLexer, index: number): boolean {
 const WORD_RUN = /^[\p{L}\p{N}_]+$/u;
 
 /** A Python string prefix (`r`, `b`, `u`, `f`, `rb`, `br`, `fr`, `rf`, any case) standing as a whole word before a quote. */
-const PYTHON_STRING_PREFIX = /(?:^|[^\p{L}\p{N}_])(?:[rRbBuUfF]|[rR][bBfF]|[bBfF][rR])$/u;
+const PYTHON_STRING_PREFIX = /(?:^|[^\p{L}\p{N}_])([rRbBuUfF]|[rR][bBfF]|[bBfF][rR])$/u;
 
 /**
  * Whether the open string is known to be one. A quote after a word character

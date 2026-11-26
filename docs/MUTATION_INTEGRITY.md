@@ -394,9 +394,13 @@ a quote of a kind therefore reads as shell, where a closing quote that more
 characters follow continues the word: no later string of that kind on the
 line is trusted to end a value, and the value keeps its quoted pieces. A cut
 only ever removes a finding, so it is made only where the string state is
-unambiguous. A Python string prefix (`r"…"`, `b'…'`, `rb"…"`, `f"…"` and the
+unambiguous; keeping that distrust local to the affected segment is owned by
+[pm-ghgf4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghgf4a.toon)
+(tracker record excluded from npm). A Python string prefix (`r"…"`, `b'…'`, `rb"…"`, `f"…"` and the
 other combinations) opens its string with the escapes an unprefixed one has,
-so `b'…\'` closes where a shell closes it. When a single-quoted string
+judged by the context before the prefix: inside a container it escapes as
+Python does (`{'label': r'…\'…'}`), and elsewhere `b'…\'` closes where a
+shell closes it. When a single-quoted string
 closed at an apostrophe a backslash precedes and the word right after it
 ends in a quote (`'can\'t'`), that quote is the string's own closing quote
 under Python's reading and declines nothing. In JSON and Python text every

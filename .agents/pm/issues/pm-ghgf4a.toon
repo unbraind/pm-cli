@@ -1,0 +1,20 @@
+id: pm-ghgf4a
+title: "Secret guard: keep lexer distrust after a declined quote local to the affected segment, and decode adjacent Python literals before judging a value"
+description: "pm-gh1781 made the string lexer conservative: once a line declines a quote of a kind (a quote right after a word character), no later string of that kind on the line ends a value, because a shell segment opened there shifts every later boundary and a cut there hid literals main reported. The rule over-reaches in valid structured text: a plain YAML flow scalar holding a prose apostrophe disables every later single-quoted boundary on its line, and a shell word with a joined double-quoted segment does the same for double quotes, so a later member holding only a bare reference is judged as literal text; main reported nothing for both. Separately, the shell-word text reading of a single-quoted value joins Python adjacent literals but keeps a hex escape between them literal, so a value Python decodes to exactly one bare reference is reported. Found by the Codex round 5 review of PR #1789; both are false positives, no lost finding."
+type: Issue
+status: open
+priority: 3
+tags[3]: "area:security",false-positive,secret-guard
+created_at: "2026-11-26T17:33:54.789Z"
+updated_at: "2026-11-26T17:33:54.789Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "After a declined quote, trust resumes at a boundary that resolves the ambiguity (a confirmed scalar, flow-mapping or shell-word boundary), so a later member's bare reference is clean while the shell desync lines from pm-gh1781 stay reported; Adjacent Python string literals are decoded and joined before the value is judged in Python expression context; the backslash-keeping join stays for shell words; The pm-gh1781 corpus differential shows no lost finding"
+parent: pm-qwoy
+risk: medium
+confidence: medium
+expected_result: A bare reference in a structured member is a placeholder however the line began
+actual_result: A prose apostrophe or a joined shell segment earlier on the line makes a later bare reference a finding
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1781,discovered_from,"2026-11-26T17:33:54.789Z","harness:claude-code","cli:create:dep",detected
+body: ""
