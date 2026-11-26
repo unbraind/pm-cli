@@ -47,6 +47,11 @@ const HOSTILE_ARGUMENTS = [
   "=node",
   "line;next",
   "first line\nsecond & echo PWNED",
+  // bash 3.2 scans the continuation line of a double-quoted argument as unquoted: a later `!` must stay literal (pm-jzrtsr).
+  "after the break !",
+  "trailing\\",
+  "carriage\rreturn",
+  "café",
 ];
 
 const historyBash = spawnSync("bash", ["--version"]).status === 0;

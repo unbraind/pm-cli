@@ -377,6 +377,53 @@ pieces (`password="$PW","…"`, a YAML single-quoted scalar whose doubled
 quotes are data), and a closing quote that another quote or a word follows
 (`echo "api_key=${EMPTY}""…"`) continues the shell word, as before.
 
+The same rule ends the value of a quoted key that sits in a string
+([pm-gh1781](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1781.toon);
+tracker record excluded from npm), so a member such as
+`'password': '${BUILD_PASSWORD}'` inside compact JSON text
+(`{"title":"'password': '${BUILD_PASSWORD}'","updated":"…"}`) is judged as in
+pretty-printed JSON, and a whole `$NAME` or `%NAME%` value there is a
+placeholder too. Only a value with a quote after its first character, or
+right after it, reads the lexer; for a key nested in a container already
+judged, the lexer resumes from a checkpoint kept every 1024 code units, so the
+structured pass stays linear. A quote right after a letter, digit or
+underscore opens no string, but in a shell it can open a segment of the word
+(`foo"[" --'password'=${EMPTY}",""…"`, or `foo'["' …`, where the double
+quote sits inside the single-quoted segment), and from there the lexer cannot
+tell a segment's closing quote from a string's opening one, of either kind. A
+line that declined a quote therefore reads as shell, where a closing quote
+that more characters follow continues the word: no later string on the line
+is trusted to end a value, and the value keeps its quoted pieces. A cut
+only ever removes a finding, so it is made only where the string state is
+unambiguous; keeping that distrust local to the affected segment is owned by
+[pm-ghgf4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghgf4a.toon)
+(tracker record excluded from npm). A Python string prefix (`r"…"`, `b'…'`, `rb"…"`, `f"…"` and the
+other combinations) opens its string with the escapes an unprefixed one has,
+so `b'…\'` closes where a shell closes it: a prefix alone never shows Python
+context. A Python string that escapes an apostrophe therefore reads as a
+shell close, and a later member on its line keeps the conservative reading
+(a false positive [pm-ghgf4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghgf4a.toon)
+owns, never a hidden literal). Outside every string a backslash before a quote
+is a shell escape but a literal path separator to PowerShell and cmd.exe
+(`C:\temp\"…"`), so it makes the line ambiguous in the same way. In JSON text
+every quote opens, closes or is escaped, so none is declined there.
+
+A single-quoted value is judged under each reading a format gives it.
+- **Decoded:** with Python and JavaScript escapes decoded.
+- **Backslashes kept:** over the span the escape-aware scan closes. This is
+  an upper bound for Python, which keeps an unrecognized escape such as `\q`.
+- **Text:** the reading a shell word and a TOML literal string share, where a
+  backslash never escapes. The value ends at its first closing quote and keeps
+  the pieces joined after it, so a quoted piece that ends in a backslash and
+  the characters joined after it reach Bash as one word. For YAML, which escapes a quote by doubling it, this reading is
+  a scanner's approximation.
+
+A span the escape-aware scan leaves open because its last quote is escaped
+is not read with its backslashes kept, since that would count the quote as
+data. So `'\\\\\\\'` (seven backslashes) is seven data characters in the
+text reading and four in the decoded one, both below the literal minimum,
+while eight backslashes are still reported.
+
 A whole Windows variable (`%DB_PASSWORD%`) is a placeholder for every
 key-named rule. `cmd.exe` reads `set NAME=value` to the end of the line, so an
 unquoted text value is whole only when nothing but blanks follows it on its

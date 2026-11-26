@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1781: secret guard reports a single-quoted reference in compact JSON, and a value of seven backslashes, as password_assignment on 2026.11.25 ([pm-gh1781](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1781.toon))
+- GH-1787: extension workspace discovery ignores GIT_CEILING_DIRECTORIES and binds a non-Git tracker to its parent checkout ([pm-gh1787](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1787.toon))
+- Platform nightly legs regress after the shell-dialect rendering: Windows tests expect POSIX recovery text, and macOS bash 3.2 with history expansion misparses a rendered command at a non-ASCII apostrophe ([pm-jzrtsr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jzrtsr.toon))
+- Release publication downloads the producer-binding artifact once and blocks the daily cut when the download endpoint trails the listing ([pm-glmcnd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-glmcnd.toon))
+
 ## 2026.11.26 - 2026-11-26
 
 ### Changed (SDK contract)

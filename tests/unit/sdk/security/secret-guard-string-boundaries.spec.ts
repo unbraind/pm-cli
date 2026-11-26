@@ -44,6 +44,14 @@ const forms = {
   dotenv: (key: string, value: string) => `${key.toUpperCase()}=${value}\nNEXT=1`,
   XML: (key: string, value: string) => `<${key}>${value}</${key}><b>x</b>`,
   "quoted key and value": (key: string, value: string) => `"${key}": "${value}", "updated": "2026-11-23"`,
+  // GH-1781: a quoted-key member inside a JSON or Python string ends at that string's closing quote too.
+  "JSON text with a single-quoted member (the GH-1781 reproduction)": (key: string, value: string) =>
+    JSON.stringify({ title: `'${key}': '${value}'`, updated: "2026-11-25T00:00:00.000Z" }),
+  "pretty-printed JSON text with a single-quoted member": (key: string, value: string) =>
+    JSON.stringify({ title: `'${key}': '${value}'`, updated: "2026-11-25T00:00:00.000Z" }, null, 2),
+  "JSON text with a single-quoted key and a bare value": (key: string, value: string) => JSON.stringify({ title: `'${key}': ${value}`, updated: "x-y-z" }),
+  "JSON text array with a single-quoted member": (key: string, value: string) => JSON.stringify([`'${key}': '${value}'`, "another-string-value"]),
+  "compact Python repr with a double-quoted member": (key: string, value: string) => `{'title':'"${key}": "${value}"','updated':'2026-11-23'}`,
 } as const;
 
 describe("bare references are never credentials (GH-1775)", () => {
@@ -290,5 +298,96 @@ describe("a whole Windows variable is a placeholder for every key-named rule (GH
     // CodeRabbit round 10: under a credential key, words after a blank are their own word, as the docs state.
     expect(rulesOf(`token=%API_KEY% words after it`)).toEqual([]);
     expect(rulesOf(`{"api_key":"%API_KEY%${literal}"}`)).toEqual(["credential_key_assignment"]);
+  });
+});
+
+describe("quoted members inside a string and escape-only values (GH-1781)", () => {
+  const q = "'";
+  const updated = "2026-11-25T00:00:00.000Z";
+
+  it("passes the reproduction: a single-quoted reference in every JSON serialization", () => {
+    const row = { title: `${q}${passwordKey}${q}: ${q}${D}{BUILD_PASSWORD}${q}`, updated };
+    expect(rulesOf(JSON.stringify(row, null, 2))).toEqual([]);
+    expect(rulesOf(JSON.stringify(row))).toEqual([]);
+    expect(rulesOf(JSON.stringify({ title: row.title }))).toEqual([]);
+    expect(rulesOf(JSON.stringify({ title: `"${passwordKey}": "${D}{BUILD_PASSWORD}"`, updated }))).toEqual([]);
+  });
+
+  it("still flags a literal or an attached literal in the same member", () => {
+    expect(rulesOf(JSON.stringify({ title: `${q}${passwordKey}${q}: ${q}${literal}${q}`, updated }))).toEqual(["password_assignment"]);
+    expect(rulesOf(JSON.stringify({ title: `${q}${passwordKey}${q}: ${q}${D}{BUILD_PASSWORD}${literal}${q}`, updated }))).toEqual(["password_assignment"]);
+    expect(rulesOf(JSON.stringify({ title: `${q}${passwordKey}${q}: ${q}${literal}${D}{BUILD_PASSWORD}${q}`, updated }))).toEqual(["password_assignment"]);
+    expect(rulesOf(`${q}${passwordKey}${q}: ${q}${literal}${q}`)).toEqual(["password_assignment"]);
+  });
+
+  it("reads a single-quoted value of backslashes to its first closing quote, as TOML and YAML do", () => {
+    const backslashes = (count: number) => `${q}${passwordKey}${q}: ${q}${"\\".repeat(count)}${q}`;
+    // Seven backslashes escape the last quote only in an escaping reading, which decodes them to three and a quote.
+    for (const count of [1, 5, 6, 7]) expect(rulesOf(backslashes(count)), `${count}`).toEqual([]);
+    // Eight are eight data characters where backslashes are literal.
+    expect(rulesOf(backslashes(8))).toEqual(["password_assignment"]);
+    // An escaped quote inside a longer literal is still judged under the decoding reading.
+    expect(rulesOf(`${q}${passwordKey}${q}: ${q}ab\\${q}${literal}${q}`)).toEqual(["password_assignment"]);
+    // Python keeps an unrecognized escape: `\q\w\'aZ11` is nine characters, judged with its backslashes kept (Codex review).
+    expect(rulesOf(`{${q}${passwordKey}${q}: ${q}\\q\\w\\${q}aZ11${q}}`)).toEqual(["password_assignment"]);
+    // As a shell word the value ends at its first quote and keeps what is joined after it: Bash receives eight characters (Codex round 2).
+    expect(rulesOf(`printf %s --${q}${passwordKey}${q}=${q}abc\\\\\\${q}Z9`)).toEqual(["password_assignment"]);
+    // A single-quoted value no quote closes reads to the end in both readings, as on 2026.11.25.
+    expect(rulesOf(`${q}${passwordKey}${q}: ${q}ab\\cdefghijkl`)).toEqual([]);
+  });
+
+  it("ends a nested quoted member at its string after the enclosing container was judged, however far into the text", () => {
+    // The container walk passes the nested member first, so its string state is read again from a checkpoint.
+    const near = (value: string) => `{"${passwordKey}": {"note": "${q}${passwordKey}${q}: ${q}${value}${q}", "y": "z"}, "w": "v"}`;
+    const zeros = Array.from({ length: 1100 }, () => 0).join(",");
+    const far = (value: string) => `{"${passwordKey}": {"pad": [${zeros}], "note": "${q}${passwordKey}${q}: ${q}${value}${q}", "y": "z"}, "w": "v"}`;
+    for (const spell of [near, far]) {
+      expect(rulesOf(spell(`${D}{X}`))).toEqual([]);
+      expect(rulesOf(spell(`${D}{X}${literal}`))).toEqual(["password_assignment"]);
+    }
+    // A bare value after a quoted key that no quote follows sits in no string the lexer has to read.
+    expect(rulesOf(`{${q}${passwordKey}${q}: ${D}{X}, ${q}a${q}: 1}`)).toEqual([]);
+    expect(rulesOf(`{${q}${passwordKey}${q}: ${literal}, ${q}a${q}: 1}`)).toEqual(["password_assignment"]);
+    // A quoted value whose quotes sit outside the capture and whose string no container holds still finds its structure.
+    for (const text of [`api_key="${D}API_KEY","next": 1`, `--'api_key'="${D}API_KEY",1,x`, `token="${D}TOKEN",{"a":1}`]) expect(rulesOf(text), text).toEqual([]);
+    // A quote after a word opens a shell segment the lexer declines (`foo"["`): no later string of its kind on
+    // the line ends a value, so the literal after the empty expansion is still reported (Codex review).
+    expect(rulesOf(`example foo"[" --${q}${passwordKey}${q}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`example foo"[" --${passwordKey}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`example foo"[" api_key=${D}{EMPTY}",""Abc123!X"`)).toEqual(["credential_key_assignment"]);
+    // Once a line declined a quote of a kind it reads as shell, so no later string of that kind ends a value,
+    // however many segments follow, and a prefixed single quote closes where a shell closes it (Codex round 3).
+    expect(rulesOf(`printf "%s" foo"[" "[" --${q}${passwordKey}${q}=${D}{EMPTY}",""Example9"`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`printf "%s" b${q}foo\\${q} foo${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9${q}`)).toEqual(["password_assignment"]);
+    // A declined quote of either kind leaves every later string on its line untrusted: inside the single-quoted
+    // segment `'["'` the double quote opens nothing (CodeRabbit).
+    expect(rulesOf(`example foo${q}["${q} --${q}${passwordKey}${q}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`example foo"[${q}" --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Abc123!X${q}`)).toEqual(["password_assignment"]);
+    // A shell word with a prefix-looking letter before a quote keeps the shell reading, so its literal is reported (Greptile).
+    expect(rulesOf(`printf %s b${q}foo\\${q}foo${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9${q}`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`printf %s :b${q}foo\\${q} foo${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9${q}`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`printf "a\\\\"x${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9${q}`)).toEqual(["password_assignment"]);
+    // A Python escaped apostrophe reads as a shell close too, so a later member on its line keeps the conservative
+    // reading: a recorded false positive that pm-ghgf4a owns, never a hidden literal.
+    expect(rulesOf(`b${q}can\\${q}t${q}; {${q}title${q}:${q}${passwordKey}: ${D}{X}${q},${q}updated${q}:${q}2026-11-25T00:00:00${q}}`)).toEqual(["password_assignment"]);
+    // Outside every string a backslash before a quote is a shell escape but a PowerShell path separator, so the
+    // line keeps the conservative reading and a phantom string cannot cut a literal (Codex round 7).
+    expect(rulesOf(`Write-Output C:\\temp\\" [" --${passwordKey}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
+    // The same ambiguity keeps a shell-escaped quote's line conservative: a recorded false positive that pm-ghgf4a
+    // owns (dialect-aware backslashes), never a hidden literal (Codex rounds 6 and 7).
+    expect(rulesOf(`echo [ r${q}x${q} \\" "${passwordKey}: ${D}BUILD_PASSWORD"`)).toEqual(["password_assignment"]);
+    // An ANSI-C string escapes its quote, so its real closing quote opens no phantom string (Codex round 4).
+    expect(rulesOf(`printf ${q}%s\\n${q} ${D}${q}\\${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9!${q}`)).toEqual(["password_assignment"]);
+    // A Python prefix opens its string, so a JSON member after it on the line still ends at its string (Codex round 2).
+    expect(rulesOf(`foo"bar" {"title":"${passwordKey}: ${D}{X}","u":1}`)).toEqual([]);
+    expect(rulesOf(`foo"[" a "x" {"title":"${passwordKey}: ${D}{X}","u":1}`)).toEqual([]);
+    expect(rulesOf(`r"x"; {"title":"${passwordKey}: ${D}{X}","updated":True}`)).toEqual([]);
+    expect(rulesOf(`rb"x" {"title":"${passwordKey}: ${D}{X}","u":1}`)).toEqual([]);
+    expect(rulesOf(`b${q}x${q} {${q}title${q}:${q}api_key: ${D}{X}${q},${q}u${q}:1}`)).toEqual([]);
+    // A declined quote of the other kind, or one on an earlier line, leaves the string trusted.
+    expect(rulesOf(`customer's note {"title":"${q}${passwordKey}${q}: ${q}${D}{X}${q}","u":"v"}`)).toEqual([]);
+    expect(rulesOf(`foo"[" bar\n{"title":"${q}${passwordKey}${q}: ${q}${D}{X}${q}","u":"v"}`)).toEqual([]);
+    // A reference later in the same text is judged on its own string.
+    expect(rulesOf(`${near(`${D}{X}`)} {"after": "${q}${passwordKey}${q}: ${q}${D}{Y}${q}", "u": "v"}`)).toEqual([]);
   });
 });

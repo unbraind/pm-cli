@@ -3714,7 +3714,9 @@ or `powershell`), otherwise `cmd` on Windows and `posix` elsewhere. Pass a
 explicitly. `quoteCmdCommandArg` caret-escapes an argument that holds `%` or
 `"`, so cmd.exe can neither expand `%VAR%` nor split the line.
 `quotePowerShellCommandArg` emits a single-quoted literal, and
-`quotePosixCommandArg` single-quotes an argument that holds `!`. The
+`quotePosixCommandArg` single-quotes an argument that holds `!` or a line
+break, or ends in a backslash, the spellings bash 3.2's history scanner
+would misread in double quotes. The
 redaction rules above recognize a credential in every one of these
 spellings, also when the rendered command is embedded in a JSON string.
 

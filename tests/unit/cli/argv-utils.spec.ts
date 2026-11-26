@@ -234,6 +234,19 @@ describe("argv-utils shell dialects (pm-kjoudp, GH-1774)", () => {
     expect(quoteCommandArg("a=b", "linux", "posix")).toBe("a=b");
   });
 
+  it("single-quotes the POSIX spellings bash 3.2's history scanner misreads in double quotes (pm-jzrtsr)", () => {
+    // A trailing backslash renders as \\" in double quotes, which bash 3.2 reads as an escaped quote.
+    expect(quotePosixCommandArg("C:\\Program Files\\pm\\")).toBe("'C:\\Program Files\\pm\\'");
+    expect(quotePosixCommandArg("it's\\")).toBe("'it'\\''s\\'");
+    // bash 3.2 scans a continuation line of a double-quoted argument as unquoted; a pasted carriage return also ends a line.
+    expect(quotePosixCommandArg("first\nsecond")).toBe("'first\nsecond'");
+    expect(quotePosixCommandArg("first\r\nsecond")).toBe("'first\r\nsecond'");
+    expect(quotePosixCommandArg("a\rb")).toBe("'a\rb'");
+    // A backslash anywhere else keeps the double-quoted spelling.
+    expect(quotePosixCommandArg("a\\b")).toBe('"a\\\\b"');
+    expect(quotePosixCommandArg("a\\\"b")).toBe('"a\\\\\\"b"');
+  });
+
   it("follows PM_COMMAND_SHELL when no dialect is passed", () => {
     // The file-level hooks restore the developer's value afterwards.
     process.env.PM_COMMAND_SHELL = "powershell";

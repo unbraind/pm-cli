@@ -1,0 +1,22 @@
+id: pm-rzojed
+title: Secret guard misses a credential inside a POSIX recovery command whose argument the renderer single-quoted with apostrophe splices
+description: "quotePosixCommandArg single-quotes an argument that holds !, CR or LF, or ends in a backslash (pm-oq893h, pm-jzrtsr), and spells each apostrophe in it as the splice '\\''. When such an argument holds a key-named assignment whose value is itself quoted (a note with a line break and a quoted password-style assignment), the detector judges the rendered command, sees the key inside the first single-quoted piece and the value starting at a closing quote, and reports nothing; it reports the same argument raw and in the double-quoted spelling main rendered before line breaks were single-quoted. The gap existed for !-holding arguments since pm-oq893h and widened with pm-jzrtsr. Found by the Codex round 4 review of PR #1789."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:security",recovery,secret-guard,shell-quoting
+created_at: "2026-11-26T17:15:46.601Z"
+updated_at: "2026-11-26T17:16:05.155Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "The detector reads a POSIX single-quoted word with '\\'' splices as the shell word it spells before judging a key-named assignment inside it; A rendered recovery command, raw and inside a JSON string, carries the same findings as its unrendered argument for every spelling quotePosixCommandArg emits; A differential against the published bundle shows no other verdict change"
+parent: pm-qwoy
+risk: medium
+confidence: medium
+expected_result: A credential in an argument is reported in the rendered recovery command whatever quoting the renderer chose
+actual_result: An argument with a line break or ! and a quoted credential assignment is reported raw but not in its single-quoted rendering
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1781,related,"2026-11-26T17:15:46.601Z","harness:claude-code","cli:create:dep",detected
+  pm-jzrtsr,discovered_from,"2026-11-26T17:15:46.601Z","harness:claude-code","cli:create:dep",detected
+  pm-oq893h,related,"2026-11-26T17:15:46.601Z","harness:claude-code","cli:create:dep",detected
+body: ""

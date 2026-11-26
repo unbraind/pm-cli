@@ -154,13 +154,28 @@ export const quoteCommandArg = (
 };
 
 /**
+ * Arguments the POSIX form single-quotes. Interactive bash and zsh
+ * history-expand `!` inside double quotes (pm-oq893h). bash 3.2, the macOS
+ * system shell, also decides whether a line needs history expansion with a
+ * quote tracker of its own that a double-quoted argument can desynchronize:
+ * it reads the `\\"` that ends an argument with a trailing backslash as an
+ * escaped quote, and it scans a continuation line of a double-quoted
+ * argument as if no quote were open (a single-quoted one it skips); a
+ * carriage return ends the line too when the command is pasted into an
+ * interactive prompt without bracketed paste. A later
+ * single-quoted `!` then looks live, and bash 3.2's expansion pass cuts the
+ * line after its first non-ASCII character (pm-jzrtsr).
+ */
+const POSIX_SINGLE_QUOTED = /!|[\r\n]|\\$/u;
+
+/**
  * Quote one argument for a POSIX shell. Double quotes with `"`, `\`, `$` and
  * backticks escaped are exact for `sh -c` and scripts; an argument holding
- * `!` is single-quoted instead, because interactive bash and zsh
- * history-expand `!` inside double quotes (pm-oq893h).
+ * `!` or a line break, or ending in a backslash, is single-quoted instead,
+ * the one spelling every interactive history scanner reads as the shell does.
  */
 export const quotePosixCommandArg = (arg: string): string =>
-  arg.includes("!") ? `'${arg.replaceAll("'", "'\\''")}'` : `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
+  POSIX_SINGLE_QUOTED.test(arg) ? `'${arg.replaceAll("'", "'\\''")}'` : `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
 
 /** Render a complete pm command from already-tokenized arguments. */
 export const renderPmCommand = (

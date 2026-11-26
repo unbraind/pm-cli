@@ -3,7 +3,7 @@
  *
  * Implements extension runtime contracts and governance for Index.
  */
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import { ownedTransactionCompensation } from "../store/item-mutation-precondition.js";
@@ -109,18 +109,119 @@ const AFTER_COMMAND_SNAPSHOT_OMITTED_FIELDS = new Set([
   "tests",
 ]);
 
-function findSourceRepositoryRoot(candidate: string): string | undefined {
-  let cursor = path.resolve(candidate);
+/** A directory's physical path, or undefined when it cannot be resolved. */
+function physicalDirectory(directory: string): string | undefined {
+  try {
+    return realpathSync.native(directory);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Git's comparison key of a walked directory: forward slashes, one trailing slash dropped. */
+function forwardKey(directory: string): string {
+  const forward = directory.split(path.sep).join("/");
+  return forward.endsWith("/") ? forward.slice(0, -1) : forward;
+}
+
+/** Ceilings resolved to physical paths, and ceilings kept as spelled in Git's comparison form. */
+interface GitCeilings {
+  resolved: Set<string>;
+  spelled: Set<string>;
+}
+
+/**
+ * Git's discovery ceilings, read as Git reads `GIT_CEILING_DIRECTORIES`:
+ * entries separated by the platform's path delimiter, relative ones ignored.
+ * Before the first empty entry each is resolved to its physical path and
+ * dropped when it cannot be; after it each is kept as spelled and compared
+ * as Git compares it, with the forward-slash form of each directory walked
+ * and one trailing slash dropped on either side, so `C:/` (or `/`) names the
+ * root while a spelling through a link, with `..`, or with backslashes on
+ * Windows never matches.
+ */
+function readGitCeilingDirectories(env: NodeJS.ProcessEnv): GitCeilings {
+  const ceilings: GitCeilings = { resolved: new Set(), spelled: new Set() };
+  let resolveLinks = true;
+  for (const entry of (env.GIT_CEILING_DIRECTORIES ?? "").split(path.delimiter)) {
+    if (entry.length === 0) {
+      resolveLinks = false;
+    } else if (!path.isAbsolute(entry)) {
+      continue;
+    } else if (!resolveLinks) {
+      ceilings.spelled.add(entry.endsWith("/") ? entry.slice(0, -1) : entry);
+    } else {
+      const physical = physicalDirectory(entry);
+      if (physical !== undefined) ceilings.resolved.add(physical);
+    }
+  }
+  return ceilings;
+}
+
+/** Whether the walk may not move up into `directory`. */
+function isCeiling(ceilings: GitCeilings, directory: string): boolean {
+  return ceilings.resolved.has(directory) || ceilings.spelled.has(forwardKey(directory));
+}
+
+/**
+ * The caller's spelling of a physical directory: `logical` or the nearest of
+ * its ancestors that resolves to it, else the physical path itself.
+ */
+function logicalSpelling(logical: string, physical: string): string {
+  for (let cursor = logical; ; cursor = path.dirname(cursor)) {
+    if (physicalDirectory(cursor) === physical) return cursor;
+    if (path.dirname(cursor) === cursor) return physical;
+  }
+}
+
+/** The source workspace a discovery settles on, and the checkout holding it when there is one. */
+interface SourceDiscovery {
+  source: string;
+  repo?: string;
+}
+
+/**
+ * Discover the source workspace the way Git discovers a repository: along
+ * the physical ancestors of the start directory, which resolves as spelled
+ * (so `link/..` names the link target's parent) and is always examined,
+ * never moving up into a discovery ceiling (GH-1787). The nearest directory
+ * holding a `.git` marker is the checkout and the source; without one, the
+ * source is the start directory itself. Each keeps the caller's spelling
+ * where it names the same directory.
+ */
+function discoverSourceWorkspace(
+  candidate: string,
+  ceilings: GitCeilings,
+): SourceDiscovery {
+  const logical = path.resolve(candidate);
+  const spelled = path.isAbsolute(candidate) ? candidate : `${process.cwd()}${path.sep}${candidate}`;
+  const start = physicalDirectory(spelled);
+  let cursor = start ?? logical;
   while (true) {
     if (existsSync(path.join(cursor, ".git"))) {
-      return cursor;
+      const repo = logicalSpelling(logical, cursor);
+      return { source: repo, repo };
     }
     const parent = path.dirname(cursor);
-    if (parent === cursor) {
-      return undefined;
+    if (parent === cursor || isCeiling(ceilings, parent)) {
+      return { source: start === undefined || physicalDirectory(logical) === start ? logical : start };
     }
     cursor = parent;
   }
+}
+
+/**
+ * The tracker's path from the source root. Both sides are compared as
+ * physical paths when both resolve, so a link alias on either side (a source
+ * reached through a link while the checkout is reported physically) still
+ * contains its tracker; otherwise as spelled.
+ */
+function relativeTrackerPath(sourceRoot: string, pmRoot: string): string {
+  const physicalSource = physicalDirectory(sourceRoot);
+  const physicalTracker = physicalDirectory(pmRoot);
+  return physicalSource !== undefined && physicalTracker !== undefined
+    ? path.relative(physicalSource, physicalTracker)
+    : path.relative(sourceRoot, path.resolve(pmRoot));
 }
 
 /**
@@ -134,19 +235,19 @@ export function resolvePortableWorkspaceContext(
 ): PortableWorkspaceContext {
   const sourceCandidate =
     process.env.PM_SOURCE_WORKSPACE_ROOT?.trim() || process.cwd();
-  const sourceWorkspaceRoot =
-    findSourceRepositoryRoot(sourceCandidate) ?? path.resolve(sourceCandidate);
-  const repoRoot = findSourceRepositoryRoot(sourceWorkspaceRoot);
+  // One discovery decides both coordinates, so a normalized fallback never names a directory
+  // the walk did not start from.
+  const { source: sourceWorkspaceRoot, repo: repoRoot } = discoverSourceWorkspace(
+    sourceCandidate,
+    readGitCeilingDirectories(process.env),
+  );
   if (!pmRoot) {
     return {
       source_workspace_root: sourceWorkspaceRoot,
       ...(repoRoot ? { repo_root: repoRoot } : {}),
     };
   }
-  const relativePmRoot = path.relative(
-    sourceWorkspaceRoot,
-    path.resolve(pmRoot),
-  );
+  const relativePmRoot = relativeTrackerPath(sourceWorkspaceRoot, pmRoot);
   const contained =
     relativePmRoot.length > 0 &&
     !relativePmRoot.startsWith(`..${path.sep}`) &&

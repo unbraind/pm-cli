@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveLinkedResourcePositionalRecovery } from "../../../src/sdk/index.js";
+import { quoteCommandArg, resolveLinkedResourcePositionalRecovery } from "../../../src/sdk/index.js";
 import { formatCommanderErrorForDisplay, formatCommanderErrorForJson } from "../../../src/cli/error-guidance.js";
 import { PM_ERROR_CODE_CATALOG } from "../../../src/sdk/generated-error-code-catalog.js";
 
@@ -52,10 +52,14 @@ describe("linked-resource positional recovery", () => {
     expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
   });
   it.each(["command=", "cmd=", 'command=""', 'cmd=" "', "cmd=,timeout_seconds=90", "command=RESULT=passed", "cmd=RESULT=passed,timeout_seconds=90", "command=# note", "# note"])("requires an actual command for %s", (value) => {
-    const envelope = formatCommanderErrorForJson("too many arguments", "test", "Task", 2, { normalizedInvocationArgs: ["test", "pm-x", value, "--json"] });
-    expect(envelope.required).toContain("command=<actual command>");
+    const argv = ["test", "pm-x", value, "--json"];
+    const envelope = formatCommanderErrorForJson("too many arguments", "test", "Task", 2, { normalizedInvocationArgs: argv });
+    // The template is judged as tokens; the guidance carries it quoted for the declared shell (pm-jzrtsr).
+    const template = resolveLinkedResourcePositionalRecovery("test", argv)?.templateArgs?.find((arg) => arg.startsWith("command=<actual command>"));
+    expect(template).toBeDefined();
+    expect(template).not.toContain("command=<actual command>,command=");
+    expect(envelope.required).toContain(quoteCommandArg(template!));
     expect(envelope.required).toContain("test pm-x");
-    expect(envelope.required).not.toContain("command=<actual command>,command=");
     expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
     if (value.includes("timeout_seconds")) expect(envelope.required).toContain("timeout_seconds");
   });

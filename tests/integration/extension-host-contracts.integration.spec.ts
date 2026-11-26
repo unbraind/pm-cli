@@ -1,7 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
+import { runDirectDistCli } from "../helpers/cliRunner.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 async function installHostContractExtension(
@@ -374,6 +375,48 @@ describe("extension host contracts", () => {
         source_workspace_root: process.cwd(),
         repo_root: process.cwd(),
       });
+    });
+  });
+
+  it("binds a nested non-Git tracker under a discovery ceiling to its own root, with or without Git on PATH (GH-1787)", async () => {
+    await withTempPmPath(async (context) => {
+      const parent = path.join(await realpath(context.tempRoot), "parent");
+      const child = path.join(parent, "child");
+      const childPm = path.join(child, ".agents", "pm");
+      const gitFreeBin = path.join(context.tempRoot, "git-free-bin");
+      await mkdir(child, { recursive: true });
+      await mkdir(gitFreeBin, { recursive: true });
+      // A real parent checkout where Git exists; the .git marker discovery reads otherwise.
+      const git = spawnSync("git", ["init", "-q", parent], { encoding: "utf8" });
+      if (git.status !== 0) await mkdir(path.join(parent, ".git"));
+      const env = { ...context.env, PM_PATH: childPm, PM_SOURCE_WORKSPACE_ROOT: child, GIT_CEILING_DIRECTORIES: parent };
+      if (git.status === 0) {
+        // Git itself refuses to discover a repository from the child under this ceiling.
+        expect(spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: child, env, encoding: "utf8" }).status).not.toBe(0);
+      }
+      expect(runDirectDistCli(["init", "--defaults", "--json"], { cwd: child, env }).code).toBe(0);
+      await installHostContractExtension(
+        childPm,
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'host probe',",
+          "      run: ({ source_workspace_root, repo_root, pm_root_rel }) => ({ source_workspace_root, repo_root, pm_root_rel }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      );
+      for (const pathValue of [process.env.PATH ?? "", gitFreeBin]) {
+        const result = runDirectDistCli(["host", "probe", "--json"], { cwd: child, env: { ...env, PATH: pathValue }, expectJson: true });
+        expect(result.code, result.stderr).toBe(0);
+        expect(result.json).toEqual({ source_workspace_root: child, pm_root_rel: ".agents/pm" });
+      }
+      // Without the ceiling the enclosing checkout is still discovered.
+      const unbounded = runDirectDistCli(["host", "probe", "--json"], { cwd: child, env: { ...env, GIT_CEILING_DIRECTORIES: "" }, expectJson: true });
+      expect(unbounded.json).toEqual({ source_workspace_root: parent, repo_root: parent, pm_root_rel: "child/.agents/pm" });
     });
   });
 

@@ -454,7 +454,7 @@ process.exit(0);
       const responses = {
         "repos/owner/project": { default_branch: "trunk" },
         "repos/owner/project/actions/runs/42/attempts/1": { id: 42, run_attempt: 1, event: "schedule", head_sha: sourceSha, head_branch: "trunk", path: ".github/workflows/auto-release.yml@trunk", display_title: "Auto Release (native_schedule)", repository: { full_name: "owner/project" } },
-        "repos/owner/project/actions/runs/42/artifacts?per_page=100": [{ total_count: 1, artifacts: [{ name: "release-producer-binding-1", expired: false, size_in_bytes: 1024, workflow_run: { id: 42, head_sha: sourceSha, head_branch: "trunk" } }] }],
+        "repos/owner/project/actions/runs/42/artifacts?per_page=100": [{ total_count: 1, artifacts: [{ id: 7, name: "release-producer-binding-1", expired: false, size_in_bytes: 1024, workflow_run: { id: 42, head_sha: sourceSha, head_branch: "trunk" } }] }],
       };
       for (const [index, scenario] of [{ object: sourceSha, watch: "0", status: 1 }, { object: tagObject, watch: "73", status: 73 }, { object: tagObject, watch: "0", status: 0 }].entries()) {
         const remote = path.join(root, `remote-${index}.git`);

@@ -78,7 +78,7 @@ describe("tag-carried release provenance", () => {
       const publicationEnv = { RELEASE_TAG: tag, RELEASE_PROVENANCE_OUTPUT: output, GITHUB_EVENT_NAME: "push", GITHUB_REPOSITORY: env.GITHUB_REPOSITORY };
       const binding = { schema: "pm-release-producer-binding/1", tag, tag_sha: sha, tag_object_sha: git(["rev-parse", `refs/tags/${tag}`]), provenance: record };
       let downloadedBinding = JSON.stringify(binding);
-      const artifact = { name: "release-producer-binding-1", expired: false, size_in_bytes: 1024, workflow_run: { id: 42, head_sha: sha, head_branch: "trunk" } };
+      const artifact = { id: 7, name: "release-producer-binding-1", expired: false, size_in_bytes: 1024, workflow_run: { id: 42, head_sha: sha, head_branch: "trunk" } };
       const artifactEndpoint = `repos/${env.GITHUB_REPOSITORY}/actions/runs/42/artifacts?per_page=100`;
       const responses = new Map<string, unknown>([
         [`repos/${env.GITHUB_REPOSITORY}`, { default_branch: "trunk" }],
@@ -117,13 +117,81 @@ describe("tag-carried release provenance", () => {
       pauses.length = 0;
       expect(publication).toMatchObject({ source_run_verified: true, recovery_origin: null, publication_event: "push", provenance: { trigger_origin: "morning_dispatcher" } });
       expect(JSON.parse(readFileSync(output, "utf8"))).toEqual(publication);
+      // The archive of a listed binding can still answer 404: only that answer is downloaded again, each time into a fresh directory.
+      const notFound = Object.assign(new Error("Command failed: gh run download"), { stderr: "error downloading release-producer-binding-1: HTTP 404: Not Found (https://api.github.com/repos/o/r/actions/artifacts/7/zip)\n" });
+      const downloadFailures: unknown[] = [notFound, notFound];
+      const downloadDirectories: string[] = [];
+      const trailingDownload = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command !== "gh" || args[0] !== "run") return execute(command, args, options);
+        downloadDirectories.push(args[args.indexOf("--dir") + 1]);
+        const failure = downloadFailures.shift();
+        if (failure !== undefined) throw failure;
+        return execute(command, args, options);
+      }) as typeof execFileSync;
+      expect(recordReleasePublicationOrigin(publicationEnv, root, trailingDownload, pause)).toMatchObject({ producer_binding_verified: true });
+      expect(pauses).toEqual([1000, 2000]);
+      expect(new Set(downloadDirectories).size).toBe(3);
+      // A 404 that outlasts the wait is the provider's own refusal.
+      pauses.length = 0;
+      downloadFailures.push(...Array.from({ length: 6 }, () => notFound));
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, trailingDownload, pause)).toThrow("Command failed: gh run download");
+      expect(pauses).toEqual([1000, 2000, 4000, 8000, 15_000]);
+      expect(downloadFailures).toEqual([]);
+      expect(JSON.parse(readFileSync(output, "utf8")).producer_binding_verified).toBe(false);
+      // The download is addressed by name, so a binding replaced while it was retried is refused (Codex review).
+      pauses.length = 0;
+      let inventoryReads = 0;
+      downloadFailures.push(notFound);
+      const replacing = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command === "gh" && args[1] === artifactEndpoint) {
+          inventoryReads += 1;
+          return JSON.stringify(inventoryReads === 1 ? settled : [{ total_count: 1, artifacts: [{ ...artifact, id: 8 }] }]);
+        }
+        return trailingDownload(command, args, options);
+      }) as typeof execFileSync;
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, replacing, pause)).toThrow("changed while it was downloaded");
+      expect(inventoryReads).toBe(2);
+      expect(JSON.parse(readFileSync(output, "utf8")).producer_binding_verified).toBe(false);
+      // A partial listing after the download is read again within the same bounded wait (Codex round 3).
+      pauses.length = 0;
+      inventoryReads = 0;
+      const trailingAfter = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command === "gh" && args[1] === artifactEndpoint) {
+          inventoryReads += 1;
+          return JSON.stringify(inventoryReads === 2 ? [{ total_count: 2, artifacts: [artifact] }] : settled);
+        }
+        return trailingDownload(command, args, options);
+      }) as typeof execFileSync;
+      expect(recordReleasePublicationOrigin(publicationEnv, root, trailingAfter, pause)).toMatchObject({ producer_binding_verified: true });
+      expect(inventoryReads).toBe(3);
+      expect(pauses).toEqual([1000]);
+      // A replacement visible in a partial listing is refused without waiting (Codex round 4).
+      pauses.length = 0;
+      inventoryReads = 0;
+      const partialReplacement = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command === "gh" && args[1] === artifactEndpoint) {
+          inventoryReads += 1;
+          return JSON.stringify(inventoryReads === 1 ? settled : [{ total_count: 2, artifacts: [{ ...artifact, id: 8 }] }]);
+        }
+        return trailingDownload(command, args, options);
+      }) as typeof execFileSync;
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, partialReplacement, pause)).toThrow("mismatched release producer binding");
+      expect(pauses).toEqual([]);
+      // Any other failure, with or without provider output, is refused at once.
+      for (const failure of [Object.assign(new Error("Command failed: gh run download"), { stderr: "HTTP 403: Forbidden\n" }), new Error("spawnSync gh ETIMEDOUT"), null]) {
+        pauses.length = 0;
+        downloadFailures.push(failure);
+        expect(() => recordReleasePublicationOrigin(publicationEnv, root, trailingDownload, pause)).toThrow();
+        expect(pauses).toEqual([]);
+        expect(downloadFailures).toEqual([]);
+      }
       git(["commit", "--allow-empty", "-m", "Unrelated descendant"]);
       const copiedTag = "v2026.10.11";
       const copiedTarget = git(["rev-parse", "HEAD"]);
       git(["tag", "-a", "-m", JSON.stringify(createReleaseProvenance(copiedTag, sha, copiedTarget, env)), copiedTag]);
       expect(readReleaseTagProvenance(copiedTag, root).tag_sha).toBe(copiedTarget);
       expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: copiedTag }, root, execute, pause)).toThrow("producer binding");
-      for (const artifacts of [[], [artifact, artifact], [{ ...artifact, expired: true }], [{ ...artifact, size_in_bytes: 4097 }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, id: 43 } }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, head_sha: source } }]]) {
+      for (const artifacts of [[], [artifact, artifact], [{ ...artifact, expired: true }], [{ ...artifact, id: undefined }], [{ ...artifact, id: 0 }], [{ ...artifact, size_in_bytes: 4097 }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, id: 43 } }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, head_sha: source } }]]) {
         responses.set(artifactEndpoint, [{ total_count: artifacts.length, artifacts }]);
         pauses.length = 0;
         expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute, pause)).toThrow("producer binding");

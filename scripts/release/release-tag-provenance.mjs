@@ -1,6 +1,6 @@
 /** Preserve upstream release declarations in content-addressed Git tag objects. */
 import { execFileSync } from "node:child_process";
-import { lstatSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { registerTempCleanup } from "../temp-lifecycle.mjs";
@@ -61,7 +61,7 @@ export function verifyReleaseSourceRun(provenance, run, defaultBranch) {
 
 /** Whether one listed artifact is a bounded, unexpired binding of exactly the declared producer run. */
 function isDeclaredProducerBinding(artifact, source, defaultBranch) {
-  return artifact.expired === false && Number.isSafeInteger(artifact.size_in_bytes) && artifact.size_in_bytes >= 1 && artifact.size_in_bytes <= 4096 && artifact.workflow_run?.id === source.run_id && artifact.workflow_run.head_sha === source.source_sha && artifact.workflow_run.head_branch === defaultBranch;
+  return Number.isSafeInteger(artifact.id) && artifact.id >= 1 && artifact.expired === false && Number.isSafeInteger(artifact.size_in_bytes) && artifact.size_in_bytes >= 1 && artifact.size_in_bytes <= 4096 && artifact.workflow_run?.id === source.run_id && artifact.workflow_run.head_sha === source.source_sha && artifact.workflow_run.head_branch === defaultBranch;
 }
 
 /** The inventory's artifacts and this attempt's bindings among them, or a refusal of a malformed listing. */
@@ -78,11 +78,17 @@ function selectProducerBindingArtifact(pages, source, defaultBranch) {
   return matching[0];
 }
 
-const INVENTORY_REREAD_DELAYS_MS = [1000, 2000, 4000, 8000, 15_000];
+/** Waits before each repeated provider read; the artifacts API trails a just-finalized upload. */
+const PROVIDER_REREAD_DELAYS_MS = [1000, 2000, 4000, 8000, 15_000];
 
 /** Block this synchronous gate without spinning. */
 function pauseSync(milliseconds) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+/** One read of the producer run's artifact inventory, every page. */
+function readInventoryPages(execute, options, source) {
+  return JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/artifacts?per_page=100`, "--paginate", "--slurp"], options));
 }
 
 /**
@@ -92,20 +98,45 @@ function pauseSync(milliseconds) {
  * binding visible in any read ends the wait at once, and the last inventory read is judged
  * exactly as a single read was.
  */
-function readProducerBindingInventory(execute, options, source, defaultBranch, pause) {
-  const read = () => JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/artifacts?per_page=100`, "--paginate", "--slurp"], options));
+function readProducerBindingInventory(execute, options, source, defaultBranch, pause, expectedId) {
+  const read = () => readInventoryPages(execute, options, source);
   const trailing = (pages) => {
     const { complete, matching } = producerBindingInventory(pages, source);
     if (matching.length === 0) return true;
-    return !complete && matching.length === 1 && isDeclaredProducerBinding(matching[0], source, defaultBranch);
+    // A binding other than the one already validated is a replacement, refused without waiting.
+    return !complete && matching.length === 1 && isDeclaredProducerBinding(matching[0], source, defaultBranch) && (expectedId === undefined || matching[0].id === expectedId);
   };
   let pages = read();
-  for (const delay of INVENTORY_REREAD_DELAYS_MS) {
+  for (const delay of PROVIDER_REREAD_DELAYS_MS) {
     if (!trailing(pages)) break;
     pause(delay);
     pages = read();
   }
   return pages;
+}
+
+/** Whether a failed provider command reported that the requested resource does not exist (yet). */
+function isProviderNotFound(error) {
+  return /\bHTTP 404\b/u.test(String(error?.stderr ?? ""));
+}
+
+/**
+ * Download the selected binding. Its archive can still answer 404 moments after a complete
+ * inventory lists it, so only a 404 is retried within the bounded wait, each attempt into a fresh
+ * directory; any other failure, or a 404 that outlasts the wait, is the provider's own refusal.
+ */
+function downloadProducerBinding(execute, options, source, artifact, directory, pause) {
+  for (let attempt = 0; ; attempt += 1) {
+    const target = path.join(directory, String(attempt));
+    mkdirSync(target);
+    try {
+      execute("gh", ["run", "download", String(source.run_id), "--repo", source.repository, "--name", artifact.name, "--dir", target], options);
+      return target;
+    } catch (error) {
+      if (attempt === PROVIDER_REREAD_DELAYS_MS.length || !isProviderNotFound(error)) throw error;
+      pause(PROVIDER_REREAD_DELAYS_MS[attempt]);
+    }
+  }
 }
 
 /** Validate a bounded regular producer document against every actual Git identity and declaration. */
@@ -137,8 +168,12 @@ export function recordReleasePublicationOrigin(env = process.env, cwd = process.
     const directory = mkdtempSync(path.join(tmpdir(), "pm-producer-binding-"));
     const releaseCleanup = registerTempCleanup(directory);
     try {
-      execute("gh", ["run", "download", String(source.run_id), "--repo", source.repository, "--name", artifact.name, "--dir", directory], options);
-      verifyProducerBindingFile(directory, report);
+      verifyProducerBindingFile(downloadProducerBinding(execute, options, source, artifact, directory, pause), report);
+      // A download is addressed by name, so after it the inventory must still hold exactly the artifact
+      // validated above, read with the same bounded waits: a replaced binding is refused at once.
+      if (selectProducerBindingArtifact(readProducerBindingInventory(execute, options, source, repository.default_branch, pause, artifact.id), source, repository.default_branch).id !== artifact.id) {
+        throw new Error("Release producer binding changed while it was downloaded.");
+      }
       report.source_run_verified = true;
       report.producer_binding_verified = true;
     } finally {
