@@ -454,6 +454,15 @@ describe("universal read-output transport contracts", () => {
     });
   });
 
+  it("hoists a flat package listing projection onto the package action, nested options still winning (pm-gh1777)", () => {
+    for (const action of ["package", "extension"]) {
+      expect(optionsWithAuthor({ fields: "name,version" }, action)).toMatchObject({ fields: "name,version" });
+      expect(optionsWithAuthor({ fields: "name", options: { fields: "version" } }, action)).toMatchObject({ fields: "version" });
+      // A flat scope selects the lifecycle scope too (Codex review round 13).
+      expect(optionsWithAuthor({ scope: "global" }, action)).toMatchObject({ scope: "global" });
+    }
+  });
+
   it("normalizes renderer-facing global controls", () => {
     expect(
       actionGlobalOptions({

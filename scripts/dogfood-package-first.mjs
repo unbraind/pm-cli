@@ -419,9 +419,10 @@ try {
   ]) {
     assert(packageAliases.has(alias), `package catalog missing bundled alias ${alias}`);
   }
+  // pm package list names the installed packages (pm-gh1777); the bundled catalog is pm package catalog above.
   const packageList = run("package list", ["package", "list", "--project"]);
-  assert(packageList?.action === "catalog", "package list compatibility path did not resolve to catalog action");
-  assert(packageList?.details?.total >= 8, "package list did not list all bundled first-party packages");
+  assert(packageList?.complete === true && Array.isArray(packageList?.extensions), "package list did not return the installed package inventory");
+  assert(packageList.extensions.filter((entry) => entry?.installed === true).length >= 8, "package list did not list every installed first-party package");
   run("package explore", ["package", "explore", "--project"]);
   const packageDoctor = run("package doctor", ["package", "doctor", "--project", "--detail", "deep", "--trace"]);
   const packageDoctorSummary = packageDoctor?.details?.summary ?? {};

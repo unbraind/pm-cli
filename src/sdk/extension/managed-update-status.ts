@@ -4,6 +4,7 @@
  * Projects bounded remote freshness without mutating durable installation records.
  */
 import { mapWithFixedConcurrency } from "./concurrency.js";
+import { isRegistryNpmSource } from "./npm-spec.js";
 import { sortManagedEntries, type ManagedExtensionState } from "./managed-state.js";
 import { checkGithubUpdate, checkNpmUpdate, resolveExtensionUpdateCheckTimeoutMs, updateCheckTeardown } from "./update-check.js";
 import type { ManagedExtensionRecord } from "./managed-state.js";
@@ -56,7 +57,9 @@ export async function refreshManagedExtensionUpdates(
   const providers = createPermits(MANAGED_UPDATE_CHECK_CONCURRENCY);
   const entries = await mapWithFixedConcurrency(state.entries, MANAGED_UPDATE_CHECK_CONCURRENCY, async (entry) => {
     if (!["github", "npm"].includes(entry.source.kind)) return entry;
-    if (offline) return withUpdateCheckTimeout({
+    // A non-registry npm source (a local path, tarball, git or URL artifact) has no registry release to compare, and
+    // never exposes a stored verdict either, online or offline (CodeRabbit review round 8).
+    if (offline || (entry.source.kind === "npm" && !isRegistryNpmSource(entry.source))) return withUpdateCheckTimeout({
       ...entry, last_update_check_at: undefined, last_update_remote_commit: undefined,
       last_update_remote_version: undefined, update_available: null, update_error: undefined,
     }, undefined);

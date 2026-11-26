@@ -12,9 +12,12 @@ import {
 } from "../../sdk/runtime-primitives.js";
 import { redactSensitiveCommandArgs,renderPmCommand } from "../argv-utils.js";
 import {
+  findBootstrapCommandTokenIndex,
   normalizeBootstrapInvocation,
   parseBootstrapCommandName,
   parseBootstrapHelpRequest,
+  removeLeadingCommandTerminator,
+  resolveLifecycleVerb,
   stripGlobalBootstrapTokens
 } from "../bootstrap-args.js";
 import {
@@ -23,10 +26,26 @@ import {
 
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 
-/** Recognize the read-only package inventory before extension bootstrap. */
+/**
+ * Recognize the read-only package inventory (and its `list` alias) before
+ * extension bootstrap. The noun is found with the host-option grammar
+ * (`pm --no-changed-fields package list`), and the verb with the lifecycle
+ * parser flag normalization uses (`pm package --offline list`).
+ */
 function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean {
-  const tokens = stripGlobalBootstrapTokens(invocationArgv);
-  return ["package", "packages", "extension"].includes(tokens[0] ?? "") && tokens[1] === "inventory";
+  // Decide on the invocation Commander will parse: a runner-injected `pm` token is stripped by normalization,
+  // and operands after a leading `--` still route to the command (Codex review round 5).
+  let normalized: string[];
+  try {
+    normalized = normalizeBootstrapInvocation(invocationArgv).argv;
+  } catch {
+    return false;
+  }
+  const argv = removeLeadingCommandTerminator(normalized);
+  const nounIndex = findBootstrapCommandTokenIndex(argv);
+  if (nounIndex === undefined) return false;
+  return ["package", "packages", "extension"].includes(argv[nounIndex]!) &&
+    ["inventory", "list"].includes(resolveLifecycleVerb(argv.slice(nounIndex + 1)) ?? "");
 }
 
 /** Protect literal preview candidates in the item namespace until the real parser settles the selected action; host-owned global grammar also captures the tracker roots. */

@@ -1,0 +1,53 @@
+id: pm-gh1780
+title: "GH-1780: the runRegisteredCommandForTest doc says undeclared option keys pass through, but the harness refuses them with unknown_option on a command that declares flags"
+description: "GH-1780 (filed 2026-11-24 by the package-fleet maintainer after the 2026.11.14 to 2026.11.2x migration). The JSDoc of runRegisteredCommandForTest (bound as harness.runCommand) in src/sdk/testing.ts, published in dist/sdk/testing.d.ts, ends its option contract with 'and undeclared keys pass through'. Since the host alignment of pm-gh1726/pm-gh1727 the direct-caller normalizer (normalizeDirectExtensionCommandOptions) refuses a key that is neither a declared spelling nor a host-owned option with unknown_option (exit 2) before dispatch, on every extension-created command path that declares flags. Undeclared keys still pass through in three cases only: a command that declares no flags (pm-4of199 owns that refusal), a hand-built registry with no flag registrations, and a native core command path an extension extends or overrides. An array for a scalar flag is refused with extension_flag_value_invalid. Reproduced on 2026.11.25 by reading the normalizer: refuseUnknownExtensionOption runs for every non-host key when declaredDefinitions is non-empty and the policy is refuse. docs/SDK.md repeats the sentence for the harness but correctly scopes hand-built registries. Fleet impact (from the report): the largest single failure class of the migration, about 25 suites across pm-slack-standup, pm-todos, pm-github, pm-brief, pm-context and pm-screen; the refusal read like a harness bug. Duplicate check: searched runCommand undeclared option pass through unknown_option harness; pm-gh1665 (closed) shipped the normalizer, pm-4of199 (open) owns zero-flag refusal, pm-gh1731 and pm-gh1657 own migration notes and SDK release-note lines."
+type: Issue
+status: closed
+priority: 2
+tags[6]: agent-ux,docs,extensions,"gh:1780",sdk,testing
+created_at: "2026-11-25T05:50:53.377Z"
+updated_at: "2026-11-25T08:52:12.408Z"
+closed_at: "2026-11-25T07:15:55.479Z"
+completed_at: "2026-11-25T07:15:55.479Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "The runRegisteredCommandForTest JSDoc and the docs/SDK.md harness paragraph state the current rule: undeclared keys are refused with unknown_option before dispatch on a command that declares flags, exactly as the CLI refuses an unknown flag, and an array for a scalar flag is refused with extension_flag_value_invalid; Both texts name the three cases that still pass undeclared keys through (zero-flag command, hand-built registry, native core path) and the supported way to unit-test a handler with a free option bag; A harness test pins each documented case so the text cannot drift from behaviour again"
+parent: pm-ugqx
+risk: low
+confidence: high
+reporter: unbraind
+severity: medium
+resolution: "Rewrote the runRegisteredCommandForTest JSDoc (published in dist/sdk/testing.d.ts) and the docs/SDK.md harness paragraph: on a command that declares flags an undeclared key is refused with unknown_option (exit 2) before the handler runs, exactly as the CLI refuses an unknown flag, and an array for a non-list flag with extension_flag_value_invalid; reserved host keys pass unchanged; undeclared keys pass verbatim only for a zero-flag command (pm-4of199), a hand-built registry and a native core path an extension extends. Both texts say how to unit-test a handler with a free option bag (call the handler directly). A harness-parity case pins every documented case."
+expected_result: Extension authors reading the harness contract learn the shipped refusal rule and its exceptions
+actual_result: "The JSDoc and SDK.md state the rule and the three exceptions; the new harness-parity test pins the GH-1780 reproduction, the array refusal, host-key pass-through and both pass-through cases"
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4of199,related,"2026-11-25T05:50:53.377Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1657,related,"2026-11-25T05:50:53.377Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1665,related,"2026-11-25T05:50:53.377Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1726,related,"2026-11-25T05:50:53.377Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1727,related,"2026-11-25T05:50:53.377Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1731,related,"2026-11-25T05:50:53.377Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-25T05:52:50.046Z","harness:claude-code","Fix: the runRegisteredCommandForTest JSDoc (published in dist/sdk/testing.d.ts) and the docs/SDK.md harness paragraph now state the shipped rule: on a command that declares flags an undeclared key is refused with unknown_option (exit 2) before dispatch and an array for a scalar flag with extension_flag_value_invalid; reserved host keys pass unchanged; undeclared keys pass verbatim only for a zero-flag command, a hand-built registry, and a native core path an extension extends. Both texts name the supported way to test a handler with a free option bag (call the handler directly). New harness-parity case pins the GH-1780 reproduction (handler never called), the array refusal, host-key pass-through and both pass-through cases; the native-path case was already pinned by the first test in that file."
+files[2]{path,scope}:
+  src/sdk/testing.ts,project
+  tests/unit/sdk/extension/harness-parity.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension/harness-parity.spec.ts,project,"harness:claude-code","2026-11-25T05:52:49.365Z",local_mutation,feat/package-listing-extension-health
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: "The harness runCommand contract now states that undeclared keys are refused on commands that declare flags, and names the three cases that still pass them through"
+contract_change:
+  api: @unbrained/pm-cli/sdk/testing runRegisteredCommandForTest (harness.runCommand) option contract documentation
+  before: "The published doc said undeclared option keys pass through, while the harness has refused them since the host alignment of 2026.11.14"
+  after: "The doc states the shipped rule: on a command that declares flags an undeclared key is refused with unknown_option before dispatch and an array for a scalar flag with extension_flag_value_invalid; undeclared keys pass through only for a zero-flag command, a hand-built registry and a native core path"
+  migrate: "Package tests that pass undeclared keys to a command declaring flags either declare those flags or call the handler function directly; pass scalars, not arrays, to flags that are not list or repeatable (unknown_option and extension_flag_value_invalid are the two refusal codes)"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1780
+  gate_id: harness-undeclared-option-documented-cases
+  negative_control: "tests/unit/sdk/extension/harness-parity.spec.ts runs the GH-1780 reproduction (one declared --count flag plus foreignFlag) and expects unknown_option before dispatch, extension_flag_value_invalid for an array, host-key pass-through, and verbatim pass-through for a zero-flag command and a hand-built registry, the exact cases the corrected runRegisteredCommandForTest JSDoc and docs/SDK.md now state; the 2026.11.25 doc text claims undeclared keys pass through, which the first assertion contradicts"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/extension/harness-parity.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

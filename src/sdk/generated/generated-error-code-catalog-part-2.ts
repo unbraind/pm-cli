@@ -268,6 +268,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/extension/install-sources.ts"],
   },
   {
+    code: "npm_source_shorthand_ambiguous",
+    exit_code: 2,
+    sources: ["sdk/extension/install-sources.ts"],
+  },
+  {
     code: "output_budget_exceeded",
     exit_code: 2,
     sources: ["sdk/testing.ts"],
@@ -396,7 +401,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
     code: "read_output_surface_unsupported",
     exit_code: 2,
-    sources: ["sdk/read-output-contracts.ts"],
+    sources: ["sdk/extension/static-inventory.ts", "sdk/read-output-contracts.ts"],
   },
   {
     code: "recovery_kind_mismatch",

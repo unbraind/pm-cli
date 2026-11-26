@@ -13,6 +13,7 @@ import {
   type PmCommandAliasRegistration,
 } from "./cli-contracts/command-aliases.js";
 import {
+  hasSubcommandFlagContractsForCommand,
   resolveSubcommandFlagContractsForCommand,
   type CliFlagContract,
 } from "./cli-contracts/flag-contracts.js";
@@ -367,6 +368,12 @@ const EXTENSION_ACTION_SYNTAX_TOKENS = new Set<ExtensionSubcommandAction>([
   "deactivate",
 ]);
 
+/** Whether the tokens after a listing action carry a `--fields` projection (or its bare `fields=` form) before any `--`. */
+function hasListingProjectionToken(tokens: readonly string[]): boolean {
+  const terminator = tokens.indexOf("--");
+  return (terminator === -1 ? tokens : tokens.slice(0, terminator)).some((token) => /^(?:--)?fields(?:[=:]|$)/iu.test(token));
+}
+
 /** Implements normalize legacy extension action syntax for the public runtime surface of this module. */
 export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   const extensionIndex = findBootstrapCommandTokenIndex(argv);
@@ -385,6 +392,15 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
     return [...argv];
   }
   if (argv.includes("--help") || argv.includes("-h")) {
+    return [...argv];
+  }
+  // Row projection is a subcommand option (pm-gh1777): keep `pm extension explore --fields ...` on its subcommand route.
+  // A bare `fields=...` assignment is normalized to --fields later, so it counts too (Codex review round 5).
+  // Spellings normalize case-insensitively later (`--FIELDS`, `FIELDS=`), so the check does too (Codex review round 7).
+  // The bare-key parser accepts both `fields=` and `fields:` (CodeRabbit review round 6).
+  // Only the listings take a projection, and only tokens after the action count, up to a terminator, so a host flag's
+  // value (`--author fields`) can never change another action's route (Codex review round 23).
+  if ((actionToken === "explore" || actionToken === "manage") && hasListingProjectionToken(argv.slice(extensionIndex + 2))) {
     return [...argv];
   }
   const forcedActionFlag = `--${actionToken}`;
@@ -1225,10 +1241,67 @@ export function normalizeBootstrapInvocation(
 }
 
 /** Resolve the command leaf needed for option normalization before full Commander registration is available. */
+/** Options of the package root command that consume the next token as their value. */
+const LIFECYCLE_ROOT_VALUE_OPTIONS = new Set(["--capability", "--gh", "--github", "--ref", "--output", "--detail"]);
+
+/**
+ * The verb of a package invocation, given the tokens after its noun: root
+ * switches Commander accepts before the verb are skipped (`--global`,
+ * `--offline`), a valued root or inherited host option skips its value
+ * (`--ref v1`, `--pm-path <dir>`), and the first
+ * remaining operand is the verb. The one parser static selection, flag
+ * normalization and recovery share, so every spelling Commander routes to a
+ * verb resolves to the same leaf contract.
+ */
+export function resolveLifecycleVerb(tokens: readonly string[]): string | undefined {
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index]!;
+    if (!token.startsWith("-")) return token;
+    // Inherited host options take values too (`pm package --pm-path /work list`, `--output-budget unbounded list`).
+    if (LIFECYCLE_ROOT_VALUE_OPTIONS.has(token) || GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) index += 1;
+  }
+  return undefined;
+}
+
+/**
+ * Drop a terminator that stands before the command (`pm --json -- package list`), which
+ * Commander still routes to the command. Host options are walked with their arity, so a
+ * `--` that is a flag value (`--pm-path --`) stays a value and the first bare `--` is the
+ * terminator (Codex review rounds 7 and 9).
+ */
+export function removeLeadingCommandTerminator(argv: readonly string[]): string[] {
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index]!;
+    if (token === "--") return [...argv.slice(0, index), ...argv.slice(index + 1)];
+    if (!token.startsWith("-")) break;
+    if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) index += 1;
+  }
+  return [...argv];
+}
+
+/**
+ * The lifecycle leaf of a package invocation. Root options may precede the verb (`pm package --project list`,
+ * `--offline list`; Codex review rounds 2-3), but a token found only after root options counts as the leaf when it
+ * names a lifecycle subcommand: in `pm package --install ./demo --dry_run` the operand is the action's target, so the
+ * root flag table, which carries `--dry-run`, still normalizes the flags (Codex review round 24).
+ */
+function resolveBootstrapLifecycleLeaf(noun: string, tokens: readonly string[]): string | undefined {
+  const verb = resolveLifecycleVerb(tokens);
+  if (verb === undefined || verb === tokens[0]) return verb;
+  const leaf = verb.trim().toLowerCase();
+  // `package upgrade` has its own flag table outside the lifecycle map (Greptile review round 11).
+  return hasSubcommandFlagContractsForCommand(`${noun} ${leaf}`) || (noun !== "extension" && leaf === "upgrade") ? verb : undefined;
+}
+
 function parseBootstrapCommandPathName(argv: string[]): string | undefined {
-  const stripped = stripGlobalBootstrapTokens(argv);
+  // Host options before the noun are skipped with the shared host-option grammar, so a host flag the bootstrap
+  // token set does not list (`--no-changed-fields`) cannot hide the leaf's flag contracts (Codex review round 17).
+  const nounIndex = findBootstrapCommandTokenIndex(argv);
+  const stripped = stripGlobalBootstrapTokens(nounIndex === undefined ? argv : argv.slice(nounIndex));
   const first = stripped[0]?.trim().toLowerCase();
-  const second = stripped[1]?.trim().toLowerCase();
+  const second = (first === "extension" || first === "package" || first === "packages"
+    ? resolveBootstrapLifecycleLeaf(first, stripped.slice(1))
+    : stripped[1])?.trim().toLowerCase();
   const namespaced = findPmNamespacedCommand(stripped);
   if (namespaced) return namespaced.canonical;
   if (

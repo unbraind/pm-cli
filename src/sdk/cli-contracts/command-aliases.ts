@@ -198,11 +198,8 @@ export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
   })),
   ...(
     [
-      ["extension list", "extension catalog"],
       ["extension scaffold", "extension init"],
-      ["package list", "package catalog"],
       ["package scaffold", "package init"],
-      ["packages list", "package catalog"],
       ["packages scaffold", "package init"],
     ] as const
   ).map(([alias, canonical]) => ({
@@ -213,6 +210,22 @@ export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
     hidden: false,
     registration: "commander" as const,
     owner: "pm-ya7x55",
+  })),
+  // `list` names the installed packages, as npm, pip and brew do; the bundled catalog keeps `catalog` (pm-gh1777).
+  ...(
+    [
+      ["extension list", "package inventory"],
+      ["package list", "package inventory"],
+      ["packages list", "package inventory"],
+    ] as const
+  ).map(([alias, canonical]) => ({
+    alias,
+    canonical,
+    canonical_argv: canonical.split(" "),
+    lifecycle: "permanent" as const,
+    hidden: false,
+    registration: "commander" as const,
+    owner: "pm-gh1777",
   })),
   {
     alias: "list-all",

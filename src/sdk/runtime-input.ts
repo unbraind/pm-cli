@@ -333,8 +333,8 @@ export const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string
     comments: ["ifAbsent"],
     notes: ["ifAbsent"],
     learnings: ["ifAbsent"],
-    extension: ["dryRun", "offline"],
-    package: ["dryRun", "offline"],
+    extension: ["dryRun", "offline", "fields", "scope"],
+    package: ["dryRun", "offline", "fields", "scope"],
     install: ["dryRun"],
     upgrade: [
       "scope",

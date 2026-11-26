@@ -484,6 +484,7 @@ const MANAGED_EXTENSION_PACKAGE_OPTION_KEYS = [
   "watch",
   "strictExit",
   "failOnWarn",
+  "fields",
 ];
 
 function managedLifecycleSchemaContracts(
@@ -503,9 +504,9 @@ function managedLifecycleSchemaContracts(
       anyOfRequired: [["target"], ["github"]],
     },
     [`${prefix}-uninstall`]: { required: ["target"], optional: ["scope"] },
-    [`${prefix}-explore`]: { optional: ["scope"] },
+    [`${prefix}-explore`]: { optional: ["scope", "fields"] },
     [`${prefix}-manage`]: {
-      optional: ["scope", "runtimeProbe", "fixManagedState", "offline"],
+      optional: ["scope", "runtimeProbe", "fixManagedState", "offline", "fields"],
     },
     [`${prefix}-describe`]: {
       optional: ["target", "scope", "markdown", "output"],
@@ -1923,7 +1924,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.28.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.28.1" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

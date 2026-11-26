@@ -346,6 +346,40 @@ describe("parseBootstrapCommandName", () => {
 });
 
 describe("normalizeLegacyExtensionActionSyntax", () => {
+  it("merges repeated --fields on a package verb that follows a scope switch (Codex review round 2)", () => {
+    expect(normalizeBootstrapInvocation(["package", "--project", "list", "--fields", "name", "--fields", "status"]).argv).toEqual(["package", "--project", "list", "--fields=name,status"]);
+    // Any accepted root option before the verb, including a valued one, resolves the same leaf (Codex review round 3).
+    expect(normalizeBootstrapInvocation(["package", "--offline", "list", "example", "--fields=name", "--fields=version"]).argv).toEqual(["package", "--offline", "list", "example", "--fields=name,version"]);
+    expect(normalizeBootstrapInvocation(["package", "--ref", "v1", "list", "--fields", "a", "--fields", "b"]).argv).toEqual(["package", "--ref", "v1", "list", "--fields=a,b"]);
+    // A host flag before the noun that the bootstrap token set does not list is skipped with the shared host-option
+    // grammar, so the leaf's list-valued --fields still merges (Codex review round 17).
+    expect(normalizeBootstrapInvocation(["--no-changed-fields", "package", "list", "missing", "--fields", "bogus", "--fields", "name"]).argv)
+      .toEqual(["--no-changed-fields", "package", "list", "missing", "--fields=bogus,name"]);
+    // An operand after a root action flag is the action's target, not a subcommand, so the root table still
+    // normalizes the flags, as on main (Codex review round 24).
+    expect(normalizeBootstrapInvocation(["package", "--install", "./demo", "--dry_run"]).argv).toEqual(["package", "--install", "./demo", "--dry-run"]);
+    // upgrade keeps its own flag table after a scope switch (Greptile review round 11).
+    expect(normalizeBootstrapInvocation(["package", "--project", "upgrade", "--cli_only", "--dry-run"]).argv).toEqual(["package", "--project", "upgrade", "--cli-only", "--dry-run"]);
+    expect(normalizeBootstrapInvocation(["packages", "--global", "upgrade", "--cli_only"]).argv).toEqual(["packages", "--global", "upgrade", "--cli-only"]);
+  });
+
+  it("keeps a --fields projection on its explore or manage subcommand route (pm-gh1777)", () => {
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--fields", "name"])).toEqual(["extension", "explore", "--fields", "name"]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "manage", "--offline", "--fields=name"])).toEqual(["extension", "manage", "--offline", "--fields=name"]);
+    // A bare fields= assignment is normalized to --fields later, so it keeps the subcommand route too (Codex review round 5).
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "fields=bogus"])).toEqual(["extension", "explore", "fields=bogus"]);
+    // Spellings normalize case-insensitively, so the route check does too (Codex review round 7).
+    for (const token of ["--FIELDS", "FIELDS=name", "fields:name"]) {
+      expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", token])).toEqual(["extension", "explore", token]);
+    }
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--fieldsx"])).toEqual(["extension", "--explore", "--fieldsx"]);
+    // A fields token that is a host flag's value, belongs to another action, or follows a terminator never changes the
+    // route, so pm --author fields extension install a b keeps the single-target action route (Codex review round 23).
+    expect(normalizeLegacyExtensionActionSyntax(["--author", "fields", "extension", "install", "a", "b"])).toEqual(["--author", "fields", "extension", "--install", "a", "b"]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "install", "a", "--fields", "name"])).toEqual(["extension", "--install", "a", "--fields", "name"]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "explore", "--", "fields"])).toEqual(["extension", "--explore", "--", "fields"]);
+  });
+
   it("converts 'extension install' to 'extension --install'", () => {
     const result = normalizeLegacyExtensionActionSyntax([
       "extension",

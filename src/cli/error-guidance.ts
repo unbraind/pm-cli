@@ -633,12 +633,30 @@ function appendRecoveryListLine(
   }
 }
 
+/** The unbudgeted recovery limit for legal domains in human guidance. */
+const DEFAULT_RECOVERY_ALLOWED_VALUES_LIMIT = 8;
+
+/**
+ * A legal domain at most this long prints whole at the unbudgeted limit: listing it costs
+ * less than the second call an omission forces on a CLI agent, which cannot read the SDK
+ * error context (pm-gh1778). Budgeted renderings keep their tighter limit.
+ */
+const WHOLE_RECOVERY_DOMAIN_MAX = 12;
+
+/** The initial render's limit: a domain of at most WHOLE_RECOVERY_DOMAIN_MAX values prints whole, a longer one the default. */
+const UNBUDGETED_RECOVERY_ALLOWED_VALUES_LIMIT = Number.POSITIVE_INFINITY;
+
 /** Bound text legal domains while leaving their complete machine representation intact. */
 function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined, limit: number): void {
-  const visible = values?.slice(0, limit).map((value) => /^[\p{L}\p{N}._:/@=-]+$/u.test(value) ? value : JSON.stringify(value));
+  // Only the initial, unbudgeted render prints a small domain whole; a budgeted fallback keeps its cap, so a long
+  // tail cannot push it straight down to the tightest one (Codex review round 22).
+  const shown = values !== undefined && limit === UNBUDGETED_RECOVERY_ALLOWED_VALUES_LIMIT && values.length <= WHOLE_RECOVERY_DOMAIN_MAX
+    ? values.length
+    : Math.min(limit, DEFAULT_RECOVERY_ALLOWED_VALUES_LIMIT);
+  const visible = values?.slice(0, shown).map((value) => /^[\p{L}\p{N}._:/@=-]+$/u.test(value) ? value : JSON.stringify(value));
   appendRecoveryListLine(lines, "allowed_values", visible, ", ");
-  if (values && values.length > limit) {
-    lines.push(`  allowed_values_omitted: ${values.length - limit} (complete domain via SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted)`);
+  if (values && values.length > shown) {
+    lines.push(`  allowed_values_omitted: ${values.length - shown} (complete domain via SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted)`);
   }
 }
 
@@ -850,7 +868,7 @@ export function renderGuidanceMessage(
   message: GuidanceMessage,
   options: RenderGuidanceOptions = {},
 ): string {
-  return renderGuidanceMessageWithRecoveryLimit(message, options, 8);
+  return renderGuidanceMessageWithRecoveryLimit(message, options, UNBUDGETED_RECOVERY_ALLOWED_VALUES_LIMIT);
 }
 
 /** Project legal choices only while rendering so every compact view keeps the original omission count. */
@@ -971,7 +989,7 @@ function renderBoundedGuidanceMessage(
     nextSteps: appendIfMissing([], message.partialLegalDomainNotice),
   };
   essentialDomainGuidance.nextSteps = compactCloseRecoverySteps(message, essentialDomainGuidance);
-  for (const [candidate, limit] of [[withoutExplanation, 8], [limitedCollections, 8], [compactRecovery, 3], [boundedHappened, 3], ...(message.partialLegalDomainNotice ? [
+  for (const [candidate, limit] of [[withoutExplanation, DEFAULT_RECOVERY_ALLOWED_VALUES_LIMIT], [limitedCollections, DEFAULT_RECOVERY_ALLOWED_VALUES_LIMIT], [compactRecovery, 3], [boundedHappened, 3], ...(message.partialLegalDomainNotice ? [
     [essentialDomainGuidance, 3] as const,
     [{ ...essentialDomainGuidance, happened: message.title }, 3] as const,
     [{ ...essentialDomainGuidance, required: "Correct the producer metadata before relying on a complete legal domain." }, 3] as const,

@@ -312,6 +312,17 @@ describe("extension command runtime", () => {
       status: "skipped_non_github",
       reason: "managed_source_kind_local",
     });
+    // An MCP or SDK caller's declared scope selects the same scope as the CLI switches (Codex review round 12).
+    expect(extensionCommandTestOnly.resolveScope({ scope: "global" } as never)).toBe("global");
+    expect(extensionCommandTestOnly.resolveScope({ scope: "project" } as never)).toBe("project");
+    expect(extensionCommandTestOnly.resolveScope({ scope: "local" } as never)).toBe("project");
+    expect(() => extensionCommandTestOnly.resolveScope({ scope: "project", global: true } as never)).toThrow(/mutually exclusive/);
+    // A local npm artifact is never compared with a registry release (pm-gh1778, Codex review round 6).
+    expect(
+      extensionCommandTestOnly.resolveUpdateCheckResolution({
+        source: { kind: "npm", input: "npm:./pkg-1.0.0.tgz", location: ".", package: "pkg", version: "1.0.0" },
+      } as never),
+    ).toEqual({ status: "skipped_non_github", reason: "managed_npm_source_not_registry" });
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({
         source: {
@@ -513,7 +524,7 @@ describe("extension command runtime", () => {
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields(undefined)).toBeUndefined();
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields("alias, category,display_name")).toEqual(["alias", "category", "display_name"]);
     expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields(" ")).toThrow(/requires a comma-separated/);
-    expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields("alias,nope")).toThrow(/Unknown package catalog/);
+    expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields("alias,nope")).toThrow("Package catalog --fields has unknown field(s): nope");
     expect(
       _testOnlyBundledCatalog.projectPackageCatalogEntry(
         {

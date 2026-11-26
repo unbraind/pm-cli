@@ -10,14 +10,84 @@ Verified replacements and disabled compatibility findings are tracked by
 
 ## Read-only configured inventory
 
-Use `pm package inventory --project --json` (or `--global`) for a host GET route
-or agent read. Pass a name to receive an explicit `absent` row. The public SDK
+Use `pm package list --project --json` (an alias of `pm package inventory`; or
+`--global`) for a host GET route or agent read. Pass a name to receive an
+explicit `absent` row, and `--fields name,version,update` for compact rows. The public SDK
 equivalent is `inspectStaticExtensionInventory({ pmRoot, scope, name })` from
 `@unbrained/pm-cli/sdk`. Both read settings, managed metadata, and manifests
 without importing package entrypoints, running hooks, checking for updates,
 adopting installs, or writing workspace files. An absent managed-state file is
 reported separately from an invalid one. `complete: false` and `errors` mean
 the list must not be treated as authoritative; the CLI also exits nonzero.
+
+Each installed row carries `update`: the newer version the last
+`pm package manage` freshness check observed for exactly that installation, or
+`null` when none is known. `manage` records what each check answered in the
+untracked `runtime/extension-update-observations.json` of the scope
+(`.agents/pm/runtime/` or the global pm root). Under a per-scope lock the
+record is rebuilt from the managed state on disk at that moment: each current
+installation keeps the latest observation taken against it, from this check or
+an earlier one, and rows for replaced or removed installations are dropped, so
+concurrent checks keep each other's answers and the record never outgrows the
+managed packages. A check that timed out or failed records nothing for that
+package. An observation names the manifest version and the managed record's
+`updated_at` it was taken against, so any install that changes the version or
+the source, including a commit-only reinstall of a repository source, retires
+it; reinstalling the identical version from the identical source keeps it,
+because its answer still applies. A registry `latest` that is not
+newer than the installed npm version under SemVer precedence is recorded as no
+update, because upgrading to it would downgrade; `pm package manage` applies the
+same verdict. A cached verdict is used only when the live check could have
+given it: a registry row must match that check's exact-version rule and SemVer
+comparison against the record's own npm version, and a repository row must
+carry the remote commit. A bounded (1 MiB) regular file is read only when the record
+entry is a regular file and the opened descriptor is one too, and nothing is
+written while `runtime/` is a link or not a directory (checked before and after
+the lock is taken): a link, FIFO or oversized file reads as no knowledge. Node
+has no directory-relative file API, so a process that can replace the
+tracker's own `runtime/` between that check and the write could redirect it;
+such a process already controls the tracker state the record describes. A
+check time more than five minutes in the future reads as a clock error, and a
+check under a pinned reproducible clock (`PM_CLOCK`/`PM_SEED`) records nothing,
+because pinned times cannot order the record. The record is derived state: a failed write is the
+warning `extension_update_observation_write_failed`, never a failed check.
+
+`pm context` reads the same observations offline for its `extension_health`
+block. Rows are `{name, scope, version, status, update, shadowed_by}`:
+`shadowed_by` names the scope whose same-named copy the runtime loads instead
+(project shadows global), so a copy installed in both scopes is told apart.
+`updates_available` counts the copies static discovery selects (a shadowed or
+disabled copy keeps its row but is not counted; this is static selection, not
+activation truth, since no package module is imported) with a known update, and
+`next` names one live check per scope with a known update, `pm package manage
+--<scope>`, only when that count is above zero; the check re-reads each
+source (the npm registry for a registry package, the Git remote for a
+repository package) and shows its update evidence (`update_available`, plus
+`last_update_remote_version` for npm or `last_update_remote_commit` for a
+repository), and its remediation says to reinstall the
+updated sources (`pm package upgrade <name> --<scope>` upgrades one). The hint names no package, so
+no manifest-controlled name can select another installation, become an option,
+or lose its quoting, and the Markdown rendering puts each hint in its own fenced
+block, which keeps line breaks and shell escapes verbatim (a tracker path with
+any other terminal control character is not written raw; the Markdown points to
+the exact JSON `next` value instead). Every hint names the
+absolute tracker the read served (`--pm-path`), because manage's activation
+probe resolves it even for a global check, and a caller's explicit
+`--no-extensions` carries over, because manage's live check runs before that
+probe. A global hint assumes the caller's
+environment, like any command: under a relative `PM_GLOBAL_PATH`, run it from
+the same directory. An npm source that is not a registry install
+(classified with npm's own spec parser: a path, tarball, `file:`, git or URL
+spec) is never compared with a registry release, by `manage` or by the offline
+readers, and `pm package upgrade` reinstalls every such artifact from its own
+spec instead of moving it to a registry tag. Corrupt or unreadable managed metadata in a scope means unknown
+updates there, never a failed `pm context`; a managed-state path that is not a
+regular file is outside that guarantee, because extension discovery, which
+`pm context` runs first, still reads the file directly. `pm package list` refuses the
+row-shaping read-output controls it cannot apply (`read_output_surface_unsupported`) and
+keeps `--output-format` and an unbounded `--output-budget`
+([pm-gh1778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1778.toon),
+tracker record excluded from npm).
 
 `configured_enabled` is the effective saved enablement setting, while
 `runtime_active` is always `null`. The static read does not prove that a package

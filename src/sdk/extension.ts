@@ -97,6 +97,9 @@ import {
   withUpdateCheckTeardownScope,
 } from "./extension/update-check.js";
 import { refreshManagedExtensionUpdates } from "./extension/managed-update-status.js";
+import { recordCheckedUpdateObservations } from "./extension/update-observations.js";
+import { parseExploreManageFields, projectExploreManageRows } from "./extension/listing-fields.js";
+import { isRegistryNpmSource } from "./extension/npm-spec.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
 import { buildBundledInstallReceipt } from "./extension/install-receipts.js";
 import { buildExtensionInstallPlan, type ExtensionInstallPlan, type ExtensionCopyPlanOptions } from "./extension/install-plan.js";
@@ -200,6 +203,8 @@ export type ExtensionActivationStatus =
 
 /** Documents the extension command options payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCommandOptions {
+  /** Declared lifecycle scope from MCP and SDK callers; selects the same scope as the `project`/`local`/`global` switches. */
+  scope?: "project" | "local" | "global";
   /** Value that configures or reports install for this contract. */
   install?: boolean;
   /** Value that configures or reports uninstall for this contract. */
@@ -958,8 +963,11 @@ const resolveAction = (
 
 /** Resolve project or global extension scope while rejecting conflicting scope flags. */
 const resolveScope = (options: ExtensionCommandOptions): ExtensionScope => {
-  const projectLike = options.project === true || options.local === true;
-  const global = options.global === true;
+  // MCP and SDK callers declare `scope`, which the tool schema advertises; it selects the same scope as the CLI
+  // switches, so a package-manage call for the global scope also records its observations there (Codex review round 12).
+  const declaredScope = options.scope;
+  const projectLike = options.project === true || options.local === true || declaredScope === "project" || declaredScope === "local";
+  const global = options.global === true || declaredScope === "global";
   if (projectLike && global) {
     throw new PmCliError(
       'Options "--project/--local" and "--global" are mutually exclusive.',
@@ -988,6 +996,11 @@ const EXTENSION_UPDATE_CHECK_RESOLVERS: ExtensionUpdateCheckResolver[] = [
           status: "skipped_non_github",
           reason: `managed_source_kind_${managedEntry.source.kind}`,
         }
+      : null,
+  // A local npm artifact is reinstalled as it is, so no registry release is compared with it (pm-gh1778).
+  (managedEntry) =>
+    managedEntry?.source.kind === "npm" && !isRegistryNpmSource(managedEntry.source)
+      ? { status: "skipped_non_github", reason: "managed_npm_source_not_registry" }
       : null,
   (managedEntry) => {
     const updateError =
@@ -1762,6 +1775,13 @@ const assertExtensionActionOptionScope = (
       allowed: action === "migrate" || action === "install",
       message: "--dry-run is only valid with --migrate or --install.",
     },
+    {
+      // Only the listings shape rows, so a describe or install never silently ignores a selection (Codex review round 21).
+      triggered: options.fields !== undefined,
+      allowed: action === "explore" || action === "manage" || action === "catalog",
+      // Named as the subcommands the CLI registers --fields on, so the advice runs as written (Codex review round 26).
+      message: "--fields is only valid on the package listings: pm package list, pm package explore, pm package manage and pm package catalog.",
+    },
   ];
   const invalidGuard = guards.find(
     (guard) => guard.triggered && !guard.allowed,
@@ -1860,6 +1880,9 @@ export const runExtension = async (
 ): Promise<ExtensionCommandResult> => {
   const action = resolveAction(target, options);
   assertExtensionActionOptionScope(action, options);
+  // A row selection is refused before any lifecycle lock is taken, so a typo reports the legal fields instead of a
+  // lock or filesystem error (Codex review round 21); the handler parses the same value again to shape its rows.
+  if (action === "explore" || action === "manage") parseExploreManageFields(options.fields, action);
   const normalizedTarget = resolveNormalizedExtensionTarget(
     target,
     action,
@@ -3546,6 +3569,9 @@ const prepareExploreManageState = async (
       locked ? EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS : resolveExtensionUpdateCheckTimeoutMs(),
       !locked,
     );
+    // Offline reads report what this check learned (pm-gh1778); the record is derived, so a failed write only warns.
+    const observationWarning = await recordCheckedUpdateObservations(ctx.resolvedRoots.settings_root, ctx.resolvedRoots.selected_root, state.entries, ctx.options.offline === true);
+    if (observationWarning) ctx.warnings.push(observationWarning);
   }
   return { state, fix };
 };
@@ -3624,6 +3650,8 @@ const runExtensionExploreManageAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
   const { action, scope, resolvedRoots, warnings, options, withResult } = ctx;
+  // Refuse an invalid row selection before adoption, remote checks or observation writes run (Codex review round 1).
+  const fields = parseExploreManageFields(options.fields, action);
   const settings = await readSettings(resolvedRoots.settings_root);
   const configuredPolicy = buildExtensionPolicyDetails(
     settings.extensions.policy,
@@ -3687,7 +3715,7 @@ const runExtensionExploreManageAction = async (
       .length,
     active_total: runtimeInstalledExtensions.filter((entry) => entry.active)
       .length,
-    extensions: runtimeInstalledExtensions,
+    extensions: projectExploreManageRows(runtimeInstalledExtensions, fields),
     triage,
     policy: configuredPolicy,
   };

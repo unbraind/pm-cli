@@ -3,8 +3,8 @@
  *
  * Implements the pm upgrade command surface and its agent-facing runtime behavior.
  */
+import { isLocalNpmSpec, isRegistryNpmSource } from "../extension/npm-spec.js";
 import { execFile } from "node:child_process";
-import path from "node:path";
 import { promisify } from "node:util";
 import { renderPmCommand } from "../command-line.js";
 import {
@@ -310,25 +310,15 @@ async function upgradeCli(
   }
 }
 
-function isLocalNpmSpec(spec: string): boolean {
-  return (
-    path.isAbsolute(spec) ||
-    spec.startsWith(".") ||
-    spec.startsWith("..") ||
-    spec.startsWith("file:")
-  );
-}
-
 function resolvePackageInstallSource(
   source: ManagedExtensionSource,
   tag: string,
 ): string {
   if (source.kind === "npm") {
-    const rawSpec = source.input.startsWith("npm:")
-      ? source.input.slice("npm:".length).trim()
-      : source.input.trim();
+    // Only a registry install moves to the requested tag: a path, tarball, file:, git or URL artifact is
+    // reinstalled from its own spec, the same policy the freshness check applies (Codex review round 16).
     if (
-      !isLocalNpmSpec(rawSpec) &&
+      isRegistryNpmSource(source) &&
       source.package &&
       source.package.trim().length > 0
     ) {

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2171,
+    "covered_symbols": 2172,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2172
+    "required_symbols": 2173
   },
   "breaking_acknowledgements": [
     {
@@ -3590,6 +3590,18 @@
       ],
       "package_version": "2026.11.24",
       "reason": "pm-gh1774 and pm-kjoudp: every signature change is additive and source-compatible. quoteCommandArg and renderPmCommand gain an optional third CommandShellDialect parameter. ItemMutationLocation gains the optional callerClaimScoped flag. mutateItem and mutateItemWithHistoryContext gain the optional callerClaimScope hook. PmCliErrorContext.claim_activity gains the optional state field (active, stale or unknown); the CLI always populates it, and readers derive it when an older producer omits it. No parameter, field or export is removed or narrowed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionCommandOptions",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:StaticExtensionInventoryEntry",
+        "signature ./sdk:StaticExtensionInventoryResult",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/runtime:ExtensionCommandOptions"
+      ],
+      "package_version": "2026.11.25",
+      "reason": "pm-gh1777/pm-gh1778: StaticExtensionInventoryEntry gains the optional observed update column and StaticExtensionInventoryResult the optional updates_available count (always emitted by inspectStaticExtensionInventory); ExtensionCommandOptions gains the optional declared scope MCP and SDK callers pass; EXTENSION_INVENTORY_FLAG_CONTRACTS is published beside the other lifecycle flag contracts so pm contracts lists package inventory and its list alias; the error catalog gains npm_source_shorthand_ambiguous. Those add an optional member or a new export: existing readers and callers keep working, while consumers that enumerate keys (Record<keyof ...> maps, exhaustive key lists, strict fixtures) must add the new optional keys. PM_TOOL_PARAMETERS_SCHEMA_VERSION changes its literal to 4.28.1 for the fields and scope parameters on the package explore/manage actions, so consumers that pin the literal type or compare it for equality must accept 4.28.1. The pm-gh1777 migration note in the changelog states both."
     }
   ],
   "entrypoints": {
@@ -9107,6 +9119,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "EXTENSION_INVENTORY_FLAG_CONTRACTS",
+          "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "EXTENSION_MANAGE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
         },
@@ -9282,7 +9300,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandOptions",
-          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; offline?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
+          "signature": "export interface ExtensionCommandOptions { scope?: \"project\" | \"local\" | \"global\"; install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; offline?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
         },
         {
           "classification": "advanced_export",
@@ -15534,7 +15552,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.28.0\""
+          "signature": "\"4.28.1\""
         },
         {
           "classification": "contract_data",
@@ -22650,7 +22668,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StaticExtensionInventoryEntry",
-          "signature": "export interface StaticExtensionInventoryEntry { name: string; directory: string | null; scope: \"project\" | \"global\"; installed: boolean; status: \"installed\" | \"inactive\" | \"absent\" | \"malformed_manifest\"; configured_enabled: boolean | null; managed: boolean | null; runtime_active: null; version?: string; }"
+          "signature": "export interface StaticExtensionInventoryEntry { name: string; directory: string | null; scope: \"project\" | \"global\"; installed: boolean; status: \"installed\" | \"inactive\" | \"absent\" | \"malformed_manifest\"; configured_enabled: boolean | null; managed: boolean | null; runtime_active: null; version?: string; update?: string | null; }"
         },
         {
           "classification": "advanced_export",
@@ -22662,7 +22680,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StaticExtensionInventoryResult",
-          "signature": "export interface StaticExtensionInventoryResult { scope: \"project\" | \"global\"; complete: boolean; settings_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; managed_state_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; extensions: StaticExtensionInventoryEntry[]; errors: StaticExtensionInventoryError[]; }"
+          "signature": "export interface StaticExtensionInventoryResult { scope: \"project\" | \"global\"; complete: boolean; settings_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; managed_state_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; updates_available?: number; extensions: StaticExtensionInventoryEntry[]; errors: StaticExtensionInventoryError[]; }"
         },
         {
           "classification": "advanced_export",
@@ -26741,6 +26759,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "EXTENSION_INVENTORY_FLAG_CONTRACTS",
+          "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "EXTENSION_MANAGE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
         },
@@ -27546,7 +27570,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.28.0\""
+          "signature": "\"4.28.1\""
         },
         {
           "classification": "contract_data",
@@ -37416,7 +37440,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandOptions",
-          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; offline?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
+          "signature": "export interface ExtensionCommandOptions { scope?: \"project\" | \"local\" | \"global\"; install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; offline?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
         },
         {
           "classification": "advanced_export",
@@ -41399,6 +41423,7 @@
     "npm_package_archive_missing",
     "npm_package_archive_unsafe",
     "npm_package_not_found",
+    "npm_source_shorthand_ambiguous",
     "output_budget_exceeded",
     "ownership_conflict",
     "ownership_dependency_bypass_restricted_options",
@@ -41613,7 +41638,7 @@
     },
     "./sdk": {
       "checked_functions": 1356,
-      "checked_values": 407,
+      "checked_values": 408,
       "exempt_test_seams": 15,
       "referenced_types": 1063
     },
@@ -41625,7 +41650,7 @@
     },
     "./sdk/contracts": {
       "checked_functions": 103,
-      "checked_values": 188,
+      "checked_values": 189,
       "exempt_test_seams": 1,
       "referenced_types": 72
     },

@@ -50,12 +50,29 @@ describe("pm cli error guidance context plumbing", () => {
     expect(formatPmCliErrorForJson("Invalid package value", 2, context).refusal.legal_domain).toEqual(values);
   });
 
+  it("prints a small legal domain whole instead of forcing a second call for its omitted tail (pm-gh1778)", () => {
+    const sections = ["hierarchy", "activity", "progress", "recently_created", "unparented", "blockers", "files", "workload", "staleness", "tests"];
+    const display = formatPmCliErrorForDisplay("Context --section is invalid", { code: "invalid_argument_value", recovery: { allowed_values: sections } });
+    expect(display).toContain(`allowed_values: ${sections.join(", ")}`);
+    expect(display).not.toContain("allowed_values_omitted");
+    const twelve = Array.from({ length: 12 }, (_, index) => `value-${index}`);
+    expect(formatPmCliErrorForDisplay("Invalid", { recovery: { allowed_values: twelve } })).not.toContain("allowed_values_omitted");
+    expect(formatPmCliErrorForDisplay("Invalid", { recovery: { allowed_values: [...twelve, "value-12"] } })).toContain("allowed_values_omitted: 5");
+    // A small domain whose long tail overflows the text ceiling keeps the eight-value cap on the budgeted fallback
+    // instead of dropping straight to three (Codex review round 22).
+    const short = Array.from({ length: 8 }, (_, index) => `short-${index}`);
+    const long = Array.from({ length: 4 }, (_, index) => `long-${index}-${"x".repeat(1500)}`);
+    const bounded = formatPmCliErrorForDisplay("Invalid", { recovery: { allowed_values: [...short, ...long] } });
+    expect(bounded).toContain(`allowed_values: ${short.join(", ")}`);
+    expect(bounded).toContain("allowed_values_omitted: 4");
+  });
+
   it("preserves empty and whitespace legal values before bounding human recovery", () => {
-    const values = ["", "  ", " padded ", ...Array.from({ length: 6 }, (_, index) => `value-${index}`)];
+    const values = ["", "  ", " padded ", ...Array.from({ length: 12 }, (_, index) => `value-${index}`)];
     const context = { code: "package_value_invalid", recovery: { allowed_values: values } };
     const display = formatPmCliErrorForDisplay("Invalid package value", context, { lean: true });
     expect(display).toContain('allowed_values: "", "  ", " padded ", value-0, value-1, value-2, value-3, value-4');
-    expect(display).toContain("allowed_values_omitted: 1");
+    expect(display).toContain("allowed_values_omitted: 7");
     expect(display).not.toContain("value-5");
     expect(formatPmCliErrorForJson("Invalid package value", 2, context).recovery?.allowed_values).toEqual(values);
     expect(context.recovery.allowed_values).toEqual(values);

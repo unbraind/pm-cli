@@ -9,7 +9,8 @@ afterEach(() => vi.unstubAllEnvs());
 const source: ManagedExtensionSource = { kind: "npm", input: "npm:@scope/example@1.0.0", location: "@scope/example@1.0.0", package: "@scope/example", version: "1.0.0" };
 
 describe("npm registry freshness evidence", () => {
-  it.each([["1.0.0", false], ["2.0.0", true], ["0.9.0", true]] as const)("compares %s against the recorded installed package version", async (version, available) => {
+  // An older registry latest is no update: installing it would downgrade (pm-gh1778, Codex review round 4).
+  it.each([["1.0.0", false], ["2.0.0", true], ["0.9.0", false]] as const)("compares %s against the recorded installed package version", async (version, available) => {
     const runner = vi.fn(async () => JSON.stringify(version));
     expect(await checkNpmUpdate(source, runner)).toMatchObject({ available, remote_version: version });
     expect(runner).toHaveBeenCalledWith(["view", "@scope/example", "dist-tags.latest", "--json", "--ignore-scripts"], 10000);

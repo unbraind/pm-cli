@@ -1877,6 +1877,52 @@
     },
     {
       "aliases": [
+        "extension list",
+        "package list",
+        "packages list"
+      ],
+      "canonical": "package inventory",
+      "contracts": [
+        {
+          "alias": "extension list",
+          "canonical": "package inventory",
+          "canonical_argv": [
+            "package",
+            "inventory"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-gh1777",
+          "registration": "commander"
+        },
+        {
+          "alias": "package list",
+          "canonical": "package inventory",
+          "canonical_argv": [
+            "package",
+            "inventory"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-gh1777",
+          "registration": "commander"
+        },
+        {
+          "alias": "packages list",
+          "canonical": "package inventory",
+          "canonical_argv": [
+            "package",
+            "inventory"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-gh1777",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "upgrade"
       ],
       "canonical": "package upgrade",
@@ -2085,6 +2131,8 @@
           "extension explore",
           "extension init",
           "extension install",
+          "extension inventory",
+          "extension list",
           "extension manage",
           "extension migrate",
           "extension reload",
@@ -2150,6 +2198,8 @@
           "package explore",
           "package init",
           "package install",
+          "package inventory",
+          "package list",
           "package manage",
           "package migrate",
           "package reload",
@@ -2166,6 +2216,8 @@
           "packages explore",
           "packages init",
           "packages install",
+          "packages inventory",
+          "packages list",
           "packages manage",
           "packages migrate",
           "packages reload",
@@ -4684,6 +4736,10 @@
           "flag": "--global"
         },
         {
+          "flag": "--fields",
+          "list": true
+        },
+        {
           "aliases": [
             "--format"
           ],
@@ -4756,6 +4812,60 @@
       "provider": "core"
     },
     {
+      "command": "extension inventory",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "extension list",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "extension manage",
       "flags": [
         {
@@ -4776,6 +4886,10 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--fields",
+          "list": true
         },
         {
           "aliases": [
@@ -7844,6 +7958,10 @@
           "flag": "--global"
         },
         {
+          "flag": "--fields",
+          "list": true
+        },
+        {
           "aliases": [
             "--format"
           ],
@@ -7919,6 +8037,60 @@
       "provider": "core"
     },
     {
+      "command": "package inventory",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "package list",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "package manage",
       "flags": [
         {
@@ -7939,6 +8111,10 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--fields",
+          "list": true
         },
         {
           "aliases": [
@@ -8404,6 +8580,10 @@
           "flag": "--global"
         },
         {
+          "flag": "--fields",
+          "list": true
+        },
+        {
           "aliases": [
             "--format"
           ],
@@ -8479,6 +8659,60 @@
       "provider": "core"
     },
     {
+      "command": "packages inventory",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "packages list",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "packages manage",
       "flags": [
         {
@@ -8499,6 +8733,10 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--fields",
+          "list": true
         },
         {
           "aliases": [
@@ -14051,6 +14289,60 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "extension inventory",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension inventory",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension list",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension list",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "extension manage",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -15806,6 +16098,60 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "package inventory",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package inventory",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package list",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package list",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "package manage",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -16229,6 +16575,60 @@
       "envelope": {
         "cardinality": "none",
         "command": "packages install",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages inventory",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages inventory",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages list",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages list",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -18109,6 +18509,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Explore extension.",
       "intent_source": "generated"
     },
@@ -18133,12 +18536,41 @@
       "intent_source": "generated"
     },
     {
+      "command": "extension inventory",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Run extension inventory.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension list",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "List extension.",
+      "intent_source": "generated"
+    },
+    {
       "command": "extension manage",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Manage extension.",
       "intent_source": "generated"
     },
@@ -18883,6 +19315,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Explore package.",
       "intent_source": "generated"
     },
@@ -18907,12 +19342,41 @@
       "intent_source": "generated"
     },
     {
+      "command": "package inventory",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Run package inventory.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package list",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "List package.",
+      "intent_source": "generated"
+    },
+    {
       "command": "package manage",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Manage package.",
       "intent_source": "generated"
     },
@@ -19046,6 +19510,9 @@
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Explore packages.",
       "intent_source": "generated"
     },
@@ -19070,12 +19537,41 @@
       "intent_source": "generated"
     },
     {
+      "command": "packages inventory",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Run packages inventory.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages list",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "List packages.",
+      "intent_source": "generated"
+    },
+    {
       "command": "packages manage",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
         "json": 4500,
         "toon": 3000
       },
+      "flags": [
+        "--fields"
+      ],
       "intent": "Manage packages.",
       "intent_source": "generated"
     },
@@ -21061,6 +21557,8 @@
     "extension explore",
     "extension init",
     "extension install",
+    "extension inventory",
+    "extension list",
     "extension manage",
     "extension migrate",
     "extension reload",
@@ -21126,6 +21624,8 @@
     "package explore",
     "package init",
     "package install",
+    "package inventory",
+    "package list",
     "package manage",
     "package migrate",
     "package reload",
@@ -21142,6 +21642,8 @@
     "packages explore",
     "packages init",
     "packages install",
+    "packages inventory",
+    "packages list",
     "packages manage",
     "packages migrate",
     "packages reload",
@@ -24458,6 +24960,8 @@
         "sdk/config.ts",
         "sdk/context-intent-contracts.ts",
         "sdk/dependencies.ts",
+        "sdk/extension/listing-fields.ts",
+        "sdk/extension/static-inventory.ts",
         "sdk/governance/assurance-mutation-error.ts",
         "sdk/history-redact.ts",
         "sdk/lifecycle/create.ts",
@@ -26452,6 +26956,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "npm_source_shorthand_ambiguous",
+      "class": "usage",
+      "code": "npm_source_shorthand_ambiguous",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Npm source shorthand ambiguous condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "output_budget_exceeded",
       "class": "usage",
       "code": "output_budget_exceeded",
@@ -26860,6 +27381,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
+        "sdk/extension/static-inventory.ts",
         "sdk/read-output-contracts.ts"
       ],
       "stability": "provisional"
@@ -31152,6 +31674,22 @@
         "target": "package"
       },
       {
+        "command": "extension inventory",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "reason": "",
+        "target": "package"
+      },
+      {
+        "command": "extension list",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "extension manage",
         "disposition": "consolidation",
         "noun": "package",
@@ -33284,7 +33822,15 @@
       },
       {
         "command": "package list",
-        "slots": []
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "package manage",
@@ -33419,6 +33965,30 @@
             "required": false,
             "value_kind": "string",
             "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "extension inventory",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension list",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
           }
         ]
       },
@@ -33560,7 +34130,15 @@
       },
       {
         "command": "packages list",
-        "slots": []
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "packages manage",
@@ -35865,11 +36443,12 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -38848,11 +39427,12 @@
             "type": "string"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -40178,11 +40758,12 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -41678,11 +42259,12 @@
             "description": "Field."
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -43432,11 +44014,12 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -47781,6 +48364,16 @@
             "const": "extension-explore",
             "description": "Tool action to execute."
           },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline",
+              "name,version,activation_status"
+            ],
+            "type": "string"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -47853,6 +48446,16 @@
           "action": {
             "const": "extension-manage",
             "description": "Tool action to execute."
+          },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline",
+              "name,version,activation_status"
+            ],
+            "type": "string"
           },
           "fixManagedState": {
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
@@ -48223,11 +48826,12 @@
             "description": "Tool action to execute."
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -48935,6 +49539,16 @@
             "const": "package-explore",
             "description": "Tool action to execute."
           },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline",
+              "name,version,activation_status"
+            ],
+            "type": "string"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -49007,6 +49621,16 @@
           "action": {
             "const": "package-manage",
             "description": "Tool action to execute."
+          },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline",
+              "name,version,activation_status"
+            ],
+            "type": "string"
           },
           "fixManagedState": {
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
@@ -49494,11 +50118,12 @@
             "description": "Tool action to execute."
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -50265,6 +50890,16 @@
           "failOnWarn": {
             "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
+          },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
+            "examples": [
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline",
+              "name,version,activation_status"
+            ],
+            "type": "string"
           },
           "fixManagedState": {
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
@@ -52122,11 +52757,12 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -53024,11 +53660,12 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -53426,11 +54063,12 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -53789,11 +54427,12 @@
             "type": "string"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -54460,11 +55099,12 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -62814,11 +63454,12 @@
             "description": "Field."
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+            "description": "Comma-separated projection fields for get, search, list-family, context, or package listing outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct; package explore/manage rows take package keys such as name/version/activation_status/update_available, and package catalog rows take alias/installed/install_command).",
             "examples": [
               "id,title,status,parent,type",
               "id,title,score,matched_fields",
-              "id,title,priority,deadline"
+              "id,title,priority,deadline",
+              "name,version,activation_status"
             ],
             "type": "string"
           },
@@ -68220,10 +68861,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.28.0"
+    "x-schema-version": "4.28.1"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.28.0",
+  "schema_version": "4.28.1",
   "selected": {
     "action": null,
     "availability_only": false,

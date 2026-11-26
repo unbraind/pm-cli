@@ -310,6 +310,53 @@ describe("local npm package archives", () => {
     });
     await safeResolved.cleanup();
 
+    // A git or URL spec names no package, so its textual prefix (`github:owner`) is no receipt identity: the sole
+    // receipt npm returns is accepted, as pm package upgrade replays such a spec (CodeRabbit review round 13).
+    const packNamed = (name: string) => async (args: string[]) => {
+      const packDirectory = args.at(-1);
+      if (!packDirectory) throw new Error("missing pack destination");
+      await copyFile(safe.archive, path.join(packDirectory, "git.tgz"));
+      return JSON.stringify([{ name, filename: "git.tgz" }]);
+    };
+    for (const spec of ["github:owner/repo", "https://example.org/demo.tgz", "git@github.com:owner/repo.git"]) {
+      const gitResolved = await _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        { kind: "npm", input: `npm:${spec}`, spec },
+        packNamed("pm-archive-demo"),
+      );
+      expect(gitResolved).toMatchObject({ version: "1.2.3" });
+      await gitResolved.cleanup();
+    }
+    // Bare owner/repo shorthand is read as a local directory first, so a replay elsewhere fails closed instead of
+    // installing from a git host (Codex review round 22).
+    // It is refused before npm packs anything, so even a repository whose package is named like the prefix cannot pass
+    // the identity check (CodeRabbit review round 14).
+    for (const receiptName of ["pm-archive-demo", "plugins"]) {
+      await expect(
+        _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+          { kind: "npm", input: "npm:plugins/my-plugin-absent", spec: "plugins/my-plugin-absent" },
+          async () => {
+            throw new Error(`npm pack must not run (${receiptName})`);
+          },
+        ),
+      ).rejects.toMatchObject({ exitCode: 2, context: { code: "npm_source_shorthand_ambiguous" } });
+    }
+    // An unparseable spec is no shorthand: the guard lets it through, and npm itself reports why it cannot pack it.
+    await expect(
+      _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        { kind: "npm", input: "npm:@@bad", spec: "@@bad" },
+        async () => {
+          throw new Error("npm pack refused @@bad");
+        },
+      ),
+    ).rejects.not.toMatchObject({ context: { code: "npm_source_shorthand_ambiguous" } });
+    // A named alias keeps the identity check, so a receipt for another package is still refused.
+    await expect(
+      _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        { kind: "npm", input: "npm:demo@github:owner/repo", spec: "demo@github:owner/repo" },
+        packNamed("someone-else"),
+      ),
+    ).rejects.toThrow();
+
     const normalizedAliasSpec = `archive-alias@file:${path.join(
       safe.root,
       "missing-package-root",

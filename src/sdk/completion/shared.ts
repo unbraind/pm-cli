@@ -201,7 +201,7 @@ const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
 
 const EXTENSION_LIFECYCLE_ACTIONS =
-  "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate migrate";
+  "init scaffold install uninstall list inventory explore manage describe reload doctor catalog adopt adopt-all activate deactivate migrate";
 
 const PACKAGE_LIFECYCLE_ACTIONS = `${EXTENSION_LIFECYCLE_ACTIONS} upgrade`;
 

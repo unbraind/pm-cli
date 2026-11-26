@@ -6,8 +6,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveGlobalPmRoot } from "../../core/store/paths.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import { normalizeManagedState, type ManagedExtensionRecord } from "./managed-state.js";
 import { normalizeExtensionNameForMatch, normalizeStringList, parseExtensionManifest } from "./shared.js";
+import { findApplicableUpdateObservation, readBoundedRegularFile, readExtensionUpdateObservations, resolveObservedUpdateVersion, type ExtensionUpdateObservation } from "./update-observations.js";
 
 /** One read failure or malformed document that prevents a complete inventory. */
 export interface StaticExtensionInventoryError {
@@ -37,7 +40,147 @@ export interface StaticExtensionInventoryEntry {
   runtime_active: null;
   /** Manifest version when available. */
   version?: string;
+  /**
+   * Newer version the last `pm package manage` check observed for this installed
+   * version, or null when none is known (pm-gh1777); absent on a row for a
+   * requested package that is not installed.
+   */
+  update?: string | null;
 }
+
+/** The `--fields` contract every package listing shares (pm-gh1777), published with the listing it serves. */
+export { parseListingFields, projectListingRows } from "./listing-fields.js";
+
+/**
+ * Lifecycle options of other package actions, which the static listing never applies, with their flag spelling.
+ * `--offline` is absent on purpose: the listing never checks remotely, so it is already satisfied.
+ */
+const STATIC_INVENTORY_FOREIGN_OPTIONS: ReadonlyArray<readonly [string, string]> = [
+  // Action selectors and their arguments the parent command accepts (Codex review round 14).
+  ["install", "--install"], ["uninstall", "--uninstall"], ["explore", "--explore"], ["list", "--list"], ["manage", "--manage"],
+  ["describe", "--describe"], ["markdown", "--markdown"], ["output", "--output"], ["reload", "--reload"], ["doctor", "--doctor"],
+  ["catalog", "--catalog"], ["adopt", "--adopt"], ["adoptAll", "--adopt-all"], ["activate", "--activate"],
+  ["deactivate", "--deactivate"], ["migrate", "--migrate"], ["init", "--init"], ["scaffold", "--scaffold"],
+  ["capability", "--capability"], ["declarative", "--declarative"], ["gh", "--gh"], ["github", "--github"], ["ref", "--ref"],
+  ["fixManagedState", "--fix-managed-state"], ["runtimeProbe", "--runtime-probe"],
+  ["trace", "--trace"], ["watch", "--watch"], ["strictExit", "--strict-exit"], ["failOnWarn", "--fail-on-warn"],
+  ["isolated", "--isolated"], ["ignoreGlobal", "--ignore-global"], ["detail", "--detail"], ["dryRun", "--dry-run"],
+];
+
+/**
+ * Refuse a lifecycle option another package action owns. Commander accepts these on the parent command, so
+ * without this check `pm package list --fix-managed-state` would succeed without adopting anything, and a
+ * caller could mistake the listing for the operation it asked for (Codex review round 13).
+ */
+export function refuseStaticInventoryForeignOptions(options: Record<string, unknown>): void {
+  const present = STATIC_INVENTORY_FOREIGN_OPTIONS.filter(([key]) => options[key] !== undefined && options[key] !== false).map(([, flag]) => flag);
+  if (present.length === 0) return;
+  throw new PmCliError(`${present.join(", ")} ${present.length === 1 ? "does" : "do"} not apply to pm package list, a read that changes nothing.`, EXIT_CODE.USAGE, {
+    code: "invalid_argument_value",
+    required: "Drop the option, or run the package action that owns it (pm package manage, pm package doctor, pm package reload).",
+    examples: ["pm package manage --fix-managed-state", "pm package list --fields name,version,update"],
+  });
+}
+
+/** The read-output controls a caller passed, by their global-option keys. */
+export interface StaticInventoryReadOutputControls {
+  /** Row cap a read would apply; the inventory cannot page, so any value is refused. */
+  outputLimit?: string;
+  /** Projection mode a read would apply; the inventory projects with `--fields` instead, so any value is refused. */
+  outputInclude?: string;
+  /** Read session that would suppress repeated rows across calls; refused because the inventory keeps no session. */
+  outputSession?: string;
+  /** Continuation token of an earlier page; refused because the inventory returns every row at once. */
+  outputCursor?: string;
+  /** Request for the per-row identity contract; refused when true because inventory rows carry none. */
+  outputRowContract?: boolean;
+  /** Byte budget for the rendered result; only `unbounded` is accepted, since the inventory cannot trim rows to fit. */
+  outputBudget?: string;
+  /** Raw `--output-format` value as typed; only `toon` and `json` are formats, anything else is refused. */
+  outputFormat?: unknown;
+}
+
+/**
+ * The static inventory returns every installed package and applies no read-output
+ * row controls, so those controls are refused instead of silently ignored; the
+ * output format and an unbounded budget still apply (Codex review round 2).
+ */
+export function refuseStaticInventoryReadOutputControls(controls: StaticInventoryReadOutputControls): void {
+  // The same format refusal every read applies, before host option parsing could drop an unknown value (Codex review round 6).
+  if (controls.outputFormat !== undefined && controls.outputFormat !== "json" && controls.outputFormat !== "toon") {
+    throw new PmCliError("--output-format must be toon or json.", EXIT_CODE.USAGE, { code: "invalid_argument_value" });
+  }
+  const unsupported = [
+    ["--output-limit", controls.outputLimit],
+    ["--output-include", controls.outputInclude],
+    ["--output-session", controls.outputSession],
+    ["--output-cursor", controls.outputCursor],
+    ["--output-row-contract", controls.outputRowContract === true ? "true" : undefined],
+    ["--output-budget", controls.outputBudget === "unbounded" ? undefined : controls.outputBudget],
+  ].filter((entry): entry is [string, string] => typeof entry[1] === "string").map(([flag]) => flag);
+  if (unsupported.length === 0) return;
+  throw new PmCliError(
+    `pm package list does not apply ${unsupported.join(", ")}: it returns every installed package. Narrow rows with --fields, or use pm package manage or pm package catalog for read-output controls.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "read_output_surface_unsupported",
+      // The structured refusal names the first refused control, never a valid --fields projection (Codex review round 24).
+      flag: unsupported[0],
+      details: { command: "package list", output_option_keys: unsupported },
+      required: "Drop the row-shaping output controls; pm package list keeps --output-format and an unbounded --output-budget.",
+      examples: ["pm package list --fields name,version,update"],
+    },
+  );
+}
+
+/** Ceiling for the managed install state the static inventory reads. */
+const MAX_STATIC_MANAGED_STATE_BYTES = 16 * 1024 * 1024;
+
+/** A manifest larger than this is not one pm can read statically. */
+const MAX_STATIC_MANIFEST_BYTES = 1024 * 1024;
+
+/** A settings.json larger than this is not read for presentation defaults. */
+const MAX_STATIC_SETTINGS_BYTES = 4 * 1024 * 1024;
+
+/**
+ * The parsed settings.json of a tracker, read through the guarded bounded reader and
+ * without the general settings reader, which may scaffold schema files; undefined when
+ * absent, unreadable, not a regular file or malformed.
+ */
+async function readStaticSettingsDocument(pmRoot: string): Promise<Record<string, unknown> | undefined> {
+  try {
+    // Follows a link to a bounded regular file, as the general settings reader does (Codex review round 16).
+    const raw = await readBoundedRegularFile(path.join(pmRoot, "settings.json"), MAX_STATIC_SETTINGS_BYTES, { followLinks: true });
+    const parsed: unknown = raw === undefined ? undefined : JSON.parse(raw);
+    return typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The tracker's configured default output format (`output.default_format`), so the static
+ * listing renders as every other command does (Codex review round 9). Absent, unreadable or
+ * unknown values yield undefined.
+ */
+export async function readStaticDefaultOutputFormat(pmRoot: string): Promise<"json" | "toon" | undefined> {
+  const format = ((await readStaticSettingsDocument(pmRoot))?.output as { default_format?: unknown } | undefined)?.default_format;
+  return format === "json" || format === "toon" ? format : undefined;
+}
+
+/**
+ * Whether the tracker shows deprecation hints (`ux.deprecation_hints`, on by default), read
+ * statically so the deprecated `pm extension list` spelling keeps its migration hint without
+ * leaving the no-activation path (Codex review round 11).
+ */
+export async function readStaticDeprecationHints(pmRoot: string): Promise<boolean> {
+  return ((await readStaticSettingsDocument(pmRoot))?.ux as { deprecation_hints?: unknown } | undefined)?.deprecation_hints !== false;
+}
+
+/** Row keys `pm package list --fields` selects from, in their emitted order. */
+export const INVENTORY_ROW_FIELDS = [
+  "name", "directory", "scope", "installed", "status", "configured_enabled", "managed", "runtime_active", "version", "update",
+] as const;
 
 /** A read-only inventory with explicit completeness and source receipts. */
 export interface StaticExtensionInventoryResult {
@@ -49,6 +192,8 @@ export interface StaticExtensionInventoryResult {
   settings_status: "ok" | "absent" | "invalid" | "unreadable";
   /** Status of the managed install metadata. */
   managed_state_status: "ok" | "absent" | "invalid" | "unreadable";
+  /** Installed entries whose last observed check found a newer release; always set by {@link inspectStaticExtensionInventory}. */
+  updates_available?: number;
   /** Installed entries, or one absent entry for a missing requested name. */
   extensions: StaticExtensionInventoryEntry[];
   /** Every failure that affected completeness. */
@@ -87,13 +232,16 @@ async function readEnablement(settingsPath: string): Promise<{
   disabled: string[];
   error?: StaticExtensionInventoryError;
 }> {
-  let raw: string;
+  let raw: string | undefined;
   try {
-    raw = await fs.readFile(settingsPath, "utf8");
+    // Bounded and non-blocking, so a FIFO or oversized settings file is unreadable instead of hanging the listing
+    // (Codex review round 16).
+    raw = await readBoundedRegularFile(settingsPath, MAX_STATIC_SETTINGS_BYTES, { followLinks: true });
   } catch (error: unknown) {
     if (isMissing(error)) return { status: "absent", enabled: [], disabled: [] };
     return { status: "unreadable", enabled: [], disabled: [], error: { code: "settings_unreadable", path: settingsPath } };
   }
+  if (raw === undefined) return { status: "unreadable", enabled: [], disabled: [], error: { code: "settings_unreadable", path: settingsPath } };
   try {
     return { status: "ok", ...parseEnablement(raw) };
   } catch {
@@ -107,9 +255,11 @@ async function readManagedRecords(managedPath: string): Promise<{
   entries: ManagedExtensionRecord[];
   error?: StaticExtensionInventoryError;
 }> {
-  let raw: string;
+  let raw: string | undefined;
   try {
-    raw = await fs.readFile(managedPath, "utf8");
+    // Bounded and non-blocking, following links as the runtime loader does; this one snapshot serves both the
+    // receipt and the observation matching (Codex review round 15).
+    raw = await readBoundedRegularFile(managedPath, MAX_STATIC_MANAGED_STATE_BYTES, { followLinks: true });
   } catch (error: unknown) {
     if (isMissing(error)) {
       try {
@@ -122,6 +272,7 @@ async function readManagedRecords(managedPath: string): Promise<{
     }
     return { status: "unreadable", entries: [], error: { code: "managed_state_unreadable", path: managedPath } };
   }
+  if (raw === undefined) return { status: "unreadable", entries: [], error: { code: "managed_state_unreadable", path: managedPath } };
   try {
     const parsed: unknown = JSON.parse(raw);
     const normalized = normalizeManagedState(parsed);
@@ -154,21 +305,31 @@ async function readManifest(manifestPath: string): Promise<{
   manifest: ReturnType<typeof parseExtensionManifest>;
   error?: StaticExtensionInventoryError;
 }> {
-  let raw: string;
+  let raw: string | undefined;
   try {
-    raw = await fs.readFile(manifestPath, "utf8");
+    // A bounded, non-blocking read that still follows links: a FIFO or endless stream in place of a manifest is
+    // unreadable, never a hang (Codex review round 13).
+    raw = await readBoundedRegularFile(manifestPath, MAX_STATIC_MANIFEST_BYTES, { followLinks: true });
   } catch (error: unknown) {
     if (isMissing(error)) {
       return { manifest: null, error: { code: "manifest_invalid", path: manifestPath } };
     }
     return { manifest: null, error: { code: "manifest_unreadable", path: manifestPath } };
   }
+  if (raw === undefined) return { manifest: null, error: { code: "manifest_unreadable", path: manifestPath } };
   try {
     const manifest = parseExtensionManifest(JSON.parse(raw) as unknown);
     return manifest ? { manifest } : { manifest: null, error: { code: "manifest_invalid", path: manifestPath } };
   } catch {
     return { manifest: null, error: { code: "manifest_invalid", path: manifestPath } };
   }
+}
+
+/** The managed install record of a package, matched by manifest name or directory. */
+function findManagedRecord(entries: readonly ManagedExtensionRecord[], name: string, directory: string): ManagedExtensionRecord | undefined {
+  return entries.find((entry) =>
+    normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(name) ||
+    normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(directory));
 }
 
 /** Project saved state without presenting it as runtime activation truth. */
@@ -184,9 +345,7 @@ function projectConfiguredEntry(input: {
   const disabled = new Set(normalizeStringList(input.settings.disabled));
   const configuredEnabled = !isTrustedSourceStatus(input.settings.status) || !input.manifest ? null :
     !disabled.has(name) && (enabled.size === 0 || enabled.has(name));
-  const managed = !isTrustedSourceStatus(input.managed.status) ? null : input.managed.entries.some((entry) =>
-    normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(name) ||
-    normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(input.directory));
+  const managed = !isTrustedSourceStatus(input.managed.status) ? null : findManagedRecord(input.managed.entries, name, input.directory) !== undefined;
   return {
     name,
     directory: input.directory,
@@ -198,6 +357,19 @@ function projectConfiguredEntry(input: {
     runtime_active: null,
     ...(input.manifest ? { version: input.manifest.version } : {}),
   };
+}
+
+/** Attach the update the last manage check observed for exactly this installation (pm-gh1778). */
+function withObservedUpdate(
+  entry: StaticExtensionInventoryEntry,
+  directory: string,
+  records: readonly ManagedExtensionRecord[],
+  observations: readonly ExtensionUpdateObservation[],
+): StaticExtensionInventoryEntry {
+  // Bind the evidence to this directory's own managed record, so a same-named unmanaged copy never borrows it.
+  const record = records.find((candidate) => candidate.directory === directory);
+  const installation = { name: entry.name, version: entry.version, updated_at: record?.updated_at, source: record?.source };
+  return { ...entry, update: resolveObservedUpdateVersion(findApplicableUpdateObservation(observations, installation)) };
 }
 
 /** Read configured extension state through filesystem reads only. */
@@ -223,6 +395,10 @@ export async function inspectStaticExtensionInventory(options: {
   }
 
   const requested = options.name?.trim();
+  const observations = await readExtensionUpdateObservations(selectedRoot);
+  // The same snapshot the receipt came from; an absent, unreadable or invalid file carries no entries, so it
+  // contributes no update evidence.
+  const observationRecords = managed.entries;
   const extensions: StaticExtensionInventoryEntry[] = [];
   for (const directory of listed.directories) {
     const manifestPath = path.join(extensionsRoot, directory, "manifest.json");
@@ -232,7 +408,7 @@ export async function inspectStaticExtensionInventory(options: {
     if (requested && ![entry.name, directory].some((value) => normalizeExtensionNameForMatch(value) === normalizeExtensionNameForMatch(requested))) {
       continue;
     }
-    extensions.push(entry);
+    extensions.push(withObservedUpdate(entry, directory, observationRecords, observations));
   }
   if (requested && extensions.length === 0 && errors.every((error) => error.code !== "extensions_unreadable")) {
     extensions.push({ name: requested, directory: null, scope, installed: false, status: "absent",
@@ -240,5 +416,6 @@ export async function inspectStaticExtensionInventory(options: {
       managed: isTrustedSourceStatus(managed.status) ? false : null,
       runtime_active: null });
   }
-  return { scope, complete: errors.length === 0, settings_status: settings.status, managed_state_status: managed.status, extensions, errors };
+  const updatesAvailable = extensions.filter((entry) => typeof entry.update === "string").length;
+  return { scope, complete: errors.length === 0, settings_status: settings.status, managed_state_status: managed.status, updates_available: updatesAvailable, extensions, errors };
 }

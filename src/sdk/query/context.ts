@@ -3,6 +3,7 @@
  *
  * Implements the pm context command surface and its agent-facing runtime behavior.
  */
+import path from "node:path";
 import type { PmReadOutputMetadata } from "../read-output-contracts.js";
 import { scanInProgressWork, type InProgressWorkScan } from "../governance/stale-work.js";
 import {
@@ -24,6 +25,13 @@ import {
   resolveItemTypeRegistry,
 } from "../runtime-primitives.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import {
+  findApplicableUpdateObservation,
+  readExtensionUpdateObservations,
+  readStrictManagedRecords,
+  resolveObservedUpdateVersion,
+} from "../extension/update-observations.js";
+import { buildExtensionUpgradeHints } from "../extension/upgrade-hints.js";
 import type { ItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   collectDependencyBlockedIds,
@@ -377,10 +385,30 @@ export interface ContextExtensionHealth {
   ok: number;
   /** Number of degraded installed extensions. */
   degraded: number;
+  /** Copies static discovery selects (not activation truth; no module is imported) whose last observed `pm package manage` check found a newer release (pm-gh1778). */
+  updates_available?: number;
+  /** One live `pm package manage --<scope>` check per scope with a known update, whose remediation names the upgrade; present only when `updates_available` is above zero. */
+  next?: string[];
   /** Per-package static discovery health. */
-  packages: Array<{ name: string; status: "ok" | "degraded" }>;
+  packages: ContextExtensionHealthRow[];
   /** Whether package rows were capped. */
   truncated?: true;
+}
+
+/** One installed copy in `extension_health` (pm-gh1778). */
+export interface ContextExtensionHealthRow {
+  /** Manifest name, or the directory name when the manifest is unreadable. */
+  name: string;
+  /** Storage scope of this copy. */
+  scope?: "project" | "global";
+  /** Manifest version, or null when unreadable. */
+  version?: string | null;
+  /** Static discovery health of this copy. */
+  status: "ok" | "degraded";
+  /** Newer version the last `pm package manage` check observed for this installed version; null when none is known. */
+  update?: string | null;
+  /** Scope of the same-named copy static discovery selects instead of this one; null when this copy is the selected one. Static selection, not activation truth. */
+  shadowed_by?: "project" | "global" | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -2037,12 +2065,7 @@ export function renderContextMarkdown(result: ContextResult): string {
     `- blocked_fallback_used: ${result.summary.blocked_fallback_used}`,
   );
   if (result.extension_health) {
-    const degradedNames = result.extension_health.packages
-      .filter((entry) => entry.status === "degraded")
-      .map((entry) => entry.name);
-    lines.push(
-      `- extensions: ${result.extension_health.ok} ok, ${result.extension_health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}`,
-    );
+    lines.push(...renderExtensionHealthMarkdown(result.extension_health));
   }
   const renderedSections = result.sections_included.filter(
     (section) => section !== "blockers" || (result.blockers?.length ?? 0) > 0,
@@ -2849,6 +2872,7 @@ export async function resolveContextExtensionHealthProjection(
   omitted: boolean,
   pmRoot: string,
   settings: PmSettings,
+  noExtensions = false,
 ): Promise<Pick<ContextResult, "extension_health">> {
   if (omitted) return {};
   const discovery = await discoverExtensions({
@@ -2857,26 +2881,118 @@ export async function resolveContextExtensionHealthProjection(
     cwd: process.cwd(),
     noExtensions: false,
   });
-  const packages = discovery.discovered
-    .map((diagnostic) => ({
-      name: diagnostic.name ?? diagnostic.directory,
-      status:
-        diagnostic.status === "ok" ? ("ok" as const) : ("degraded" as const),
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  if (discovery.discovered.length === 0) return {};
+  // Offline by design: updates come from what the last `pm package manage` check observed, never a network call.
+  // Each scope's observations and managed records sit beside its extensions directory.
+  const scopes = await Promise.all((["project", "global"] as const).map(async (scope) => {
+    const extensionsRoot = discovery.roots[scope];
+    // Managed metadata is optional evidence here: a corrupt or unreadable file means unknown updates, never a failed context read.
+    const [observations, records] = await Promise.all([
+      readExtensionUpdateObservations(path.dirname(extensionsRoot)),
+      readStrictManagedRecords(extensionsRoot).then((records) => records ?? []),
+    ]);
+    return [scope, { observations, records }] as const;
+  }));
+  const scopeEvidence = new Map(scopes);
+  const loadedScopeByName = new Map(discovery.effective.map((entry) => [entry.name, entry.layer]));
+  const loadedCopies = new Set(discovery.effective.map((entry) => `${entry.layer}:${entry.directory}`));
+  const loaded = new Set<ContextExtensionHealthRow>();
+  const packages: ContextExtensionHealthRow[] = discovery.discovered
+    .map((diagnostic) => {
+      const name = diagnostic.name ?? diagnostic.directory;
+      const loadedScope = diagnostic.name === null ? undefined : loadedScopeByName.get(diagnostic.name);
+      const evidence = scopeEvidence.get(diagnostic.layer)!;
+      const record = evidence.records.find((entry) => entry.directory === diagnostic.directory);
+      const row = {
+        name,
+        scope: diagnostic.layer,
+        version: diagnostic.version,
+        status: diagnostic.status === "ok" ? ("ok" as const) : ("degraded" as const),
+        update: resolveObservedUpdateVersion(findApplicableUpdateObservation(evidence.observations, { name, version: diagnostic.version, updated_at: record?.updated_at, source: record?.source })),
+        // Directory identity decides, so a losing copy in the same scope is marked too (Codex review round 8).
+        shadowed_by: loadedScope !== undefined && !loadedCopies.has(`${diagnostic.layer}:${diagnostic.directory}`) ? loadedScope : null,
+      };
+      if (loadedCopies.has(`${diagnostic.layer}:${diagnostic.directory}`)) loaded.add(row);
+      return row;
+    })
+    .sort((left, right) => left.name.localeCompare(right.name) || left.scope.localeCompare(right.scope));
   const degraded = packages.filter(
     (entry) => entry.status === "degraded",
   ).length;
-  if (packages.length === 0) return {};
+  // Only the copy the runtime loads counts: a shadowed or disabled copy keeps its row but earns no upgrade hint.
+  const updatable = packages.filter((entry) => typeof entry.update === "string" && loaded.has(entry));
   return {
     extension_health: {
       total: packages.length,
       ok: packages.length - degraded,
       degraded,
+      updates_available: updatable.length,
+      ...(updatable.length > 0 ? { next: buildExtensionUpgradeHints(updatable, pmRoot, noExtensions) } : {}),
       packages: packages.slice(0, 20),
       ...(packages.length > 20 ? { truncated: true } : {}),
     },
   };
+}
+
+/**
+ * The Markdown summary line of `extension_health`. `next` is present exactly when
+ * `updates_available` is above zero; a hint holding a line break (a tracker path may
+ * contain one) goes in a fenced block after the line, because a code span turns
+ * line breaks into spaces.
+ */
+function renderExtensionHealthMarkdown(health: ContextExtensionHealth): string[] {
+  // Manifest-controlled names are escaped as plain text, and each hint sits in its own fenced block after the
+  // line, so no name can open or close a code span around a command (Codex review round 7).
+  const degradedNames = health.packages.filter((entry) => entry.status === "degraded").map((entry) => escapeMarkdownText(entry.name));
+  const next = health.next;
+  const updates = next === undefined ? "" : `, ${String(health.updates_available)} with a known update (check with the commands below)`;
+  // Copies that carry more than "ok" (degraded, a known update, or shadowed by another scope) get their own line,
+  // so a Markdown reader can tell same-named copies apart (CodeRabbit review round 8).
+  const notable = health.packages.filter((row) => row.status === "degraded" || typeof row.update === "string" || typeof row.shadowed_by === "string");
+  return [
+    `- extensions: ${health.ok} ok, ${health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}${updates}`,
+    ...notable.map(renderExtensionHealthRowMarkdown),
+    ...(next ?? []).map(renderExtensionHintMarkdown),
+  ];
+}
+
+/**
+ * A live-check hint as a fenced command, unless its tracker path carries a terminal control character other than a
+ * line break or tab: such a path cannot be shown without driving the terminal, so the reader is pointed at the exact
+ * structured `next` value instead (Codex review round 20).
+ */
+function renderExtensionHintMarkdown(hint: string): string {
+  return /\p{Cc}/u.test(hint.replace(/[\n\t]/gu, ""))
+    ? "- a live check command is not shown because the tracker path contains terminal control characters; read it from the JSON `next` field"
+    : renderMarkdownFence(hint);
+}
+
+/** One notable extension copy as a nested Markdown list item, its manifest-controlled name escaped. */
+function renderExtensionHealthRowMarkdown(row: ContextExtensionHealthRow): string {
+  const facts = [
+    row.status,
+    ...(typeof row.update === "string" ? [`update ${escapeMarkdownText(row.update)}`] : []),
+    ...(typeof row.shadowed_by === "string" ? [`shadowed by ${row.shadowed_by}`] : []),
+  ];
+  return `  - ${escapeMarkdownText(row.name)} (${row.scope ?? "unknown scope"}, ${escapeMarkdownText(row.version ?? "unknown version")}): ${facts.join(", ")}`;
+}
+
+/**
+ * Escape the inline Markdown syntax characters, fold line breaks, and replace every other control character, so an
+ * untrusted label renders as one line of literal text and cannot drive the terminal (Codex review round 18).
+ */
+function escapeMarkdownText(text: string): string {
+  return text
+    .replace(/[\r\n]+/gu, " ")
+    .replace(/\p{Cc}/gu, "\uFFFD")
+    .replace(/[\\`*_[\]<>|~]/gu, "\\$&");
+}
+
+/** Render a command as a fenced block whose fence no run of backticks inside it can close; it keeps line breaks and shell escapes verbatim. */
+function renderMarkdownFence(text: string): string {
+  const longestRun = Math.max(0, ...[...text.matchAll(/`+/gu)].map((match) => match[0].length));
+  const fence = "`".repeat(Math.max(3, longestRun + 1));
+  return `${fence}sh\n${text}\n${fence}`;
 }
 
 async function resolveContextSemanticAffinity(
@@ -2917,6 +3033,7 @@ export async function runContext(
     options.noExtensionHealth === true,
     pmRoot,
     runtime.settings,
+    global.noExtensions === true,
   );
   // Single shared edge-aware blocked classification (GH-578): resolved against
   // the full corpus so terminal blocker targets count as satisfied at every depth.

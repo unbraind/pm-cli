@@ -142,6 +142,19 @@ describe("upgrade command", () => {
           "next",
         ),
       ).toBe("npm:../local");
+      // Remote tarball and git artifacts are reinstalled from their own spec, the freshness check's policy (Codex review round 16).
+      expect(
+        upgradeInternals.resolvePackageInstallSource(
+          { ...npmSource, input: "npm:demo@https://example.org/demo.tgz?download=1", package: "demo" },
+          "latest",
+        ),
+      ).toBe("npm:demo@https://example.org/demo.tgz?download=1");
+      expect(
+        upgradeInternals.resolvePackageInstallSource(
+          { ...npmSource, input: "github:owner/repo", package: "repo" },
+          "latest",
+        ),
+      ).toBe("npm:github:owner/repo");
       expect(
         upgradeInternals.resolvePackageInstallSource(githubSource, "next"),
       ).toBe("Owner/Repo");

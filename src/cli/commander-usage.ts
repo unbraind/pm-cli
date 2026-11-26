@@ -37,6 +37,7 @@ import {
   parseBootstrapHelpRequest,
   parseBootstrapGlobalOptions,
   parseBootstrapCommandName,
+  resolveLifecycleVerb,
 } from "./bootstrap-args.js";
 import {
   extractProvidedOptionFlags,
@@ -621,6 +622,82 @@ function resolveUnknownCommandCandidates(params: {
   ], params.commandPaths, params.primaryToken).filter((path) => !params.normalizedUnknown.includes(" ") || path !== params.normalizedUnknown);
 }
 
+/**
+ * Map a singular or plural slip of a command noun (`pm extensions list`) to the
+ * command it meant (`package list`, pm-gh1777): the inflected noun resolves
+ * through a command or alias to a canonical root, then the operands typed after
+ * it extend that root while they name a command or a visible alias beneath it.
+ */
+function resolveInflectedCommandPath(
+  normalizedUnknown: string,
+  invocationArgv: readonly string[],
+  commandPaths: readonly string[],
+): string | undefined {
+  const [primary, ...typedRest] = normalizedUnknown.split(" ");
+  // A typed noun that is already a command or an alias is ranked by the alias-aware scorer instead.
+  if (commandPaths.includes(primary) || resolvePmCommandAlias(primary) !== undefined) return undefined;
+  const variant = primary.endsWith("s") ? primary.slice(0, -1) : `${primary}s`;
+  const alias = resolvePmCommandAlias(variant);
+  const root = alias && commandPaths.includes(alias.canonical) ? alias.canonical : commandPaths.includes(variant) ? variant : undefined;
+  if (root === undefined) return undefined;
+  let path = root;
+  // A package root takes its verb with the lifecycle grammar (`--ref v1 list`); other roots follow host-option arity.
+  const followingOperands = ["package", "packages", "extension"].includes(root)
+    ? [resolveLifecycleVerb(collectTokensAfterCommand(invocationArgv)) ?? ""].filter((token) => token.length > 0)
+    : collectInvocationOperandsAfterCommand(invocationArgv, typedRest.length);
+  for (const operand of [...typedRest, ...followingOperands]) {
+    const next = `${path} ${operand}`;
+    const nextAlias = resolvePmCommandAlias(next);
+    if (!commandPaths.includes(next) && !(nextAlias !== undefined && !nextAlias.hidden && commandPaths.includes(nextAlias.canonical))) break;
+    path = next;
+  }
+  return path;
+}
+
+/**
+ * Order the paths an unknown command suggests: a misnested or inflected path
+ * first (it also becomes the executable retry), then the ranked candidates, or
+ * the top-level namespaces when nothing concrete matched.
+ */
+function rankUnknownCommandSuggestions(
+  normalizedUnknown: string,
+  invocationArgv: readonly string[],
+  commandPaths: string[],
+  combinedCandidates: string[],
+): { misnestedPath: string | undefined; hasConcreteCandidates: boolean; suggestedPaths: string[] } {
+  const inflectedPath = resolveInflectedCommandPath(normalizedUnknown, invocationArgv, commandPaths);
+  const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths) ?? inflectedPath;
+  const hasConcreteCandidates = combinedCandidates.length > 0 || inflectedPath !== undefined;
+  const fallback = hasConcreteCandidates ? [] : canonicalizeCommandSuggestions(resolveUnknownCommandFallbacks(commandPaths), commandPaths);
+  const suggestedPaths = [...new Set([
+    ...(misnestedPath ? [misnestedPath] : []),
+    ...(combinedCandidates.length > 0 ? combinedCandidates : fallback),
+  ])].slice(0, 3);
+  return { misnestedPath, hasConcreteCandidates, suggestedPaths };
+}
+
+/** The raw tokens an invocation typed after its command token. */
+function collectTokensAfterCommand(invocationArgv: readonly string[]): string[] {
+  const index = findBootstrapCommandTokenIndex([...invocationArgv]);
+  return index === undefined ? [] : invocationArgv.slice(index + 1);
+}
+
+/**
+ * The command operands an invocation typed after its command token, found with the
+ * bootstrap scanner so host flags and their values (`--json`, `--author <name>`)
+ * are skipped rather than ending the path or being read as the command.
+ */
+function collectInvocationOperandsAfterCommand(invocationArgv: readonly string[], skip: number): string[] {
+  const operands: string[] = [];
+  let index = findBootstrapCommandTokenIndex([...invocationArgv]);
+  while (index !== undefined) {
+    const offset = findBootstrapCommandTokenIndex(invocationArgv.slice(index + 1));
+    index = offset === undefined ? undefined : index + 1 + offset;
+    if (index !== undefined) operands.push(invocationArgv[index]);
+  }
+  return operands.slice(skip);
+}
+
 /** Offer each installed top-level namespace once when no concrete command candidate matches. */
 function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
   const topLevel = [
@@ -722,19 +799,19 @@ export function buildUnknownCommandGuidanceFromRuntime(
     primaryToken,
     extensionDescriptors,
   });
-  const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
-  const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths);
+  const { misnestedPath, hasConcreteCandidates, suggestedPaths } = rankUnknownCommandSuggestions(
+    normalizedUnknown,
+    invocationArgv,
+    commandPaths,
+    combinedCandidates,
+  );
   const retryArgs = buildCanonicalHelpRetryArgs(misnestedPath, invocationArgv);
-  const suggestedPaths = [...new Set([
-    ...(misnestedPath ? [misnestedPath] : []),
-    ...(combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)),
-  ])].slice(0, 3);
   const examples = buildUnknownCommandExamples(
     suggestedPaths,
-    combinedCandidates.length > 0,
+    hasConcreteCandidates,
   );
   const didYouMean =
-    combinedCandidates.length > 0
+    hasConcreteCandidates
       ? `Did you mean: ${suggestedPaths.join(", ")}?`
       : null;
 

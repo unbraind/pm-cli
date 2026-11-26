@@ -286,5 +286,37 @@ describe("extension test harness parity with native dispatch", () => {
     process.exitCode = undefined;
     await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge" })).resolves.toMatchObject({ handled: true });
   });
+  it("refuses undeclared keys on a command that declares flags and passes them only in the documented cases (pm-gh1780)", async () => {
+    const seen: unknown[] = [];
+    const activation = await activate((api) => {
+      api.registerCommand({ name: "demo run", flags: [{ long: "--count", value_type: "number" }], run: (context) => { seen.push(context.options); return { ok: true }; } });
+      api.registerCommand({ name: "demo bare", run: (context) => ({ options: context.options }) });
+    });
+    // The GH-1780 reproduction: one declared flag, one foreign key. Refused before dispatch, the handler never runs.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "demo run", options: { count: 1, foreignFlag: true } })).rejects.toMatchObject({
+      exitCode: 2,
+      context: expect.objectContaining({ code: "unknown_option", flag: "--foreign-flag" }),
+    });
+    // An array for a scalar flag is refused too, because argv never delivers one.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "demo run", options: { count: [1, 2] } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "extension_flag_value_invalid" }),
+    });
+    expect(seen).toEqual([]);
+    // Host-owned keys pass through unchanged next to a declared flag.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "demo run", options: { count: "2", quiet: true } })).resolves.toMatchObject({ handled: true });
+    expect(seen).toEqual([{ count: 2, quiet: true }]);
+    // Case 1: a command that declares no flags still receives undeclared keys (pm-4of199 owns that refusal).
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "demo bare", options: { foreignFlag: true } })).resolves.toMatchObject({
+      handled: true,
+      result: { options: { foreignFlag: true } },
+    });
+    // Case 2: a hand-built registry has no flag registrations, so its options pass verbatim.
+    const handBuilt = { overrides: [], handlers: [{ layer: "project" as const, name: "hand", command: "demo run", run: (context: { options: Record<string, unknown> }) => ({ options: context.options }) }] };
+    await expect(runRegisteredCommandForTest(handBuilt, { command: "demo run", options: { count: "1", foreignFlag: true } })).resolves.toMatchObject({
+      handled: true,
+      result: { options: { count: "1", foreignFlag: true } },
+    });
+    // Case 3, a native command path an extension extends, is pinned by the first test of this file.
+  });
 });
 
