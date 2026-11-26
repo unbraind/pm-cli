@@ -122,11 +122,11 @@ function physicalDirectory(directory: string): string | undefined {
  * A ceiling kept as spelled, in the separator form of the physical walk (Git
  * for Windows compares `C:/parent` with `C:\parent`; on POSIX this changes
  * nothing), with one trailing separator dropped as Git compares it; a root
- * keeps its own. Links and `..` are left as spelled, as Git leaves them.
+ * (`/`, `C:\`, a UNC share) keeps its own. Links and `..` are left as spelled, as Git leaves them.
  */
 function spelledCeiling(entry: string): string {
   const native = entry.split("/").join(path.sep);
-  return native.length > 1 && native.endsWith(path.sep) ? native.slice(0, -1) : native;
+  return native.length > path.parse(native).root.length && native.endsWith(path.sep) ? native.slice(0, -1) : native;
 }
 
 /**

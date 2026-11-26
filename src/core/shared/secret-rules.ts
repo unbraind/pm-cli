@@ -1197,13 +1197,12 @@ interface StringLexer {
   opener: number;
   /** Whether a backslash escapes inside the open string: always in a double-quoted one, in a single-quoted one only as a container member. */
   escapes: boolean;
-  /** Whether a double (single) quote after a word character opened no string earlier on this line (see trustsOpenString). */
-  declinedDouble: boolean;
-  declinedSingle: boolean;
+  /** Whether a quote after a word character opened no string earlier on this line (see trustsOpenString). */
+  declined: boolean;
 }
 
 function createStringLexer(content: string): StringLexer {
-  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true, declinedDouble: false, declinedSingle: false };
+  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true, declined: false };
 }
 
 /** Read one character (two for an escape); returns the position of a quote that closed the open string, or -1. */
@@ -1214,8 +1213,7 @@ function lexStep(lexer: StringLexer): number {
   lexer.index = index + 1;
   if (isNewlineCode(code)) {
     lexer.state = NO_STRING;
-    lexer.declinedDouble = false;
-    lexer.declinedSingle = false;
+    lexer.declined = false;
     return -1;
   }
   if (code === 0x5c) {
@@ -1243,8 +1241,7 @@ function lexStep(lexer: StringLexer): number {
 function openOrDecline(lexer: StringLexer, kind: number, index: number): void {
   const { content } = lexer;
   if (index > 0 && WORD_CHARACTER.test(content[index - 1]!) && !PYTHON_STRING_PREFIX.test(content.slice(Math.max(0, index - 3), index))) {
-    if (kind === DOUBLE_STRING) lexer.declinedDouble = true;
-    else lexer.declinedSingle = true;
+    lexer.declined = true;
     return;
   }
   lexer.state = kind;
@@ -1261,17 +1258,17 @@ const PYTHON_STRING_PREFIX = /(?:^|[^\p{L}\p{N}_])(?:[rRbBuUfF]|[rR][bBfF]|[bBfF
  * Whether the open string is known to be one. A quote after a word character
  * opens no string, which keeps a prose apostrophe (`customer's`) or a unit
  * mark out of the state, but in a shell it opens a segment of the word
- * (`foo"[" …`), and from there the lexer cannot tell a segment's closing
- * quote from a string's opening one. A line that declined a quote of a kind
- * therefore shows shell quoting, where a closing quote that more characters
- * follow continues the word, so no later string of that kind on the line is
- * trusted to end a value; a cut only ever removes a finding, so it is made
- * only where the string state is unambiguous. A Python string prefix
+ * (`foo"[" …`, `foo'["' …`), and from there the lexer cannot tell a
+ * segment's closing quote from a string's opening one, of either kind. A
+ * line that declined a quote therefore shows shell quoting, where a closing
+ * quote that more characters follow continues the word, so no later string on
+ * the line is trusted to end a value; a cut only ever removes a finding, so it
+ * is made only where the string state is unambiguous. A Python string prefix
  * (`r"…"`, `b'…'`) opens its string, and in JSON and Python text every other
  * quote opens, closes or is escaped, so none is declined there.
  */
 function trustsOpenString(lexer: StringLexer): boolean {
-  return lexer.state === DOUBLE_STRING ? !lexer.declinedDouble : !lexer.declinedSingle;
+  return !lexer.declined;
 }
 
 /** Move the lexer to `position`; an escape that straddles it leaves the same state, since an escaped character never changes it. */

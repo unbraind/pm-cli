@@ -388,11 +388,12 @@ right after it, reads the lexer; for a key nested in a container already
 judged, the lexer resumes from a checkpoint kept every 1024 code units, so the
 structured pass stays linear. A quote right after a letter, digit or
 underscore opens no string, but in a shell it can open a segment of the word
-(`foo"[" --'password'=${EMPTY}",""…"`), and from there the lexer cannot tell
-a segment's closing quote from a string's opening one. A line that declined
-a quote of a kind therefore reads as shell, where a closing quote that more
-characters follow continues the word: no later string of that kind on the
-line is trusted to end a value, and the value keeps its quoted pieces. A cut
+(`foo"[" --'password'=${EMPTY}",""…"`, or `foo'["' …`, where the double
+quote sits inside the single-quoted segment), and from there the lexer cannot
+tell a segment's closing quote from a string's opening one, of either kind. A
+line that declined a quote therefore reads as shell, where a closing quote
+that more characters follow continues the word: no later string on the line
+is trusted to end a value, and the value keeps its quoted pieces. A cut
 only ever removes a finding, so it is made only where the string state is
 unambiguous; keeping that distrust local to the affected segment is owned by
 [pm-ghgf4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghgf4a.toon)

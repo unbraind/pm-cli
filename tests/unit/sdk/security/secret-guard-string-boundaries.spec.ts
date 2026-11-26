@@ -359,6 +359,10 @@ describe("quoted members inside a string and escape-only values (GH-1781)", () =
     // however many segments follow, and a prefixed single quote closes where a shell closes it (Codex round 3).
     expect(rulesOf(`printf "%s" foo"[" "[" --${q}${passwordKey}${q}=${D}{EMPTY}",""Example9"`)).toEqual(["password_assignment"]);
     expect(rulesOf(`printf "%s" b${q}foo\\${q} foo${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9${q}`)).toEqual(["password_assignment"]);
+    // A declined quote of either kind leaves every later string on its line untrusted: inside the single-quoted
+    // segment `'["'` the double quote opens nothing (CodeRabbit).
+    expect(rulesOf(`example foo${q}["${q} --${q}${passwordKey}${q}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`example foo"[${q}" --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Abc123!X${q}`)).toEqual(["password_assignment"]);
     // A shell word with a prefix-looking letter before a quote keeps the shell reading, so its literal is reported (Greptile).
     expect(rulesOf(`printf %s b${q}foo\\${q}foo${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9${q}`)).toEqual(["password_assignment"]);
     expect(rulesOf(`printf %s :b${q}foo\\${q} foo${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9${q}`)).toEqual(["password_assignment"]);
