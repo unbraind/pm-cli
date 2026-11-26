@@ -299,8 +299,13 @@ describe("extension update observations", () => {
     // never masks a valid one (Codex review round 16).
     expect(findApplicableUpdateObservation([
       observation({ checked_at: "2026-11-24T10:00:00.000Z" }),
-      observation({ update_available: false, checked_at: "2026-11-25T10:00:00.000Z" }),
+      observation({ remote_version: "2026.10.4", update_available: false, checked_at: "2026-11-25T10:00:00.000Z" }),
     ], { ...installed, source: npm })?.update_available).toBe(false);
+    // A negative row whose own versions say update is contradictory, so it cannot hide the valid positive row (round 19).
+    expect(findApplicableUpdateObservation([
+      observation({ checked_at: "2026-11-24T10:00:00.000Z" }),
+      observation({ update_available: false, checked_at: "2026-11-25T10:00:00.000Z" }),
+    ], { ...installed, source: npm })?.update_available).toBe(true);
     expect(findApplicableUpdateObservation([
       observation({ remote_version: "not-a-version", checked_at: "2026-11-26T10:00:00.000Z" }),
       observation({ checked_at: "2026-11-24T10:00:00.000Z" }),

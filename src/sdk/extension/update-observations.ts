@@ -387,14 +387,15 @@ export function findApplicableUpdateObservation(
  * and registry npm sources are checked, and an npm "update" must be newer under SemVer precedence.
  */
 function isConsistentWithSource(observation: ExtensionUpdateObservation, source: ManagedExtensionRecord["source"] | undefined): boolean {
-  if (source === undefined || observation.update_available === false) return true;
+  if (source === undefined) return true;
   // A positive repository check always records the short hexadecimal remote commit; anything else, a missing commit
   // included, is not one it produced (Codex review round 14, CodeRabbit review round 10).
-  if (source.kind === "github") return observation.remote_version !== null && /^[0-9a-f]{7,40}$/u.test(observation.remote_version);
-  if (!isRegistryNpmSource(source)) return false;
-  // A registry version the live check would refuse is not one it produced (Codex review rounds 13 and 14).
+  if (source.kind === "github") return observation.update_available === false || (observation.remote_version !== null && /^[0-9a-f]{7,40}$/u.test(observation.remote_version));
+  if (!isRegistryNpmSource(source)) return observation.update_available === false;
+  // A registry verdict, positive or negative, must be the one the live check's comparison gives for an exact version
+  // it accepts, so an edited row can neither invent an update nor hide one (Codex review rounds 13, 14 and 19).
   return observation.remote_version !== null && isExactNpmVersion(observation.remote_version) &&
-    isNewerRegistryVersion(observation.remote_version, source.version ?? observation.installed_version);
+    isNewerRegistryVersion(observation.remote_version, source.version ?? observation.installed_version) === observation.update_available;
 }
 
 /** The newer version an applicable observation reports (`available` when the provider named none), or null when none is known. */
