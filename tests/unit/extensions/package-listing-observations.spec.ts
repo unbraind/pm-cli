@@ -31,6 +31,7 @@ import {
 import type { ManagedExtensionRecord } from "../../../src/sdk/extension/managed-state.js";
 import { isExactNpmVersion, isLocalNpmSpec, isNewerRegistryVersion, isRegistryNpmSource } from "../../../src/sdk/extension/npm-spec.js";
 import { acquireLock } from "../../../src/core/lock/lock.js";
+import { runExtension } from "../../../src/sdk/extension.js";
 import { refreshManagedExtensionUpdates } from "../../../src/sdk/extension/managed-update-status.js";
 
 let scopeRoot: string;
@@ -107,6 +108,13 @@ describe("package listing --fields contract", () => {
     } catch (error) {
       expect(error).toMatchObject({ exitCode: 2, context: { code: "invalid_argument_value", recovery: { allowed_values: ["name", "version"] } } });
     }
+  });
+
+  it("refuses --fields on a lifecycle action that shapes no rows, and an explore or manage typo before any lock (Codex review round 21)", async () => {
+    // A path that does not exist proves no filesystem or lock work ran before the refusal.
+    const missing = { path: path.join(os.tmpdir(), "pm-fields-admission-missing", "tracker") };
+    await expect(runExtension(undefined, { describe: true, fields: "not_a_row_key" }, missing)).rejects.toThrow("--fields is only valid with --explore, --manage, --catalog or pm package list.");
+    await expect(runExtension(undefined, { manage: true, fixManagedState: true, fields: "typo" }, missing)).rejects.toThrow("Package manage --fields has unknown field(s): typo");
   });
 
   it("projects rows in the requested order and reads a missing key as null", () => {

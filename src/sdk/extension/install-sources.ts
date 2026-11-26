@@ -415,6 +415,22 @@ function npmPackageNameFromSpec(spec: string): string {
   return unscoped?.[1] ?? withoutAlias;
 }
 
+/**
+ * The package name an npm pack receipt must carry for a spec, or undefined when the spec names none: a complete
+ * local-file alias, and a git or URL spec without an alias name (`github:owner/repo`, `https://host/pkg.tgz`), whose
+ * textual prefix is no package name, so the sole receipt npm returns is accepted (CodeRabbit review round 13).
+ */
+function resolveExpectedPackedNpmIdentity(spec: string): string | undefined {
+  if (isNpmLocalFileAliasSpec(spec)) return undefined;
+  try {
+    const parsed = npa(spec.trim());
+    if ((parsed.type === "git" || parsed.type === "remote") && !parsed.name) return undefined;
+  } catch {
+    // An unparseable spec keeps the textual prefix check; npm itself reports why it cannot pack it.
+  }
+  return npmPackageNameFromSpec(spec);
+}
+
 /** Return whether an npm spec is a complete local-file alias, including unchanged UNC targets. */
 function isNpmLocalFileAliasSpec(spec: string): boolean {
   const marker = "@file:";
@@ -825,9 +841,7 @@ async function resolveNpmSourceDirectoryWithRunner(
     const packed = parsePackedNpmPackage(
       packStdout,
       packDirectory,
-      isNpmLocalFileAliasSpec(source.spec)
-        ? undefined
-        : npmPackageNameFromSpec(source.spec),
+      resolveExpectedPackedNpmIdentity(source.spec),
     );
     if (!(await pathExists(packed.tarball))) {
       throw new PmCliError(

@@ -1775,6 +1775,12 @@ const assertExtensionActionOptionScope = (
       allowed: action === "migrate" || action === "install",
       message: "--dry-run is only valid with --migrate or --install.",
     },
+    {
+      // Only the listings shape rows, so a describe or install never silently ignores a selection (Codex review round 21).
+      triggered: options.fields !== undefined,
+      allowed: action === "explore" || action === "manage" || action === "catalog",
+      message: "--fields is only valid with --explore, --manage, --catalog or pm package list.",
+    },
   ];
   const invalidGuard = guards.find(
     (guard) => guard.triggered && !guard.allowed,
@@ -1873,6 +1879,9 @@ export const runExtension = async (
 ): Promise<ExtensionCommandResult> => {
   const action = resolveAction(target, options);
   assertExtensionActionOptionScope(action, options);
+  // A row selection is refused before any lifecycle lock is taken, so a typo reports the legal fields instead of a
+  // lock or filesystem error (Codex review round 21); the handler parses the same value again to shape its rows.
+  if (action === "explore" || action === "manage") parseExploreManageFields(options.fields, action);
   const normalizedTarget = resolveNormalizedExtensionTarget(
     target,
     action,

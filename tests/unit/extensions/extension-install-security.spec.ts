@@ -310,6 +310,30 @@ describe("local npm package archives", () => {
     });
     await safeResolved.cleanup();
 
+    // A git or URL spec names no package, so its textual prefix (`github:owner`) is no receipt identity: the sole
+    // receipt npm returns is accepted, as pm package upgrade replays such a spec (CodeRabbit review round 13).
+    const packNamed = (name: string) => async (args: string[]) => {
+      const packDirectory = args.at(-1);
+      if (!packDirectory) throw new Error("missing pack destination");
+      await copyFile(safe.archive, path.join(packDirectory, "git.tgz"));
+      return JSON.stringify([{ name, filename: "git.tgz" }]);
+    };
+    for (const spec of ["github:owner/repo", "https://example.org/demo.tgz"]) {
+      const gitResolved = await _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        { kind: "npm", input: `npm:${spec}`, spec },
+        packNamed("pm-archive-demo"),
+      );
+      expect(gitResolved).toMatchObject({ version: "1.2.3" });
+      await gitResolved.cleanup();
+    }
+    // A named alias keeps the identity check, so a receipt for another package is still refused.
+    await expect(
+      _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        { kind: "npm", input: "npm:demo@github:owner/repo", spec: "demo@github:owner/repo" },
+        packNamed("someone-else"),
+      ),
+    ).rejects.toThrow();
+
     const normalizedAliasSpec = `archive-alias@file:${path.join(
       safe.root,
       "missing-package-root",
