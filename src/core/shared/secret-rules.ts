@@ -1213,6 +1213,7 @@ function lexStep(lexer: StringLexer): number {
   lexer.index = index + 1;
   if (isNewlineCode(code)) {
     lexer.state = NO_STRING;
+    lexer.escapes = true;
     lexer.declined = false;
     return -1;
   }
@@ -1226,6 +1227,8 @@ function lexStep(lexer: StringLexer): number {
   const kind = code === 0x22 ? DOUBLE_STRING : SINGLE_STRING;
   if (lexer.state === kind) {
     lexer.state = NO_STRING;
+    // Outside every string a backslash escapes, whatever the string just closed allowed.
+    lexer.escapes = true;
     return index;
   }
   if (lexer.state === NO_STRING) openOrDecline(lexer, kind, index);
@@ -1264,8 +1267,10 @@ const PYTHON_STRING_PREFIX = /(?:^|[^\p{L}\p{N}_])(?:[rRbBuUfF]|[rR][bBfF]|[bBfF
  * quote that more characters follow continues the word, so no later string on
  * the line is trusted to end a value; a cut only ever removes a finding, so it
  * is made only where the string state is unambiguous. A Python string prefix
- * (`r"…"`, `b'…'`) opens its string, and in JSON and Python text every other
- * quote opens, closes or is escaped, so none is declined there.
+ * (`r"…"`, `b'…'`) opens its string. In JSON text every quote opens, closes or
+ * is escaped, so none is declined there. A single-quoted string that is no
+ * container member is read without escapes, as a shell reads it, so in
+ * Python a quote after its escaped apostrophe can be declined (pm-ghgf4a).
  */
 function trustsOpenString(lexer: StringLexer): boolean {
   return !lexer.declined;

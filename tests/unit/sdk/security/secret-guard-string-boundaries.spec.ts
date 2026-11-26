@@ -370,6 +370,8 @@ describe("quoted members inside a string and escape-only values (GH-1781)", () =
     // A Python escaped apostrophe reads as a shell close too, so a later member on its line keeps the conservative
     // reading: a recorded false positive that pm-ghgf4a owns, never a hidden literal.
     expect(rulesOf(`b${q}can\\${q}t${q}; {${q}title${q}:${q}${passwordKey}: ${D}{X}${q},${q}updated${q}:${q}2026-11-25T00:00:00${q}}`)).toEqual(["password_assignment"]);
+    // Outside every string a backslash escapes, whatever the string before it allowed (Codex round 6).
+    expect(rulesOf(`echo [ r${q}x${q} \\" "${passwordKey}: ${D}BUILD_PASSWORD"`)).toEqual([]);
     // An ANSI-C string escapes its quote, so its real closing quote opens no phantom string (Codex round 4).
     expect(rulesOf(`printf ${q}%s\\n${q} ${D}${q}\\${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9!${q}`)).toEqual(["password_assignment"]);
     // A Python prefix opens its string, so a JSON member after it on the line still ends at its string (Codex round 2).

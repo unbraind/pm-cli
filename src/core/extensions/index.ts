@@ -118,37 +118,49 @@ function physicalDirectory(directory: string): string | undefined {
   }
 }
 
-/**
- * A ceiling kept as spelled, in the separator form of the physical walk (Git
- * for Windows compares `C:/parent` with `C:\parent`; on POSIX this changes
- * nothing), with one trailing separator dropped as Git compares it; a root
- * (`/`, `C:\`, a UNC share) keeps its own. Links and `..` are left as spelled, as Git leaves them.
- */
-function spelledCeiling(entry: string): string {
-  const native = entry.split("/").join(path.sep);
-  return native.length > path.parse(native).root.length && native.endsWith(path.sep) ? native.slice(0, -1) : native;
+/** Git's comparison key of a walked directory: forward slashes, one trailing slash dropped. */
+function forwardKey(directory: string): string {
+  const forward = directory.split(path.sep).join("/");
+  return forward.endsWith("/") ? forward.slice(0, -1) : forward;
+}
+
+/** Ceilings resolved to physical paths, and ceilings kept as spelled in Git's comparison form. */
+interface GitCeilings {
+  resolved: Set<string>;
+  spelled: Set<string>;
 }
 
 /**
  * Git's discovery ceilings, read as Git reads `GIT_CEILING_DIRECTORIES`:
- * entries separated by the platform's path delimiter, relative ones ignored;
- * before the first empty entry each is resolved to its physical path and
- * dropped when it cannot be, and after it each is kept as spelled. Git
- * compares them with the physical directories it walks, so an entry spelled
- * through a link or with `..` after an empty entry never matches.
+ * entries separated by the platform's path delimiter, relative ones ignored.
+ * Before the first empty entry each is resolved to its physical path and
+ * dropped when it cannot be; after it each is kept as spelled and compared
+ * as Git compares it, with the forward-slash form of each directory walked
+ * and one trailing slash dropped on either side, so `C:/` (or `/`) names the
+ * root while a spelling through a link, with `..`, or with backslashes on
+ * Windows never matches.
  */
-function readGitCeilingDirectories(env: NodeJS.ProcessEnv): ReadonlySet<string> {
-  const ceilings = new Set<string>();
+function readGitCeilingDirectories(env: NodeJS.ProcessEnv): GitCeilings {
+  const ceilings: GitCeilings = { resolved: new Set(), spelled: new Set() };
   let resolveLinks = true;
   for (const entry of (env.GIT_CEILING_DIRECTORIES ?? "").split(path.delimiter)) {
     if (entry.length === 0) {
       resolveLinks = false;
-    } else if (path.isAbsolute(entry)) {
-      const ceiling = resolveLinks ? physicalDirectory(entry) : spelledCeiling(entry);
-      if (ceiling !== undefined) ceilings.add(ceiling);
+    } else if (!path.isAbsolute(entry)) {
+      continue;
+    } else if (!resolveLinks) {
+      ceilings.spelled.add(entry.endsWith("/") ? entry.slice(0, -1) : entry);
+    } else {
+      const physical = physicalDirectory(entry);
+      if (physical !== undefined) ceilings.resolved.add(physical);
     }
   }
   return ceilings;
+}
+
+/** Whether the walk may not move up into `directory`. */
+function isCeiling(ceilings: GitCeilings, directory: string): boolean {
+  return ceilings.resolved.has(directory) || ceilings.spelled.has(forwardKey(directory));
 }
 
 /**
@@ -179,7 +191,7 @@ interface SourceDiscovery {
  */
 function discoverSourceWorkspace(
   candidate: string,
-  ceilings: ReadonlySet<string>,
+  ceilings: GitCeilings,
 ): SourceDiscovery {
   const logical = path.resolve(candidate);
   const spelled = path.isAbsolute(candidate) ? candidate : `${process.cwd()}${path.sep}${candidate}`;
@@ -191,7 +203,7 @@ function discoverSourceWorkspace(
       return { source: repo, repo };
     }
     const parent = path.dirname(cursor);
-    if (parent === cursor || ceilings.has(parent)) {
+    if (parent === cursor || isCeiling(ceilings, parent)) {
       return { source: start === undefined || physicalDirectory(logical) === start ? logical : start };
     }
     cursor = parent;

@@ -87,9 +87,10 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
   it("keeps an entry after an empty one as spelled, with one trailing separator trimmed", () => {
     // `child/..` names the parent only after normalization, which Git does not apply there.
     expect(resolveFor(child, ["", `${child}${path.sep}..`])).toEqual(parentCheckout());
-    expect(resolveFor(child, ["", `${parent}${path.sep}`])).toEqual(childOnly());
-    // Spelled with forward slashes, as Git for Windows writes paths, it still names the parent (CodeRabbit).
-    expect(resolveFor(child, ["", parent.split(path.sep).join("/")])).toEqual(childOnly());
+    // Git compares a spelled entry with the forward-slash form of each directory, one trailing slash dropped (Codex round 6).
+    const forward = parent.split(path.sep).join("/");
+    expect(resolveFor(child, ["", `${forward}/`])).toEqual(childOnly());
+    expect(resolveFor(child, ["", forward])).toEqual(childOnly());
   });
 
   it("walks a start directory that does not exist yet by its spelling, and keeps a root ceiling whole", () => {
@@ -122,6 +123,11 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
     expect(resolvePortableWorkspaceContext(path.join(alias, "missing", ".agents", "pm"))).toEqual({ source_workspace_root: parent, repo_root: parent });
   });
 
+  it("walks to the filesystem root when no checkout holds the start", () => {
+    // The temporary root holds no .git marker, so the walk reaches the root and stops there.
+    expect(resolveFor(root)).toEqual({ source_workspace_root: root, pm_root_rel: "parent/child/.agents/pm" });
+  });
+
   it("resolves a relative source against the working directory", () => {
     vi.spyOn(process, "cwd").mockReturnValue(root);
     try {
@@ -130,6 +136,10 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
     } finally {
       vi.restoreAllMocks();
     }
+  });
+
+  it.runIf(process.platform === "win32")("ignores a spelled entry written with backslashes, as Git for Windows does", () => {
+    expect(resolveFor(child, ["", parent])).toEqual(parentCheckout());
   });
 
   it.runIf(process.platform !== "win32")("keeps a backslash at the end of a POSIX entry, which names another directory there", () => {
