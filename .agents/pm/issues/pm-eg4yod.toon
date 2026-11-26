@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: bootstrap,cli,normalization,ux
 created_at: "2026-11-26T01:02:21.946Z"
-updated_at: "2026-11-26T02:46:34.153Z"
+updated_at: "2026-11-26T10:59:52.671Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "pm -- package list --fields name --fields version selects name and version, exactly as pm package list does; A dash-leading operand after a leading terminator (pm -- get -weird-id) is still an operand; A unit test pins repeated list-valued flags after a leading terminator for one native command and the package listing"
@@ -18,6 +18,7 @@ expected_result: "pm -- <command> with repeated list-valued flags selects the sa
 actual_result: "Only the last occurrence of a repeated list-valued flag is kept after a leading terminator, silently"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1777,discovered_from,"2026-11-26T01:02:21.946Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-26T02:46:34.152Z","harness:claude-code","Codex review round 19 on PR #1782: pm --output-budget -- package list --output-budget unbounded reaches the inventory command in Commander, but isStaticExtensionInventoryInvocation returns false because removeLeadingCommandTerminator skips the first -- as the value of --output-budget while findBootstrapCommandTokenIndex treats it as the terminator; the static route then misses and the pre-action hook can activate extensions. One shared required-value rule for -- in value position should serve both helpers."
+  "2026-11-26T10:59:52.671Z","harness:claude-code","Codex review round 27 on PR #1782 adds two arity cases to this bootstrap grammar seam: pm --pm-path -- package list --fields bogus --fields name keeps only the last --fields, because coalescing reads the path value -- as the terminator; and pm extension manage --offline fields=name leaves fields=name literal, because normalizeBootstrapTokens assumes any preceding dash token owns the next value. One option-arity rule shared by every bootstrap pass should cover both, with tests for each ordering."
 body: ""
