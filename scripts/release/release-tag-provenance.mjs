@@ -61,7 +61,7 @@ export function verifyReleaseSourceRun(provenance, run, defaultBranch) {
 
 /** Whether one listed artifact is a bounded, unexpired binding of exactly the declared producer run. */
 function isDeclaredProducerBinding(artifact, source, defaultBranch) {
-  return artifact.expired === false && Number.isSafeInteger(artifact.size_in_bytes) && artifact.size_in_bytes >= 1 && artifact.size_in_bytes <= 4096 && artifact.workflow_run?.id === source.run_id && artifact.workflow_run.head_sha === source.source_sha && artifact.workflow_run.head_branch === defaultBranch;
+  return Number.isSafeInteger(artifact.id) && artifact.id >= 1 && artifact.expired === false && Number.isSafeInteger(artifact.size_in_bytes) && artifact.size_in_bytes >= 1 && artifact.size_in_bytes <= 4096 && artifact.workflow_run?.id === source.run_id && artifact.workflow_run.head_sha === source.source_sha && artifact.workflow_run.head_branch === defaultBranch;
 }
 
 /** The inventory's artifacts and this attempt's bindings among them, or a refusal of a malformed listing. */
@@ -86,6 +86,11 @@ function pauseSync(milliseconds) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
 }
 
+/** One read of the producer run's artifact inventory, every page. */
+function readInventoryPages(execute, options, source) {
+  return JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/artifacts?per_page=100`, "--paginate", "--slurp"], options));
+}
+
 /**
  * Read the producer run's artifact inventory. The listing trails an upload finalized moments
  * earlier, so an inventory that does not yet list this attempt's binding, or lists one valid
@@ -94,7 +99,7 @@ function pauseSync(milliseconds) {
  * exactly as a single read was.
  */
 function readProducerBindingInventory(execute, options, source, defaultBranch, pause) {
-  const read = () => JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/artifacts?per_page=100`, "--paginate", "--slurp"], options));
+  const read = () => readInventoryPages(execute, options, source);
   const trailing = (pages) => {
     const { complete, matching } = producerBindingInventory(pages, source);
     if (matching.length === 0) return true;
@@ -163,6 +168,11 @@ export function recordReleasePublicationOrigin(env = process.env, cwd = process.
     const releaseCleanup = registerTempCleanup(directory);
     try {
       verifyProducerBindingFile(downloadProducerBinding(execute, options, source, artifact, directory, pause), report);
+      // A download is addressed by name, so after it the inventory must still hold exactly the artifact
+      // validated above: a binding replaced while the download was retried is refused.
+      if (selectProducerBindingArtifact(readInventoryPages(execute, options, source), source, repository.default_branch).id !== artifact.id) {
+        throw new Error("Release producer binding changed while it was downloaded.");
+      }
       report.source_run_verified = true;
       report.producer_binding_verified = true;
     } finally {

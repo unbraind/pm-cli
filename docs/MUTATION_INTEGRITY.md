@@ -388,22 +388,29 @@ right after it, reads the lexer; for a key nested in a container already
 judged, the lexer resumes from a checkpoint kept every 1024 code units, so the
 structured pass stays linear. A quote right after a letter, digit or
 underscore opens no string, but in a shell it can open a segment of the word
-(`foo"[" --'password'=${EMPTY}",""…"`), so once a quote of a kind was declined
-on a line, no string of that kind opened later on that line is trusted to end
-a value, and the value keeps its quoted pieces. In JSON and Python text every
-quote opens, closes or is escaped, so none is declined there.
+(`foo"[" --'password'=${EMPTY}",""…"`), whose closing quote the lexer then
+takes for an opening one. So after an odd number of such declined quotes of
+a kind on a line, the next string of that kind is not trusted to end a value,
+and the value keeps its quoted pieces; the strings after it are trusted
+again. A Python string prefix (`r"…"`, `b'…'`, `rb"…"`, `f"…"` and the other
+combinations) opens its string, and in JSON and Python text every other quote
+opens, closes or is escaped, so none is declined there.
 
-A single-quoted value is judged under each reading a format gives it: decoded
-with Python and JavaScript escapes; with every backslash kept, over the span
-the escape-aware scan closes (an upper bound for Python, which keeps an
-unrecognized escape such as `\q`); and ending at its first closing quote, as a
-TOML literal string reads it, where a backslash never escapes (for YAML, which
-escapes a quote by doubling it, this is a scanner's approximation). A span the
-escape-aware scan leaves open because its last quote is escaped is not read
-with its backslashes kept, since that would count the quote as data: so
-`'\\\\\\\'` (seven backslashes) is seven data characters in the TOML
-reading and four in the decoded one, both below the literal minimum, while
-eight backslashes are still reported.
+A single-quoted value is judged under each reading a format gives it.
+- **Decoded:** with Python and JavaScript escapes decoded.
+- **Backslashes kept:** over the span the escape-aware scan closes. This is
+  an upper bound for Python, which keeps an unrecognized escape such as `\q`.
+- **Text:** the reading a shell word and a TOML literal string share, where a
+  backslash never escapes. The value ends at its first closing quote and keeps
+  the pieces joined after it, so a quoted piece that ends in a backslash and
+  the characters joined after it reach Bash as one word. For YAML, which escapes a quote by doubling it, this reading is
+  a scanner's approximation.
+
+A span the escape-aware scan leaves open because its last quote is escaped
+is not read with its backslashes kept, since that would count the quote as
+data. So `'\\\\\\\'` (seven backslashes) is seven data characters in the
+text reading and four in the decoded one, both below the literal minimum,
+while eight backslashes are still reported.
 
 A whole Windows variable (`%DB_PASSWORD%`) is a placeholder for every
 key-named rule. `cmd.exe` reads `set NAME=value` to the end of the line, so an

@@ -118,9 +118,9 @@ function physicalDirectory(directory: string): string | undefined {
   }
 }
 
-/** One trailing separator dropped, as Git compares a ceiling; a root keeps its own. */
+/** One trailing separator of the platform dropped, as Git compares a ceiling; a root keeps its own. */
 function trimTrailingSeparator(entry: string): string {
-  return entry.length > 1 && /[\\/]$/u.test(entry) ? entry.slice(0, -1) : entry;
+  return entry.length > 1 && (entry.endsWith("/") || entry.endsWith(path.sep)) ? entry.slice(0, -1) : entry;
 }
 
 /**
@@ -168,7 +168,10 @@ function findSourceRepositoryRoot(
   ceilings: ReadonlySet<string>,
 ): string | undefined {
   const logical = path.resolve(candidate);
-  let cursor = physicalDirectory(logical) ?? logical;
+  // The start resolves as spelled, so `link/..` names the link target's parent as it does for Git;
+  // resolving the normalized spelling would drop the link first.
+  const spelled = path.isAbsolute(candidate) ? candidate : `${process.cwd()}${path.sep}${candidate}`;
+  let cursor = physicalDirectory(spelled) ?? logical;
   while (true) {
     if (existsSync(path.join(cursor, ".git"))) {
       return logicalSpelling(logical, cursor);
@@ -182,6 +185,20 @@ function findSourceRepositoryRoot(
 }
 
 /**
+ * The tracker's path from the source root. Both sides are compared as
+ * physical paths when both resolve, so a link alias on either side (a source
+ * reached through a link while the checkout is reported physically) still
+ * contains its tracker; otherwise as spelled.
+ */
+function relativeTrackerPath(sourceRoot: string, pmRoot: string): string {
+  const physicalSource = physicalDirectory(sourceRoot);
+  const physicalTracker = physicalDirectory(pmRoot);
+  return physicalSource !== undefined && physicalTracker !== undefined
+    ? path.relative(physicalSource, physicalTracker)
+    : path.relative(sourceRoot, path.resolve(pmRoot));
+}
+
+/**
  * Resolve portable workspace coordinates without reading tracker state.
  *
  * Linked-test runners set `PM_SOURCE_WORKSPACE_ROOT` before swapping `PM_PATH`,
@@ -192,21 +209,20 @@ export function resolvePortableWorkspaceContext(
 ): PortableWorkspaceContext {
   const sourceCandidate =
     process.env.PM_SOURCE_WORKSPACE_ROOT?.trim() || process.cwd();
-  const ceilings = readGitCeilingDirectories(process.env);
-  const sourceWorkspaceRoot =
-    findSourceRepositoryRoot(sourceCandidate, ceilings) ??
-    path.resolve(sourceCandidate);
-  const repoRoot = findSourceRepositoryRoot(sourceWorkspaceRoot, ceilings);
+  // One discovery decides both coordinates: rediscovering from a normalized fallback could find a
+  // checkout the first walk was kept out of.
+  const repoRoot = findSourceRepositoryRoot(
+    sourceCandidate,
+    readGitCeilingDirectories(process.env),
+  );
+  const sourceWorkspaceRoot = repoRoot ?? path.resolve(sourceCandidate);
   if (!pmRoot) {
     return {
       source_workspace_root: sourceWorkspaceRoot,
       ...(repoRoot ? { repo_root: repoRoot } : {}),
     };
   }
-  const relativePmRoot = path.relative(
-    sourceWorkspaceRoot,
-    path.resolve(pmRoot),
-  );
+  const relativePmRoot = relativeTrackerPath(sourceWorkspaceRoot, pmRoot);
   const contained =
     relativePmRoot.length > 0 &&
     !relativePmRoot.startsWith(`..${path.sep}`) &&

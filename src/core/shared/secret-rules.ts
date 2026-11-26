@@ -850,21 +850,17 @@ function decodeQuotedLiteral(literal: string, terminated: boolean): DecodedLiter
 }
 
 /**
- * The readings of a single-quoted literal that keep its backslashes as data,
- * besides the decoded one. Where the escape-aware scan closes the literal,
- * its whole span counts with every backslash kept, which also bounds Python's
- * reading of unrecognized escapes (`'\q\'…'` keeps `\q`). And as TOML
- * literal strings read it, where a backslash never escapes, the literal ends
- * at its first closing quote (a scanner's reading for YAML, which doubles a
- * quote instead). An escape-aware span left open by an escaped last quote is
- * not read raw, because its final quote is then counted as data (GH-1781).
+ * The decoded readings of a quoted literal: with Python, JavaScript and JSON
+ * escapes decoded, and, for a single-quoted literal the escape-aware scan
+ * closes, over that span with every backslash kept, which bounds Python's
+ * reading of an unrecognized escape (`'\q\'…'` keeps `\q`). A single-quoted
+ * span left open by an escaped last quote is not read with its backslashes
+ * kept, because its final quote would then count as data (GH-1781); the text
+ * reading judges it as a shell word or TOML literal instead.
  */
-function rawSingleQuotedReadings(content: string, at: number, literal: string, terminated: boolean): DecodedLiteral[] {
-  const close = content.indexOf("'", at + 1);
-  const firstQuote = content.slice(at, close === -1 ? content.length : close + 1);
-  const readings = [{ reading: firstQuote, ...literalBody(firstQuote, close !== -1) }];
-  if (terminated && firstQuote !== literal) readings.push({ reading: literal, ...literalBody(literal, true) });
-  return readings;
+function quotedLiteralReadings(content: string, at: number, literal: string, terminated: boolean): DecodedLiteral[] {
+  const decoded = decodeQuotedLiteral(literal, terminated);
+  return content[at] === "'" && terminated ? [decoded, { reading: literal, ...literalBody(literal, true) }] : [decoded];
 }
 
 /** A literal read as written: its delimiters are syntax and everything between them is data. */
@@ -959,16 +955,16 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string, alwa
     if (!alwaysDecode && !literal.includes("\\")) return undefined;
     // A raw line break is a host-language artifact before any escape is decoded.
     if (LINE_BREAK.test(literal)) return [];
-    const decoded = decodeQuotedLiteral(literal, terminated);
-    const readings = content[at] === "'" ? [decoded, ...rawSingleQuotedReadings(content, at, literal, terminated)] : [decoded];
-    return readings.map((reading) => valueMatch(reading.reading, 0, reading)).filter((match): match is RegExpExecArray => match !== null);
+    const decoded = quotedLiteralReadings(content, at, literal, terminated).map((reading) => valueMatch(reading.reading, 0, reading)).filter((match): match is RegExpExecArray => match !== null);
+    // A single-quoted literal is also a shell word and a TOML literal string, where a backslash never
+    // escapes: the text reading ends it at its first quote and keeps the pieces joined after it (GH-1781).
+    return content[at] === "'" ? [...decoded, ...textMatches(at)] : decoded;
   };
-  const valuesAt = (at: number): RegExpExecArray[] => {
-    const escaped = escapedMatches(at);
-    if (escaped !== undefined) return escaped;
+  const textMatches = (at: number): RegExpExecArray[] => {
     const match = valueMatch(content, at);
     return match === null ? [] : [match];
   };
+  const valuesAt = (at: number): RegExpExecArray[] => escapedMatches(at) ?? textMatches(at);
   return {
     direct: (at) => valueMatch(content, at) !== null,
     escaped: (at) => (escapedMatches(at)?.length ?? 0) > 0,
@@ -1201,13 +1197,15 @@ interface StringLexer {
   opener: number;
   /** Whether a backslash escapes inside the open string: always in a double-quoted one, in a single-quoted one only as a container member. */
   escapes: boolean;
-  /** Whether a double (single) quote after a word character opened no string earlier on this line (see trustsOpenString). */
+  /** Whether an odd number of double (single) quotes after a word character opened no string since the last string of that kind (see trustsOpenString). */
   declinedDouble: boolean;
   declinedSingle: boolean;
+  /** Whether the open string's opening quote may instead close a shell word segment such a quote opened. */
+  suspect: boolean;
 }
 
 function createStringLexer(content: string): StringLexer {
-  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true, declinedDouble: false, declinedSingle: false };
+  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true, declinedDouble: false, declinedSingle: false, suspect: false };
 }
 
 /** Read one character (two for an escape); returns the position of a quote that closed the open string, or -1. */
@@ -1220,6 +1218,7 @@ function lexStep(lexer: StringLexer): number {
     lexer.state = NO_STRING;
     lexer.declinedDouble = false;
     lexer.declinedSingle = false;
+    lexer.suspect = false;
     return -1;
   }
   if (code === 0x5c) {
@@ -1234,29 +1233,48 @@ function lexStep(lexer: StringLexer): number {
     lexer.state = NO_STRING;
     return index;
   }
-  if (lexer.state !== NO_STRING) return -1;
-  if (index > 0 && WORD_CHARACTER.test(content[index - 1]!)) {
-    if (kind === DOUBLE_STRING) lexer.declinedDouble = true;
-    else lexer.declinedSingle = true;
-    return -1;
+  if (lexer.state === NO_STRING) openOrDecline(lexer, kind, index);
+  return -1;
+}
+
+/**
+ * Open a string of `kind` at the quote at `index` outside every string, or
+ * decline it when a word character stands right before it (see
+ * trustsOpenString); a Python string prefix opens its string.
+ */
+function openOrDecline(lexer: StringLexer, kind: number, index: number): void {
+  const { content } = lexer;
+  const double = kind === DOUBLE_STRING;
+  const prefixed = PYTHON_STRING_PREFIX.test(content.slice(Math.max(0, index - 3), index));
+  if (!prefixed && index > 0 && WORD_CHARACTER.test(content[index - 1]!)) {
+    if (double) lexer.declinedDouble = !lexer.declinedDouble;
+    else lexer.declinedSingle = !lexer.declinedSingle;
+    return;
   }
   lexer.state = kind;
   lexer.opener = index;
-  lexer.escapes = kind === DOUBLE_STRING || opensAfterContainer(content, index);
-  return -1;
+  // A Python string, prefixed or not, never ends at a quote a backslash escapes.
+  lexer.escapes = prefixed || double || opensAfterContainer(content, index);
+  lexer.suspect = double ? lexer.declinedDouble : lexer.declinedSingle;
+  lexer.declinedDouble &&= !double;
+  lexer.declinedSingle &&= double;
 }
+
+/** A Python string prefix (`r`, `b`, `u`, `f`, `rb`, `br`, `fr`, `rf`, any case) standing as a whole word before a quote. */
+const PYTHON_STRING_PREFIX = /(?:^|[^\p{L}\p{N}_])(?:[rRbBuUfF]|[rR][bBfF]|[bBfF][rR])$/u;
 
 /**
  * Whether the open string is known to be one. A quote after a word character
  * opens no string, which keeps a prose apostrophe (`customer's`) or a unit
  * mark out of the state, but in a shell it can open a segment of the word
- * (`foo"[" …`). Once a quote of a kind was declined on a line, a later quote
- * of that kind may be that segment's closer, so a string of that kind opened
- * after it on the line is not trusted to enclose a value. In JSON and Python
- * text every quote opens, closes or is escaped, so none is ever declined there.
+ * (`foo"[" …`), whose closer the lexer then takes for an opening quote. So
+ * after an odd number of such declined quotes of a kind, the next string of
+ * that kind is not trusted to enclose a value; the strings after it are. A
+ * Python prefix (`r"…"`, `b'…'`) opens its string, and in JSON and Python
+ * text every other quote opens, closes or is escaped, so none is declined.
  */
 function trustsOpenString(lexer: StringLexer): boolean {
-  return lexer.state === DOUBLE_STRING ? !lexer.declinedDouble : !lexer.declinedSingle;
+  return !lexer.suspect;
 }
 
 /** Move the lexer to `position`; an escape that straddles it leaves the same state, since an escaped character never changes it. */

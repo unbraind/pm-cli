@@ -98,6 +98,41 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
     expect(resolveFor(child, ["", path.parse(root).root])).toEqual(parentCheckout());
   });
 
+  it("resolves a start spelled through a link before collapsing `..`, as Git's chdir does (Codex round 2)", async () => {
+    const physical = path.join(parent, "ws", "child2");
+    const link = path.join(root, "wslink");
+    await mkdir(physical, { recursive: true });
+    await symlink(physical, link, linkType);
+    // `wslink/..` is parent/ws for Git, which may not move up into the parent ceiling.
+    const spelled = `${link}${path.sep}..`;
+    expect(resolveFor(spelled, [parent])).toEqual({ source_workspace_root: root, pm_root_rel: "parent/child/.agents/pm" });
+    expect(resolveFor(spelled)).toEqual({ source_workspace_root: parent, repo_root: parent, pm_root_rel: "child/.agents/pm" });
+  });
+
+  it("keeps the tracker path when the source is a link alias and the checkout is reported physically (Codex round 2)", async () => {
+    const alias = path.join(root, "alias");
+    await symlink(child, alias, linkType);
+    vi.stubEnv("PM_SOURCE_WORKSPACE_ROOT", alias);
+    vi.stubEnv("GIT_CEILING_DIRECTORIES", "");
+    expect(resolvePortableWorkspaceContext(path.join(alias, ".agents", "pm"))).toEqual(parentCheckout());
+    // A tracker that does not exist yet is compared as spelled.
+    expect(resolvePortableWorkspaceContext(path.join(alias, "missing", ".agents", "pm"))).toEqual({ source_workspace_root: parent, repo_root: parent });
+  });
+
+  it("resolves a relative source against the working directory", () => {
+    vi.spyOn(process, "cwd").mockReturnValue(root);
+    try {
+      expect(resolveFor(path.join("parent", "child"), [parent])).toEqual(childOnly());
+      expect(resolveFor(path.join("parent", "child"))).toEqual(parentCheckout());
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it.runIf(process.platform !== "win32")("keeps a backslash at the end of a POSIX entry, which names another directory there", () => {
+    expect(resolveFor(child, ["", `${parent}\\`])).toEqual(parentCheckout());
+  });
+
   it.runIf(process.platform !== "win32")("drops an entry before an empty one that does not resolve", () => {
     // Git cannot resolve `parent/missing/..`, so it is no ceiling, although it normalizes to the parent.
     expect(resolveFor(child, [`${parent}${path.sep}missing${path.sep}..`])).toEqual(parentCheckout());

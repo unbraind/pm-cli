@@ -330,6 +330,8 @@ describe("quoted members inside a string and escape-only values (GH-1781)", () =
     expect(rulesOf(`${q}${passwordKey}${q}: ${q}ab\\${q}${literal}${q}`)).toEqual(["password_assignment"]);
     // Python keeps an unrecognized escape: `\q\w\'aZ11` is nine characters, judged with its backslashes kept (Codex review).
     expect(rulesOf(`{${q}${passwordKey}${q}: ${q}\\q\\w\\${q}aZ11${q}}`)).toEqual(["password_assignment"]);
+    // As a shell word the value ends at its first quote and keeps what is joined after it: Bash receives eight characters (Codex round 2).
+    expect(rulesOf(`printf %s --${q}${passwordKey}${q}=${q}abc\\\\\\${q}Z9`)).toEqual(["password_assignment"]);
     // A single-quoted value no quote closes reads to the end in both readings, as on 2026.11.25.
     expect(rulesOf(`${q}${passwordKey}${q}: ${q}ab\\cdefghijkl`)).toEqual([]);
   });
@@ -353,6 +355,12 @@ describe("quoted members inside a string and escape-only values (GH-1781)", () =
     expect(rulesOf(`example foo"[" --${q}${passwordKey}${q}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
     expect(rulesOf(`example foo"[" --${passwordKey}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
     expect(rulesOf(`example foo"[" api_key=${D}{EMPTY}",""Abc123!X"`)).toEqual(["credential_key_assignment"]);
+    // Only the next string after an odd run of declined quotes is suspect, and a Python prefix opens its string (Codex round 2).
+    expect(rulesOf(`foo"bar" {"title":"${passwordKey}: ${D}{X}","u":1}`)).toEqual([]);
+    expect(rulesOf(`foo"[" a "x" {"title":"${passwordKey}: ${D}{X}","u":1}`)).toEqual([]);
+    expect(rulesOf(`r"x"; {"title":"${passwordKey}: ${D}{X}","updated":True}`)).toEqual([]);
+    expect(rulesOf(`rb"x" {"title":"${passwordKey}: ${D}{X}","u":1}`)).toEqual([]);
+    expect(rulesOf(`b${q}x${q} {${q}title${q}:${q}api_key: ${D}{X}${q},${q}u${q}:1}`)).toEqual([]);
     // A declined quote of the other kind, or one on an earlier line, leaves the string trusted.
     expect(rulesOf(`customer's note {"title":"${q}${passwordKey}${q}: ${q}${D}{X}${q}","u":"v"}`)).toEqual([]);
     expect(rulesOf(`foo"[" bar\n{"title":"${q}${passwordKey}${q}: ${q}${D}{X}${q}","u":"v"}`)).toEqual([]);
