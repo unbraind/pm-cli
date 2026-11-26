@@ -147,7 +147,8 @@ const MAX_STATIC_SETTINGS_BYTES = 4 * 1024 * 1024;
  */
 async function readStaticSettingsDocument(pmRoot: string): Promise<Record<string, unknown> | undefined> {
   try {
-    const raw = await readBoundedRegularFile(path.join(pmRoot, "settings.json"), MAX_STATIC_SETTINGS_BYTES);
+    // Follows a link to a bounded regular file, as the general settings reader does (Codex review round 16).
+    const raw = await readBoundedRegularFile(path.join(pmRoot, "settings.json"), MAX_STATIC_SETTINGS_BYTES, { followLinks: true });
     const parsed: unknown = raw === undefined ? undefined : JSON.parse(raw);
     return typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : undefined;
   } catch {
@@ -229,13 +230,16 @@ async function readEnablement(settingsPath: string): Promise<{
   disabled: string[];
   error?: StaticExtensionInventoryError;
 }> {
-  let raw: string;
+  let raw: string | undefined;
   try {
-    raw = await fs.readFile(settingsPath, "utf8");
+    // Bounded and non-blocking, so a FIFO or oversized settings file is unreadable instead of hanging the listing
+    // (Codex review round 16).
+    raw = await readBoundedRegularFile(settingsPath, MAX_STATIC_SETTINGS_BYTES, { followLinks: true });
   } catch (error: unknown) {
     if (isMissing(error)) return { status: "absent", enabled: [], disabled: [] };
     return { status: "unreadable", enabled: [], disabled: [], error: { code: "settings_unreadable", path: settingsPath } };
   }
+  if (raw === undefined) return { status: "unreadable", enabled: [], disabled: [], error: { code: "settings_unreadable", path: settingsPath } };
   try {
     return { status: "ok", ...parseEnablement(raw) };
   } catch {

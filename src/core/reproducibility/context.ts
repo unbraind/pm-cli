@@ -73,6 +73,11 @@ export async function runWithReproducibleExecution<T>(
   return createReproducibleExecutionRunner(settings)(operation);
 }
 
+/** Whether a reproducible recipe (pinned clock and entropy) governs the current execution. */
+export function isReproducibleExecutionActive(): boolean {
+  return executionStorage.getStore() !== undefined;
+}
+
 /** Return the next deterministic clock value, or undefined outside a recipe. */
 export function nextReproducibleTimestamp(): string | undefined {
   const state = executionStorage.getStore();

@@ -1,4 +1,4 @@
-import fs, { mkdir, readFile, readdir, rmdir, stat, unlink, writeFile } from "node:fs/promises";
+import fs, { mkdir, readFile, readdir, rmdir, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { inspectStaticExtensionInventory } from "../../../src/sdk/index.js";
@@ -95,6 +95,35 @@ describe("read-only configured extension inventory", () => {
       expect(result.complete).toBe(false);
       expect(result.errors.map((error) => error.code)).toEqual(["managed_state_unreadable", "extensions_unreadable"]);
       expect(result.extensions).toEqual([]);
+    });
+  });
+
+  // File links need a privilege on Windows, so this runs where links are unprivileged (CodeRabbit review round 11).
+  it.skipIf(process.platform === "win32")("follows links to bounded regular settings and managed-state files, from one snapshot (Codex review rounds 15 and 16)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const extensionRoot = path.join(pmPath, "extensions", "link-probe");
+      await mkdir(extensionRoot, { recursive: true });
+      await writeFile(path.join(extensionRoot, "manifest.json"), JSON.stringify({ name: "link-probe", version: "1.0.0", entry: "./index.mjs", manifest_version: 1, capabilities: [] }));
+      const installedAt = "2026-10-04T00:00:00.000Z";
+      const linkedManaged = path.join(pmPath, "managed-elsewhere.json");
+      await writeFile(linkedManaged, JSON.stringify({
+        version: 1, updated_at: installedAt,
+        entries: [{ name: "link-probe", directory: "link-probe", scope: "project", manifest_version: "1.0.0", manifest_entry: "./index.mjs", capabilities: [], installed_at: installedAt, updated_at: installedAt, source: { kind: "npm", input: "npm:link-probe", location: "package", package: "link-probe", version: "1.0.0" } }],
+      }));
+      await symlink(linkedManaged, path.join(pmPath, "extensions", ".managed-extensions.json"));
+      await mkdir(path.join(pmPath, "runtime"), { recursive: true });
+      await writeFile(path.join(pmPath, "runtime", "extension-update-observations.json"), JSON.stringify({
+        version: 1,
+        observations: [{ name: "link-probe", installed_version: "1.0.0", installed_updated_at: installedAt, remote_version: "1.2.0", update_available: true, checked_at: "2026-11-24T10:00:00.000Z" }],
+      }));
+      const settingsPath = path.join(pmPath, "settings.json");
+      const linkedSettings = path.join(pmPath, "settings-elsewhere.json");
+      await writeFile(linkedSettings, '{"extensions":{"disabled":["other"]}}');
+      await unlink(settingsPath);
+      await symlink(linkedSettings, settingsPath);
+      const result = await inspectStaticExtensionInventory({ pmRoot: pmPath });
+      expect(result).toMatchObject({ complete: true, settings_status: "ok", managed_state_status: "ok", updates_available: 1 });
+      expect(result.extensions).toEqual([expect.objectContaining({ name: "link-probe", update: "1.2.0" })]);
     });
   });
 

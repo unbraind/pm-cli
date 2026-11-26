@@ -3,6 +3,7 @@
  * offline update observations `pm package manage` records for `pm context` and
  * `pm package list`.
  */
+import { runWithReproducibleExecution } from "../../../src/core/reproducibility/context.js";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -284,6 +285,16 @@ describe("extension update observations", () => {
     expect(isExactNpmVersion("^2.0.0")).toBe(false);
     expect(isExactNpmVersion("@@")).toBe(false);
     expect(findApplicableUpdateObservation([observation({ remote_version: "2026.11.23+build.1" })], { ...installed, source: npm })?.remote_version).toBe("2026.11.23+build.1");
+    // The newest valid row wins: an older positive row never masks a newer negative one, and an incompatible row
+    // never masks a valid one (Codex review round 16).
+    expect(findApplicableUpdateObservation([
+      observation({ checked_at: "2026-11-24T10:00:00.000Z" }),
+      observation({ update_available: false, checked_at: "2026-11-25T10:00:00.000Z" }),
+    ], { ...installed, source: npm })?.update_available).toBe(false);
+    expect(findApplicableUpdateObservation([
+      observation({ remote_version: "not-a-version", checked_at: "2026-11-26T10:00:00.000Z" }),
+      observation({ checked_at: "2026-11-24T10:00:00.000Z" }),
+    ], { ...installed, source: npm })?.remote_version).toBe("2026.11.23");
     // A cached registry version the live check would refuse (not exact SemVer) is rejected (Codex review round 13).
     expect(findApplicableUpdateObservation([observation({ remote_version: "not-a-version" })], { ...installed, source: npm })).toBeUndefined();
     // npm resolves a leading-v version as exact, so the live check could record it, and the reader accepts it too.
@@ -459,6 +470,11 @@ describe("extension update observations", () => {
     const answered = [record({ last_update_check_at: "2026-11-24T10:00:00.000Z", update_available: true, last_update_remote_version: "2026.11.23" })];
     await writeManagedState(answered);
     expect(await recordCheckedUpdateObservations(scopeRoot, extensionsRoot(), answered, true)).toBeUndefined();
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+    // A pinned reproducible clock cannot order a wall-clock cache, so such a run records nothing (Codex review round 16).
+    await runWithReproducibleExecution({ clock: "2026-11-24T10:00:00.000Z", seed: "observations", tickMs: 0 }, async () => {
+      expect(await recordCheckedUpdateObservations(scopeRoot, extensionsRoot(), answered, false)).toBeUndefined();
+    });
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
     expect(await recordCheckedUpdateObservations(scopeRoot, extensionsRoot(), answered, false)).toBeUndefined();
     expect(await readExtensionUpdateObservations(scopeRoot)).toHaveLength(1);

@@ -15,6 +15,7 @@
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { isReproducibleExecutionActive } from "../../core/reproducibility/context.js";
 import { acquireLockLease } from "../../core/lock/lock.js";
 import { writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { normalizeManagedState, resolveManagedExtensionStatePath, type ManagedExtensionRecord } from "./managed-state.js";
@@ -342,7 +343,9 @@ export async function recordCheckedUpdateObservations(
   entries: readonly ManagedExtensionRecord[],
   offline: boolean,
 ): Promise<string | undefined> {
-  if (offline) return undefined;
+  // A pinned reproducible clock stamps check times that cannot order a wall-clock cache, nor tell two installs
+  // apart that share a pinned updated_at, so such a run records nothing (Codex review round 16).
+  if (offline || isReproducibleExecutionActive()) return undefined;
   try {
     await recordExtensionUpdateObservations(scopeRoot, extensionsRoot, collectExtensionUpdateObservations(entries));
     return undefined;
@@ -360,11 +363,13 @@ export function findApplicableUpdateObservation(
 ): ExtensionUpdateObservation | undefined {
   if (typeof installation.version !== "string" || installation.updated_at === undefined) return undefined;
   const key = normalizeExtensionNameForMatch(installation.name);
-  const match = observations.find((entry) =>
+  // The newest valid row wins, as in the writer's merge, so a restored or edited cache with two rows for one
+  // installation never lets an older or incompatible row mask a newer answer (Codex review round 16).
+  return latestPerInstallation(observations.filter((entry) =>
     normalizeExtensionNameForMatch(entry.name) === key &&
     entry.installed_version === installation.version &&
-    entry.installed_updated_at === installation.updated_at);
-  return match === undefined || isConsistentWithSource(match, installation.source) ? match : undefined;
+    entry.installed_updated_at === installation.updated_at &&
+    isConsistentWithSource(entry, installation.source)))[0];
 }
 
 /**

@@ -44,7 +44,9 @@ the lock is taken): a link, FIFO or oversized file reads as no knowledge. Node
 has no directory-relative file API, so a process that can replace the
 tracker's own `runtime/` between that check and the write could redirect it;
 such a process already controls the tracker state the record describes. A
-check time more than five minutes in the future reads as a clock error. The record is derived state: a failed write is the
+check time more than five minutes in the future reads as a clock error, and a
+check under a pinned reproducible clock (`PM_CLOCK`/`PM_SEED`) records nothing,
+because pinned times cannot order the record. The record is derived state: a failed write is the
 warning `extension_update_observation_write_failed`, never a failed check.
 
 `pm context` reads the same observations offline for its `extension_health`
@@ -70,8 +72,8 @@ environment, like any command: under a relative `PM_GLOBAL_PATH`, run it from
 the same directory. An npm source that is not a registry install
 (classified with npm's own spec parser: a path, tarball, `file:`, git or URL
 spec) is never compared with a registry release, by `manage` or by the offline
-readers; `pm package upgrade` reinstalls path, tarball and `file:` artifacts as
-they are. Corrupt or unreadable managed metadata in a scope means unknown
+readers, and `pm package upgrade` reinstalls every such artifact from its own
+spec instead of moving it to a registry tag. Corrupt or unreadable managed metadata in a scope means unknown
 updates there, never a failed `pm context`. `pm package list` refuses the
 row-shaping read-output controls it cannot apply (`read_output_surface_unsupported`) and
 keeps `--output-format` and an unbounded `--output-budget`
