@@ -1249,7 +1249,8 @@ function openOrDecline(lexer: StringLexer, kind: number, index: number): void {
   }
   lexer.state = kind;
   lexer.opener = index;
-  lexer.escapes = kind === DOUBLE_STRING || opensAfterContainer(content, index);
+  // An ANSI-C `$'…'` string escapes like a double-quoted one.
+  lexer.escapes = kind === DOUBLE_STRING || content[index - 1] === "$" || opensAfterContainer(content, index);
 }
 
 /** A Python string prefix (`r`, `b`, `u`, `f`, `rb`, `br`, `fr`, `rf`, any case) standing as a whole word before a quote. */

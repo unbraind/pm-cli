@@ -118,9 +118,15 @@ function physicalDirectory(directory: string): string | undefined {
   }
 }
 
-/** One trailing separator of the platform dropped, as Git compares a ceiling; a root keeps its own. */
-function trimTrailingSeparator(entry: string): string {
-  return entry.length > 1 && (entry.endsWith("/") || entry.endsWith(path.sep)) ? entry.slice(0, -1) : entry;
+/**
+ * A ceiling kept as spelled, in the separator form of the physical walk (Git
+ * for Windows compares `C:/parent` with `C:\parent`; on POSIX this changes
+ * nothing), with one trailing separator dropped as Git compares it; a root
+ * keeps its own. Links and `..` are left as spelled, as Git leaves them.
+ */
+function spelledCeiling(entry: string): string {
+  const native = entry.split("/").join(path.sep);
+  return native.length > 1 && native.endsWith(path.sep) ? native.slice(0, -1) : native;
 }
 
 /**
@@ -138,7 +144,7 @@ function readGitCeilingDirectories(env: NodeJS.ProcessEnv): ReadonlySet<string> 
     if (entry.length === 0) {
       resolveLinks = false;
     } else if (path.isAbsolute(entry)) {
-      const ceiling = resolveLinks ? physicalDirectory(entry) : trimTrailingSeparator(entry);
+      const ceiling = resolveLinks ? physicalDirectory(entry) : spelledCeiling(entry);
       if (ceiling !== undefined) ceilings.add(ceiling);
     }
   }

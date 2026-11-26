@@ -165,6 +165,18 @@ describe("tag-carried release provenance", () => {
       expect(recordReleasePublicationOrigin(publicationEnv, root, trailingAfter, pause)).toMatchObject({ producer_binding_verified: true });
       expect(inventoryReads).toBe(3);
       expect(pauses).toEqual([1000]);
+      // A replacement visible in a partial listing is refused without waiting (Codex round 4).
+      pauses.length = 0;
+      inventoryReads = 0;
+      const partialReplacement = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command === "gh" && args[1] === artifactEndpoint) {
+          inventoryReads += 1;
+          return JSON.stringify(inventoryReads === 1 ? settled : [{ total_count: 2, artifacts: [{ ...artifact, id: 8 }] }]);
+        }
+        return trailingDownload(command, args, options);
+      }) as typeof execFileSync;
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, partialReplacement, pause)).toThrow("mismatched release producer binding");
+      expect(pauses).toEqual([]);
       // Any other failure, with or without provider output, is refused at once.
       for (const failure of [Object.assign(new Error("Command failed: gh run download"), { stderr: "HTTP 403: Forbidden\n" }), new Error("spawnSync gh ETIMEDOUT"), null]) {
         pauses.length = 0;

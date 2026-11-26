@@ -98,12 +98,13 @@ function readInventoryPages(execute, options, source) {
  * binding visible in any read ends the wait at once, and the last inventory read is judged
  * exactly as a single read was.
  */
-function readProducerBindingInventory(execute, options, source, defaultBranch, pause) {
+function readProducerBindingInventory(execute, options, source, defaultBranch, pause, expectedId) {
   const read = () => readInventoryPages(execute, options, source);
   const trailing = (pages) => {
     const { complete, matching } = producerBindingInventory(pages, source);
     if (matching.length === 0) return true;
-    return !complete && matching.length === 1 && isDeclaredProducerBinding(matching[0], source, defaultBranch);
+    // A binding other than the one already validated is a replacement, refused without waiting.
+    return !complete && matching.length === 1 && isDeclaredProducerBinding(matching[0], source, defaultBranch) && (expectedId === undefined || matching[0].id === expectedId);
   };
   let pages = read();
   for (const delay of PROVIDER_REREAD_DELAYS_MS) {
@@ -170,7 +171,7 @@ export function recordReleasePublicationOrigin(env = process.env, cwd = process.
       verifyProducerBindingFile(downloadProducerBinding(execute, options, source, artifact, directory, pause), report);
       // A download is addressed by name, so after it the inventory must still hold exactly the artifact
       // validated above, read with the same bounded waits: a replaced binding is refused at once.
-      if (selectProducerBindingArtifact(readProducerBindingInventory(execute, options, source, repository.default_branch, pause), source, repository.default_branch).id !== artifact.id) {
+      if (selectProducerBindingArtifact(readProducerBindingInventory(execute, options, source, repository.default_branch, pause, artifact.id), source, repository.default_branch).id !== artifact.id) {
         throw new Error("Release producer binding changed while it was downloaded.");
       }
       report.source_run_verified = true;

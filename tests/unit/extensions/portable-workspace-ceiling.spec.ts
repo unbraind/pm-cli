@@ -88,6 +88,8 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
     // `child/..` names the parent only after normalization, which Git does not apply there.
     expect(resolveFor(child, ["", `${child}${path.sep}..`])).toEqual(parentCheckout());
     expect(resolveFor(child, ["", `${parent}${path.sep}`])).toEqual(childOnly());
+    // Spelled with forward slashes, as Git for Windows writes paths, it still names the parent (CodeRabbit).
+    expect(resolveFor(child, ["", parent.split(path.sep).join("/")])).toEqual(childOnly());
   });
 
   it("walks a start directory that does not exist yet by its spelling, and keeps a root ceiling whole", () => {

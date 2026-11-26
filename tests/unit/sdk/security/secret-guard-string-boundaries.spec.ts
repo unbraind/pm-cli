@@ -359,6 +359,8 @@ describe("quoted members inside a string and escape-only values (GH-1781)", () =
     // however many segments follow, and a prefixed single quote closes where a shell closes it (Codex round 3).
     expect(rulesOf(`printf "%s" foo"[" "[" --${q}${passwordKey}${q}=${D}{EMPTY}",""Example9"`)).toEqual(["password_assignment"]);
     expect(rulesOf(`printf "%s" b${q}foo\\${q} foo${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9${q}`)).toEqual(["password_assignment"]);
+    // An ANSI-C string escapes its quote, so its real closing quote opens no phantom string (Codex round 4).
+    expect(rulesOf(`printf ${q}%s\\n${q} ${D}${q}\\${q}[${q} --"${passwordKey}"=${D}{EMPTY}${q},${q}${q}Example9!${q}`)).toEqual(["password_assignment"]);
     // A Python prefix opens its string, so a JSON member after it on the line still ends at its string (Codex round 2).
     expect(rulesOf(`foo"bar" {"title":"${passwordKey}: ${D}{X}","u":1}`)).toEqual([]);
     expect(rulesOf(`foo"[" a "x" {"title":"${passwordKey}: ${D}{X}","u":1}`)).toEqual([]);
