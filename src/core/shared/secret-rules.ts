@@ -1218,9 +1218,7 @@ function lexStep(lexer: StringLexer): number {
     return -1;
   }
   if (code === 0x5c) {
-    // A backslash is literal inside a shell single-quoted string (`note='C:\'`), but escapes in a
-    // Python or JavaScript one that is a container member (`{'title': 'can\'t …'}`).
-    if (lexer.escapes && index + 1 < content.length && !isNewlineCode(content.charCodeAt(index + 1))) lexer.index = index + 2;
+    lexBackslash(lexer, index);
     return -1;
   }
   if (code !== 0x22 && code !== 0x27) return -1;
@@ -1233,6 +1231,21 @@ function lexStep(lexer: StringLexer): number {
   }
   if (lexer.state === NO_STRING) openOrDecline(lexer, kind, index);
   return -1;
+}
+
+/**
+ * Read a backslash. It is literal inside a shell single-quoted string
+ * (`note='C:\'`), but escapes in a Python or JavaScript one that is a
+ * container member (`{'title': 'can\'t …'}`) and outside every string, as a
+ * shell reads it. Outside every string a backslash before a quote is also a
+ * literal path separator to PowerShell and cmd.exe (`C:\temp\"…"`), where the
+ * quote opens a string, so the line's string state is ambiguous from there.
+ */
+function lexBackslash(lexer: StringLexer, index: number): void {
+  const { content } = lexer;
+  if (!lexer.escapes || index + 1 >= content.length || isNewlineCode(content.charCodeAt(index + 1))) return;
+  lexer.index = index + 2;
+  if (lexer.state === NO_STRING && isQuote(content[index + 1])) lexer.declined = true;
 }
 
 /**
@@ -1268,9 +1281,11 @@ const PYTHON_STRING_PREFIX = /(?:^|[^\p{L}\p{N}_])(?:[rRbBuUfF]|[rR][bBfF]|[bBfF
  * the line is trusted to end a value; a cut only ever removes a finding, so it
  * is made only where the string state is unambiguous. A Python string prefix
  * (`r"…"`, `b'…'`) opens its string. In JSON text every quote opens, closes or
- * is escaped, so none is declined there. A single-quoted string that is no
- * container member is read without escapes, as a shell reads it, so in
- * Python a quote after its escaped apostrophe can be declined (pm-ghgf4a).
+ * is escaped, so none is declined there. A plain single-quoted string that is
+ * no container member is read without escapes, as a shell reads it (an ANSI-C
+ * `$'…'` one escapes), so in Python a quote after its escaped apostrophe can
+ * be declined (pm-ghgf4a). A backslash before a quote outside every string is
+ * ambiguous between shells too (see lexBackslash).
  */
 function trustsOpenString(lexer: StringLexer): boolean {
   return !lexer.declined;

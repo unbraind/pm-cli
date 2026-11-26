@@ -3,6 +3,7 @@
  * `GIT_CEILING_DIRECTORIES`: a nested non-Git tracker under a ceiling is not
  * bound to its parent checkout (GH-1787, pm-gh1787).
  */
+import { existsSync, realpathSync } from "node:fs";
 import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -37,6 +38,14 @@ function resolveFor(source: string, ceilings?: string[]) {
   return resolvePortableWorkspaceContext(pmRoot);
 }
 
+/** Whether the host's temporary directory sits inside a checkout, which a walk to the filesystem root would find. */
+function temporaryRootInsideCheckout(): boolean {
+  for (let cursor = realpathSync(os.tmpdir()); ; cursor = path.dirname(cursor)) {
+    if (existsSync(path.join(cursor, ".git"))) return true;
+    if (path.dirname(cursor) === cursor) return false;
+  }
+}
+
 const childOnly = () => ({ source_workspace_root: child, pm_root_rel: ".agents/pm" });
 const parentCheckout = () => ({ source_workspace_root: parent, repo_root: parent, pm_root_rel: "child/.agents/pm" });
 
@@ -65,8 +74,8 @@ describe("portable workspace coordinates under Git discovery ceilings", () => {
     // After an empty entry it is kept as spelled, and Git compares it with physical directories: a link spelling never matches.
     expect(resolveFor(child, ["", link])).toEqual(parentCheckout());
     expect(resolveFor(path.join(link, "child"), ["", link])).toMatchObject({ repo_root: link });
-    // A physical spelling after an empty entry still stops the walk.
-    expect(resolveFor(child, ["", parent])).toEqual(childOnly());
+    // A physical spelling after an empty entry still stops the walk, written as Git compares it (forward slashes).
+    expect(resolveFor(child, ["", parent.split(path.sep).join("/")])).toEqual(childOnly());
   });
 });
 
@@ -123,7 +132,7 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
     expect(resolvePortableWorkspaceContext(path.join(alias, "missing", ".agents", "pm"))).toEqual({ source_workspace_root: parent, repo_root: parent });
   });
 
-  it("walks to the filesystem root when no checkout holds the start", () => {
+  it.skipIf(temporaryRootInsideCheckout())("walks to the filesystem root when no checkout holds the start", () => {
     // The temporary root holds no .git marker, so the walk reaches the root and stops there.
     expect(resolveFor(root)).toEqual({ source_workspace_root: root, pm_root_rel: "parent/child/.agents/pm" });
   });

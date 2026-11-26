@@ -403,8 +403,10 @@ so `b'…\'` closes where a shell closes it: a prefix alone never shows Python
 context. A Python string that escapes an apostrophe therefore reads as a
 shell close, and a later member on its line keeps the conservative reading
 (a false positive [pm-ghgf4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghgf4a.toon)
-owns, never a hidden literal). In JSON text every quote opens, closes or is
-escaped, so none is declined there.
+owns, never a hidden literal). Outside every string a backslash before a quote
+is a shell escape but a literal path separator to PowerShell and cmd.exe
+(`C:\temp\"…"`), so it makes the line ambiguous in the same way. In JSON text
+every quote opens, closes or is escaped, so none is declined there.
 
 A single-quoted value is judged under each reading a format gives it.
 - **Decoded:** with Python and JavaScript escapes decoded.
