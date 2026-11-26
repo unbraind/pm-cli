@@ -26956,6 +26956,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "npm_source_shorthand_ambiguous",
+      "class": "usage",
+      "code": "npm_source_shorthand_ambiguous",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Npm source shorthand ambiguous condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "output_budget_exceeded",
       "class": "usage",
       "code": "output_budget_exceeded",

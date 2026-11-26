@@ -328,12 +328,27 @@ describe("local npm package archives", () => {
     }
     // Bare owner/repo shorthand is read as a local directory first, so a replay elsewhere fails closed instead of
     // installing from a git host (Codex review round 22).
+    // It is refused before npm packs anything, so even a repository whose package is named like the prefix cannot pass
+    // the identity check (CodeRabbit review round 14).
+    for (const receiptName of ["pm-archive-demo", "plugins"]) {
+      await expect(
+        _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+          { kind: "npm", input: "npm:plugins/my-plugin-absent", spec: "plugins/my-plugin-absent" },
+          async () => {
+            throw new Error(`npm pack must not run (${receiptName})`);
+          },
+        ),
+      ).rejects.toMatchObject({ exitCode: 2, context: { code: "npm_source_shorthand_ambiguous" } });
+    }
+    // An unparseable spec is no shorthand: the guard lets it through, and npm itself reports why it cannot pack it.
     await expect(
       _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
-        { kind: "npm", input: "npm:plugins/my-plugin-absent", spec: "plugins/my-plugin-absent" },
-        packNamed("pm-archive-demo"),
+        { kind: "npm", input: "npm:@@bad", spec: "@@bad" },
+        async () => {
+          throw new Error("npm pack refused @@bad");
+        },
       ),
-    ).rejects.toThrow();
+    ).rejects.not.toMatchObject({ context: { code: "npm_source_shorthand_ambiguous" } });
     // A named alias keeps the identity check, so a receipt for another package is still refused.
     await expect(
       _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(

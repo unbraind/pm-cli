@@ -355,6 +355,9 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
     // grammar, so the leaf's list-valued --fields still merges (Codex review round 17).
     expect(normalizeBootstrapInvocation(["--no-changed-fields", "package", "list", "missing", "--fields", "bogus", "--fields", "name"]).argv)
       .toEqual(["--no-changed-fields", "package", "list", "missing", "--fields=bogus,name"]);
+    // An operand after a root action flag is the action's target, not a subcommand, so the root table still
+    // normalizes the flags, as on main (Codex review round 24).
+    expect(normalizeBootstrapInvocation(["package", "--install", "./demo", "--dry_run"]).argv).toEqual(["package", "--install", "./demo", "--dry-run"]);
   });
 
   it("keeps a --fields projection on its explore or manage subcommand route (pm-gh1777)", () => {

@@ -268,6 +268,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/extension/install-sources.ts"],
   },
   {
+    code: "npm_source_shorthand_ambiguous",
+    exit_code: 2,
+    sources: ["sdk/extension/install-sources.ts"],
+  },
+  {
     code: "output_budget_exceeded",
     exit_code: 2,
     sources: ["sdk/testing.ts"],

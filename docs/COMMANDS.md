@@ -139,8 +139,11 @@ that installed version (`null` when none is known), and an `updates_available`
 count. `pm package catalog` lists what pm bundles. `list`, `explore`, `manage`
 and `catalog` take the same `--fields` contract: a comma-separated subset of the
 row keys. An unknown key is refused with the listing's legal domain: human text
-bounds a long domain, and `--json` carries all of it in
-`recovery.allowed_values` and `refusal.legal_domain`.
+bounds a long domain, and `--json` carries it in `recovery.allowed_values` and
+`refusal.legal_domain` within the default diagnostic budget (a refusal that
+would exceed it is trimmed as
+[Diagnostic Output Contracts](DIAGNOSTIC_OUTPUT_CONTRACTS.md) describe; the SDK
+error context always holds the complete domain).
 `explore` and `manage` rows leave the embedded `contributions` map out unless
 `--fields` asks for it; `pm package describe` maps every registered surface
 ([pm-gh1777](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1777.toon),

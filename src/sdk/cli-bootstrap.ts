@@ -13,6 +13,7 @@ import {
   type PmCommandAliasRegistration,
 } from "./cli-contracts/command-aliases.js";
 import {
+  hasSubcommandFlagContractsForCommand,
   resolveSubcommandFlagContractsForCommand,
   type CliFlagContract,
 } from "./cli-contracts/flag-contracts.js";
@@ -1278,15 +1279,26 @@ export function removeLeadingCommandTerminator(argv: readonly string[]): string[
   return [...argv];
 }
 
+/**
+ * The lifecycle leaf of a package invocation. Root options may precede the verb (`pm package --project list`,
+ * `--offline list`; Codex review rounds 2-3), but a token found only after root options counts as the leaf when it
+ * names a lifecycle subcommand: in `pm package --install ./demo --dry_run` the operand is the action's target, so the
+ * root flag table, which carries `--dry-run`, still normalizes the flags (Codex review round 24).
+ */
+function resolveBootstrapLifecycleLeaf(noun: string, tokens: readonly string[]): string | undefined {
+  const verb = resolveLifecycleVerb(tokens);
+  if (verb === undefined || verb === tokens[0]) return verb;
+  return hasSubcommandFlagContractsForCommand(`${noun} ${verb.trim().toLowerCase()}`) ? verb : undefined;
+}
+
 function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   // Host options before the noun are skipped with the shared host-option grammar, so a host flag the bootstrap
   // token set does not list (`--no-changed-fields`) cannot hide the leaf's flag contracts (Codex review round 17).
   const nounIndex = findBootstrapCommandTokenIndex(argv);
   const stripped = stripGlobalBootstrapTokens(nounIndex === undefined ? argv : argv.slice(nounIndex));
   const first = stripped[0]?.trim().toLowerCase();
-  // Root options may precede the package verb (`pm package --project list`, `--offline list`); the leaf is the verb (Codex review rounds 2-3).
   const second = (first === "extension" || first === "package" || first === "packages"
-    ? resolveLifecycleVerb(stripped.slice(1))
+    ? resolveBootstrapLifecycleLeaf(first, stripped.slice(1))
     : stripped[1])?.trim().toLowerCase();
   const namespaced = findPmNamespacedCommand(stripped);
   if (namespaced) return namespaced.canonical;

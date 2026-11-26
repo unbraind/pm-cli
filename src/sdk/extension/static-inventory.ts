@@ -124,6 +124,8 @@ export function refuseStaticInventoryReadOutputControls(controls: StaticInventor
     EXIT_CODE.USAGE,
     {
       code: "read_output_surface_unsupported",
+      // The structured refusal names the first refused control, never a valid --fields projection (Codex review round 24).
+      flag: unsupported[0],
       details: { command: "package list", output_option_keys: unsupported },
       required: "Drop the row-shaping output controls; pm package list keeps --output-format and an unbounded --output-budget.",
       examples: ["pm package list --fields name,version,update"],

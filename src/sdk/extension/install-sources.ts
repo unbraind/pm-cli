@@ -423,22 +423,45 @@ const QUALIFIED_REMOTE_NPM_SPEC = /^(?:(?:github|gitlab|bitbucket|gist):|git(?:\
 
 /**
  * The package name an npm pack receipt must carry for a spec, or undefined when the spec names none: a complete
- * local-file alias, and an explicitly qualified git or URL spec without an alias name (`github:owner/repo`,
- * `https://host/pkg.tgz`), whose textual prefix is no package name, so the sole receipt npm returns is accepted
- * (CodeRabbit review round 13). Bare `owner/repo` shorthand keeps the prefix check: the installer reads that
- * spelling as a local directory first, so a replay elsewhere must fail closed instead of installing from a git
- * host (Codex review round 22).
+ * local-file alias, and a git or URL spec without an alias name (`github:owner/repo`, `https://host/pkg.tgz`), whose
+ * textual prefix is no package name, so the sole receipt npm returns is accepted (CodeRabbit review round 13). Bare
+ * `owner/repo` shorthand never gets here: refuseUnresolvedNpmShorthand refuses it before npm packs anything, because
+ * the installer reads that spelling as a local directory first (Codex review round 22, CodeRabbit review round 14).
  */
 function resolveExpectedPackedNpmIdentity(spec: string): string | undefined {
   if (isNpmLocalFileAliasSpec(spec)) return undefined;
-  const trimmed = spec.trim();
   try {
-    const parsed = npa(trimmed);
-    if ((parsed.type === "git" || parsed.type === "remote") && !parsed.name && QUALIFIED_REMOTE_NPM_SPEC.test(trimmed)) return undefined;
+    const parsed = npa(spec.trim());
+    if ((parsed.type === "git" || parsed.type === "remote") && !parsed.name) return undefined;
   } catch {
     // An unparseable spec keeps the textual prefix check; npm itself reports why it cannot pack it.
   }
   return npmPackageNameFromSpec(spec);
+}
+
+/**
+ * Refuse a bare `owner/repo` spec that named no local directory before npm packs it: npm would read it as a git
+ * host, and no receipt identity can tell that repository apart from the local package the spelling usually means
+ * (CodeRabbit review round 14). Explicitly qualified git and URL specs, and named aliases, are unaffected.
+ */
+function refuseUnresolvedNpmShorthand(spec: string): void {
+  const trimmed = spec.trim();
+  let parsed: ReturnType<typeof npa>;
+  try {
+    parsed = npa(trimmed);
+  } catch {
+    return;
+  }
+  if (parsed.type !== "git" || parsed.name || QUALIFIED_REMOTE_NPM_SPEC.test(trimmed)) return;
+  throw new PmCliError(
+    `npm:${trimmed} names no local directory here, and npm would read it as a git repository.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "npm_source_shorthand_ambiguous",
+      required: "Spell the source explicitly: npm:./<path> for a local directory, or npm:github:<owner>/<repo> for a repository.",
+      why: "A bare owner/repo npm spec means a local directory when one exists and a git host otherwise, so pm refuses to guess which code to install.",
+    },
+  );
 }
 
 /** Return whether an npm spec is a complete local-file alias, including unchanged UNC targets. */
@@ -832,6 +855,7 @@ async function resolveNpmSourceDirectoryWithRunner(
       cleanup: async () => {},
     };
   }
+  refuseUnresolvedNpmShorthand(source.spec);
 
   const tempRoot = await fs.mkdtemp(
     path.join(os.tmpdir(), "pm-npm-package-source-"),
