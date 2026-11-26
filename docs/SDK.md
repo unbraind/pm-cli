@@ -1001,7 +1001,9 @@ an unknown flag (a key whose value is `undefined` counts as omitted and is
 forwarded as it is), and an
 array for a flag that is not `list` or `repeatable` is refused with
 `extension_flag_value_invalid`; host-owned keys (the reserved host flags such
-as `json` or `quiet`) pass through unchanged. Undeclared keys pass through
+as `json` or `quiet`) skip extension-option normalization once host validation
+accepts them, and host validation still refuses a read-output control such as
+`outputLimit` on a command that does not declare `read_output`. Undeclared keys pass through
 verbatim in three cases only: a command that declares no flags
 ([pm-4of199](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4of199.toon),
 tracker record excluded from npm, owns that refusal), a hand-built registry

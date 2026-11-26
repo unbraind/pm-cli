@@ -1137,7 +1137,10 @@ export async function deactivateExtensionForTest(
  * runs, exactly as the CLI refuses an unknown flag, and an array for a flag
  * that is not `list` or `repeatable` is refused with
  * `extension_flag_value_invalid` (pm-gh1726, pm-gh1727). Host-owned keys (the
- * reserved host flags such as `json` or `quiet`) pass through unchanged. Undeclared keys
+ * reserved host flags such as `json` or `quiet`) skip extension-option
+ * normalization once host validation accepts them; host validation still refuses
+ * a read-output control such as `outputLimit` on a command that does not declare
+ * `read_output`. Undeclared keys
  * still pass through verbatim in three cases only: a command that declares no
  * flags (pm-4of199 owns that refusal), a hand-built registry with no flag
  * registrations, and a native command path such as `list` that an extension

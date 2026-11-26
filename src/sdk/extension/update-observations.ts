@@ -127,6 +127,9 @@ function parseObservation(value: unknown): ExtensionUpdateObservation | undefine
   };
 }
 
+/** The core lock's stale-cleanup gate directory suffix, whose owner.json the lock reads while reclaiming. */
+const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
+
 /** Whether a path exists as something other than a regular file (a FIFO, a directory, a link). */
 async function isNonRegularEntry(target: string): Promise<boolean> {
   try {
@@ -303,10 +306,11 @@ export async function recordExtensionUpdateObservations(
   };
   await assertRuntimeDirectory();
   // maxWaitMs caps the wait even when PM_LOCK_WAIT_MS asks for longer: this derived write must never stall a manage call.
-  // The core lock reader blocks on a FIFO, so a lock path that is not a regular file refuses this derived write up front
-  // instead of hanging a successful check (Codex review round 15).
-  if (await isNonRegularEntry(path.join(scopeRoot, "locks", "extension-update-observations.lock"))) {
-    throw new Error("update observation lock path is not a regular file");
+  // The core lock readers block on a FIFO, so a lock file or stale-cleanup gate owner file that is not a regular file
+  // refuses this derived write up front instead of hanging a successful check (Codex review rounds 15 and 17).
+  const lockPath = path.join(scopeRoot, "locks", "extension-update-observations.lock");
+  for (const metadata of [lockPath, path.join(`${lockPath}${STALE_CLEANUP_GATE_SUFFIX}`, "owner.json")]) {
+    if (await isNonRegularEntry(metadata)) throw new Error("update observation lock metadata is not a regular file");
   }
   // An expired lease of an interrupted check may be reclaimed (as session state does): the cache is derived, and the
   // commit fence below keeps a resumed stale holder from overwriting its successor (Codex review round 12).

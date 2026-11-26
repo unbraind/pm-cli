@@ -197,6 +197,11 @@ describe("extension update observations", () => {
     await fs.mkdir(lockPath, { recursive: true });
     await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow("not a regular file");
     await fs.rm(lockPath, { recursive: true });
+    // So does a stale-cleanup gate owner file that is not a regular file (Codex review round 17).
+    const gateOwner = path.join(`${lockPath}.stale-cleanup`, "owner.json");
+    await fs.mkdir(gateOwner, { recursive: true });
+    await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow("not a regular file");
+    await fs.rm(`${lockPath}.stale-cleanup`, { recursive: true });
     // The merge runs under a released per-scope lock.
     await expect(fs.readdir(path.join(scopeRoot, "locks"))).resolves.not.toContain("extension-update-observations.lock");
   });
@@ -345,18 +350,16 @@ describe("extension update observations", () => {
       ],
     }));
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([valid]);
-    // A link to a record elsewhere is not followed.
-    const outside = path.join(scopeRoot, "outside.json");
-    await fs.writeFile(outside, JSON.stringify({ version: 1, observations: [valid] }));
     await fs.rm(file);
-    await fs.symlink(outside, file);
-    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
-    await fs.rm(file);
-    // A directory or an oversized file at the record path is not one pm wrote.
+    // A directory or an oversized file at the record path is not one pm wrote; the size control below the limit
+    // is the same valid envelope, so only the size can reject it (CodeRabbit review round 12).
     await fs.mkdir(file);
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
     await fs.rm(file, { recursive: true });
-    await fs.writeFile(file, `{"observations":[],"pad":"${"x".repeat(1024 * 1024)}"}`);
+    const padded = (bytes: number) => JSON.stringify({ version: 1, observations: [valid], pad: "x".repeat(bytes) });
+    await fs.writeFile(file, padded(1024));
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([valid]);
+    await fs.writeFile(file, padded(1024 * 1024));
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
   });
 
@@ -418,11 +421,22 @@ describe("extension update observations", () => {
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
   });
 
+  // File links need a privilege on Windows (CodeRabbit review round 12).
+  it.skipIf(process.platform === "win32")("does not follow a link at the record path to a record elsewhere", async () => {
+    const file = resolveExtensionUpdateObservationsPath(scopeRoot);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    const outside = path.join(scopeRoot, "outside.json");
+    await fs.writeFile(outside, JSON.stringify({ version: 1, observations: [observation()] }));
+    await fs.symlink(outside, file);
+    expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
+  });
+
   it("never reads or writes through a runtime path that is not a real directory", async () => {
     const elsewhere = path.join(scopeRoot, "elsewhere");
     await fs.mkdir(elsewhere);
     await fs.writeFile(path.join(elsewhere, "extension-update-observations.json"), JSON.stringify({ version: 1, observations: [observation()] }));
-    await fs.symlink(elsewhere, path.join(scopeRoot, "runtime"));
+    // A junction needs no privilege on Windows, and reads as a link there just as a directory link does elsewhere.
+    await fs.symlink(elsewhere, path.join(scopeRoot, "runtime"), process.platform === "win32" ? "junction" : "dir");
     expect(await readExtensionUpdateObservations(scopeRoot)).toEqual([]);
     await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow(/is not a directory/);
     expect(JSON.parse(await fs.readFile(path.join(elsewhere, "extension-update-observations.json"), "utf8")).observations).toHaveLength(1);
@@ -447,7 +461,7 @@ describe("extension update observations", () => {
       const settled = recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()]).then(() => "resolved", (error: unknown) => error);
       await barrier;
       await fs.rm(runtimeDir, { recursive: true });
-      await fs.symlink(scopeRoot, runtimeDir);
+      await fs.symlink(scopeRoot, runtimeDir, process.platform === "win32" ? "junction" : "dir");
       await release();
       expect(String(await settled)).toMatch(/is not a directory/);
     } finally {

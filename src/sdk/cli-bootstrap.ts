@@ -1271,7 +1271,10 @@ export function removeLeadingCommandTerminator(argv: readonly string[]): string[
 }
 
 function parseBootstrapCommandPathName(argv: string[]): string | undefined {
-  const stripped = stripGlobalBootstrapTokens(argv);
+  // Host options before the noun are skipped with the shared host-option grammar, so a host flag the bootstrap
+  // token set does not list (`--no-changed-fields`) cannot hide the leaf's flag contracts (Codex review round 17).
+  const nounIndex = findBootstrapCommandTokenIndex(argv);
+  const stripped = stripGlobalBootstrapTokens(nounIndex === undefined ? argv : argv.slice(nounIndex));
   const first = stripped[0]?.trim().toLowerCase();
   // Root options may precede the package verb (`pm package --project list`, `--offline list`); the leaf is the verb (Codex review rounds 2-3).
   const second = (first === "extension" || first === "package" || first === "packages"

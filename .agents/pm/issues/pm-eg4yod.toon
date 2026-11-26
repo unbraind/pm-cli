@@ -1,0 +1,21 @@
+id: pm-eg4yod
+title: "A leading -- before the command skips bootstrap flag normalization, so a repeated list-valued flag keeps only its last occurrence (pm -- package list --fields name --fields version)"
+description: "Found by CodeRabbit review round 12 on PR #1782. A leading terminator still routes to the command (Codex review round 5 made the static listing honor it), but normalizeBootstrapTokens stops at the first bare terminator, so list coalescing, typo correction and alias rewrites never see the flags after it. Commander then parses those flags at the leaf, where a non-collecting option keeps only the last value: pm -- package list --fields name --fields version lists only version, with no error. The behavior is host-wide and predates the PR (the same holds for pm -- list with repeated list-valued flags). Fix in one place: when the terminator precedes the command noun and Commander will route to the command, normalize the tail exactly as the invocation without the terminator, keeping the terminator semantics for operands that start with a dash."
+type: Issue
+status: open
+priority: 3
+tags[4]: bootstrap,cli,normalization,ux
+created_at: "2026-11-26T01:02:21.946Z"
+updated_at: "2026-11-26T01:34:55.241Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "pm -- package list --fields name --fields version selects name and version, exactly as pm package list does; A dash-leading operand after a leading terminator (pm -- get -weird-id) is still an operand; A unit test pins repeated list-valued flags after a leading terminator for one native command and the package listing"
+parent: pm-doxj
+risk: low
+confidence: 80
+severity: low
+expected_result: "pm -- <command> with repeated list-valued flags selects the same values as pm <command> with the same flags, or refuses the invocation"
+actual_result: "Only the last occurrence of a repeated list-valued flag is kept after a leading terminator, silently"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1777,discovered_from,"2026-11-26T01:02:21.946Z","harness:claude-code","cli:create:dep",detected
+body: ""

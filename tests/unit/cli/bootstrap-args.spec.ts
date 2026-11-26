@@ -351,6 +351,10 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
     // Any accepted root option before the verb, including a valued one, resolves the same leaf (Codex review round 3).
     expect(normalizeBootstrapInvocation(["package", "--offline", "list", "example", "--fields=name", "--fields=version"]).argv).toEqual(["package", "--offline", "list", "example", "--fields=name,version"]);
     expect(normalizeBootstrapInvocation(["package", "--ref", "v1", "list", "--fields", "a", "--fields", "b"]).argv).toEqual(["package", "--ref", "v1", "list", "--fields=a,b"]);
+    // A host flag before the noun that the bootstrap token set does not list is skipped with the shared host-option
+    // grammar, so the leaf's list-valued --fields still merges (Codex review round 17).
+    expect(normalizeBootstrapInvocation(["--no-changed-fields", "package", "list", "missing", "--fields", "bogus", "--fields", "name"]).argv)
+      .toEqual(["--no-changed-fields", "package", "list", "missing", "--fields=bogus,name"]);
   });
 
   it("keeps a --fields projection on its explore or manage subcommand route (pm-gh1777)", () => {
