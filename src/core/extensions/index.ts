@@ -3,7 +3,7 @@
  *
  * Implements extension runtime contracts and governance for Index.
  */
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import { ownedTransactionCompensation } from "../store/item-mutation-precondition.js";
@@ -109,14 +109,51 @@ const AFTER_COMMAND_SNAPSHOT_OMITTED_FIELDS = new Set([
   "tests",
 ]);
 
-function findSourceRepositoryRoot(candidate: string): string | undefined {
+/** A directory's physical spelling for ceiling comparison, or its resolved spelling when it cannot be read. */
+function physicalDirectory(directory: string): string {
+  try {
+    return realpathSync.native(directory);
+  } catch {
+    return path.resolve(directory);
+  }
+}
+
+/**
+ * Git's discovery ceilings: the absolute `GIT_CEILING_DIRECTORIES` entries
+ * (separated by the platform's path delimiter), resolved to physical paths up
+ * to the first empty entry and kept as spelled after it, as Git does. Git
+ * compares them with the physical directories it walks, so an unresolved
+ * entry spelled through a symbolic link never matches.
+ */
+function readGitCeilingDirectories(env: NodeJS.ProcessEnv): ReadonlySet<string> {
+  const ceilings = new Set<string>();
+  let resolveLinks = true;
+  for (const entry of (env.GIT_CEILING_DIRECTORIES ?? "").split(path.delimiter)) {
+    if (entry.length === 0) {
+      resolveLinks = false;
+    } else if (path.isAbsolute(entry)) {
+      ceilings.add(resolveLinks ? physicalDirectory(entry) : path.resolve(entry));
+    }
+  }
+  return ceilings;
+}
+
+/**
+ * The nearest directory holding a `.git` marker, searched the way Git
+ * discovers a repository: the start directory is always examined, and the
+ * search never moves up into a discovery ceiling (GH-1787).
+ */
+function findSourceRepositoryRoot(
+  candidate: string,
+  ceilings: ReadonlySet<string>,
+): string | undefined {
   let cursor = path.resolve(candidate);
   while (true) {
     if (existsSync(path.join(cursor, ".git"))) {
       return cursor;
     }
     const parent = path.dirname(cursor);
-    if (parent === cursor) {
+    if (parent === cursor || ceilings.has(physicalDirectory(parent))) {
       return undefined;
     }
     cursor = parent;
@@ -134,9 +171,11 @@ export function resolvePortableWorkspaceContext(
 ): PortableWorkspaceContext {
   const sourceCandidate =
     process.env.PM_SOURCE_WORKSPACE_ROOT?.trim() || process.cwd();
+  const ceilings = readGitCeilingDirectories(process.env);
   const sourceWorkspaceRoot =
-    findSourceRepositoryRoot(sourceCandidate) ?? path.resolve(sourceCandidate);
-  const repoRoot = findSourceRepositoryRoot(sourceWorkspaceRoot);
+    findSourceRepositoryRoot(sourceCandidate, ceilings) ??
+    path.resolve(sourceCandidate);
+  const repoRoot = findSourceRepositoryRoot(sourceWorkspaceRoot, ceilings);
   if (!pmRoot) {
     return {
       source_workspace_root: sourceWorkspaceRoot,

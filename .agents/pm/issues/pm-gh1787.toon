@@ -6,7 +6,9 @@ status: open
 priority: 2
 tags[4]: extensions,"gh:1787",git,workspace
 created_at: "2026-11-26T11:22:42.361Z"
-updated_at: "2026-11-26T11:22:42.361Z"
+updated_at: "2026-11-26T15:30:17.862Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#bde5973a64851be416b1c911"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A nested non-Git tracker fixture under a real parent checkout, with the explicit source root and ceiling, gives the child root, no VCS root and the correct tracker-relative path, with and without Git on the command PATH; Ordinary Git checkouts and .git-file worktrees keep their discovery, and linked-test runs keep their independent tracker path; The linked pm-swarm tracker-only cases pass against the corrected host"
@@ -19,4 +21,9 @@ actual_result: The handler sees the parent checkout as source and repo root and 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fc9gm4,discovered_from,"2026-11-26T11:22:42.361Z","harness:claude-code","cli:create:dep",detected
   pm-j4ac9a,related,"2026-11-26T11:22:42.361Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-26T14:58:07.558Z","harness:claude-code","Root cause: findSourceRepositoryRoot walked up to any .git marker and ignored GIT_CEILING_DIRECTORIES. Fix follows Git's own discovery rule, checked against git rev-parse --show-toplevel for nine scenarios: the start directory is always examined, the walk never moves up into a ceiling, only absolute entries count (path.delimiter separated), entries are resolved to physical paths up to the first empty entry and kept as spelled after it, and Git compares them with the physical directories it walks, so an unresolved entry spelled through a symbolic link never matches. Returned coordinates keep their existing logical spelling. Covered by tests/unit/extensions/portable-workspace-ceiling.spec.ts (real directories and a link or junction) and an end-to-end case in extension-host-contracts.integration.spec.ts that runs an installed extension command with Git on PATH and with a Git-free PATH."
+files[2]{path,scope,note}:
+  src/core/extensions/index.ts,project,findSourceRepositoryRoot honours GIT_CEILING_DIRECTORIES
+  tests/unit/extensions/portable-workspace-ceiling.spec.ts,project,Git ceiling discovery rule for extension workspace coordinates
 body: ""
