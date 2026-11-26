@@ -156,29 +156,37 @@ function logicalSpelling(logical: string, physical: string): string {
   }
 }
 
+/** The source workspace a discovery settles on, and the checkout holding it when there is one. */
+interface SourceDiscovery {
+  source: string;
+  repo?: string;
+}
+
 /**
- * The nearest directory holding a `.git` marker, searched the way Git
- * discovers a repository: along the physical ancestors of the start
- * directory, which is always examined, never moving up into a discovery
- * ceiling (GH-1787). The result keeps the caller's spelling where one of its
- * ancestors names the same directory.
+ * Discover the source workspace the way Git discovers a repository: along
+ * the physical ancestors of the start directory, which resolves as spelled
+ * (so `link/..` names the link target's parent) and is always examined,
+ * never moving up into a discovery ceiling (GH-1787). The nearest directory
+ * holding a `.git` marker is the checkout and the source; without one, the
+ * source is the start directory itself. Each keeps the caller's spelling
+ * where it names the same directory.
  */
-function findSourceRepositoryRoot(
+function discoverSourceWorkspace(
   candidate: string,
   ceilings: ReadonlySet<string>,
-): string | undefined {
+): SourceDiscovery {
   const logical = path.resolve(candidate);
-  // The start resolves as spelled, so `link/..` names the link target's parent as it does for Git;
-  // resolving the normalized spelling would drop the link first.
   const spelled = path.isAbsolute(candidate) ? candidate : `${process.cwd()}${path.sep}${candidate}`;
-  let cursor = physicalDirectory(spelled) ?? logical;
+  const start = physicalDirectory(spelled);
+  let cursor = start ?? logical;
   while (true) {
     if (existsSync(path.join(cursor, ".git"))) {
-      return logicalSpelling(logical, cursor);
+      const repo = logicalSpelling(logical, cursor);
+      return { source: repo, repo };
     }
     const parent = path.dirname(cursor);
     if (parent === cursor || ceilings.has(parent)) {
-      return undefined;
+      return { source: start === undefined || physicalDirectory(logical) === start ? logical : start };
     }
     cursor = parent;
   }
@@ -209,13 +217,12 @@ export function resolvePortableWorkspaceContext(
 ): PortableWorkspaceContext {
   const sourceCandidate =
     process.env.PM_SOURCE_WORKSPACE_ROOT?.trim() || process.cwd();
-  // One discovery decides both coordinates: rediscovering from a normalized fallback could find a
-  // checkout the first walk was kept out of.
-  const repoRoot = findSourceRepositoryRoot(
+  // One discovery decides both coordinates, so a normalized fallback never names a directory
+  // the walk did not start from.
+  const { source: sourceWorkspaceRoot, repo: repoRoot } = discoverSourceWorkspace(
     sourceCandidate,
     readGitCeilingDirectories(process.env),
   );
-  const sourceWorkspaceRoot = repoRoot ?? path.resolve(sourceCandidate);
   if (!pmRoot) {
     return {
       source_workspace_root: sourceWorkspaceRoot,

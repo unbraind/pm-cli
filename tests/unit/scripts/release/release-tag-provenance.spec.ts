@@ -152,6 +152,19 @@ describe("tag-carried release provenance", () => {
       expect(() => recordReleasePublicationOrigin(publicationEnv, root, replacing, pause)).toThrow("changed while it was downloaded");
       expect(inventoryReads).toBe(2);
       expect(JSON.parse(readFileSync(output, "utf8")).producer_binding_verified).toBe(false);
+      // A partial listing after the download is read again within the same bounded wait (Codex round 3).
+      pauses.length = 0;
+      inventoryReads = 0;
+      const trailingAfter = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command === "gh" && args[1] === artifactEndpoint) {
+          inventoryReads += 1;
+          return JSON.stringify(inventoryReads === 2 ? [{ total_count: 2, artifacts: [artifact] }] : settled);
+        }
+        return trailingDownload(command, args, options);
+      }) as typeof execFileSync;
+      expect(recordReleasePublicationOrigin(publicationEnv, root, trailingAfter, pause)).toMatchObject({ producer_binding_verified: true });
+      expect(inventoryReads).toBe(3);
+      expect(pauses).toEqual([1000]);
       // Any other failure, with or without provider output, is refused at once.
       for (const failure of [Object.assign(new Error("Command failed: gh run download"), { stderr: "HTTP 403: Forbidden\n" }), new Error("spawnSync gh ETIMEDOUT"), null]) {
         pauses.length = 0;

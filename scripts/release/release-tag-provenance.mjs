@@ -169,8 +169,8 @@ export function recordReleasePublicationOrigin(env = process.env, cwd = process.
     try {
       verifyProducerBindingFile(downloadProducerBinding(execute, options, source, artifact, directory, pause), report);
       // A download is addressed by name, so after it the inventory must still hold exactly the artifact
-      // validated above: a binding replaced while the download was retried is refused.
-      if (selectProducerBindingArtifact(readInventoryPages(execute, options, source), source, repository.default_branch).id !== artifact.id) {
+      // validated above, read with the same bounded waits: a replaced binding is refused at once.
+      if (selectProducerBindingArtifact(readProducerBindingInventory(execute, options, source, repository.default_branch, pause), source, repository.default_branch).id !== artifact.id) {
         throw new Error("Release producer binding changed while it was downloaded.");
       }
       report.source_run_verified = true;

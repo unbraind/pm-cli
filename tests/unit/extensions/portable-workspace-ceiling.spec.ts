@@ -105,7 +105,8 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
     await symlink(physical, link, linkType);
     // `wslink/..` is parent/ws for Git, which may not move up into the parent ceiling.
     const spelled = `${link}${path.sep}..`;
-    expect(resolveFor(spelled, [parent])).toEqual({ source_workspace_root: root, pm_root_rel: "parent/child/.agents/pm" });
+    // Without a checkout the source is the directory the walk started from, so the tracker is outside it (Codex round 3).
+    expect(resolveFor(spelled, [parent])).toEqual({ source_workspace_root: path.join(parent, "ws") });
     expect(resolveFor(spelled)).toEqual({ source_workspace_root: parent, repo_root: parent, pm_root_rel: "child/.agents/pm" });
   });
 

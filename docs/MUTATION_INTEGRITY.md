@@ -388,13 +388,16 @@ right after it, reads the lexer; for a key nested in a container already
 judged, the lexer resumes from a checkpoint kept every 1024 code units, so the
 structured pass stays linear. A quote right after a letter, digit or
 underscore opens no string, but in a shell it can open a segment of the word
-(`foo"[" --'password'=${EMPTY}",""…"`), whose closing quote the lexer then
-takes for an opening one. So after an odd number of such declined quotes of
-a kind on a line, the next string of that kind is not trusted to end a value,
-and the value keeps its quoted pieces; the strings after it are trusted
-again. A Python string prefix (`r"…"`, `b'…'`, `rb"…"`, `f"…"` and the other
-combinations) opens its string, and in JSON and Python text every other quote
-opens, closes or is escaped, so none is declined there.
+(`foo"[" --'password'=${EMPTY}",""…"`), and from there the lexer cannot tell
+a segment's closing quote from a string's opening one. A line that declined
+a quote of a kind therefore reads as shell, where a closing quote that more
+characters follow continues the word: no later string of that kind on the
+line is trusted to end a value, and the value keeps its quoted pieces. A cut
+only ever removes a finding, so it is made only where the string state is
+unambiguous. A Python string prefix (`r"…"`, `b'…'`, `rb"…"`, `f"…"` and the
+other combinations) opens its string with the escapes an unprefixed one has,
+so `b'…\'` closes where a shell closes it. In JSON and Python text every
+other quote opens, closes or is escaped, so none is declined there.
 
 A single-quoted value is judged under each reading a format gives it.
 - **Decoded:** with Python and JavaScript escapes decoded.
