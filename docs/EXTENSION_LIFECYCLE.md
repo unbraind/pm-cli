@@ -79,7 +79,9 @@ the same directory. An npm source that is not a registry install
 spec) is never compared with a registry release, by `manage` or by the offline
 readers, and `pm package upgrade` reinstalls every such artifact from its own
 spec instead of moving it to a registry tag. Corrupt or unreadable managed metadata in a scope means unknown
-updates there, never a failed `pm context`. `pm package list` refuses the
+updates there, never a failed `pm context`; a managed-state path that is not a
+regular file is outside that guarantee, because extension discovery, which
+`pm context` runs first, still reads the file directly. `pm package list` refuses the
 row-shaping read-output controls it cannot apply (`read_output_surface_unsupported`) and
 keeps `--output-format` and an unbounded `--output-budget`
 ([pm-gh1778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1778.toon),

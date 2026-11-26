@@ -1288,7 +1288,9 @@ export function removeLeadingCommandTerminator(argv: readonly string[]): string[
 function resolveBootstrapLifecycleLeaf(noun: string, tokens: readonly string[]): string | undefined {
   const verb = resolveLifecycleVerb(tokens);
   if (verb === undefined || verb === tokens[0]) return verb;
-  return hasSubcommandFlagContractsForCommand(`${noun} ${verb.trim().toLowerCase()}`) ? verb : undefined;
+  const leaf = verb.trim().toLowerCase();
+  // `package upgrade` has its own flag table outside the lifecycle map (Greptile review round 11).
+  return hasSubcommandFlagContractsForCommand(`${noun} ${leaf}`) || (noun !== "extension" && leaf === "upgrade") ? verb : undefined;
 }
 
 function parseBootstrapCommandPathName(argv: string[]): string | undefined {

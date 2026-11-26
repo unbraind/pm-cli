@@ -358,6 +358,9 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
     // An operand after a root action flag is the action's target, not a subcommand, so the root table still
     // normalizes the flags, as on main (Codex review round 24).
     expect(normalizeBootstrapInvocation(["package", "--install", "./demo", "--dry_run"]).argv).toEqual(["package", "--install", "./demo", "--dry-run"]);
+    // upgrade keeps its own flag table after a scope switch (Greptile review round 11).
+    expect(normalizeBootstrapInvocation(["package", "--project", "upgrade", "--cli_only", "--dry-run"]).argv).toEqual(["package", "--project", "upgrade", "--cli-only", "--dry-run"]);
+    expect(normalizeBootstrapInvocation(["packages", "--global", "upgrade", "--cli_only"]).argv).toEqual(["packages", "--global", "upgrade", "--cli-only"]);
   });
 
   it("keeps a --fields projection on its explore or manage subcommand route (pm-gh1777)", () => {
