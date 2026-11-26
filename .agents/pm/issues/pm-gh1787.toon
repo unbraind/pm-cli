@@ -1,0 +1,22 @@
+id: pm-gh1787
+title: "GH-1787: extension workspace discovery ignores GIT_CEILING_DIRECTORIES and binds a non-Git tracker to its parent checkout"
+description: "Published 2026.11.24 and 2026.11.25 supply the enclosing Git checkout as an extension command's workspace even when the explicitly selected child workspace is not in a repository by Git's own discovery. With a Git repository at parent/, a non-Git workspace at parent/child/, GIT_CEILING_DIRECTORIES set to parent/ and PM_SOURCE_WORKSPACE_ROOT set to child/, git rev-parse --show-toplevel refuses to discover a repository, yet a local extension command sees source_workspace_root = parent, repo_root = parent and pm_root_rel = child/.agents/pm, with or without Git on the command PATH. Expected: source_workspace_root = child, no repo_root, and pm_root_rel = .agents/pm. The pm-swarm capacity and continuation tests select Git versus tracker-only behavior from this context, and four tracker-only cases fail under an ordinary nested Git parent."
+type: Issue
+status: open
+priority: 2
+tags[4]: extensions,"gh:1787",git,workspace
+created_at: "2026-11-26T11:22:42.361Z"
+updated_at: "2026-11-26T11:22:42.361Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A nested non-Git tracker fixture under a real parent checkout, with the explicit source root and ceiling, gives the child root, no VCS root and the correct tracker-relative path, with and without Git on the command PATH; Ordinary Git checkouts and .git-file worktrees keep their discovery, and linked-test runs keep their independent tracker path; The linked pm-swarm tracker-only cases pass against the corrected host"
+parent: pm-doxj
+risk: medium
+confidence: 80
+severity: medium
+expected_result: "An extension handler for a nested non-Git tracker under a ceiling sees the child source root, no VCS root, and the tracker path relative to the child"
+actual_result: The handler sees the parent checkout as source and repo root and a tracker path relative to the parent
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fc9gm4,discovered_from,"2026-11-26T11:22:42.361Z","harness:claude-code","cli:create:dep",detected
+  pm-j4ac9a,related,"2026-11-26T11:22:42.361Z","harness:claude-code","cli:create:dep",detected
+body: ""

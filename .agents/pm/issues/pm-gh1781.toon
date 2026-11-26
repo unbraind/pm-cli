@@ -1,0 +1,21 @@
+id: pm-gh1781
+title: "GH-1781: secret guard reports a single-quoted reference in compact JSON, and a value of seven backslashes, as password_assignment on 2026.11.25"
+description: "Follow-up to GH-1775 (fixed in 2026.11.25). Two neighbouring shapes that returned no finding on 2026.11.14 are reported as password_assignment on 2026.11.25. First, a single-quoted run-time reference inside a JSON string in compact form: title 'password': '${BUILD_PASSWORD}' followed directly by the next member; pretty JSON, a title-only object and the double-quoted twin stay clean, so the verdict depends on serialization. Second, a single-quoted value made only of backslashes: seven backslashes (an unterminated value, since the last quote is escaped) is reported where 2026.11.14 reported nothing; six stay clean and eight were already reported. Reading: the single-quoted value is not ended at its own closing quote when it sits inside a JSON string, and an escape-only value is judged as a literal secret."
+type: Issue
+status: open
+priority: 2
+tags[4]: false-positive,"gh:1781",sdk,secret-guard
+created_at: "2026-11-26T11:21:54.325Z"
+updated_at: "2026-11-26T11:21:54.325Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: The four JSON forms of the single-quoted reference return no findings; Single-quoted values of six and seven backslashes return no findings; a literal password is still reported; A differential against the published 2026.11.14 bundle shows no other verdict change for the reported shapes
+parent: pm-doxj
+risk: medium
+confidence: 80
+severity: medium
+expected_result: "A pure run-time reference in a single-quoted value is clean in every JSON serialization, and an escape-only value carries no secret finding, as on 2026.11.14"
+actual_result: Compact JSON with a single-quoted reference and a seven-backslash single-quoted value report password_assignment
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1775,discovered_from,"2026-11-26T11:21:54.325Z","harness:claude-code","cli:create:dep",detected
+body: ""
