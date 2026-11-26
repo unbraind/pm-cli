@@ -849,6 +849,17 @@ function decodeQuotedLiteral(literal: string, terminated: boolean): DecodedLiter
   return { reading: `${quote}${neutral}${close}`, ...literalBody(`${quote}${body}${close}`, terminated) };
 }
 
+/**
+ * A single-quoted literal as TOML and YAML read it: a backslash is data, so
+ * the literal ends at its first closing quote, which an escape-aware scan
+ * would read as escaped after an odd run of backslashes (GH-1781).
+ */
+function rawSingleQuotedReading(content: string, at: number): DecodedLiteral {
+  const close = content.indexOf("'", at + 1);
+  const literal = content.slice(at, close === -1 ? content.length : close + 1);
+  return { reading: literal, ...literalBody(literal, close !== -1) };
+}
+
 /** A literal read as written: its delimiters are syntax and everything between them is data. */
 function literalBody(original: string, terminated: boolean): Omit<DecodedLiteral, "reading"> {
   return { original, bodyStart: 1, bodyEnd: original.length - (terminated ? 1 : 0) };
@@ -907,14 +918,19 @@ interface ValueJudge {
  * for a serialized payload string, which is always complete.
  */
 function createValueJudge(rule: SecretRule, value: RegExp, content: string, alwaysDecode = false): ValueJudge {
+  // A value read from the text itself ends at the string it sits in, as a flat value does (GH-1775):
+  // a quoted key's value inside compact JSON text never runs on into the next member (GH-1781).
+  // A decoded literal is read from its own reading, so it passes the cut unchanged.
+  const enclosed = enclosingStringCut(rule, content);
   // A JSON, Python or YAML-flow string literal never spans a raw line break, so
   // a structured value that does is a host-language artifact, not a credential.
   // With an `original`, the grammar reads `text` but the predicates judge the
   // same span of the decoded original (see DecodedLiteral).
   const valueMatch = (text: string, at: number, decoded?: DecodedLiteral): RegExpExecArray | null => {
     value.lastIndex = at;
-    const match = value.exec(text);
-    if (match === null || LINE_BREAK.test(match[0])) return null;
+    const read = value.exec(text);
+    if (read === null || LINE_BREAK.test(read[0])) return null;
+    const match = enclosed(read);
     const span = match.indices?.[1];
     if (decoded !== undefined && span !== undefined) {
       // The literal's own delimiters are syntax; every decoded character
@@ -937,7 +953,7 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string, alwa
     // A raw line break is a host-language artifact before any escape is decoded.
     if (LINE_BREAK.test(literal)) return [];
     const decoded = decodeQuotedLiteral(literal, terminated);
-    const readings = content[at] === "'" ? [decoded, { reading: literal, ...literalBody(literal, terminated) }] : [decoded];
+    const readings = content[at] === "'" ? [decoded, rawSingleQuotedReading(content, at)] : [decoded];
     return readings.map((reading) => valueMatch(reading.reading, 0, reading)).filter((match): match is RegExpExecArray => match !== null);
   };
   const valuesAt = (at: number): RegExpExecArray[] => {
@@ -1324,6 +1340,59 @@ function endsRightAfterQuote(content: string, index: number, opening: StringOpen
 const NEXT_TOKEN_BOUND = 512;
 /** An unquoted YAML flow key and its separator, the next member of `{title: "…", updated: ok}`. */
 const YAML_FLOW_KEY = /^[A-Za-z_][\w.-]{0,480}:(?:\s|$)/u;
+
+/** Code units between the checkpoints of a lexer cursor; an earlier position re-reads at most this many. */
+const LEXER_CHECKPOINT_SPAN = 1024;
+
+/**
+ * String lexers positioned at any value start in one text. The lexer reads
+ * forward once and keeps checkpoint k at or before code unit
+ * k * LEXER_CHECKPOINT_SPAN (taken before the step that would pass it), so a
+ * value judged before one already passed (a key nested in a container a walk
+ * has judged) re-reads at most one span. Each caller walks its own copy.
+ */
+function createLexerCursor(content: string): (position: number) => StringLexer {
+  const lexer = createStringLexer(content);
+  const checkpoints: StringLexer[] = [{ ...lexer }];
+  return (position) => {
+    while (lexer.index < position) {
+      if (lexer.index + 1 >= checkpoints.length * LEXER_CHECKPOINT_SPAN) checkpoints.push({ ...lexer });
+      lexStep(lexer);
+    }
+    const from = lexer.index === position
+      ? lexer
+      : checkpoints[Math.min(Math.floor(position / LEXER_CHECKPOINT_SPAN), checkpoints.length - 1)]!;
+    const copy = { ...from };
+    advanceLexer(copy, position);
+    return copy;
+  };
+}
+
+/**
+ * End a structured value read from the text at the closing quote of the
+ * string it sits in, exactly as flatMatches ends a flat value: cut there, and
+ * recorded as where its word ends. Only a rule with a literal minimum reads
+ * quoted pieces past a value, and a decoded literal is judged whole, so every
+ * other match passes unchanged. The closing quote is inside the value or
+ * right after it, so a value with neither moves no lexer.
+ */
+function enclosingStringCut(rule: SecretRule, content: string): (match: RegExpExecArray) => RegExpExecArray {
+  if (rule.minimumLiteralLength === undefined) return (match) => match;
+  let cursor: ((position: number) => StringLexer) | undefined;
+  return (match) => {
+    if (match.input !== content) return match;
+    const value = match[1]!;
+    const end = match.index + match[0].length;
+    if (!/["']/u.test(value.slice(1)) && !isQuote(content.charAt(end))) return match;
+    const valueStart = end - value.length;
+    cursor ??= createLexerCursor(content);
+    const close = enclosingStringClose(cursor(valueStart), valueStart, end);
+    if (close <= valueStart) return match;
+    const ended = close < end ? truncateMatch(match, close) : match;
+    ENCLOSING_STRING_CLOSE.set(ended, close);
+    return ended;
+  };
+}
 
 /**
  * Where the string that a value starting at `valueStart` sits in closes, when

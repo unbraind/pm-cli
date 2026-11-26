@@ -377,6 +377,21 @@ pieces (`password="$PW","…"`, a YAML single-quoted scalar whose doubled
 quotes are data), and a closing quote that another quote or a word follows
 (`echo "api_key=${EMPTY}""…"`) continues the shell word, as before.
 
+The same rule ends the value of a quoted key that sits in a string
+([pm-gh1781](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1781.toon);
+tracker record excluded from npm), so a member such as
+`'password': '${BUILD_PASSWORD}'` inside compact JSON text
+(`{"title":"'password': '${BUILD_PASSWORD}'","updated":"…"}`) is judged as in
+pretty-printed JSON, and a whole `$NAME` or `%NAME%` value there is a
+placeholder too. Only a value with a quote after its first character, or
+right after it, reads the lexer; for a key nested in a container already
+judged, the lexer resumes from a checkpoint kept every 1024 code units, so the
+structured pass stays linear. A single-quoted value is also read as TOML and
+YAML read it, where a backslash is data and the value ends at its first
+closing quote: `'\\\\\\\'` (seven backslashes) is seven data characters,
+below the literal minimum, rather than an unterminated value whose escaped
+last quote counts as data; eight backslashes are still reported.
+
 A whole Windows variable (`%DB_PASSWORD%`) is a placeholder for every
 key-named rule. `cmd.exe` reads `set NAME=value` to the end of the line, so an
 unquoted text value is whole only when nothing but blanks follows it on its
