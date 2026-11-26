@@ -398,13 +398,12 @@ unambiguous; keeping that distrust local to the affected segment is owned by
 [pm-ghgf4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghgf4a.toon)
 (tracker record excluded from npm). A Python string prefix (`r"…"`, `b'…'`, `rb"…"`, `f"…"` and the
 other combinations) opens its string with the escapes an unprefixed one has,
-judged by the context before the prefix: inside a container it escapes as
-Python does (`{'label': r'…\'…'}`), and elsewhere `b'…\'` closes where a
-shell closes it. When a single-quoted string
-closed at an apostrophe a backslash precedes and the word right after it
-ends in a quote (`'can\'t'`), that quote is the string's own closing quote
-under Python's reading and declines nothing. In JSON and Python text every
-other quote opens, closes or is escaped, so none is declined there.
+so `b'…\'` closes where a shell closes it: a prefix alone never shows Python
+context. A Python string that escapes an apostrophe therefore reads as a
+shell close, and a later member on its line keeps the conservative reading
+(a false positive [pm-ghgf4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghgf4a.toon)
+owns, never a hidden literal). In JSON text every quote opens, closes or is
+escaped, so none is declined there.
 
 A single-quoted value is judged under each reading a format gives it.
 - **Decoded:** with Python and JavaScript escapes decoded.

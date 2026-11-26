@@ -1200,12 +1200,10 @@ interface StringLexer {
   /** Whether a double (single) quote after a word character opened no string earlier on this line (see trustsOpenString). */
   declinedDouble: boolean;
   declinedSingle: boolean;
-  /** Where the last single-quoted string closed at a quote a backslash precedes, or -1 (see openOrDecline). */
-  escapedClose: number;
 }
 
 function createStringLexer(content: string): StringLexer {
-  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true, declinedDouble: false, declinedSingle: false, escapedClose: -1 };
+  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true, declinedDouble: false, declinedSingle: false };
 }
 
 /** Read one character (two for an escape); returns the position of a quote that closed the open string, or -1. */
@@ -1230,7 +1228,6 @@ function lexStep(lexer: StringLexer): number {
   const kind = code === 0x22 ? DOUBLE_STRING : SINGLE_STRING;
   if (lexer.state === kind) {
     lexer.state = NO_STRING;
-    lexer.escapedClose = kind === SINGLE_STRING && content[index - 1] === "\\" ? index : -1;
     return index;
   }
   if (lexer.state === NO_STRING) openOrDecline(lexer, kind, index);
@@ -1245,32 +1242,20 @@ function lexStep(lexer: StringLexer): number {
  */
 function openOrDecline(lexer: StringLexer, kind: number, index: number): void {
   const { content } = lexer;
-  const prefix = PYTHON_STRING_PREFIX.exec(content.slice(Math.max(0, index - 3), index))?.[1].length ?? 0;
-  if (prefix === 0 && index > 0 && WORD_CHARACTER.test(content[index - 1]!)) {
-    // `'can\'t'`: the string closed at an escaped apostrophe and this quote ends the word right after
-    // it, so under Python's reading it is that string's own closing quote, not a shell segment.
-    if (kind === SINGLE_STRING && closesEscapedWord(lexer, index)) return;
+  if (index > 0 && WORD_CHARACTER.test(content[index - 1]!) && !PYTHON_STRING_PREFIX.test(content.slice(Math.max(0, index - 3), index))) {
     if (kind === DOUBLE_STRING) lexer.declinedDouble = true;
     else lexer.declinedSingle = true;
     return;
   }
   lexer.state = kind;
   lexer.opener = index;
-  // An ANSI-C `$'…'` string escapes like a double-quoted one; a prefixed one judges the container
-  // context before its prefix (`{'label': r'…'}`).
-  lexer.escapes = kind === DOUBLE_STRING || content[index - 1] === "$" || opensAfterContainer(content, index - prefix);
+  // An ANSI-C `$'…'` string escapes like a double-quoted one. A prefixed string escapes as an
+  // unprefixed one does: a prefix alone never shows Python context (`printf %s :b'…\'` is shell).
+  lexer.escapes = kind === DOUBLE_STRING || content[index - 1] === "$" || opensAfterContainer(content, index);
 }
-
-/** Whether only word characters stand between a single-quoted string's escaped-looking closing quote and the quote at `index`. */
-function closesEscapedWord(lexer: StringLexer, index: number): boolean {
-  return lexer.escapedClose !== -1 && WORD_RUN.test(lexer.content.slice(lexer.escapedClose + 1, index));
-}
-
-/** A run of letters, digits and underscores, the whole text. */
-const WORD_RUN = /^[\p{L}\p{N}_]+$/u;
 
 /** A Python string prefix (`r`, `b`, `u`, `f`, `rb`, `br`, `fr`, `rf`, any case) standing as a whole word before a quote. */
-const PYTHON_STRING_PREFIX = /(?:^|[^\p{L}\p{N}_])([rRbBuUfF]|[rR][bBfF]|[bBfF][rR])$/u;
+const PYTHON_STRING_PREFIX = /(?:^|[^\p{L}\p{N}_])(?:[rRbBuUfF]|[rR][bBfF]|[bBfF][rR])$/u;
 
 /**
  * Whether the open string is known to be one. A quote after a word character

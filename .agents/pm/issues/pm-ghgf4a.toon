@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[3]: "area:security",false-positive,secret-guard
 created_at: "2026-11-26T17:33:54.789Z"
-updated_at: "2026-11-26T17:33:54.789Z"
+updated_at: "2026-11-26T18:08:47.055Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "After a declined quote, trust resumes at a boundary that resolves the ambiguity (a confirmed scalar, flow-mapping or shell-word boundary), so a later member's bare reference is clean while the shell desync lines from pm-gh1781 stay reported; Adjacent Python string literals are decoded and joined before the value is judged in Python expression context; the backslash-keeping join stays for shell words; The pm-gh1781 corpus differential shows no lost finding"
@@ -17,4 +17,6 @@ expected_result: A bare reference in a structured member is a placeholder howeve
 actual_result: A prose apostrophe or a joined shell segment earlier on the line makes a later bare reference a finding
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1781,discovered_from,"2026-11-26T17:33:54.789Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-26T18:08:47.054Z","harness:claude-code","Also in scope, from Greptile and Codex round 5 on PR #1789: a Python string that escapes an apostrophe (an escaped-apostrophe bytes or raw string, or an unprefixed one after an assignment) reads as a shell close under the per-line lexer, so a later dict member on its line keeps the conservative reading and a bare reference there is reported. Two narrower exceptions (treating the quote that ends the word after an escaped apostrophe as Python's closer, and judging a prefixed string's escapes by the context before its prefix) were tried and reverted on PR #1789, because each let a shell line hide a literal that main reports (both lines are spec cases). A fix needs a signal that separates Python from shell context beyond one quote's neighbourhood."
 body: ""
