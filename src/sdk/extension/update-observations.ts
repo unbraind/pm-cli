@@ -394,8 +394,11 @@ function isConsistentWithSource(observation: ExtensionUpdateObservation, source:
   if (!isRegistryNpmSource(source)) return observation.update_available === false;
   // A registry verdict, positive or negative, must be the one the live check's comparison gives for an exact version
   // it accepts, so an edited row can neither invent an update nor hide one (Codex review rounds 13, 14 and 19).
-  return observation.remote_version !== null && isExactNpmVersion(observation.remote_version) &&
-    isNewerRegistryVersion(observation.remote_version, source.version ?? observation.installed_version) === observation.update_available;
+  // The baseline is the record's own exact npm version, as the live check requires; without one it answers unknown,
+  // so no verdict for that record is one it produced (Codex review round 22).
+  return typeof source.version === "string" && isExactNpmVersion(source.version) &&
+    observation.remote_version !== null && isExactNpmVersion(observation.remote_version) &&
+    isNewerRegistryVersion(observation.remote_version, source.version) === observation.update_available;
 }
 
 /** The newer version an applicable observation reports (`available` when the provider named none), or null when none is known. */

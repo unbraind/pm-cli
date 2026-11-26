@@ -643,9 +643,16 @@ const DEFAULT_RECOVERY_ALLOWED_VALUES_LIMIT = 8;
  */
 const WHOLE_RECOVERY_DOMAIN_MAX = 12;
 
+/** The initial render's limit: a domain of at most WHOLE_RECOVERY_DOMAIN_MAX values prints whole, a longer one the default. */
+const UNBUDGETED_RECOVERY_ALLOWED_VALUES_LIMIT = Number.POSITIVE_INFINITY;
+
 /** Bound text legal domains while leaving their complete machine representation intact. */
 function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined, limit: number): void {
-  const shown = values !== undefined && limit >= DEFAULT_RECOVERY_ALLOWED_VALUES_LIMIT && values.length <= WHOLE_RECOVERY_DOMAIN_MAX ? values.length : limit;
+  // Only the initial, unbudgeted render prints a small domain whole; a budgeted fallback keeps its cap, so a long
+  // tail cannot push it straight down to the tightest one (Codex review round 22).
+  const shown = values !== undefined && limit === UNBUDGETED_RECOVERY_ALLOWED_VALUES_LIMIT && values.length <= WHOLE_RECOVERY_DOMAIN_MAX
+    ? values.length
+    : Math.min(limit, DEFAULT_RECOVERY_ALLOWED_VALUES_LIMIT);
   const visible = values?.slice(0, shown).map((value) => /^[\p{L}\p{N}._:/@=-]+$/u.test(value) ? value : JSON.stringify(value));
   appendRecoveryListLine(lines, "allowed_values", visible, ", ");
   if (values && values.length > shown) {
@@ -861,7 +868,7 @@ export function renderGuidanceMessage(
   message: GuidanceMessage,
   options: RenderGuidanceOptions = {},
 ): string {
-  return renderGuidanceMessageWithRecoveryLimit(message, options, DEFAULT_RECOVERY_ALLOWED_VALUES_LIMIT);
+  return renderGuidanceMessageWithRecoveryLimit(message, options, UNBUDGETED_RECOVERY_ALLOWED_VALUES_LIMIT);
 }
 
 /** Project legal choices only while rendering so every compact view keeps the original omission count. */

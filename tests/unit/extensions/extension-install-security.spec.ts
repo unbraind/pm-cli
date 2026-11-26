@@ -326,6 +326,14 @@ describe("local npm package archives", () => {
       expect(gitResolved).toMatchObject({ version: "1.2.3" });
       await gitResolved.cleanup();
     }
+    // Bare owner/repo shorthand is read as a local directory first, so a replay elsewhere fails closed instead of
+    // installing from a git host (Codex review round 22).
+    await expect(
+      _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        { kind: "npm", input: "npm:plugins/my-plugin-absent", spec: "plugins/my-plugin-absent" },
+        packNamed("pm-archive-demo"),
+      ),
+    ).rejects.toThrow();
     // A named alias keeps the identity check, so a receipt for another package is still refused.
     await expect(
       _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(

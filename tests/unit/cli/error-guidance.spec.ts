@@ -58,6 +58,13 @@ describe("pm cli error guidance context plumbing", () => {
     const twelve = Array.from({ length: 12 }, (_, index) => `value-${index}`);
     expect(formatPmCliErrorForDisplay("Invalid", { recovery: { allowed_values: twelve } })).not.toContain("allowed_values_omitted");
     expect(formatPmCliErrorForDisplay("Invalid", { recovery: { allowed_values: [...twelve, "value-12"] } })).toContain("allowed_values_omitted: 5");
+    // A small domain whose long tail overflows the text ceiling keeps the eight-value cap on the budgeted fallback
+    // instead of dropping straight to three (Codex review round 22).
+    const short = Array.from({ length: 8 }, (_, index) => `short-${index}`);
+    const long = Array.from({ length: 4 }, (_, index) => `long-${index}-${"x".repeat(1500)}`);
+    const bounded = formatPmCliErrorForDisplay("Invalid", { recovery: { allowed_values: [...short, ...long] } });
+    expect(bounded).toContain(`allowed_values: ${short.join(", ")}`);
+    expect(bounded).toContain("allowed_values_omitted: 4");
   });
 
   it("preserves empty and whitespace legal values before bounding human recovery", () => {

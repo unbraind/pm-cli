@@ -37,7 +37,10 @@ it; reinstalling the identical version from the identical source keeps it,
 because its answer still applies. A registry `latest` that is not
 newer than the installed npm version under SemVer precedence is recorded as no
 update, because upgrading to it would downgrade; `pm package manage` applies the
-same verdict. A bounded (1 MiB) regular file is read only when the record
+same verdict. A cached verdict is used only when the live check could have
+given it: a registry row must match that check's exact-version rule and SemVer
+comparison against the record's own npm version, and a repository row must
+carry the remote commit. A bounded (1 MiB) regular file is read only when the record
 entry is a regular file and the opened descriptor is one too, and nothing is
 written while `runtime/` is a link or not a directory (checked before and after
 the lock is taken): a link, FIFO or oversized file reads as no knowledge. Node

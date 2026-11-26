@@ -322,9 +322,11 @@ describe("extension update observations", () => {
     expect(findApplicableUpdateObservation([observation({ remote_version: "not-a-version" })], { ...installed, source: npm })).toBeUndefined();
     // npm resolves a leading-v version as exact, so the live check could record it, and the reader accepts it too.
     expect(findApplicableUpdateObservation([observation({ remote_version: "v2026.11.23" })], { ...installed, source: npm })?.remote_version).toBe("v2026.11.23");
-    // Without a recorded npm version, the manifest version the observation was taken against is compared.
+    // Without the record's own exact npm version the live check answers unknown, so no cached verdict applies; the
+    // manifest version is never substituted for it (Codex review round 22).
     const { version: _version, ...unversioned } = npm;
-    expect(findApplicableUpdateObservation([observation()], { ...installed, source: unversioned })?.remote_version).toBe("2026.11.23");
+    expect(findApplicableUpdateObservation([observation()], { ...installed, source: unversioned })).toBeUndefined();
+    expect(findApplicableUpdateObservation([observation()], { ...installed, source: { ...npm, version: "^2026.10.4" } })).toBeUndefined();
     // A local artifact is never checked, so a cached update for it is rejected; a "no update" row is harmless.
     const local = { kind: "local" as const, input: "./pm-github", location: "/tmp/pm-github" };
     expect(findApplicableUpdateObservation([observation()], { ...installed, source: local })).toBeUndefined();

@@ -415,16 +415,23 @@ function npmPackageNameFromSpec(spec: string): string {
   return unscoped?.[1] ?? withoutAlias;
 }
 
+/** An explicitly qualified git or URL spec: a hosted-git scheme, a `git`/`git+` transport, or a URL. */
+const QUALIFIED_REMOTE_NPM_SPEC = /^(?:(?:github|gitlab|bitbucket|gist):|git(?:\+[a-z]+)?:|[a-z][a-z0-9+.-]*:\/\/)/iu;
+
 /**
  * The package name an npm pack receipt must carry for a spec, or undefined when the spec names none: a complete
- * local-file alias, and a git or URL spec without an alias name (`github:owner/repo`, `https://host/pkg.tgz`), whose
- * textual prefix is no package name, so the sole receipt npm returns is accepted (CodeRabbit review round 13).
+ * local-file alias, and an explicitly qualified git or URL spec without an alias name (`github:owner/repo`,
+ * `https://host/pkg.tgz`), whose textual prefix is no package name, so the sole receipt npm returns is accepted
+ * (CodeRabbit review round 13). Bare `owner/repo` shorthand keeps the prefix check: the installer reads that
+ * spelling as a local directory first, so a replay elsewhere must fail closed instead of installing from a git
+ * host (Codex review round 22).
  */
 function resolveExpectedPackedNpmIdentity(spec: string): string | undefined {
   if (isNpmLocalFileAliasSpec(spec)) return undefined;
+  const trimmed = spec.trim();
   try {
-    const parsed = npa(spec.trim());
-    if ((parsed.type === "git" || parsed.type === "remote") && !parsed.name) return undefined;
+    const parsed = npa(trimmed);
+    if ((parsed.type === "git" || parsed.type === "remote") && !parsed.name && QUALIFIED_REMOTE_NPM_SPEC.test(trimmed)) return undefined;
   } catch {
     // An unparseable spec keeps the textual prefix check; npm itself reports why it cannot pack it.
   }
