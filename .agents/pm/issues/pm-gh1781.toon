@@ -2,13 +2,13 @@ id: pm-gh1781
 title: "GH-1781: secret guard reports a single-quoted reference in compact JSON, and a value of seven backslashes, as password_assignment on 2026.11.25"
 description: "Follow-up to GH-1775 (fixed in 2026.11.25). Two neighbouring shapes that returned no finding on 2026.11.14 are reported as password_assignment on 2026.11.25. First, a single-quoted run-time reference inside a JSON string in compact form: title 'password': '${BUILD_PASSWORD}' followed directly by the next member; pretty JSON, a title-only object and the double-quoted twin stay clean, so the verdict depends on serialization. Second, a single-quoted value made only of backslashes: seven backslashes (an unterminated value, since the last quote is escaped) is reported where 2026.11.14 reported nothing; six stay clean and eight were already reported. Reading: the single-quoted value is not ended at its own closing quote when it sits inside a JSON string, and an escape-only value is judged as a literal secret."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: false-positive,"gh:1781",sdk,secret-guard
 created_at: "2026-11-26T11:21:54.325Z"
-updated_at: "2026-11-26T17:34:11.859Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#bde5973a64851be416b1c911"
+updated_at: "2026-11-26T17:43:45.183Z"
+closed_at: "2026-11-26T17:43:45.164Z"
+completed_at: "2026-11-26T17:43:45.164Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: The four JSON forms of the single-quoted reference return no findings; Single-quoted values of six and seven backslashes return no findings; a literal password is still reported; A differential against the published 2026.11.14 bundle shows no other verdict change for the reported shapes
@@ -16,8 +16,9 @@ parent: pm-doxj
 risk: medium
 confidence: 80
 severity: medium
+resolution: "The structured value judge ends a value read from the text at the closing quote of the string it sits in, as flatMatches does, through a checkpointed lexer cursor; a cut is made only where the string state is unambiguous (a line that declined a quote of a kind reads as shell for that kind); single-quoted literals are judged decoded, with backslashes kept over a closed escape-aware span, and as the shell-word and TOML text reading"
 expected_result: "A pure run-time reference in a single-quoted value is clean in every JSON serialization, and an escape-only value carries no secret finding, as on 2026.11.14"
-actual_result: Compact JSON with a single-quoted reference and a seven-backslash single-quoted value report password_assignment
+actual_result: "The reproduction is clean in compact, pretty, title-only and double-quoted JSON; six and seven backslashes are clean and eight are reported; literals and attached literals stay reported in every grid form; follow-ups pm-rzojed and pm-ghgf4a own the rendered-splice detection and the line-wide distrust refinement"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1775,discovered_from,"2026-11-26T11:21:54.325Z","harness:claude-code","cli:create:dep",detected
   pm-jzrtsr,related,"2026-11-26T17:19:28.440Z","harness:claude-code","cli:update:dep",detected
@@ -33,4 +34,13 @@ notes[7]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/core/shared/secret-rules.ts,project,structured value judge ends at the enclosing string; raw single-quoted reading ends at its first quote
   tests/unit/sdk/security/secret-guard-string-boundaries.spec.ts,project,GH-1781 grid forms and reproduction
+close_reason: Quoted members inside JSON text end at their string and escape-only values carry no finding
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1781
+  gate_id: secret-guard-string-boundaries
+  negative_control: "the five quoted-member forms added to secret-guard-string-boundaries.spec.ts fail on the previous module for every bare reference and key; an 18,816-input generated corpus differential against the published 2026.11.14 and 2026.11.25 bundles shows no lost finding on a literal-bearing value"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/security
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

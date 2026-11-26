@@ -2,13 +2,13 @@ id: pm-gh1787
 title: "GH-1787: extension workspace discovery ignores GIT_CEILING_DIRECTORIES and binds a non-Git tracker to its parent checkout"
 description: "Published 2026.11.24 and 2026.11.25 supply the enclosing Git checkout as an extension command's workspace even when the explicitly selected child workspace is not in a repository by Git's own discovery. With a Git repository at parent/, a non-Git workspace at parent/child/, GIT_CEILING_DIRECTORIES set to parent/ and PM_SOURCE_WORKSPACE_ROOT set to child/, git rev-parse --show-toplevel refuses to discover a repository, yet a local extension command sees source_workspace_root = parent, repo_root = parent and pm_root_rel = child/.agents/pm, with or without Git on the command PATH. Expected: source_workspace_root = child, no repo_root, and pm_root_rel = .agents/pm. The pm-swarm capacity and continuation tests select Git versus tracker-only behavior from this context, and four tracker-only cases fail under an ordinary nested Git parent."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: extensions,"gh:1787",git,workspace
 created_at: "2026-11-26T11:22:42.361Z"
-updated_at: "2026-11-26T17:16:20.718Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#bde5973a64851be416b1c911"
+updated_at: "2026-11-26T17:43:43.699Z"
+closed_at: "2026-11-26T17:43:43.682Z"
+completed_at: "2026-11-26T17:43:43.682Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A nested non-Git tracker fixture under a real parent checkout, with the explicit source root and ceiling, gives the child root, no VCS root and the correct tracker-relative path, with and without Git on the command PATH; Ordinary Git checkouts and .git-file worktrees keep their discovery, and linked-test runs keep their independent tracker path; The linked pm-swarm tracker-only cases pass against the corrected host"
@@ -16,8 +16,9 @@ parent: pm-doxj
 risk: medium
 confidence: 80
 severity: medium
+resolution: "discoverSourceWorkspace follows Git's discovery: it walks the physical ancestors of the start directory resolved as spelled, never moves up into a GIT_CEILING_DIRECTORIES entry (resolved and dropped when unresolvable before the first empty entry, compared as spelled in native separator form after it), returns source and checkout from one walk, and computes pm_root_rel between physical paths when both resolve"
 expected_result: "An extension handler for a nested non-Git tracker under a ceiling sees the child source root, no VCS root, and the tracker path relative to the child"
-actual_result: The handler sees the parent checkout as source and repo root and a tracker path relative to the parent
+actual_result: "A nested non-Git tracker under a real parent checkout gets the child root, no repo_root and pm_root_rel .agents/pm with Git on PATH and with a Git-free PATH; the pm-swarm PR 102 cases pass 159 of 159 against this host under a nested Git parent, where published 2026.11.26 fails 11"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fc9gm4,discovered_from,"2026-11-26T11:22:42.361Z","harness:claude-code","cli:create:dep",detected
   pm-j4ac9a,related,"2026-11-26T11:22:42.361Z","harness:claude-code","cli:create:dep",detected
@@ -30,4 +31,13 @@ notes[5]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/core/extensions/index.ts,project,findSourceRepositoryRoot honours GIT_CEILING_DIRECTORIES
   tests/unit/extensions/portable-workspace-ceiling.spec.ts,project,Git ceiling discovery rule for extension workspace coordinates
+close_reason: Extension workspace coordinates follow Git's ceiling-aware discovery
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1787
+  gate_id: portable-workspace-git-ceiling
+  negative_control: "tests/unit/extensions/portable-workspace-ceiling.spec.ts and the nested non-Git tracker case in extension-host-contracts.integration.spec.ts fail on the previous discovery, which bound the child tracker to its parent checkout; pm-swarm PR 102 capacity and continuation cases fail 11 of 159 on published 2026.11.24 and 2026.11.26 under a nested Git parent and pass 159 of 159 against this host"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/portable-workspace-ceiling.spec.ts tests/integration/extension-host-contracts.integration.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

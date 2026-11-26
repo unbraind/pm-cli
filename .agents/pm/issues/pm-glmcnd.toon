@@ -2,21 +2,22 @@ id: pm-glmcnd
 title: Release publication downloads the producer-binding artifact once and blocks the daily cut when the download endpoint trails the listing
 description: "The blocker_retry Auto Release run 45818705282 on 2026-11-26 passed every gate, uploaded release-producer-binding-1 (artifact 15118638954, finalized 12:56:28.2Z), found it in a complete inventory on the first read, and failed 1.5 s later in recordReleasePublicationOrigin: gh run download returned HTTP 404 for actions/artifacts/15118638954/zip. Nothing was pushed or published and blocker issue GH-1788 was reopened with a retry marker, so only a manual dispatch could still cut the day's release. pm-jvb9pk made the inventory read wait out a trailing listing; the download of a listed artifact is a second read of the same eventually consistent store and still runs once, so a not-yet-servable archive costs the whole daily release exactly as a trailing listing did."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:release",auto-release,"gh:1788",reliability
 created_at: "2026-11-26T14:22:25.576Z"
-updated_at: "2026-11-26T17:16:21.763Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#bde5973a64851be416b1c911"
+updated_at: "2026-11-26T17:43:27.300Z"
+closed_at: "2026-11-26T17:43:27.277Z"
+completed_at: "2026-11-26T17:43:27.277Z"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "The publication gate downloads the selected binding again after a bounded wait when the provider answers HTTP 404, each attempt into a fresh directory; Any other download failure, and a 404 that outlasts the wait, is refused at once with the provider's error; the downloaded file is verified exactly as before; A spec drives trailing 404 downloads, a persistent 404 and a non-404 failure through the gate and proves the waits and refusals; GH-1788 carries a root-cause comment naming this item"
 parent: pm-u9d0
 risk: low
 confidence: high
+resolution: "downloadProducerBinding retries only an HTTP 404 download after the bounded waits of the inventory read (1, 2, 4, 8, 15 s), each attempt into a fresh directory; after the download the inventory is read again with the same waits and must still hold exactly the validated artifact id, so a visible replacement is refused at once"
 expected_result: "A producer binding listed in the complete inventory is downloaded and verified, and the release is pushed"
-actual_result: "gh run download answered HTTP 404 1.5 s after the upload finalized, and the gate refused the release"
+actual_result: "release-tag-provenance.spec.ts proves trailing, persistent and non-404 download failures, a replaced binding and a partial post-download listing; GH-1788 carries the root-cause comment"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-jvb9pk,discovered_from,"2026-11-26T14:22:25.576Z","harness:claude-code","cli:create:dep",detected
 notes[3]{created_at,author,text}:
@@ -26,4 +27,13 @@ notes[3]{created_at,author,text}:
 files[2]{path,scope,note}:
   scripts/release/release-tag-provenance.mjs,project,downloadProducerBinding retries an HTTP 404 within the bounded wait
   tests/unit/scripts/release/release-tag-provenance.spec.ts,project,"trailing, persistent and non-404 download failures"
+close_reason: The publication gate waits out a trailing artifact download and refuses a replaced binding
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-glmcnd
+  gate_id: release-producer-download-reread
+  negative_control: "tests/unit/scripts/release/release-tag-provenance.spec.ts drives two trailing 404 downloads to a verified publication; against the previous script the first 404 throws, as in Auto Release run 45818705282"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-tag-provenance.spec.ts,node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

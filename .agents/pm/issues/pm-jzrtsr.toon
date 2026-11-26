@@ -2,13 +2,13 @@ id: pm-jzrtsr
 title: "Platform nightly legs regress after the shell-dialect rendering: Windows tests expect POSIX recovery text, and macOS bash 3.2 with history expansion misparses a rendered command at a non-ASCII apostrophe"
 description: "The 2026-11-25 nightly (run 45629253836, commit b7356de67, the first main after the PowerShell and bash history-expansion rendering changes) failed on windows-latest shards 2, 3 and 4 and on macos-latest shard 1, so the aggregate ubuntu job failed too; the previous nightly on 6b998021d was green. Windows: recovery text is now rendered in the cmd dialect, for example ^\"command=^<actual command^>,timeout_seconds=\\^\"90\\^\"^\", while tests in linked-resource-admission.integration.spec.ts, linked-resource-recovery.spec.ts and register-commands.spec.ts expect the POSIX spelling command=<actual command>; these are platform-dependent expectations. macOS: rendered-command-shell-safety.integration.spec.ts 'posix: bash with history expansion on receives every argument literally' receives 25 arguments instead of 12, the parse breaking at the argument smart’s (U+2019), so a rendered command is not paste-safe under the system bash 3.2 with history expansion; this is a product defect, not only a test expectation. Linux passes both."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: ci,macos,nightly,regression,shell,windows
 created_at: "2026-11-26T11:22:56.337Z"
-updated_at: "2026-11-26T15:30:19.034Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#bde5973a64851be416b1c911"
+updated_at: "2026-11-26T17:43:28.575Z"
+closed_at: "2026-11-26T17:43:28.553Z"
+completed_at: "2026-11-26T17:43:28.553Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Windows recovery-text tests derive their expectations from the dialect renderer instead of a POSIX literal; The rendered-command safety test passes under bash 3.2 with history expansion, including non-ASCII arguments; A dispatched Nightly Validation run is green on every leg"
@@ -16,8 +16,9 @@ parent: pm-doxj
 risk: high
 confidence: 85
 severity: high
+resolution: "quotePosixCommandArg single-quotes an argument holding !, CR or LF, or ending in a backslash, the spellings bash 3.2's history pre-scan misreads in double quotes; the Windows recovery-text specs derive their expectations from the dialect renderer"
 expected_result: "Every nightly leg passes: Windows tests compare recovery text through the dialect renderer, and a rendered POSIX command survives bash 3.2 with history expansion byte for byte"
-actual_result: Windows legs fail on POSIX-spelled expectations and the macOS leg receives 25 arguments instead of 12 from one rendered command
+actual_result: "33 hostile arguments round-trip byte for byte under bash 3.2; the three Windows specs pass under PM_COMMAND_SHELL=posix, cmd and powershell; dispatched Nightly Validation run 45851305902 is green on every leg"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-kjoudp,discovered_from,"2026-11-26T11:22:56.337Z","harness:claude-code","cli:create:dep",detected
   pm-oq893h,discovered_from,"2026-11-26T11:22:56.337Z","harness:claude-code","cli:create:dep",detected
@@ -26,4 +27,13 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/core/shared/command-line.ts,project,"POSIX_SINGLE_QUOTED: !, CR or LF, or a trailing backslash"
   tests/integration/cli/rendered-command-shell-safety.integration.spec.ts,project,bash 3.2 history-expansion fixture
+close_reason: Every nightly leg passes and rendered POSIX commands are paste-safe under bash 3.2
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-jzrtsr
+  gate_id: rendered-command-shell-safety
+  negative_control: "rendered-command-shell-safety.integration.spec.ts now puts a ! argument after a line break and adds trailing-backslash, CR and non-ASCII arguments; the previous renderer delivers 12 of 25 arguments under bash 3.2 (official bash:3.2 image) and fails the macOS nightly leg"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/cli/argv-utils.spec.ts tests/integration/cli/rendered-command-shell-safety.integration.spec.ts,PM_COMMAND_SHELL=cmd node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/commands/register-commands.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
