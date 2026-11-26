@@ -130,10 +130,14 @@ function parseObservation(value: unknown): ExtensionUpdateObservation | undefine
 /** The core lock's stale-cleanup gate directory suffix, whose owner.json the lock reads while reclaiming. */
 const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
 
-/** Whether a path exists as something other than a regular file (a FIFO, a directory, a link). */
-async function isNonRegularEntry(target: string): Promise<boolean> {
+/** Lock metadata pm writes is a few hundred bytes; anything far larger is not lock state the core lease should read whole. */
+const MAX_LOCK_METADATA_BYTES = 64 * 1024;
+
+/** Whether a lock metadata path exists as something the core lease must not read: not a regular file, or oversized. */
+async function isUnsafeLockMetadata(target: string): Promise<boolean> {
   try {
-    return !(await fs.lstat(target)).isFile();
+    const stat = await fs.lstat(target);
+    return !stat.isFile() || stat.size > MAX_LOCK_METADATA_BYTES;
   } catch {
     return false;
   }
@@ -306,11 +310,12 @@ export async function recordExtensionUpdateObservations(
   };
   await assertRuntimeDirectory();
   // maxWaitMs caps the wait even when PM_LOCK_WAIT_MS asks for longer: this derived write must never stall a manage call.
-  // The core lock readers block on a FIFO, so a lock file or stale-cleanup gate owner file that is not a regular file
-  // refuses this derived write up front instead of hanging a successful check (Codex review rounds 15 and 17).
+  // The core lock readers block on a FIFO and read a file whole, so a lock file or stale-cleanup gate owner file that
+  // is not a small regular file refuses this derived write up front instead of hanging or exhausting memory after a
+  // successful check (Codex review rounds 15, 17 and 18).
   const lockPath = path.join(scopeRoot, "locks", "extension-update-observations.lock");
   for (const metadata of [lockPath, path.join(`${lockPath}${STALE_CLEANUP_GATE_SUFFIX}`, "owner.json")]) {
-    if (await isNonRegularEntry(metadata)) throw new Error("update observation lock metadata is not a regular file");
+    if (await isUnsafeLockMetadata(metadata)) throw new Error("update observation lock metadata is not a small regular file");
   }
   // An expired lease of an interrupted check may be reclaimed (as session state does): the cache is derived, and the
   // commit fence below keeps a resumed stale holder from overwriting its successor (Codex review round 12).

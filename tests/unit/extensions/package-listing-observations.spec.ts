@@ -195,13 +195,18 @@ describe("extension update observations", () => {
     // A lock path that is not a regular file refuses the derived write instead of hanging on it (Codex review round 15).
     const lockPath = path.join(scopeRoot, "locks", "extension-update-observations.lock");
     await fs.mkdir(lockPath, { recursive: true });
-    await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow("not a regular file");
+    await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow("not a small regular file");
     await fs.rm(lockPath, { recursive: true });
     // So does a stale-cleanup gate owner file that is not a regular file (Codex review round 17).
     const gateOwner = path.join(`${lockPath}.stale-cleanup`, "owner.json");
     await fs.mkdir(gateOwner, { recursive: true });
-    await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow("not a regular file");
+    await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow("not a small regular file");
     await fs.rm(`${lockPath}.stale-cleanup`, { recursive: true });
+    // An oversized regular lock file is refused too, since the core lease reads it whole (Codex review round 18).
+    await fs.mkdir(path.dirname(lockPath), { recursive: true });
+    await fs.writeFile(lockPath, "x".repeat(64 * 1024 + 1));
+    await expect(recordExtensionUpdateObservations(scopeRoot, extensionsRoot(), [observation()])).rejects.toThrow("not a small regular file");
+    await fs.rm(lockPath);
     // The merge runs under a released per-scope lock.
     await expect(fs.readdir(path.join(scopeRoot, "locks"))).resolves.not.toContain("extension-update-observations.lock");
   });

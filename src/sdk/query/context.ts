@@ -2966,9 +2966,15 @@ function renderExtensionHealthRowMarkdown(row: ContextExtensionHealthRow): strin
   return `  - ${escapeMarkdownText(row.name)} (${row.scope ?? "unknown scope"}, ${escapeMarkdownText(row.version ?? "unknown version")}): ${facts.join(", ")}`;
 }
 
-/** Escape the inline Markdown syntax characters and fold line breaks, so an untrusted label renders as one line of literal text. */
+/**
+ * Escape the inline Markdown syntax characters, fold line breaks, and replace every other control character, so an
+ * untrusted label renders as one line of literal text and cannot drive the terminal (Codex review round 18).
+ */
 function escapeMarkdownText(text: string): string {
-  return text.replace(/[\r\n]+/gu, " ").replace(/[\\`*_[\]<>|~]/gu, "\\$&");
+  return text
+    .replace(/[\r\n]+/gu, " ")
+    .replace(/\p{Cc}/gu, "\uFFFD")
+    .replace(/[\\`*_[\]<>|~]/gu, "\\$&");
 }
 
 /** Render a command as a fenced block whose fence no run of backticks inside it can close; it keeps line breaks and shell escapes verbatim. */
