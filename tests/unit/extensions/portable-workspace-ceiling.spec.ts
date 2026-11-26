@@ -3,7 +3,7 @@
  * `GIT_CEILING_DIRECTORIES`: a nested non-Git tracker under a ceiling is not
  * bound to its parent checkout (GH-1787, pm-gh1787).
  */
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -38,9 +38,9 @@ function resolveFor(source: string, ceilings?: string[]) {
   return resolvePortableWorkspaceContext(pmRoot);
 }
 
-/** Whether the host's temporary directory sits inside a checkout, which a walk to the filesystem root would find. */
-function temporaryRootInsideCheckout(): boolean {
-  for (let cursor = realpathSync(os.tmpdir()); ; cursor = path.dirname(cursor)) {
+/** Whether a directory sits inside a checkout, which a walk to the filesystem root would find. */
+function insideCheckout(directory: string): boolean {
+  for (let cursor = directory; ; cursor = path.dirname(cursor)) {
     if (existsSync(path.join(cursor, ".git"))) return true;
     if (path.dirname(cursor) === cursor) return false;
   }
@@ -132,7 +132,9 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
     expect(resolvePortableWorkspaceContext(path.join(alias, "missing", ".agents", "pm"))).toEqual({ source_workspace_root: parent, repo_root: parent });
   });
 
-  it.skipIf(temporaryRootInsideCheckout())("walks to the filesystem root when no checkout holds the start", () => {
+  it("walks to the filesystem root when no checkout holds the start", (context) => {
+    // Judged on the resolved fixture itself, so a host temporary directory inside a checkout skips the case.
+    if (insideCheckout(path.dirname(root))) context.skip();
     // The temporary root holds no .git marker, so the walk reaches the root and stops there.
     expect(resolveFor(root)).toEqual({ source_workspace_root: root, pm_root_rel: "parent/child/.agents/pm" });
   });
