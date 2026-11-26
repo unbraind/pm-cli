@@ -113,7 +113,7 @@ describe("package listing --fields contract", () => {
   it("refuses --fields on a lifecycle action that shapes no rows, and an explore or manage typo before any lock (Codex review round 21)", async () => {
     // A path that does not exist proves no filesystem or lock work ran before the refusal.
     const missing = { path: path.join(os.tmpdir(), "pm-fields-admission-missing", "tracker") };
-    await expect(runExtension(undefined, { describe: true, fields: "not_a_row_key" }, missing)).rejects.toThrow("--fields is only valid with --explore, --manage, --catalog or pm package list.");
+    await expect(runExtension(undefined, { describe: true, fields: "not_a_row_key" }, missing)).rejects.toThrow("--fields is only valid on the package listings: pm package list, pm package explore, pm package manage and pm package catalog.");
     await expect(runExtension(undefined, { manage: true, fixManagedState: true, fields: "typo" }, missing)).rejects.toThrow("Package manage --fields has unknown field(s): typo");
   });
 
@@ -331,14 +331,21 @@ describe("extension update observations", () => {
     const local = { kind: "local" as const, input: "./pm-github", location: "/tmp/pm-github" };
     expect(findApplicableUpdateObservation([observation()], { ...installed, source: local })).toBeUndefined();
     expect(findApplicableUpdateObservation([observation({ update_available: false })], { ...installed, source: local })).toBeDefined();
-    // A repository source reports commits, which carry no version order.
-    const github = { kind: "github" as const, input: "o/r", location: "o/r" };
-    expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789ab" })], { ...installed, source: github })).toBeDefined();
+    // A repository source reports commits, which carry no version order; the verdict must match the installed commit as
+    // the live check compares it (Codex review round 26, CodeRabbit review round 15).
+    const installedCommit = "0123456789abcdef0123456789abcdef01234567";
+    const github = { kind: "github" as const, input: "o/r", location: "o/r", commit: installedCommit };
+    expect(findApplicableUpdateObservation([observation({ remote_version: "fedcba987654" })], { ...installed, source: github })).toBeDefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789AB", update_available: false })], { ...installed, source: github })?.update_available).toBe(false);
+    // A positive row naming the installed commit, or a negative row naming another, contradicts the live check; so does
+    // any verdict for a record without an installed commit, which the live check answers as unknown.
+    expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789ab" })], { ...installed, source: github })).toBeUndefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: "fedcba987654", update_available: false })], { ...installed, source: github })).toBeUndefined();
+    expect(findApplicableUpdateObservation([observation({ remote_version: "fedcba987654" })], { ...installed, source: { ...github, commit: undefined } })).toBeUndefined();
     // A verdict without the remote commit the live check always records is rejected, positive (CodeRabbit review round 10)
     // or negative (Codex review round 20), so a commit-less negative row cannot mask a valid update.
     expect(findApplicableUpdateObservation([observation({ remote_version: null })], { ...installed, source: github })).toBeUndefined();
     expect(findApplicableUpdateObservation([observation({ remote_version: null, update_available: false })], { ...installed, source: github })).toBeUndefined();
-    expect(findApplicableUpdateObservation([observation({ remote_version: "0123456789ab", update_available: false })], { ...installed, source: github })?.update_available).toBe(false);
     // Anything but the hexadecimal commit a repository check records is rejected (Codex review round 14).
     expect(findApplicableUpdateObservation([observation({ remote_version: "abc\n```sh" })], { ...installed, source: github })).toBeUndefined();
   });

@@ -1779,7 +1779,8 @@ const assertExtensionActionOptionScope = (
       // Only the listings shape rows, so a describe or install never silently ignores a selection (Codex review round 21).
       triggered: options.fields !== undefined,
       allowed: action === "explore" || action === "manage" || action === "catalog",
-      message: "--fields is only valid with --explore, --manage, --catalog or pm package list.",
+      // Named as the subcommands the CLI registers --fields on, so the advice runs as written (Codex review round 26).
+      message: "--fields is only valid on the package listings: pm package list, pm package explore, pm package manage and pm package catalog.",
     },
   ];
   const invalidGuard = guards.find(

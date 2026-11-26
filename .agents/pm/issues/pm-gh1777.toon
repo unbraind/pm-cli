@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,extensions,"gh:1777",packages,token-efficiency
 created_at: "2026-11-25T05:51:18.663Z"
-updated_at: "2026-11-26T09:20:26.567Z"
+updated_at: "2026-11-26T10:18:31.643Z"
 closed_at: "2026-11-25T07:16:03.640Z"
 completed_at: "2026-11-25T07:16:03.640Z"
 author: "harness:claude-code"
@@ -82,10 +82,10 @@ docs[2]{path,scope}:
   docs/EXTENSION_LIFECYCLE.md,project
 close_reason: "pm package list lists the installed packages, and every package listing takes one --fields contract"
 contract_change:
-  api: "pm package list / pm packages list / pm extension list, pm package explore and manage rows, and the SDK StaticExtensionInventoryEntry/StaticExtensionInventoryResult types and ExtensionCommandOptions"
+  api: "pm package list / pm packages list / pm extension list, pm package explore and manage rows, and the SDK StaticExtensionInventoryEntry/StaticExtensionInventoryResult types, ExtensionCommandOptions and PM_TOOL_PARAMETERS_SCHEMA_VERSION"
   before: pm package list was an alias of pm package catalog and returned the bundled catalog (details.packages); explore and manage rows embedded the full contributions map; inventory rows had no update column
-  after: "pm package list is an alias of pm package inventory and returns the installed packages of the selected scope (extensions[] with an update column, plus updates_available); pm package catalog returns the bundled catalog; explore and manage rows leave contributions out unless --fields asks for it; list, explore, manage and catalog share one --fields contract"
-  migrate: "Scripts that read the bundled catalog from pm package list switch to pm package catalog (same rows and --fields); readers of contributions in explore or manage rows pass --fields with contributions, or use pm package describe; SDK consumers that enumerate the keys of StaticExtensionInventoryEntry, StaticExtensionInventoryResult or ExtensionCommandOptions (Record<keyof ...> maps, exhaustive key lists, strict fixtures) add the optional update and updates_available keys and the optional scope option (project, local or global, selecting the same scope as the boolean switches): installed rows carry update, an absent row (a looked-up name that is not installed) omits it, and inspectStaticExtensionInventory always emits updates_available"
+  after: "pm package list is an alias of pm package inventory and returns the installed packages of the selected scope (extensions[] with an update column, plus updates_available); pm package catalog returns the bundled catalog; explore and manage rows leave contributions out unless --fields asks for it; list, explore, manage and catalog share one --fields contract; PM_TOOL_PARAMETERS_SCHEMA_VERSION is 4.28.1, for the fields and scope parameters on the package explore and manage actions"
+  migrate: "Scripts that read the bundled catalog from pm package list switch to pm package catalog (same rows and --fields); readers of contributions in explore or manage rows pass --fields with contributions, or use pm package describe; SDK consumers that enumerate the keys of StaticExtensionInventoryEntry, StaticExtensionInventoryResult or ExtensionCommandOptions (Record<keyof ...> maps, exhaustive key lists, strict fixtures) add the optional update and updates_available keys and the optional scope option (project, local or global, selecting the same scope as the boolean switches): installed rows carry update, an absent row (a looked-up name that is not installed) omits it, and inspectStaticExtensionInventory always emits updates_available; consumers that pin the PM_TOOL_PARAMETERS_SCHEMA_VERSION literal type, or compare it for equality, accept 4.28.1"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added

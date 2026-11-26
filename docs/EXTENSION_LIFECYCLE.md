@@ -60,9 +60,11 @@ block. Rows are `{name, scope, version, status, update, shadowed_by}`:
 disabled copy keeps its row but is not counted; this is static selection, not
 activation truth, since no package module is imported) with a known update, and
 `next` names one live check per scope with a known update, `pm package manage
---<scope>`, only when that count is above zero; the check re-reads the
-registry and shows each package's update evidence (`update_available`,
-`last_update_remote_version`), and its remediation says to reinstall the
+--<scope>`, only when that count is above zero; the check re-reads each
+source (the npm registry for a registry package, the Git remote for a
+repository package) and shows its update evidence (`update_available`, plus
+`last_update_remote_version` for npm or `last_update_remote_commit` for a
+repository), and its remediation says to reinstall the
 updated sources (`pm package upgrade <name> --<scope>` upgrades one). The hint names no package, so
 no manifest-controlled name can select another installation, become an option,
 or lose its quoting, and the Markdown rendering puts each hint in its own fenced

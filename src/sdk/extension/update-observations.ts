@@ -382,15 +382,27 @@ export function findApplicableUpdateObservation(
 }
 
 /**
+ * Whether a cached repository verdict is the one the live check gives: it answers only against a recorded installed
+ * commit, always records the remote commit (stored as its 12-character prefix), and reports an update exactly when the
+ * two differ, so a negative row must name the installed commit and a positive row another one (Codex review rounds 14,
+ * 20 and 26, CodeRabbit review rounds 10 and 15). This also retires an update once its commit is installed, even when
+ * a pinned clock repeats the managed record's updated_at.
+ */
+function isConsistentGithubVerdict(observation: ExtensionUpdateObservation, installedCommit: string | undefined): boolean {
+  const installed = installedCommit?.trim().toLowerCase();
+  const remote = observation.remote_version?.toLowerCase();
+  if (!installed || remote === undefined || !/^[0-9a-f]{7,40}$/u.test(remote)) return false;
+  return installed.startsWith(remote) !== observation.update_available;
+}
+
+/**
  * Whether a cached verdict is one a check of this source could have produced, so an edited or corrupt row
  * never marks a local artifact updatable or an older npm release newer (Codex review round 12): only GitHub
  * and registry npm sources are checked, and an npm "update" must be newer under SemVer precedence.
  */
 function isConsistentWithSource(observation: ExtensionUpdateObservation, source: ManagedExtensionRecord["source"] | undefined): boolean {
   if (source === undefined) return true;
-  // A repository check that answered always records the short hexadecimal remote commit, whatever its verdict; anything
-  // else, a missing commit included, is not one it produced (Codex review rounds 14 and 20, CodeRabbit review round 10).
-  if (source.kind === "github") return observation.remote_version !== null && /^[0-9a-f]{7,40}$/u.test(observation.remote_version);
+  if (source.kind === "github") return isConsistentGithubVerdict(observation, source.commit);
   if (!isRegistryNpmSource(source)) return observation.update_available === false;
   // A registry verdict, positive or negative, must be the one the live check's comparison gives for an exact version
   // it accepts, so an edited row can neither invent an update nor hide one (Codex review rounds 13, 14 and 19).
