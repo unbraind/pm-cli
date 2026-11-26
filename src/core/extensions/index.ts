@@ -109,21 +109,27 @@ const AFTER_COMMAND_SNAPSHOT_OMITTED_FIELDS = new Set([
   "tests",
 ]);
 
-/** A directory's physical spelling for ceiling comparison, or its resolved spelling when it cannot be read. */
-function physicalDirectory(directory: string): string {
+/** A directory's physical path, or undefined when it cannot be resolved. */
+function physicalDirectory(directory: string): string | undefined {
   try {
     return realpathSync.native(directory);
   } catch {
-    return path.resolve(directory);
+    return undefined;
   }
 }
 
+/** One trailing separator dropped, as Git compares a ceiling; a root keeps its own. */
+function trimTrailingSeparator(entry: string): string {
+  return entry.length > 1 && /[\\/]$/u.test(entry) ? entry.slice(0, -1) : entry;
+}
+
 /**
- * Git's discovery ceilings: the absolute `GIT_CEILING_DIRECTORIES` entries
- * (separated by the platform's path delimiter), resolved to physical paths up
- * to the first empty entry and kept as spelled after it, as Git does. Git
- * compares them with the physical directories it walks, so an unresolved
- * entry spelled through a symbolic link never matches.
+ * Git's discovery ceilings, read as Git reads `GIT_CEILING_DIRECTORIES`:
+ * entries separated by the platform's path delimiter, relative ones ignored;
+ * before the first empty entry each is resolved to its physical path and
+ * dropped when it cannot be, and after it each is kept as spelled. Git
+ * compares them with the physical directories it walks, so an entry spelled
+ * through a link or with `..` after an empty entry never matches.
  */
 function readGitCeilingDirectories(env: NodeJS.ProcessEnv): ReadonlySet<string> {
   const ceilings = new Set<string>();
@@ -132,28 +138,43 @@ function readGitCeilingDirectories(env: NodeJS.ProcessEnv): ReadonlySet<string> 
     if (entry.length === 0) {
       resolveLinks = false;
     } else if (path.isAbsolute(entry)) {
-      ceilings.add(resolveLinks ? physicalDirectory(entry) : path.resolve(entry));
+      const ceiling = resolveLinks ? physicalDirectory(entry) : trimTrailingSeparator(entry);
+      if (ceiling !== undefined) ceilings.add(ceiling);
     }
   }
   return ceilings;
 }
 
 /**
+ * The caller's spelling of a physical directory: `logical` or the nearest of
+ * its ancestors that resolves to it, else the physical path itself.
+ */
+function logicalSpelling(logical: string, physical: string): string {
+  for (let cursor = logical; ; cursor = path.dirname(cursor)) {
+    if (physicalDirectory(cursor) === physical) return cursor;
+    if (path.dirname(cursor) === cursor) return physical;
+  }
+}
+
+/**
  * The nearest directory holding a `.git` marker, searched the way Git
- * discovers a repository: the start directory is always examined, and the
- * search never moves up into a discovery ceiling (GH-1787).
+ * discovers a repository: along the physical ancestors of the start
+ * directory, which is always examined, never moving up into a discovery
+ * ceiling (GH-1787). The result keeps the caller's spelling where one of its
+ * ancestors names the same directory.
  */
 function findSourceRepositoryRoot(
   candidate: string,
   ceilings: ReadonlySet<string>,
 ): string | undefined {
-  let cursor = path.resolve(candidate);
+  const logical = path.resolve(candidate);
+  let cursor = physicalDirectory(logical) ?? logical;
   while (true) {
     if (existsSync(path.join(cursor, ".git"))) {
-      return cursor;
+      return logicalSpelling(logical, cursor);
     }
     const parent = path.dirname(cursor);
-    if (parent === cursor || ceilings.has(physicalDirectory(parent))) {
+    if (parent === cursor || ceilings.has(parent)) {
       return undefined;
     }
     cursor = parent;

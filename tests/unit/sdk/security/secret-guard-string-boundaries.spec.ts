@@ -328,6 +328,8 @@ describe("quoted members inside a string and escape-only values (GH-1781)", () =
     expect(rulesOf(backslashes(8))).toEqual(["password_assignment"]);
     // An escaped quote inside a longer literal is still judged under the decoding reading.
     expect(rulesOf(`${q}${passwordKey}${q}: ${q}ab\\${q}${literal}${q}`)).toEqual(["password_assignment"]);
+    // Python keeps an unrecognized escape: `\q\w\'aZ11` is nine characters, judged with its backslashes kept (Codex review).
+    expect(rulesOf(`{${q}${passwordKey}${q}: ${q}\\q\\w\\${q}aZ11${q}}`)).toEqual(["password_assignment"]);
     // A single-quoted value no quote closes reads to the end in both readings, as on 2026.11.25.
     expect(rulesOf(`${q}${passwordKey}${q}: ${q}ab\\cdefghijkl`)).toEqual([]);
   });
@@ -346,6 +348,14 @@ describe("quoted members inside a string and escape-only values (GH-1781)", () =
     expect(rulesOf(`{${q}${passwordKey}${q}: ${literal}, ${q}a${q}: 1}`)).toEqual(["password_assignment"]);
     // A quoted value whose quotes sit outside the capture and whose string no container holds still finds its structure.
     for (const text of [`api_key="${D}API_KEY","next": 1`, `--'api_key'="${D}API_KEY",1,x`, `token="${D}TOKEN",{"a":1}`]) expect(rulesOf(text), text).toEqual([]);
+    // A quote after a word opens a shell segment the lexer declines (`foo"["`): no later string of its kind on
+    // the line ends a value, so the literal after the empty expansion is still reported (Codex review).
+    expect(rulesOf(`example foo"[" --${q}${passwordKey}${q}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`example foo"[" --${passwordKey}=${D}{EMPTY}",""Abc123!X"`)).toEqual(["password_assignment"]);
+    expect(rulesOf(`example foo"[" api_key=${D}{EMPTY}",""Abc123!X"`)).toEqual(["credential_key_assignment"]);
+    // A declined quote of the other kind, or one on an earlier line, leaves the string trusted.
+    expect(rulesOf(`customer's note {"title":"${q}${passwordKey}${q}: ${q}${D}{X}${q}","u":"v"}`)).toEqual([]);
+    expect(rulesOf(`foo"[" bar\n{"title":"${q}${passwordKey}${q}: ${q}${D}{X}${q}","u":"v"}`)).toEqual([]);
     // A reference later in the same text is judged on its own string.
     expect(rulesOf(`${near(`${D}{X}`)} {"after": "${q}${passwordKey}${q}: ${q}${D}{Y}${q}", "u": "v"}`)).toEqual([]);
   });

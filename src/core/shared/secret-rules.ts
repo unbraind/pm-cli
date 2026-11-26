@@ -850,14 +850,21 @@ function decodeQuotedLiteral(literal: string, terminated: boolean): DecodedLiter
 }
 
 /**
- * A single-quoted literal as TOML and YAML read it: a backslash is data, so
- * the literal ends at its first closing quote, which an escape-aware scan
- * would read as escaped after an odd run of backslashes (GH-1781).
+ * The readings of a single-quoted literal that keep its backslashes as data,
+ * besides the decoded one. Where the escape-aware scan closes the literal,
+ * its whole span counts with every backslash kept, which also bounds Python's
+ * reading of unrecognized escapes (`'\q\'…'` keeps `\q`). And as TOML
+ * literal strings read it, where a backslash never escapes, the literal ends
+ * at its first closing quote (a scanner's reading for YAML, which doubles a
+ * quote instead). An escape-aware span left open by an escaped last quote is
+ * not read raw, because its final quote is then counted as data (GH-1781).
  */
-function rawSingleQuotedReading(content: string, at: number): DecodedLiteral {
+function rawSingleQuotedReadings(content: string, at: number, literal: string, terminated: boolean): DecodedLiteral[] {
   const close = content.indexOf("'", at + 1);
-  const literal = content.slice(at, close === -1 ? content.length : close + 1);
-  return { reading: literal, ...literalBody(literal, close !== -1) };
+  const firstQuote = content.slice(at, close === -1 ? content.length : close + 1);
+  const readings = [{ reading: firstQuote, ...literalBody(firstQuote, close !== -1) }];
+  if (terminated && firstQuote !== literal) readings.push({ reading: literal, ...literalBody(literal, true) });
+  return readings;
 }
 
 /** A literal read as written: its delimiters are syntax and everything between them is data. */
@@ -953,7 +960,7 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string, alwa
     // A raw line break is a host-language artifact before any escape is decoded.
     if (LINE_BREAK.test(literal)) return [];
     const decoded = decodeQuotedLiteral(literal, terminated);
-    const readings = content[at] === "'" ? [decoded, rawSingleQuotedReading(content, at)] : [decoded];
+    const readings = content[at] === "'" ? [decoded, ...rawSingleQuotedReadings(content, at, literal, terminated)] : [decoded];
     return readings.map((reading) => valueMatch(reading.reading, 0, reading)).filter((match): match is RegExpExecArray => match !== null);
   };
   const valuesAt = (at: number): RegExpExecArray[] => {
@@ -1194,10 +1201,13 @@ interface StringLexer {
   opener: number;
   /** Whether a backslash escapes inside the open string: always in a double-quoted one, in a single-quoted one only as a container member. */
   escapes: boolean;
+  /** Whether a double (single) quote after a word character opened no string earlier on this line (see trustsOpenString). */
+  declinedDouble: boolean;
+  declinedSingle: boolean;
 }
 
 function createStringLexer(content: string): StringLexer {
-  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true };
+  return { content, index: 0, state: NO_STRING, opener: -1, escapes: true, declinedDouble: false, declinedSingle: false };
 }
 
 /** Read one character (two for an escape); returns the position of a quote that closed the open string, or -1. */
@@ -1208,6 +1218,8 @@ function lexStep(lexer: StringLexer): number {
   lexer.index = index + 1;
   if (isNewlineCode(code)) {
     lexer.state = NO_STRING;
+    lexer.declinedDouble = false;
+    lexer.declinedSingle = false;
     return -1;
   }
   if (code === 0x5c) {
@@ -1222,12 +1234,29 @@ function lexStep(lexer: StringLexer): number {
     lexer.state = NO_STRING;
     return index;
   }
-  if (lexer.state === NO_STRING && !(index > 0 && WORD_CHARACTER.test(content[index - 1]!))) {
-    lexer.state = kind;
-    lexer.opener = index;
-    lexer.escapes = kind === DOUBLE_STRING || opensAfterContainer(content, index);
+  if (lexer.state !== NO_STRING) return -1;
+  if (index > 0 && WORD_CHARACTER.test(content[index - 1]!)) {
+    if (kind === DOUBLE_STRING) lexer.declinedDouble = true;
+    else lexer.declinedSingle = true;
+    return -1;
   }
+  lexer.state = kind;
+  lexer.opener = index;
+  lexer.escapes = kind === DOUBLE_STRING || opensAfterContainer(content, index);
   return -1;
+}
+
+/**
+ * Whether the open string is known to be one. A quote after a word character
+ * opens no string, which keeps a prose apostrophe (`customer's`) or a unit
+ * mark out of the state, but in a shell it can open a segment of the word
+ * (`foo"[" …`). Once a quote of a kind was declined on a line, a later quote
+ * of that kind may be that segment's closer, so a string of that kind opened
+ * after it on the line is not trusted to enclose a value. In JSON and Python
+ * text every quote opens, closes or is escaped, so none is ever declined there.
+ */
+function trustsOpenString(lexer: StringLexer): boolean {
+  return lexer.state === DOUBLE_STRING ? !lexer.declinedDouble : !lexer.declinedSingle;
 }
 
 /** Move the lexer to `position`; an escape that straddles it leaves the same state, since an escaped character never changes it. */
@@ -1408,7 +1437,7 @@ function enclosingStringCut(rule: SecretRule, content: string): (match: RegExpEx
 function enclosingStringClose(lexer: StringLexer, valueStart: number, end: number): number {
   advanceLexer(lexer, valueStart);
   const kind = lexer.state;
-  if (kind === NO_STRING) return -1;
+  if (kind === NO_STRING || !trustsOpenString(lexer)) return -1;
   const { content } = lexer;
   const opener = lexer.opener;
   const other = kind === DOUBLE_STRING ? "'" : "\"";

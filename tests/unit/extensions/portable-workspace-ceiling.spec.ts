@@ -69,3 +69,37 @@ describe("portable workspace coordinates under Git discovery ceilings", () => {
     expect(resolveFor(child, ["", parent])).toEqual(childOnly());
   });
 });
+
+describe("Git's own reading of ceilings and links (Codex review)", () => {
+  const linkType = process.platform === "win32" ? "junction" : "dir";
+
+  it("walks the physical ancestors, so a ceiling a link skips over still stops the walk", async () => {
+    // root/wslink -> parent/ws/child2: Git walks parent/ws/child2, parent/ws (the ceiling) and stops.
+    const physical = path.join(parent, "ws", "child2");
+    const link = path.join(root, "wslink");
+    await mkdir(physical, { recursive: true });
+    await symlink(physical, link, linkType);
+    expect(resolveFor(link, [path.join(parent, "ws")])).toEqual({ source_workspace_root: link });
+    // Without the ceiling the checkout is found; no ancestor of the link names it, so its physical path is reported.
+    expect(resolveFor(link)).toEqual(parentCheckout());
+  });
+
+  it("keeps an entry after an empty one as spelled, with one trailing separator trimmed", () => {
+    // `child/..` names the parent only after normalization, which Git does not apply there.
+    expect(resolveFor(child, ["", `${child}${path.sep}..`])).toEqual(parentCheckout());
+    expect(resolveFor(child, ["", `${parent}${path.sep}`])).toEqual(childOnly());
+  });
+
+  it("walks a start directory that does not exist yet by its spelling, and keeps a root ceiling whole", () => {
+    const missing = path.join(child, "not-yet");
+    expect(resolveFor(missing)).toEqual(parentCheckout());
+    expect(resolveFor(missing, [parent])).toEqual({ source_workspace_root: missing });
+    // A root entry after an empty one keeps its only separator; the checkout below it is still found.
+    expect(resolveFor(child, ["", path.parse(root).root])).toEqual(parentCheckout());
+  });
+
+  it.runIf(process.platform !== "win32")("drops an entry before an empty one that does not resolve", () => {
+    // Git cannot resolve `parent/missing/..`, so it is no ceiling, although it normalizes to the parent.
+    expect(resolveFor(child, [`${parent}${path.sep}missing${path.sep}..`])).toEqual(parentCheckout());
+  });
+});
