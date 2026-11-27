@@ -133,37 +133,32 @@ describe("settings writers share the custom field admission", () => {
     });
   });
 
-  it("judges the stored spelling of an inline entry that a file switch makes effective (Codex review)", async () => {
+  it("judges a definition a file switch makes effective as the registry reads it, leaving a stored blank alias to validate", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const settingsPath = path.join(pmPath, "settings.json");
       const raw = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown> & { schema?: Record<string, unknown> };
-      // The inline entry keeps a blank alias on disk; the file-backed definition of the same key masks it.
-      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] }] } }, null, 2)}\n`);
+      const withInline = (fields: unknown[]) => writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields } }, null, 2)}\n`);
       await mkdir(path.join(pmPath, "schema"), { recursive: true });
       await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["create"] }] }));
       await writeFile(path.join(pmPath, "schema", "empty.json"), JSON.stringify({ fields: [] }));
+      await writeFile(path.join(pmPath, "schema", "blank.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] }] }));
+      await writeFile(path.join(pmPath, "schema", "shadow.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" ", "full"] }] }));
       const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
       const pointAt = (file: string) => (current: PmSettings): PmSettings => ({ ...current, schema: { ...current.schema, files: { ...current.schema.files, fields: file } } });
-      await expect(
-        sdk.mutateWorkspaceSettings({ operationId: "unmask", dryRun: true, mutate: pointAt("schema/empty.json") }),
-      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_flag_invalid", field: "review_owner" }) });
-      // A file-backed winner is judged as the file holds it, never by an inline entry that resolves the same way
-      // (Greptile review): a clean file definition stays admissible while the bad inline entry stays masked ...
-      await writeFile(path.join(pmPath, "schema", "clean.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"] }] }));
-      await expect(sdk.mutateWorkspaceSettings({ operationId: "clean-file", dryRun: true, mutate: pointAt("schema/clean.json") })).resolves.toMatchObject({ dry_run: true });
-      // Two inline entries resolve the same way once the blank alias is dropped; the registry reads the last one, so a
-      // clean last entry is judged, not the masked earlier one with the blank alias (CodeRabbit review).
-      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [
-        { key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] },
-        { key: "review_owner", type: "string", commands: ["list"] },
-      ] } }, null, 2)}\n`);
-      await expect(sdk.mutateWorkspaceSettings({ operationId: "last-inline", dryRun: true, mutate: pointAt("schema/empty.json") })).resolves.toMatchObject({ dry_run: true });
-      // ... and a file definition with a blank alias is refused even when the inline entry is clean.
-      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [{ key: "review_owner", type: "string", commands: ["list"] }] } }, null, 2)}\n`);
-      await writeFile(path.join(pmPath, "schema", "blank.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] }] }));
-      await expect(sdk.mutateWorkspaceSettings({ operationId: "blank-file", dryRun: true, mutate: pointAt("schema/blank.json") })).rejects.toMatchObject({
-        context: expect.objectContaining({ code: "schema_field_flag_invalid", field: "review_owner" }),
+      // The registry drops a blank alias, so it cannot shadow an option or stop a command. A stored entry that
+      // keeps one and becomes effective, inline or file-backed, is admitted, and validate reports the alias.
+      await withInline([{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] }]);
+      await expect(sdk.mutateWorkspaceSettings({ operationId: "unmask-inline", dryRun: true, mutate: pointAt("schema/empty.json") })).resolves.toMatchObject({ dry_run: true });
+      await withInline([{ key: "review_owner", type: "string", commands: ["list"] }]);
+      await expect(sdk.mutateWorkspaceSettings({ operationId: "blank-file", dryRun: true, mutate: pointAt("schema/blank.json") })).resolves.toMatchObject({ dry_run: true });
+      // What the registry reads is still judged: a newly effective alias that shadows --full on list is refused.
+      await expect(sdk.mutateWorkspaceSettings({ operationId: "shadow-file", dryRun: true, mutate: pointAt("schema/shadow.json") })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "schema_field_option_collision", field: "review_owner", flag: "--full" }),
       });
+      // A newly supplied blank spelling is still refused, as before.
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "new-blank", dryRun: true, mutate: (current) => withFields(current, [{ key: "review_lead", type: "string", commands: ["list"], cli_aliases: [" "] } as InlineField]) }),
+      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_flag_invalid", field: "review_lead" }) });
     });
   });
 });

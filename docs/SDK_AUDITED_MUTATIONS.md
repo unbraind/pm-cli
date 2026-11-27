@@ -81,8 +81,12 @@ including one the registry drops entirely
 ([pm-3s4jwl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3s4jwl.toon),
 [pm-x9r2h3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x9r2h3.toon);
 tracker records excluded from npm). The registry reads the last definition of
-each key, so a stored copy that a proposal makes effective, such as an earlier
-duplicate exposed by removing the later one, is judged as a change
+each key, the fields file after the inline list, so a stored copy that a
+proposal makes effective, such as an earlier duplicate exposed by removing the
+later one, is judged as a change, as the registry resolves it. A spelling the
+registry drops (a blank alias) cannot shadow an option, so on a stored entry it
+stays a `pm validate --check-metadata` report; only a newly supplied one is
+refused
 ([pm-2nwcgg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2nwcgg.toon);
 tracker record excluded from npm).
 

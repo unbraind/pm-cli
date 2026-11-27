@@ -83,44 +83,25 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
   return stableValueEquals(persisted, JSON.parse(raw)) ? raw : `${JSON.stringify(persisted, null, 2)}\n`;
 }
 
-/** The definition the registry reads for one key, and whether it comes from the inline list. */
-interface EffectiveFieldDefinition {
-  definition: unknown;
-  resolved: unknown;
-  inline: boolean;
-}
-
-/** The definition the registry reads for each key: the last resolvable one, the fields file after the inline list. */
-function effectiveFieldDefinitions(resolve: (definition: unknown) => unknown, inline: readonly unknown[], file: readonly unknown[]): Map<string, EffectiveFieldDefinition> {
-  const byKey = new Map<string, EffectiveFieldDefinition>();
-  for (const [definitions, fromInline] of [[inline, true], [file, false]] as const) {
-    for (const definition of definitions) {
-      const candidate = resolve(definition) as { key: string } | undefined;
-      if (candidate !== undefined) byKey.set(candidate.key, { definition, resolved: candidate, inline: fromInline });
-    }
+/** The definition the registry reads for each key, as it resolves it: the last resolvable one, the fields file after the inline list. */
+function effectiveFieldDefinitions(resolve: (definition: unknown) => unknown, inline: readonly unknown[], file: readonly unknown[]): Map<string, unknown> {
+  const byKey = new Map<string, unknown>();
+  for (const definition of [...inline, ...file]) {
+    const candidate = resolve(definition) as { key: string } | undefined;
+    if (candidate !== undefined) byKey.set(candidate.key, candidate);
   }
   return byKey;
 }
 
 /**
  * Definitions that become what the registry reads for their key (pm-2nwcgg), such as an earlier duplicate a
- * proposal exposes by removing the later one; one a file-backed definition still masks is not among them. An
- * inline winner in the proposal is the normalized copy, which has lost a blank alias the stored entry keeps, so
- * the stored spelling that stays on disk is judged when one resolves the same way; a file-backed winner is
- * judged as the file holds it (Greptile review).
+ * proposal exposes by removing the later one; one a file-backed definition still masks is not among them. Each is
+ * judged as the registry resolves it, which is what can shadow a built-in option. A spelling the registry drops
+ * (a blank alias) cannot, so on a stored entry it stays a `pm validate --check-metadata` report; only a newly
+ * supplied spelling is refused for it.
  */
-function collectNewlyEffectiveDefinitions(
-  resolve: (definition: unknown) => unknown,
-  sides: { before: Map<string, EffectiveFieldDefinition>; after: Map<string, EffectiveFieldDefinition>; rawStored: readonly unknown[]; judged: readonly unknown[] },
-): unknown[] {
-  const result: unknown[] = [];
-  for (const [key, entry] of sides.after) {
-    if (sides.judged.includes(entry.definition) || stableValueEquals(sides.before.get(key)?.resolved, entry.resolved)) continue;
-    // The registry reads the last inline entry of a key, so the last stored match is the one on disk that counts (CodeRabbit review).
-    const stored = entry.inline ? [...sides.rawStored].reverse().find((candidate) => stableValueEquals(resolve(candidate), entry.resolved)) : undefined;
-    result.push(stored ?? entry.definition);
-  }
-  return result;
+function collectNewlyEffectiveDefinitions(before: Map<string, unknown>, after: Map<string, unknown>): unknown[] {
+  return [...after].filter(([key, definition]) => !stableValueEquals(before.get(key), definition)).map(([, definition]) => definition);
 }
 
 /**
@@ -153,12 +134,10 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
     if (candidate === undefined || hasEmptySpelling(definition)) return !storedCopy;
     return !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
   });
-  changed.push(...collectNewlyEffectiveDefinitions(resolved, {
-    before: effectiveFieldDefinitions(resolved, current.schema.fields, fileFields.before),
-    after: effectiveFieldDefinitions(resolved, proposed, fileFields.after),
-    rawStored: Array.isArray(rawFields) ? rawFields : [],
-    judged: changed,
-  }) as typeof changed);
+  changed.push(...collectNewlyEffectiveDefinitions(
+    effectiveFieldDefinitions(resolved, current.schema.fields, fileFields.before),
+    effectiveFieldDefinitions(resolved, proposed, fileFields.after),
+  ) as typeof changed);
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
   for (const definition of changed) assertFieldDefinitionOptionsAvailable(definition);
