@@ -16,6 +16,7 @@ import {
   loadRuntimeSchemaFromOptionalFiles,
   normalizeRuntimeSchemaSettings,
   resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
 } from "../../../../src/core/schema/runtime-schema.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { PmClient } from "../../../../src/sdk/index.js";
@@ -27,6 +28,7 @@ const STORED_SHAPES: Array<[string, unknown, Record<string, unknown>]> = [
   ["a scalar entry", "review_owner", { dropped: "not_an_object" }],
   ["a list entry", [], { dropped: "not_an_object" }],
   ["a blank key", { key: "  " }, { dropped: "key_empty" }],
+  ["no key at all", { type: "string" }, { dropped: "key_empty" }],
   ["a metadata key that normalizes to nothing", { key: "review_owner", metadata_key: "  " }, { ignored: ['metadata_key: "  " names no item key, so values are stored under the field key'] }],
   ["a front matter key that is not a string", { key: "review_owner", front_matter_key: 5 }, { ignored: ["front_matter_key: 5 names no item key, so values are stored under the field key"] }],
   ["a flag that normalizes to nothing", { key: "review_owner", cli_flag: "--" }, { dropped: "cli_flag_empty" }],
@@ -126,7 +128,7 @@ describe("schema file entries that are not objects", () => {
   it.each([
     ["fields.json", { fields: [null, { key: "review_owner" }] }, "runtime_schema_fields_entry_invalid:1"],
     ["statuses.json", { statuses: [null, 3] }, "runtime_schema_statuses_entry_invalid:2"],
-    ["types.json", { definitions: [null] }, "runtime_schema_types_entry_invalid:1"],
+    ["types.json", { definitions: [null, {}, { name: 5 }, { name: "Risk", folder: "risks" }] }, "runtime_schema_types_entry_invalid:3"],
   ])("keeps the settings read when %s holds one", async (file, contents, warning) => {
     await withTempPmPath(async ({ pmPath }) => {
       const before = await readSettings(pmPath);
@@ -139,6 +141,24 @@ describe("schema file entries that are not objects", () => {
       expect(loaded.warnings).toEqual([warning]);
       // The inline setting survives: before, the read failed and every setting fell back to its default.
       expect((await readSettings(pmPath)).id_prefix).toBe("zz-");
+    });
+  });
+});
+
+describe("status file entries keep their positions", () => {
+  it("skips an unusable status entry in place, so later statuses keep their implicit order (Codex review)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const base = normalizeRuntimeSchemaSettings((await readSettings(pmPath)).schema);
+      const orderOf = async (statuses: unknown[]): Promise<number | undefined> => {
+        await writeFile(path.join(pmPath, "schema", "statuses.json"), JSON.stringify({ statuses }));
+        const loaded = await loadRuntimeSchemaFromOptionalFiles(pmPath, base);
+        return resolveRuntimeStatusRegistry(loaded.schema).definitions.find((definition) => definition.id === "alpha")?.order;
+      };
+      // A scalar entry never threw, so its slot counted; null used to throw. Both now leave the same order.
+      const scalar = await orderOf([42, { id: "alpha" }]);
+      expect(scalar).toBeDefined();
+      await expect(orderOf([null, { id: "alpha" }])).resolves.toBe(scalar);
+      await expect(orderOf([{}, { id: "alpha" }])).resolves.toBe(scalar);
     });
   });
 });

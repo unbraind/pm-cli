@@ -585,15 +585,28 @@ function isPlainRecord(value: unknown): value is RuntimeFieldDefinition {
 }
 
 /**
- * Keep the object entries of a schema file list (pm-x9r2h3): one null or
- * scalar entry would otherwise fail the whole settings read, and every setting
- * would fall back to its default.
+ * Guard a schema file list against entries its normalizer cannot read (pm-x9r2h3): one null or scalar entry
+ * would otherwise fail the whole settings read, and every setting would fall back to its default. With
+ * `keepPositions` an unusable entry becomes an empty object, which the normalizer drops in place, because a
+ * status's position is its implicit order; otherwise it is removed.
  */
-function keepObjectEntries<T>(entries: T[] | undefined, warningKey: string, warnings: string[]): T[] | undefined {
+function guardSchemaFileEntries<T>(
+  entries: T[] | undefined,
+  usable: (entry: unknown) => boolean,
+  options: { warningKey: string; warnings: string[]; keepPositions: boolean },
+): T[] | undefined {
   if (entries === undefined) return undefined;
-  const kept = entries.filter((entry) => isPlainRecord(entry));
-  if (kept.length < entries.length) warnings.push(`${warningKey}:${entries.length - kept.length}`);
-  return kept;
+  const unusable = entries.filter((entry) => !usable(entry)).length;
+  if (unusable === 0) return entries;
+  options.warnings.push(`${options.warningKey}:${unusable}`);
+  return options.keepPositions
+    ? entries.map((entry) => (usable(entry) ? entry : ({} as T)))
+    : entries.filter((entry) => usable(entry));
+}
+
+/** A type entry the type normalizer can read: an object whose name is a string. */
+function isUsableTypeEntry(entry: unknown): boolean {
+  return isPlainRecord(entry) && typeof (entry as { name?: unknown }).name === "string";
 }
 
 function resolveRuntimeFieldType(definition: RuntimeFieldDefinition): RuntimeFieldType {
@@ -1080,7 +1093,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_types_invalid_json",
   );
   if (parsedTypes !== undefined) {
-    loadedTypeDefinitions = keepObjectEntries(readTypeDefinitionsFromSchemaFile(parsedTypes), "runtime_schema_types_entry_invalid", warnings);
+    loadedTypeDefinitions = guardSchemaFileEntries(readTypeDefinitionsFromSchemaFile(parsedTypes), isUsableTypeEntry, { warningKey: "runtime_schema_types_entry_invalid", warnings, keepPositions: false });
     if (loadedTypeDefinitions === undefined) {
       warnings.push("runtime_schema_types_invalid_shape");
     }
@@ -1091,7 +1104,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_statuses_invalid_json",
   );
   if (parsedStatuses !== undefined) {
-    loadedStatuses = keepObjectEntries(readStatusesFromSchemaFile(parsedStatuses), "runtime_schema_statuses_entry_invalid", warnings);
+    loadedStatuses = guardSchemaFileEntries(readStatusesFromSchemaFile(parsedStatuses), isPlainRecord, { warningKey: "runtime_schema_statuses_entry_invalid", warnings, keepPositions: true });
     if (loadedStatuses === undefined) {
       warnings.push("runtime_schema_statuses_invalid_shape");
     }
@@ -1102,7 +1115,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_fields_invalid_json",
   );
   if (parsedFields !== undefined) {
-    loadedFields = keepObjectEntries(readFieldsFromSchemaFile(parsedFields), "runtime_schema_fields_entry_invalid", warnings);
+    loadedFields = guardSchemaFileEntries(readFieldsFromSchemaFile(parsedFields), isPlainRecord, { warningKey: "runtime_schema_fields_entry_invalid", warnings, keepPositions: false });
     if (loadedFields === undefined) {
       warnings.push("runtime_schema_fields_invalid_shape");
     }
