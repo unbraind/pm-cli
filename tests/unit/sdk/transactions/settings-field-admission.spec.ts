@@ -143,9 +143,20 @@ describe("settings writers share the custom field admission", () => {
       await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["create"] }] }));
       await writeFile(path.join(pmPath, "schema", "empty.json"), JSON.stringify({ fields: [] }));
       const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
+      const pointAt = (file: string) => (current: PmSettings): PmSettings => ({ ...current, schema: { ...current.schema, files: { ...current.schema.files, fields: file } } });
       await expect(
-        sdk.mutateWorkspaceSettings({ operationId: "unmask", dryRun: true, mutate: (current) => ({ ...current, schema: { ...current.schema, files: { ...current.schema.files, fields: "schema/empty.json" } } }) }),
+        sdk.mutateWorkspaceSettings({ operationId: "unmask", dryRun: true, mutate: pointAt("schema/empty.json") }),
       ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_flag_invalid", field: "review_owner" }) });
+      // A file-backed winner is judged as the file holds it, never by an inline entry that resolves the same way
+      // (Greptile review): a clean file definition stays admissible while the bad inline entry stays masked ...
+      await writeFile(path.join(pmPath, "schema", "clean.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"] }] }));
+      await expect(sdk.mutateWorkspaceSettings({ operationId: "clean-file", dryRun: true, mutate: pointAt("schema/clean.json") })).resolves.toMatchObject({ dry_run: true });
+      // ... and a file definition with a blank alias is refused even when the inline entry is clean.
+      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [{ key: "review_owner", type: "string", commands: ["list"] }] } }, null, 2)}\n`);
+      await writeFile(path.join(pmPath, "schema", "blank.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] }] }));
+      await expect(sdk.mutateWorkspaceSettings({ operationId: "blank-file", dryRun: true, mutate: pointAt("schema/blank.json") })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "schema_field_flag_invalid", field: "review_owner" }),
+      });
     });
   });
 });

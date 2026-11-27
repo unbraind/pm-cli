@@ -116,22 +116,26 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
   // The registry reads the last definition of each key, the fields file after the inline list. A stored copy that
   // becomes that definition, such as an earlier duplicate the proposal exposes by removing the later one, takes
   // effect now and is judged (pm-2nwcgg); one a file-backed definition still masks is not.
-  const effective = (fields: readonly unknown[]): Map<string, { definition: unknown; resolved: unknown }> => {
-    const byKey = new Map<string, { definition: unknown; resolved: unknown }>();
-    for (const definition of fields) {
-      const candidate = resolved(definition) as { key: string } | undefined;
-      if (candidate !== undefined) byKey.set(candidate.key, { definition, resolved: candidate });
+  type Effective = { definition: unknown; resolved: unknown; inline: boolean };
+  const effective = (inline: readonly unknown[], file: readonly unknown[]): Map<string, Effective> => {
+    const byKey = new Map<string, Effective>();
+    for (const [definitions, fromInline] of [[inline, true], [file, false]] as const) {
+      for (const definition of definitions) {
+        const candidate = resolved(definition) as { key: string } | undefined;
+        if (candidate !== undefined) byKey.set(candidate.key, { definition, resolved: candidate, inline: fromInline });
+      }
     }
     return byKey;
   };
-  const before = effective([...current.schema.fields, ...fileFields.before]);
+  const before = effective(current.schema.fields, fileFields.before);
   const rawStored: readonly unknown[] = Array.isArray(rawFields) ? rawFields : [];
-  for (const [key, entry] of effective([...proposed, ...fileFields.after])) {
+  for (const [key, entry] of effective(proposed, fileFields.after)) {
     const definition = entry.definition as (typeof proposed)[number];
     if (changed.includes(definition) || stableValueEquals(before.get(key)?.resolved, entry.resolved)) continue;
-    // The proposal holds the normalized copy, which has lost a blank alias the stored entry keeps; judge the
-    // stored spelling that stays on disk when one resolves the same way.
-    const stored = rawStored.find((candidate) => stableValueEquals(resolved(candidate), entry.resolved));
+    // An inline winner in the proposal is the normalized copy, which has lost a blank alias the stored entry keeps;
+    // judge the stored spelling that stays on disk when one resolves the same way. A file-backed winner is judged
+    // as the file holds it (Greptile review).
+    const stored = entry.inline ? rawStored.find((candidate) => stableValueEquals(resolved(candidate), entry.resolved)) : undefined;
     changed.push((stored ?? definition) as (typeof proposed)[number]);
   }
   if (changed.length === 0) return;
