@@ -32,6 +32,7 @@ import type {
   RuntimeWorkflowDefinition,
   TypeWorkflowDefinition,
 } from "../../types/index.js";
+import { BUILTIN_FIELD_KEYS } from "./fields-file.js";
 import { normalizeStatusToken } from "./status-token.js";
 
 export type { RuntimeFieldCommand } from "../../types/index.js";
@@ -516,6 +517,7 @@ function normalizeTypeWorkflowDefinitions(
 export type RuntimeFieldDefinitionDropReason =
   | "not_an_object"
   | "key_empty"
+  | "metadata_key_empty"
   | "cli_flag_empty"
   | "value_schema_invalid";
 
@@ -627,6 +629,15 @@ function explicitFieldMetadataKey(definition: RuntimeFieldDefinition): { member:
   return definition.front_matter_key == null ? undefined : { member: "front_matter_key", value: definition.front_matter_key };
 }
 
+/**
+ * Whether an explicit metadata key that names nothing would fall back onto built-in item metadata: the fallback
+ * to the field key must never let a hand-written `key: "id"` field overwrite an item's own id (Codex review).
+ */
+function metadataFallbackHitsBuiltinKey(definition: RuntimeFieldDefinition, key: string): boolean {
+  const explicit = explicitFieldMetadataKey(definition);
+  return explicit !== undefined && normalizeStatusToken(explicit.value).length === 0 && BUILTIN_FIELD_KEYS.has(key);
+}
+
 /** The item key a field's values are stored under; an explicit key that normalizes to nothing falls back to the field key (pm-x9r2h3). */
 function resolveRuntimeFieldMetadataKey(definition: RuntimeFieldDefinition, key: string): string {
   const normalized = normalizeStatusToken(explicitFieldMetadataKey(definition)?.value);
@@ -666,6 +677,9 @@ export function inspectRuntimeFieldDefinition(definition: unknown): {
   const key = normalizeStatusToken(definition.key ?? "");
   if (!key) {
     return drop("key_empty");
+  }
+  if (metadataFallbackHitsBuiltinKey(definition, key)) {
+    return drop("metadata_key_empty");
   }
   const cliFlag = normalizeCliToken(
     definition.cli_flag ?? keyToDefaultCliFlag(key),
