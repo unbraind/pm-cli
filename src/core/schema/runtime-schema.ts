@@ -552,18 +552,14 @@ function describeIgnoredListEntries(member: string, value: unknown, keeps: (entr
     .map((entry: unknown) => `${member}: ${describeStoredValue(entry)} is not ${what}`);
 }
 
-/** Boolean members and the value the registry reads when the stored one is not a boolean. */
-const FIELD_BOOLEAN_MEMBERS = [
-  ["repeatable", false],
-  ["required", false],
-  ["required_on_create", false],
-  ["allow_unset", true],
-] as const;
+/** Boolean members a stored definition may set. */
+const FIELD_BOOLEAN_MEMBERS = ["repeatable", "required", "required_on_create", "allow_unset"] as const;
 
-function describeIgnoredBooleanMembers(definition: RuntimeFieldDefinition): string[] {
-  return FIELD_BOOLEAN_MEMBERS.flatMap(([member, fallback]) => {
+/** One line per boolean member that is not a boolean, with the value the resolved definition carries instead. */
+function describeIgnoredBooleanMembers(definition: RuntimeFieldDefinition, resolved: RuntimeFieldDefinitionResolved): string[] {
+  return FIELD_BOOLEAN_MEMBERS.flatMap((member) => {
     const value: unknown = definition[member];
-    return value === undefined || typeof value === "boolean" ? [] : [`${member}: ${describeStoredValue(value)} is not a boolean, so it reads as ${String(fallback)}`];
+    return value === undefined || typeof value === "boolean" ? [] : [`${member}: ${describeStoredValue(value)} is not a boolean, so it reads as ${String(resolved[member])}`];
   });
 }
 
@@ -625,8 +621,8 @@ function resolveRuntimeFieldMetadataKey(definition: RuntimeFieldDefinition, key:
 }
 
 /** One line per member of a kept definition that the registry ignores or replaces. */
-function describeIgnoredFieldMembers(definition: RuntimeFieldDefinition, type: RuntimeFieldType): string[] {
-  const typeKept = typeof definition.type === "string" && definition.type.trim().toLowerCase() === type;
+function describeIgnoredFieldMembers(definition: RuntimeFieldDefinition, resolved: RuntimeFieldDefinitionResolved): string[] {
+  const typeKept = typeof definition.type === "string" && definition.type.trim().toLowerCase() === resolved.type;
   const metadataKey = explicitFieldMetadataKey(definition);
   return [
     ...(metadataKey === undefined || normalizeStatusToken(metadataKey.value).length > 0 ? [] : [`${metadataKey.member}: ${describeStoredValue(metadataKey.value)} names no item key, so values are stored under the field key`]),
@@ -635,7 +631,7 @@ function describeIgnoredFieldMembers(definition: RuntimeFieldDefinition, type: R
     ...describeIgnoredListEntries("commands", definition.commands, (entry) => RUNTIME_FIELD_COMMAND_SET.has(entry), "a field command"),
     ...describeIgnoredListEntries("required_types", definition.required_types, (entry) => entry.length > 0, "a type name"),
     ...(definition.description === undefined || typeof definition.description === "string" ? [] : ["description: is not a string"]),
-    ...describeIgnoredBooleanMembers(definition),
+    ...describeIgnoredBooleanMembers(definition, resolved),
     ...describeIgnoredValueSchemaKeywords(definition.value_schema, "value_schema"),
   ];
 }
@@ -676,30 +672,28 @@ export function inspectRuntimeFieldDefinition(definition: unknown): {
     typeof definition.description === "string"
       ? definition.description.trim()
       : undefined;
-  return {
-    resolved: {
-      key,
-      metadata_key: resolveRuntimeFieldMetadataKey(definition, key),
-      cli_flag: cliFlag,
-      cli_aliases: normalizeStringList(definition.cli_aliases)
-        .map((value) => normalizeCliToken(value))
-        .filter((value) => value.length > 0 && value !== cliFlag),
-      description:
-        description && description.length > 0 ? description : undefined,
-      type,
-      commands: resolveRuntimeFieldCommands(definition),
-      repeatable: [
-        definition.repeatable === true,
-        type === "string_array",
-      ].includes(true),
-      required: definition.required === true,
-      required_on_create: definition.required_on_create === true,
-      required_types: normalizeStringList(definition.required_types),
-      allow_unset: definition.allow_unset !== false,
-      value_schema: valueSchema,
-    },
-    loss: { ignored: describeIgnoredFieldMembers(definition, type) },
+  const resolved: RuntimeFieldDefinitionResolved = {
+    key,
+    metadata_key: resolveRuntimeFieldMetadataKey(definition, key),
+    cli_flag: cliFlag,
+    cli_aliases: normalizeStringList(definition.cli_aliases)
+      .map((value) => normalizeCliToken(value))
+      .filter((value) => value.length > 0 && value !== cliFlag),
+    description:
+      description && description.length > 0 ? description : undefined,
+    type,
+    commands: resolveRuntimeFieldCommands(definition),
+    repeatable: [
+      definition.repeatable === true,
+      type === "string_array",
+    ].includes(true),
+    required: definition.required === true,
+    required_on_create: definition.required_on_create === true,
+    required_types: normalizeStringList(definition.required_types),
+    allow_unset: definition.allow_unset !== false,
+    value_schema: valueSchema,
   };
+  return { resolved, loss: { ignored: describeIgnoredFieldMembers(definition, resolved) } };
 }
 
 function normalizeRuntimeFieldDefinition(

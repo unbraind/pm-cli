@@ -342,7 +342,13 @@ describe("extension test harness parity with native dispatch", () => {
       api.registerFlags("notes", [{ long: "--stdin", value_type: "boolean", list: true }]);
       api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
     });
-    await expect(runRegisteredCommandForTest(lists.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": [] }, global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
+    for (const entries of [[], [" "], [null], [undefined, ""]]) {
+      await expect(runRegisteredCommandForTest(lists.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": entries }, global: { outputLimit: "1" } }), JSON.stringify(entries)).resolves.toMatchObject({ handled: true });
+    }
+    // A kept entry still sets the flag, so it is a mutation beside an output control.
+    await expect(runRegisteredCommandForTest(lists.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": [" ", "false"] }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+    });
     // A handler on the namespaced annotation path: the path resolves first, as native dispatch resolves it, so its
     // positional text is a mutation.
     for (const command of ["item comments", " item comments "]) {

@@ -12,8 +12,9 @@
  * with the registry's own inspection.
  */
 
+import { constants } from "node:fs";
+import { open } from "node:fs/promises";
 import path from "node:path";
-import { readFileIfExists } from "../../core/fs/fs-utils.js";
 import {
   DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
   filePathForSchemaSection,
@@ -40,13 +41,20 @@ export interface FieldDefinitionLossRow {
 }
 
 /**
- * Parse a stored JSON document, or undefined when it is absent, unreadable (a directory, a permission refusal)
- * or not JSON; the settings read reports those cases, and the metadata check keeps scanning the other source.
+ * Parse a stored JSON document, or undefined when it is absent, not a regular file (a directory, a named pipe),
+ * unreadable or not JSON; the settings read reports those cases, and the metadata check keeps scanning the other
+ * source.
  */
 async function readStoredJson(filePath: string): Promise<unknown> {
   try {
-    const raw = await readFileIfExists(filePath);
-    return raw === null ? undefined : (JSON.parse(raw) as unknown);
+    // A non-blocking open and a descriptor check: a named pipe at a configured path must not stall a settings
+    // writer that holds the workspace lock. Links are followed, as the settings read follows them.
+    const handle = await open(filePath, constants.O_RDONLY | constants.O_NONBLOCK);
+    try {
+      return (await handle.stat()).isFile() ? (JSON.parse(await handle.readFile("utf8")) as unknown) : undefined;
+    } finally {
+      await handle.close();
+    }
   } catch {
     return undefined;
   }

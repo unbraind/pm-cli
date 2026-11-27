@@ -7,6 +7,7 @@
  * inspection. One null entry in a schema file also used to fail the whole
  * settings read and put every setting back to its default.
  */
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -18,7 +19,7 @@ import {
 } from "../../../../src/core/schema/runtime-schema.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { PmClient } from "../../../../src/sdk/index.js";
-import { scanFieldDefinitionLosses } from "../../../../src/sdk/schema/field-definition-losses.js";
+import { readFieldsFileDefinitions, scanFieldDefinitionLosses } from "../../../../src/sdk/schema/field-definition-losses.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const STORED_SHAPES: Array<[string, unknown, Record<string, unknown>]> = [
@@ -57,6 +58,8 @@ const STORED_SHAPES: Array<[string, unknown, Record<string, unknown>]> = [
     "value_schema.properties.name.maxLength: is not a value schema keyword, so it is not enforced",
     "value_schema.one_of[0].pattern: is not a value schema keyword, so it is not enforced",
   ] }],
+  // The stated value is the one the resolved definition carries: a string_array is repeatable whatever the member says (Codex review).
+  ["a non-boolean repeatable on a string_array", { key: "review_tags", type: "string_array", repeatable: 1 }, { ignored: ["repeatable: 1 is not a boolean, so it reads as true"] }],
   ["value schema items keywords", { key: "review_tags", type: "array", value_schema: { type: "array", items: { type: "string", uniqueItems: true } } }, { ignored: [
     "value_schema.items.uniqueItems: is not a value schema keyword, so it is not enforced",
   ] }],
@@ -260,6 +263,18 @@ describe("validate --check-metadata", () => {
       await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "unused", cli_flag: "--" }] }));
       const scanned = await scanFieldDefinitionLosses(pmPath, defaults, 10);
       expect(scanned.details.schema_field_definition_losses).toEqual([{ source: "schema/alternate.json", index: 0, key: "review_owner", dropped: "cli_flag_empty" }]);
+    });
+  });
+
+  it.skipIf(process.platform === "win32")("does not wait on a named pipe at a configured path (Codex review)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const schema = (await readSettings(pmPath)).schema;
+      const fieldsPath = path.join(pmPath, "schema", "fields.json");
+      await rm(fieldsPath, { force: true });
+      execFileSync("mkfifo", [fieldsPath]);
+      // A blocking read would never return here: the pipe has no writer.
+      await expect(readFieldsFileDefinitions(pmPath, schema)).resolves.toEqual([]);
+      await expect(scanFieldDefinitionLosses(pmPath, schema, 10)).resolves.toEqual({ details: {}, warnings: [] });
     });
   });
 });

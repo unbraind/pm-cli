@@ -1,0 +1,19 @@
+id: pm-8dbagz
+title: "The settings writer judges field definitions as if the current schema hydrated, so a proposal that repairs a broken schema file path activates stored definitions without judging them"
+description: "Raised by the Codex review of the field-admission branch (2026-11-27, round 3), not reproduced here. When a configured schema file is unusable (for example schema.files.statuses names a directory), readSettings falls back to defaults and no custom field is active. assertChangedSchemaFieldsAvailable in src/sdk/extension-command-context.ts compares the inline list plus the fields file before and after the proposal, as if both were active, so a proposal that only repairs the broken path activates every stored definition, including one whose alias shadows a built-in option, and nothing is judged. pm-2nwcgg made the writer judge the definition the registry will read for each key, but it reads stored entries, not the hydrated registry. Resolve both sides with the runtime's hydration and fallback rules (without hooks or scaffolding), so a definition that becomes active because hydration starts to succeed is judged. Duplicate check: searched settings writer hydration fallback schema file path admission; pm-2nwcgg (closed) owns the effective-definition rule."
+type: Issue
+status: open
+priority: 3
+tags[4]: "area:sdk",schema,settings,validation
+created_at: "2026-11-27T04:49:36.163Z"
+updated_at: "2026-11-27T04:49:36.163Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "Reproduce with a settings file whose statuses path is a directory and a stored shadowing field, then a proposal that repairs only the path; The writer judges every definition that becomes active because hydration starts to succeed, and only those; A spec covers the repair proposal and a proposal that leaves hydration failing"
+parent: pm-ugqx
+risk: low
+confidence: medium
+expected_result: A settings proposal cannot activate a shadowing field without the add-field admission
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2nwcgg,discovered_from,"2026-11-27T04:49:36.163Z","harness:claude-code","cli:create:dep",detected
+body: ""
