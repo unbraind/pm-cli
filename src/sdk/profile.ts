@@ -510,7 +510,7 @@ export async function runProfileApply(
     let normalized;
     // An invalid field keeps the planner's own diagnostic.
     try { normalized = normalizeAddFieldInput(field); } catch { continue; }
-    assertFieldOptionsAvailable(normalized);
+    assertFieldOptionsAvailable(normalized, field);
   }
 
   const dryRun = options.dryRun === true;

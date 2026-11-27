@@ -74,7 +74,6 @@ import {
   runActiveBeforeMutationHooks,
   runActiveOnWriteHooks,
   collectRegisteredItemFieldNames,
-  applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
   listAllItemMetadataLight,
   locateItem,
@@ -189,6 +188,7 @@ import {
   SCOPE_VALUES,
 } from "../../types/index.js";
 import type { RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
+import { applyRegisteredItemFieldDefaultsForWrite } from "../../core/extensions/item-fields.js";
 import { assertIdentityFieldsWithoutUrlCredentials, parseIdentityOption } from "../../core/shared/url-credentials.js";
 
 /** Documents the create command options payload exchanged by command, SDK, and package integrations. */
@@ -3249,21 +3249,10 @@ export async function runCreate(
     ...runtimeCreateFieldValues.values,
   });
   assertIdentityFieldsWithoutUrlCredentials(itemMetadata);
-  try {
-    applyRegisteredItemFieldDefaultsAndValidation(
-      itemMetadata as unknown as Record<string, unknown>,
-      extensionRegistrations,
-    );
-  } catch (error: unknown) {
-    /* c8 ignore start -- applyRegisteredItemFieldDefaultsAndValidation only throws Error instances, so the non-Error message fallback is unreachable. */
-    throw new PmCliError(
-      error instanceof Error
-        ? error.message
-        : "Invalid extension item field values",
-      EXIT_CODE.USAGE,
-    );
-    /* c8 ignore stop */
-  }
+  applyRegisteredItemFieldDefaultsForWrite(
+    itemMetadata as unknown as Record<string, unknown>,
+    extensionRegistrations,
+  );
 
   stampRequiredItemFormat(itemMetadata, pmRoot);
   const afterDocument: ItemDocument = canonicalDocument(

@@ -1,0 +1,22 @@
+id: pm-f0s4g8
+title: "PmClient.schemaAddField reads a whitespace-only cliFlag as omitted and registers the default flag, while pm schema add-field --cli-flag ' ' refuses it with schema_field_flag_invalid"
+description: "Found 2026-11-27 while fixing pm-2nwcgg. After that fix, the CLI refuses a supplied --cli-flag or --alias that normalizes to nothing. Through the SDK, new PmClient({ pmRoot }).schemaAddField('review_owner', { type: 'string', commands: ['list'], cliFlag: ' ' }) resolves and registers the default --review-owner flag, while cliFlag '--' and alias ['  '] are refused as on the CLI. So somewhere on the PmClient.runTyped path a whitespace-only string option is dropped before runSchemaAddField sees it. Find where, and decide whether the transport should keep a supplied blank string for every command (as argv does) or whether schema options need their own exception. Duplicate check: searched blank option string omitted, whitespace option SDK transport; no open item covers it."
+type: Issue
+status: open
+priority: 3
+tags[3]: "area:sdk",schema,transport-parity
+created_at: "2026-11-27T03:33:50.298Z"
+updated_at: "2026-11-27T04:49:35.617Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "Reproduce the SDK and CLI divergence and name the transport stage that drops the blank string; PmClient.schemaAddField with a whitespace-only cliFlag is refused with schema_field_flag_invalid as the CLI refuses it, or the transport rule is documented with a reason; A parity spec drives the CLI and the SDK with the same blank spelling"
+parent: pm-ugqx
+risk: low
+confidence: medium
+expected_result: A blank cliFlag gets the same verdict through the SDK and the CLI
+actual_result: The SDK registers the default flag; the CLI refuses with schema_field_flag_invalid
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2nwcgg,discovered_from,"2026-11-27T03:33:50.298Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-27T04:49:35.617Z","harness:claude-code","Stage located by the Codex review of the field-admission branch (2026-11-27), confirmed by reading the code: the SDK schema dispatch (createMcpSchemaContext in src/sdk/runtime/schema.ts) reads aliases through readRuntimeStringArray (src/sdk/runtime-input.ts), which maps entries with String and drops every empty one, so alias [''] never reaches add-field; cliFlag goes through readRuntimeString, which drops a blank value the same way. A two-space alias survives (it is not empty), which is why it was refused through the SDK while cliFlag ' ' was not. A fix can keep raw entries for add-field's cliFlag and alias, or decide the transport rule for every command."
+body: ""

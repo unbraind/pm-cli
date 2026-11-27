@@ -1,0 +1,20 @@
+id: pm-x17o8l
+title: "A wrong-typed member in schema/statuses.json or schema/types.json (a numeric description, a numeric alias) throws in its normalizer and resets every setting to its default"
+description: "Found 2026-11-27 while fixing pm-x9r2h3. loadRuntimeSchemaFromOptionalFiles now skips status and field entries that are not objects and type entries without a string name, but the status and type normalizers still call trim on members they assume are strings: a status with description 5, or a type with description 5 or aliases [5], throws inside the settings read, which then fails its merge (settings_read_merge_failed) and every setting falls back to its default. The field normalizer was hardened in pm-x9r2h3 (non-string description is ignored and reported); statuses and types need the same treatment, plus a validate report of what was ignored. Reproduced on the built CLI by calling normalizeRuntimeSchemaSettings with statuses [{ id: 'x', description: 5 }] and normalizeItemTypeDefinitions with [{ name: 'X', description: 5 }]. Duplicate check: searched statuses types normalizer description crash settings_read_merge_failed; no open item covers it."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:schema",robustness,settings,validation
+created_at: "2026-11-27T05:24:27.089Z"
+updated_at: "2026-11-27T05:24:27.089Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A status or type schema file entry with any wrong-typed member no longer fails the settings read; the member is ignored and the rest of the entry and of the settings load; pm validate or pm health names each ignored member with its file and position; A spec seeds wrong-typed members for every string and list member of a status and a type definition, with a negative control on the current release"
+parent: pm-8jdc
+risk: medium
+confidence: high
+expected_result: One malformed member in a schema file cannot reset every setting
+actual_result: settings_read_merge_failed and defaults for the whole tracker
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-x9r2h3,discovered_from,"2026-11-27T05:24:27.089Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -1671,7 +1671,7 @@ export async function runSchemaAddField(
     );
   }
 
-  assertFieldOptionsAvailable(normalized);
+  assertFieldOptionsAvailable(normalized, { cliFlag: options.cliFlag, aliases: options.alias });
 
   const settings = await readSettings(pmRoot);
   const schema = normalizeRuntimeSchemaSettings(settings.schema);

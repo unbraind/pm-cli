@@ -123,25 +123,32 @@ function shadowedOption(spelling: string, options: BuiltInOptions): string | und
 export function resolveFieldOptionCollisions(fields: readonly FieldOptionSource[]): FieldOptionCollision[] {
   const collisions: FieldOptionCollision[] = [];
   for (const field of fields) {
-    // The key is included beside the flags: the parsed value is stored under the key whatever the flag is spelled.
     // A short flag keeps its dash, because it is compared with the command's short flags only (pm-8patuh).
-    const spellings = [...new Set([field.cli_flag, ...field.cli_aliases, field.key].map((token) => (isShortSpelling(token) ? token.trim() : optionName(token))))];
+    const spell = (token: string): string => (isShortSpelling(token) ? token.trim() : optionName(token));
+    const flags = [...new Set([field.cli_flag, ...field.cli_aliases].map(spell))];
+    // The key is judged beside the flags: the parsed value is stored under the key whatever the flag is spelled.
+    const key = spell(field.key);
     for (const fieldCommand of field.commands) {
-      collisions.push(...resolveCommandCollisions(field.key, spellings, fieldCommand.replaceAll("_", "-")));
+      collisions.push(...resolveCommandCollisions(field.key, flags, flags.includes(key) ? undefined : key, fieldCommand.replaceAll("_", "-")));
     }
   }
   return collisions.sort((left, right) =>
     left.field.localeCompare(right.field) || left.command.localeCompare(right.command) || left.option.localeCompare(right.option));
 }
 
-/** The built-in options of one command that a field's spellings shadow, one row per shadowed option. */
-function resolveCommandCollisions(fieldKey: string, spellings: readonly string[], command: string): FieldOptionCollision[] {
+/**
+ * The built-in options of one command that a field's spellings shadow, one row per shadowed option. A key spelled
+ * differently from every flag is judged only against options that deliver a parsed value under that key: the
+ * implicit help option exits before any handler reads options, so a key `help` behind another flag is free (pm-2nwcgg).
+ */
+function resolveCommandCollisions(fieldKey: string, flags: readonly string[], keyOnly: string | undefined, command: string): FieldOptionCollision[] {
   const options = builtInOptions(command);
   const collisions = new Map<string, FieldOptionCollision>();
-  for (const spelling of spellings) {
+  for (const spelling of keyOnly === undefined ? flags : [...flags, keyOnly]) {
     if (REDEFINABLE_METADATA_KEYS.has(fieldKey) && spelling.replaceAll("-", "_") === fieldKey) continue;
     const option = shadowedOption(spelling, options);
     if (option === undefined || collisions.has(option)) continue;
+    if (spelling === keyOnly && option === IMPLICIT_HELP_OPTION.flag) continue;
     collisions.set(option, { field: fieldKey, command, field_flag: isShortSpelling(spelling) ? spelling : `--${spelling.replaceAll("_", "-")}`, option });
   }
   return [...collisions.values()];
@@ -177,9 +184,23 @@ export function resolveFieldFlagSpellingDefects(fields: ReadonlyArray<Pick<Field
     }));
 }
 
-/** Defects of one field as `schema add-field` and a profile declare it, before it is stored. */
-export function resolveAddFieldFlagSpellingDefects(field: NormalizedAddFieldInput): FieldFlagSpellingDefect[] {
-  return resolveFieldFlagSpellingDefects([{ key: field.key, cli_flag: field.cliFlag ?? field.key.replaceAll("_", "-"), cli_aliases: field.cliAliases }]);
+/** The flag and aliases a caller supplied to `schema add-field` or a profile, before normalization. */
+export interface RawFieldSpellings {
+  /** The supplied primary flag. */
+  cliFlag?: unknown;
+  /** The supplied aliases. */
+  aliases?: unknown;
+}
+
+/**
+ * Defects of one field as `schema add-field` and a profile declare it, before it is stored. Normalization reads an
+ * empty explicit flag as omitted and drops an empty alias, so the supplied spellings are judged too (pm-2nwcgg).
+ */
+export function resolveAddFieldFlagSpellingDefects(field: NormalizedAddFieldInput, raw?: RawFieldSpellings): FieldFlagSpellingDefect[] {
+  return [
+    ...resolveEmptySpellingDefects(field.key, raw?.cliFlag, raw?.aliases),
+    ...resolveFieldFlagSpellingDefects([{ key: field.key, cli_flag: field.cliFlag ?? field.key.replaceAll("_", "-"), cli_aliases: field.cliAliases }]),
+  ];
 }
 
 /** One line per spelling defect for refusals and diagnostics. */
@@ -227,16 +248,21 @@ export function scanFieldOptionCollisions(
  * (pm-8patuh), or whose option would shadow a built-in option of a command it
  * is registered for (pm-pta8um).
  */
-export function assertFieldOptionsAvailable(field: NormalizedAddFieldInput): void {
-  refuseFieldFlagSpellingDefects(field.key, resolveAddFieldFlagSpellingDefects(field));
+export function assertFieldOptionsAvailable(field: NormalizedAddFieldInput, raw?: RawFieldSpellings): void {
+  refuseFieldFlagSpellingDefects(field.key, resolveAddFieldFlagSpellingDefects(field, raw));
   refuseFieldOptionCollisions(field.key, field.commands, resolveAddFieldOptionCollisions(field));
+}
+
+/** Supplied flag and alias spellings that normalize to nothing, which would drop the definition or the alias silently. */
+function resolveEmptySpellingDefects(fieldKey: string, cliFlag: unknown, aliases: unknown): FieldFlagSpellingDefect[] {
+  return [cliFlag, ...(Array.isArray(aliases) ? aliases : [])]
+    .filter((token): token is string => typeof token === "string" && normalizeCliToken(token).length === 0)
+    .map((spelling) => ({ field: fieldKey, spelling, reason: "is empty" }));
 }
 
 /** The same refusals for a stored definition a migration or settings writer is about to write, such as a rename target. */
 export function assertFieldDefinitionOptionsAvailable(definition: RuntimeFieldDefinition): void {
-  // A flag or alias that normalizes to nothing would make the registry drop the whole definition or the alias silently.
-  const raw = [definition.cli_flag, ...(Array.isArray(definition.cli_aliases) ? definition.cli_aliases : [])].filter((token): token is string => typeof token === "string");
-  refuseFieldFlagSpellingDefects(definition.key, raw.filter((token) => normalizeCliToken(token).length === 0).map((spelling) => ({ field: definition.key, spelling, reason: "is empty" })));
+  refuseFieldFlagSpellingDefects(definition.key, resolveEmptySpellingDefects(definition.key, definition.cli_flag, definition.cli_aliases));
   // A definition the registry rejects otherwise resolves to nothing and so reports nothing here.
   const resolved = resolveRuntimeFieldRegistry({ fields: [definition] } as RuntimeSchemaSettings).definitions;
   refuseFieldFlagSpellingDefects(definition.key, resolveFieldFlagSpellingDefects(resolved));

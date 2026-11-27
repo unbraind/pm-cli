@@ -2980,8 +2980,8 @@ describe("sdk testing helpers", () => {
           "  api.registerExporter('jsonl', async () => ({ content: '' }));",
           "  api.registerSearchProvider({ name: 'capability-search', query: async () => ({ hits: [] }) });",
           "  api.registerVectorStoreAdapter({ name: 'capability-vector', query: async () => [] });",
-          "  api.registerItemFields([{ name: 'risk', type: 'string' }]);",
-          "  api.registerItemTypes([{ name: 'Risk', folder: 'risks', aliases: ['risk'], required_create_fields: ['risk'] }]);",
+          "  api.registerItemFields([{ name: 'risk_score', type: 'string' }]);",
+          "  api.registerItemTypes([{ name: 'Risk', folder: 'risks', aliases: ['risk'], required_create_fields: ['risk_score'] }]);",
           "  api.hooks.onWrite(() => undefined);",
           "}",
           "",
@@ -3019,7 +3019,7 @@ describe("sdk testing helpers", () => {
       expect(typeof hook.run).toBe("function");
 
       const field = assertRegisteredItemField(activation.registrations, {
-        field: "risk",
+        field: "risk_score",
         extensionName: "capability-ext",
       });
       expect(field.field.type).toBe("string");
@@ -3052,8 +3052,8 @@ describe("sdk testing helpers", () => {
           flags: [{ long: "--name", value_type: "string" }],
           run: async () => ({ ok: true }),
         });
-        api.registerItemFields([{ name: "severity", type: "string" }]);
-        api.registerItemTypes([{ name: "Incident", folder: "incidents", required_create_fields: ["severity"] }]);
+        api.registerItemFields([{ name: "incident_severity", type: "string" }]);
+        api.registerItemTypes([{ name: "Incident", folder: "incidents", required_create_fields: ["incident_severity"] }]);
         api.hooks.afterCommand(() => undefined);
       },
     });
@@ -3073,18 +3073,18 @@ describe("sdk testing helpers", () => {
     expect(typeof hook.run).toBe("function");
 
     const field = assertRegisteredItemField(activation.registrations, {
-      field: "severity",
+      field: "incident_severity",
       extensionName: "memory-ext",
       type: "string",
     });
-    expect(field.field.name).toBe("severity");
+    expect(field.field.name).toBe("incident_severity");
 
     const itemType = assertRegisteredItemType(activation.registrations, {
       itemType: "Incident",
       extensionName: "memory-ext",
       folder: "incidents",
     });
-    expect(itemType.itemType.required_create_fields).toEqual(["severity"]);
+    expect(itemType.itemType.required_create_fields).toEqual(["incident_severity"]);
   });
 
   it("uses a default manifest for simple in-memory extension tests", async () => {
@@ -4021,8 +4021,8 @@ describe("createExtensionTestHarness", () => {
         flags: [{ long: "--name", value_type: "string" }],
         run: async (context) => ({ ok: true, name: context.options.name ?? null }),
       });
-      api.registerItemFields([{ name: "risk", type: "string" }]);
-      api.registerItemTypes([{ name: "Risk", folder: "risks", required_create_fields: ["risk"] }]);
+      api.registerItemFields([{ name: "risk_score", type: "string" }]);
+      api.registerItemTypes([{ name: "Risk", folder: "risks", required_create_fields: ["risk_score"] }]);
       api.registerProfile({
         name: "harness-archetype",
         title: "Harness archetype",
@@ -4103,7 +4103,7 @@ describe("createExtensionTestHarness", () => {
       "harness-hello",
     );
     expect(harness.assertFlags({ targetCommand: "harness hello", flags: ["--name"] }).target_command).toBe("harness hello");
-    expect(harness.assertItemField({ field: "risk", type: "string" }).field.name).toBe("risk");
+    expect(harness.assertItemField({ field: "risk_score", type: "string" }).field.name).toBe("risk_score");
     expect(harness.assertItemType({ itemType: "Risk", folder: "risks" }).itemType.folder).toBe("risks");
     expect(harness.assertProfile({ profile: "harness-archetype" }).profile.name).toBe("harness-archetype");
     expect(typeof harness.assertHook({ kind: "after_command" }).run).toBe("function");

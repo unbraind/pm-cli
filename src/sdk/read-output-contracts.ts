@@ -678,7 +678,8 @@ export function annotationPositionalMutationOptions(
   processedArgs: readonly unknown[],
 ): { add?: string } {
   const text = processedArgs[1];
-  return ANNOTATION_TEXT_COMMANDS.has(commandPath) && typeof text === "string"
+  // The path resolves as read-output validation resolves it, so a namespaced spelling such as item comments counts (pm-2nwcgg).
+  return ANNOTATION_TEXT_COMMANDS.has(resolvePmHistoryOperation(commandPath.trim().toLowerCase())) && typeof text === "string"
     ? { add: text }
     : {};
 }

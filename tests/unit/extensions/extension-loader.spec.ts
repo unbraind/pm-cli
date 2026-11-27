@@ -5220,7 +5220,7 @@ describe("item field type validation (pm-oll8)", () => {
     const loadResult = inMemoryLoadResult(
       {
         activate(api: ExtensionApi) {
-          api.registerItemFields([{ name: "severity", type: "STRING" }]);
+          api.registerItemFields([{ name: "incident_severity", type: "STRING" }]);
         },
       },
       { name: "schema-ext", capabilities: ["schema"] },

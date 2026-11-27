@@ -1238,6 +1238,33 @@ function resolveNegatedBooleanSpelling(
 }
 
 /**
+ * The declared boolean a negated direct-caller spelling sets, under its handler key, with the value normalization
+ * gives it (pm-2nwcgg). It reads the normalizer's own spelling index and boolean tokens (`true`, `1`, `false`, `0`
+ * in any case, trimmed), so a negation through a declared short alias counts too, and the test harness's host
+ * admission judges an invocation exactly as normalization applies it. A spelling that is not such a negation, or a
+ * value normalization refuses (it refuses it again afterwards), yields undefined.
+ */
+export function resolveNegatedDeclaredBooleanOption(
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+  spelling: string,
+  value: unknown,
+): { key: string; value: unknown } | undefined {
+  const index = indexDeclaredOptionSpellings(definitions);
+  try {
+    const resolved = resolveNegatedBooleanSpelling(index, spelling, value, "");
+    if (resolved.spelling === spelling) return undefined;
+    // The resolved spelling is the declared flag the negation names, so it is always in the index.
+    const declared = resolveDeclaredOptionSpelling(index, resolved.spelling)!;
+    // A list that keeps no entry once normalized (`[]`, `[" , "]`) is zero occurrences, so it sets nothing.
+    const list = declared.definition.list === true || declared.definition.repeatable === true;
+    if (list && !hasLooseListEntries(declared.definition, resolved.value)) return undefined;
+    return { key: declared.handlerKey, value: resolved.value };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Invert one entry of a negated list boolean token by token, keeping its raw shape (CodeRabbit review): a CSV
  * list's comma-delimited string stays a string with each segment inverted, so the canonical pipeline still
  * splits it, refuses a blank strict segment, and compares it against another spelling exactly as it would the

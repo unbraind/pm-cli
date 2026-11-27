@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Two residual admission gaps from the PR \#1772 review: an inactive duplicate inline field can take over a built-in option, and a negated mutation flag passes harness output-control admission ([pm-2nwcgg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2nwcgg.toon))
+- pm validate reports nothing for a stored custom field definition the runtime registry drops, such as cli_flag '--' or a blank alias ([pm-x9r2h3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x9r2h3.toon))
+- An installed extension whose registerItemFields names a reserved item key makes every pm create and pm update fail with untyped command_failed, and package doctor does not name the cause ([pm-dhlij3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dhlij3.toon))
+
 ## 2026.11.27 - 2026-11-27
 
 ### Fixed

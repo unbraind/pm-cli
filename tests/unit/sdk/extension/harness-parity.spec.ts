@@ -318,5 +318,43 @@ describe("extension test harness parity with native dispatch", () => {
     });
     // Case 3, a native command path an extension extends, is pinned by the first test of this file.
   });
-});
 
+  it("judges negations and annotation paths with the normalizer's and native dispatch's own rules (pm-2nwcgg)", async () => {
+    const seen: unknown[] = [];
+    const activation = await activate((api) => {
+      api.registerFlags("notes", [{ long: "--stdin", short: "-S", value_type: "boolean" }]);
+      api.registerCommand({ name: "notes", run: (context) => (seen.push(context.options.stdin), { notes: [] }) });
+      api.registerCommand({ name: "item comments", run: () => ({ comments: [] }) });
+    });
+    // The normalizer reads 0 and 1 in any case and spacing, and a negation through a declared short alias; each sets
+    // --stdin, a mutation, so it is refused beside an output control before the handler runs.
+    for (const options of [{ "no-stdin": "0" }, { "--no-stdin": " FALSE " }, { "--no-S": false }, { "no-S": "false" }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options, global: { outputLimit: "1" } }), JSON.stringify(options)).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+      });
+    }
+    expect(seen).toEqual([]);
+    // Without output controls the handler receives the value normalization gives it.
+    await runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { "no-S": "1" } });
+    expect(seen).toEqual([false]);
+    // An empty negated list is zero occurrences, as normalization delivers it, so it sets nothing (Codex review).
+    const lists = await activate((api) => {
+      api.registerFlags("notes", [{ long: "--stdin", value_type: "boolean", list: true }]);
+      api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
+    });
+    for (const entries of [[], [" "], [null], [undefined, ""], [" , "], " , "]) {
+      await expect(runRegisteredCommandForTest(lists.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": entries }, global: { outputLimit: "1" } }), JSON.stringify(entries)).resolves.toMatchObject({ handled: true });
+    }
+    // A kept entry still sets the flag, so it is a mutation beside an output control.
+    await expect(runRegisteredCommandForTest(lists.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": [" ", "false"] }, global: { outputLimit: "1" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+    });
+    // A handler on the namespaced annotation path: the path resolves first, as native dispatch resolves it, so its
+    // positional text is a mutation.
+    for (const command of ["item comments", " item comments "]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command, args: ["pm-x", "text"], global: { outputLimit: "1" } }), command).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "read_output_mutation_conflict" }),
+      });
+    }
+  });
+});

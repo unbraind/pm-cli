@@ -78,6 +78,12 @@ describe("short spellings and implicit help", () => {
       { field: "review_owner", command: "search", field_flag: "-h", option: "--help" },
     ]);
     expect(resolveFieldOptionCollisions([field("help", ["context"])])).toMatchObject([{ field_flag: "--help", option: "--help" }]);
+    // The help option exits before any handler reads a parsed value, so a key help behind another flag is free,
+    // while the same spelling as a flag or alias still takes over help (pm-2nwcgg).
+    expect(resolveFieldOptionCollisions([field("help", ["context", "create"], { cli_flag: "help-topic" })])).toEqual([]);
+    expect(resolveFieldOptionCollisions([field("help", ["context"], { cli_flag: "help-topic", cli_aliases: ["help"] })])).toMatchObject([{ field_flag: "--help", option: "--help" }]);
+    // A key that names an option delivering a parsed value is still judged behind any flag.
+    expect(resolveFieldOptionCollisions([field("full", ["list"], { cli_flag: "full-detail" })])).toMatchObject([{ field_flag: "--full", option: "--full" }]);
     // A free short letter is accepted, and a short spelling never matches a long option of the same letter.
     expect(resolveFieldOptionCollisions([field("review_owner", ["create", "list"], { cli_aliases: ["-q"] })])).toEqual([]);
   });
@@ -85,8 +91,12 @@ describe("short spellings and implicit help", () => {
 
 describe("custom field registration and stored definitions", () => {
   it("refuses a flag the parser would split and a shadowing short spelling in add-field, rename and profile lint", async () => {
-    await withTempPmPath(async ({ pmPath }) => {
+    await withTempPmPath(async ({ pmPath, runCli }) => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      // The CLI hands a blank --cli-flag through as typed; normalization used to read it as omitted (pm-2nwcgg).
+      const blank = await runCli(["schema", "add-field", "review_owner", "--cli-flag", " ", "--json"], { expectJson: true });
+      expect(blank.code).toBe(2);
+      expect(JSON.parse(blank.stdout || blank.stderr)).toMatchObject({ code: "schema_field_flag_invalid" });
       for (const [options, flag] of [
         [{ alias: ["full|deep"] }, "full|deep"],
         [{ cliFlag: "fullx|detail" }, "fullx|detail"],
@@ -94,6 +104,10 @@ describe("custom field registration and stored definitions", () => {
         // A comma gets the same typed refusal as every other separator (Greptile review).
         [{ alias: ["a,b"] }, "a,b"],
         [{ cliFlag: "own,er" }, "own,er"],
+        // A supplied spelling that normalizes to nothing is refused, as the settings writer refuses it, instead of
+        // being read as omitted or dropped (pm-2nwcgg).
+        [{ cliFlag: "--" }, "--"],
+        [{ alias: ["  "] }, "  "],
       ] as const) {
         await expect(client.schemaAddField("review_owner", { type: "string", commands: ["list"], ...options }), flag).rejects.toMatchObject({
           exitCode: 2,
@@ -114,6 +128,9 @@ describe("custom field registration and stored definitions", () => {
       expect(await readFile(path.join(pmPath, "schema", "fields.json"), "utf8")).toBe(before);
       const profile = { name: "split", title: "Split", summary: "Splits a flag.", types: [], statuses: [], workflows: [], config: [], templates: [], packages: [] };
       expect(lintProjectProfile({ ...profile, fields: [{ key: "review_lead", aliases: ["a,b"] }] } as never).findings.map((finding) => finding.code)).toEqual(["field_flag_invalid"]);
+      for (const spellings of [{ cliFlag: "--" }, { aliases: [" "] }]) {
+        expect(lintProjectProfile({ ...profile, fields: [{ key: "review_lead", ...spellings }] } as never).findings.map((finding) => finding.code), JSON.stringify(spellings)).toEqual(["field_flag_invalid"]);
+      }
       expect(lintProjectProfile({ ...profile, fields: [{ key: "review_lead", aliases: ["a|b"] }] } as never)).toMatchObject({
         ok: false,
         findings: expect.arrayContaining([expect.objectContaining({ severity: "error", code: "field_flag_invalid", target: "review_lead", message: expect.stringContaining('"a|b" contains "|"') })]),

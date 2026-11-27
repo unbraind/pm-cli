@@ -10,6 +10,7 @@ import {
   readRoutedItemMetadata,
 } from "./repeated-terminal-state.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { applyRegisteredItemFieldDefaultsForWrite } from "../../core/extensions/item-fields.js";
 import { emptyMutationOptionMessage, isLiteralMutationInput, mutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
@@ -59,7 +60,6 @@ import {
   resolveIsoOrRelative,
   getActiveExtensionRegistrations,
   collectRegisteredItemFieldNames,
-  applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
   buildItemNotFoundError,
   listAllItemMetadataLight,
@@ -3135,20 +3135,11 @@ function mutateUpdateDocument(
     context,
     changedFields,
   );
-  try {
-    applyRegisteredItemFieldDefaultsAndValidation(
-      metadataRecord,
-      context.extensionRegistrations,
-      { skipDefaultFields: context.clearItemMetadataKeys },
-    );
-  } catch (error: unknown) {
-    throw new PmCliError(
-      error instanceof Error
-        ? error.message
-        : "Invalid extension item field values",
-      EXIT_CODE.USAGE,
-    );
-  }
+  applyRegisteredItemFieldDefaultsForWrite(
+    metadataRecord,
+    context.extensionRegistrations,
+    { skipDefaultFields: context.clearItemMetadataKeys },
+  );
   const afterMetadata = toItemRecord(document.metadata);
   const actualChangedFields = [...new Set(changedFields)].filter((field) =>
     field === "body"

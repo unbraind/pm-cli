@@ -2,11 +2,13 @@ id: pm-dhlij3
 title: "An installed extension whose registerItemFields names a reserved item key makes every pm create and pm update fail with untyped command_failed, and package doctor does not name the cause"
 description: "Measured 2026-11-23 on the 2026.11.23 build while closing pm-3s4jwl. A project extension that calls api.registerItemFields([{ name: 'priority', type: 'string' }]) activates without a refusal. Afterwards every pm create (with or without --field) and every pm update (pm update <id> --title t2) exits 2 with code command_failed and the detail 'Extension item field \"priority\" collides with built-in item metadata \"priority\"; rename the extension field...'. Reads keep working (pm list returns items). pm package doctor reports only extension_custom_field_mcp_input_collision for the field, and pm health --check-only says nothing about it, so the operator sees a tracker whose writes all fail with an untyped code and no diagnostic that names the package. pm-ghf1 (closed) added the reserved-key check to SDK lint, preflight and the test harness, so a package author is warned, but an already published or hand-written package still disables all writes for every user of the tracker. Duplicate check: searched 'extension item field collides with built-in item metadata reserved create fails'; pm-ghf1 owns authoring-time detection only, pm-3s4jwl owns built-in option collisions."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:sdk",extensions,schema,ux
 created_at: "2026-11-23T08:45:02.256Z"
-updated_at: "2026-11-23T08:45:02.256Z"
+updated_at: "2026-11-27T04:40:03.742Z"
+closed_at: "2026-11-27T04:03:25.551Z"
+completed_at: "2026-11-27T04:03:25.551Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Activation refuses only the reserved field registration with a typed code that names the package, the field and the reserved key, and pm create and pm update keep working for every other field; pm package doctor and pm health report the refused registration with the package name and a rename hint; A regression spec installs such an extension and drives create and update on the built CLI, with a negative control showing the pre-fix refusal"
@@ -14,9 +16,46 @@ parent: pm-ugqx
 risk: medium
 confidence: high
 severity: medium
+resolution: "registerItemFields drops only a field named after built-in item metadata and emits extension_item_field_reserved:<layer>:<package>:<field>:rename=<prefix>_<field>, which package doctor and health report; the create and update write paths share applyRegisteredItemFieldDefaultsForWrite, which keeps typed refusal codes instead of rebuilding them as command_failed"
 expected_result: One package's reserved field name cannot disable writes for the whole tracker; the refusal is typed and diagnosable
-actual_result: Every create and update exits 2 with command_failed while the extension is active; doctor names only the MCP input collision
+actual_result: "On the built CLI with such a package installed, create --field review_owner=ada and update --title exit 0, and doctor and health list the warning naming the package, field and rename; a hand-built registry that still reaches the write path is refused with extension_item_field_reserved instead of command_failed"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-3s4jwl,discovered_from,"2026-11-23T08:45:02.256Z","harness:claude-code","cli:create:dep",detected
   pm-ghf1,related,"2026-11-23T08:45:02.256Z","harness:claude-code","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-11-27T03:31:48.250Z","harness:claude-code","Root cause and fix (2026-11-27, branch fix/field-admission-diagnostics). Two defects combined: (1) the loader accepted a registerItemFields definition named after built-in item metadata, and every write then ran applyRegisteredItemFieldDefaultsAndValidation, which refuses the reserved name; (2) create.ts and update.ts wrapped that call in a catch that rebuilt every error as a plain PmCliError, so the typed extension_item_field_reserved code (and extension_item_field_type_conflict) surfaced as command_failed. Fix: ExtensionApiRegistrar.registerItemFields drops only the reserved field and pushes the activation warning extension_item_field_reserved:<layer>:<package>:<field>:rename=<prefix>_<field> (formatReservedItemFieldWarning in src/core/extensions/item-fields.ts); a registration that held only reserved fields registers nothing. Both write paths now call applyRegisteredItemFieldDefaultsForWrite, which rethrows a PmCliError unchanged and turns the validation TypeErrors into usage refusals. Activation warnings already reach package doctor and health, so both now name the package, field and rename; the MCP input collision row for the dropped field disappears with it. Evidence on the built CLI in a sandbox tracker: create --field review_owner=ada exits 0, update --title exits 0, doctor and health list the warning; tests/unit/extensions/extension-item-field-admission.spec.ts (5 cases) covers activation, the write path (a hand-built registry is the negative control that still reaches the write path), and the built CLI. Negative control: with src reverted to main, all 5 cases fail."
+  "2026-11-27T04:02:40.566Z","harness:claude-code","Correction to the fix note above (2026-11-27): a registerItemFields call whose fields are all reserved now keeps an empty registration entry instead of registering nothing. The package did register against the schema capability, so the harness least-privilege check (assertExtensionCapabilityUsage) and capability usage stay truthful; registration_counts.item_fields counts fields, so it still reports 0 for that call. Test fixtures in sdk-index.spec.ts and extension-loader.spec.ts that asserted registered fields named severity and risk (both reserved item keys, so those fields already broke every write) now use incident_severity and risk_score. The write-path helper is imported directly from core/extensions/item-fields.js so it does not join the public ./sdk surface."
+  "2026-11-27T04:40:03.742Z","harness:claude-code","Codex review round 2 (2026-11-27) on 9de3e2c90, verified and fixed: a field definition whose name is read through a prototype getter passes validation, but the registration snapshot keeps own enumerable members only, so the new reserved-name check called trim on undefined and deactivated the whole package. The check now reads the name only when the snapshot holds a string, so such a package activates as it did before."
+files[6]{path,scope,note}:
+  src/core/extensions/item-fields.ts,project,formatReservedItemFieldWarning; applyRegisteredItemFieldDefaultsForWrite keeps typed refusals
+  src/core/extensions/loader.ts,project,registerItemFields drops a reserved field with an activation warning
+  src/sdk/lifecycle/create.ts,project,write path keeps typed field refusal codes
+  src/sdk/lifecycle/update.ts,project,write path keeps typed field refusal codes
+  src/sdk/runtime-primitives.ts,project,re-exports the write-path field helper
+  tests/unit/extensions/extension-item-field-admission.spec.ts,project,"activation, write path, built CLI doctor/health regression"
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/extensions/extension-item-field-admission.spec.ts,project,"harness:claude-code","2026-11-27T03:29:19.038Z",local_mutation,fix/field-admission-diagnostics
+test_runs[1]:
+  - run_id: test-local-mwyghaxh-wuvmbo
+    kind: test
+    status: passed
+    started_at: "2026-11-27T04:02:47.900Z"
+    finished_at: "2026-11-27T04:02:56.021Z"
+    recorded_at: "2026-11-27T04:02:56.021Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/extensions/extension-item-field-admission.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,reserved item field activation warning
+close_reason: A reserved extension item field is dropped at activation with a named warning; create and update keep working and keep typed field refusal codes
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-dhlij3
+  gate_id: extension-item-field-reserved-activation
+  negative_control: "tests/unit/extensions/extension-item-field-admission.spec.ts fails all 5 cases with src reverted to main: activation kept the reserved field, create and update refused with command_failed, and doctor and health did not name the package"
+  local_checks[1]: node scripts/run-tests.mjs test tests/unit/extensions/extension-item-field-admission.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

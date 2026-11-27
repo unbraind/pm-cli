@@ -83,18 +83,40 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
   return stableValueEquals(persisted, JSON.parse(raw)) ? raw : `${JSON.stringify(persisted, null, 2)}\n`;
 }
 
+/** The definition the registry reads for each key, as it resolves it: the last resolvable one, the fields file after the inline list. */
+function effectiveFieldDefinitions(resolve: (definition: unknown) => unknown, inline: readonly unknown[], file: readonly unknown[]): Map<string, unknown> {
+  const byKey = new Map<string, unknown>();
+  for (const definition of [...inline, ...file]) {
+    const candidate = resolve(definition) as { key: string } | undefined;
+    if (candidate !== undefined) byKey.set(candidate.key, candidate);
+  }
+  return byKey;
+}
+
+/**
+ * Definitions that become what the registry reads for their key (pm-2nwcgg), such as an earlier duplicate a
+ * proposal exposes by removing the later one; one a file-backed definition still masks is not among them. Each is
+ * judged as the registry resolves it, which is what can shadow a built-in option. A spelling the registry drops
+ * (a blank alias) cannot, so on a stored entry it stays a `pm validate --check-metadata` report; only a newly
+ * supplied spelling is refused for it.
+ */
+function collectNewlyEffectiveDefinitions(before: Map<string, unknown>, after: Map<string, unknown>): unknown[] {
+  return [...after].filter(([key, definition]) => !stableValueEquals(before.get(key), definition)).map(([, definition]) => definition);
+}
+
 /**
  * A settings writer shares the `schema add-field` admission for every inline
  * field definition it adds or changes (pm-3s4jwl): a flag the parser would
  * split, or an option that shadows a built-in option, is refused before
  * anything is written. A definition the proposal leaves exactly as stored is
  * not judged again, so an unrelated write can still preserve a legacy
- * definition, which validate keeps reporting.
+ * definition, which validate keeps reporting, unless it becomes the
+ * definition the registry reads for its key.
  */
-async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown): Promise<void> {
+async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown, sources: { before: readonly unknown[]; after: readonly unknown[]; inlineAfter: readonly unknown[] }): Promise<void> {
   // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
   const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
-  if (proposed.length === 0) return;
+  // No early return for an empty inline list: a proposal can still make a file-backed definition effective.
   const { normalizeCliToken, resolveRuntimeFieldRegistry } = await import("../core/schema/runtime-schema.js");
   // Definitions compare as the registry reads them, so a proposal that JSON round-trips the fields or
   // restates a stored definition without its defaults leaves it unchanged. One the registry drops compares
@@ -112,6 +134,10 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
     if (candidate === undefined || hasEmptySpelling(definition)) return !storedCopy;
     return !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
   });
+  changed.push(...collectNewlyEffectiveDefinitions(
+    effectiveFieldDefinitions(resolved, current.schema.fields, sources.before),
+    effectiveFieldDefinitions(resolved, sources.inlineAfter, sources.after),
+  ) as typeof changed);
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
   for (const definition of changed) assertFieldDefinitionOptionsAvailable(definition);
@@ -205,7 +231,6 @@ export function createExtensionCommandSdk(
                 EXIT_CODE.USAGE,
               );
             }
-            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields);
             let raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!
               : serializeSettings(next, { source: { raw: current, validated: validatedCurrent.data } });
@@ -217,6 +242,15 @@ export function createExtensionCommandSdk(
                 EXIT_CODE.USAGE,
               );
             }
+            // The effective field set is judged as the bytes about to be written read back: serialization and
+            // validation can drop or strip an inline definition, so the proposal itself is not what persists (Codex review).
+            const persisted = validatedResult.data.schema as Partial<PmSettings["schema"]> | undefined;
+            const { readFieldsFileDefinitions } = await import("./schema/field-definition-losses.js");
+            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields, {
+              before: await readFieldsFileDefinitions(pmRoot, currentSettings.schema),
+              after: await readFieldsFileDefinitions(pmRoot, persisted),
+              inlineAfter: persisted?.fields ?? [],
+            });
             return {
               raw,
               result: options.includePreview === true

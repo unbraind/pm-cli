@@ -147,7 +147,7 @@ import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
   resolveExtensionFlagOptionKey,
-  resolveLooseOptionCoercionKind,
+  resolveNegatedDeclaredBooleanOption,
 } from "./extension/command-options.js";
 import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
 import { formatOutput, projectPrintedResult } from "../core/output/output.js";
@@ -1226,27 +1226,6 @@ export async function runRegisteredCommandForTest(
 }
 
 /**
- * The handler key a negated spelling (`--no-stdin` or `no-stdin`) inverts, under the normalizer's own rule: only
- * when that spelling is not itself declared and its base names a declared boolean flag.
- */
-function negatedDeclaredBooleanKey(key: string, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): string | undefined {
-  const negated = /^(?:--)?no-(.+)$/u.exec(key)?.[1];
-  if (negated === undefined) return undefined;
-  const handlerKeyOf = (definition: (typeof definitions)[number]): string | null => resolveExtensionFlagOptionKey(definition);
-  const spelled = resolveExtensionFlagOptionKey({ long: `--${key.replace(/^--/u, "")}` });
-  if (definitions.some((definition) => handlerKeyOf(definition) === spelled)) return undefined;
-  const base = resolveExtensionFlagOptionKey({ long: `--${negated}` });
-  const declared = definitions.find((definition) => handlerKeyOf(definition) === base);
-  return declared !== undefined && resolveLooseOptionCoercionKind(declared) === "boolean" ? (base as string) : undefined;
-}
-
-/** A boolean option value or its string token, or `undefined` for anything else. */
-function booleanToken(value: unknown): boolean | undefined {
-  if (value === true || value === "true") return true;
-  return value === false || value === "false" ? false : undefined;
-}
-
-/**
  * The options with every key also under its handler spelling (`--add-json`,
  * `add-json` and a declared short alias such as `-J` as `addJson`), so host
  * admission sees a mutation option however a harness caller spells it, as
@@ -1256,10 +1235,9 @@ function booleanToken(value: unknown): boolean | undefined {
 function foldOptionSpellings(options: Record<string, unknown>, definitions: ReturnType<typeof collectExtensionFlagDefinitionsForCommand>): Record<string, unknown> {
   const folded: Record<string, unknown> = { ...options };
   for (const [key, value] of Object.entries(options)) {
-    // A negated spelling of a declared boolean (`--no-stdin: false`) sets that flag to the inverse, as the normalizer applies it.
-    const base = negatedDeclaredBooleanKey(key, definitions);
-    const flag = booleanToken(value);
-    if (base !== undefined && flag !== undefined && folded[base] === undefined) folded[base] = !flag;
+    // A negated spelling of a declared boolean (`--no-stdin: false`, `no-stdin: "0"`) sets that flag as the normalizer applies it.
+    const negation = resolveNegatedDeclaredBooleanOption(definitions, key, value);
+    if (negation !== undefined && folded[negation.key] === undefined) folded[negation.key] = negation.value;
     // A declared short alias counts with or without its dash, as the normalizer accepts both (`-J`, `J`).
     const declared = definitions.find((definition) => definition.short !== undefined && (definition.short === key || definition.short === `-${key}`));
     const handlerKey = resolveExtensionFlagOptionKey(declared ?? { long: key.startsWith("-") ? key : `--${key}` });

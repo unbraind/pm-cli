@@ -12,6 +12,7 @@ import { createFileAtomic } from "../fs/atomic-create.js";
 import {
   DEFAULT_STATUS_DEFINITIONS,
   DEFAULT_WORKFLOW_DEFINITION,
+  ITEM_METADATA_KEY_ORDER,
 } from "../shared/constants.js";
 import {
   RUNTIME_FIELD_COMMAND_VALUES,
@@ -32,6 +33,7 @@ import type {
   RuntimeWorkflowDefinition,
   TypeWorkflowDefinition,
 } from "../../types/index.js";
+import { BUILTIN_FIELD_KEYS } from "./fields-file.js";
 import { normalizeStatusToken } from "./status-token.js";
 
 export type { RuntimeFieldCommand } from "../../types/index.js";
@@ -343,8 +345,10 @@ function normalizeStatusId(value: unknown): string | undefined {
   return normalized.length > 0 ? normalized : undefined;
 }
 
+// Every leading pair of dashes goes in one pass, so normalization is idempotent: the registry
+// normalizes a definition more than once, and `----x` must read as `x` on the first pass too.
 function stripFlagPrefix(value: string): string {
-  return value.startsWith("--") ? value.slice(2) : value;
+  return value.replace(/^(?:--)+/u, "");
 }
 
 /** Normalize a stored field flag token as the registry reads it: trimmed, lower-cased, separators as hyphens, leading dashes removed. */
@@ -510,70 +514,227 @@ function normalizeTypeWorkflowDefinitions(
   return normalized.length > 0 ? normalized : undefined;
 }
 
-function normalizeRuntimeFieldDefinition(
-  definition: RuntimeFieldDefinition,
-): RuntimeFieldDefinitionResolved | null {
+/** Why the field registry drops a whole stored definition (pm-x9r2h3). */
+export type RuntimeFieldDefinitionDropReason =
+  | "not_an_object"
+  | "key_empty"
+  | "metadata_key_empty"
+  | "cli_flag_empty"
+  | "value_schema_invalid";
+
+/**
+ * What the field registry discards from one stored definition (pm-x9r2h3):
+ * the whole definition, or members it ignores or replaces while keeping it.
+ */
+export interface RuntimeFieldDefinitionLoss {
+  /** Set when the registry drops the whole definition. */
+  dropped?: RuntimeFieldDefinitionDropReason;
+  /** One line per member the registry ignores or replaces, such as a blank alias. */
+  ignored: string[];
+}
+
+/** A stored value as diagnostic text; never throws, so describing a value cannot change whether a definition resolves. */
+function describeStoredValue(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? String(value);
+  } catch {
+    try {
+      return String(value);
+    } catch {
+      return "a value that cannot be shown";
+    }
+  }
+}
+
+/** One line per entry of a stored list the registry skips; a member that is not a list is skipped whole. */
+function describeIgnoredListEntries(member: string, value: unknown, keeps: (entry: string) => boolean, what: string): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) return [`${member}: is not a list`];
+  return value
+    .filter((entry: unknown) => typeof entry !== "string" || !keeps(entry.trim()))
+    .map((entry: unknown) => `${member}: ${describeStoredValue(entry)} is not ${what}`);
+}
+
+/** Boolean members a stored definition may set. */
+const FIELD_BOOLEAN_MEMBERS = ["repeatable", "required", "required_on_create", "allow_unset"] as const;
+
+/** One line per boolean member that is not a boolean, with the value the resolved definition carries instead. */
+function describeIgnoredBooleanMembers(definition: RuntimeFieldDefinition, resolved: RuntimeFieldDefinitionResolved): string[] {
+  return FIELD_BOOLEAN_MEMBERS.flatMap((member) => {
+    const value: unknown = definition[member];
+    return value === undefined || typeof value === "boolean" ? [] : [`${member}: ${describeStoredValue(value)} is not a boolean, so it reads as ${String(resolved[member])}`];
+  });
+}
+
+/** The value schema keywords the registry reads; any other keyword is dropped without enforcement. */
+const VALUE_SCHEMA_KEYWORDS: ReadonlySet<string> = new Set([
+  "type", "const", "enum", "min_length", "min_items", "format", "properties", "required", "additional_properties", "items", "one_of",
+]);
+
+/** One line per value schema keyword the registry drops, with its path, nested schemas included. */
+function describeIgnoredValueSchemaKeywords(schema: unknown, at: string): string[] {
+  if (!isPlainObject(schema)) return [];
+  const record = schema as Record<string, unknown>;
+  return [
+    ...Object.keys(record).filter((keyword) => !VALUE_SCHEMA_KEYWORDS.has(keyword)).map((keyword) => `${at}.${keyword}: is not a value schema keyword, so it is not enforced`),
+    ...(isPlainObject(record.properties) ? Object.entries(record.properties as Record<string, unknown>).flatMap(([name, entry]) => describeIgnoredValueSchemaKeywords(entry, `${at}.properties.${name}`)) : []),
+    ...describeIgnoredValueSchemaKeywords(record.items, `${at}.items`),
+    ...(Array.isArray(record.one_of) ? record.one_of.flatMap((entry: unknown, index: number) => describeIgnoredValueSchemaKeywords(entry, `${at}.one_of[${index}]`)) : []),
+  ];
+}
+
+function isPlainRecord(value: unknown): value is RuntimeFieldDefinition {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Guard a schema file list against entries its normalizer cannot read (pm-x9r2h3): one null or scalar entry
+ * would otherwise fail the whole settings read, and every setting would fall back to its default. With
+ * `keepPositions` an unusable entry becomes an empty object, which the normalizer drops in place, because a
+ * status's position is its implicit order; otherwise it is removed.
+ */
+function guardSchemaFileEntries<T>(
+  entries: T[] | undefined,
+  usable: (entry: unknown) => boolean,
+  options: { warningKey: string; warnings: string[]; keepPositions: boolean },
+): T[] | undefined {
+  if (entries === undefined) return undefined;
+  const unusable = entries.filter((entry) => !usable(entry)).length;
+  if (unusable === 0) return entries;
+  options.warnings.push(`${options.warningKey}:${unusable}`);
+  return options.keepPositions
+    ? entries.map((entry) => (usable(entry) ? entry : ({} as T)))
+    : entries.filter((entry) => usable(entry));
+}
+
+/** A type entry the type normalizer can read: an object whose name is a string. */
+function isUsableTypeEntry(entry: unknown): boolean {
+  return isPlainRecord(entry) && typeof (entry as { name?: unknown }).name === "string";
+}
+
+function resolveRuntimeFieldType(definition: RuntimeFieldDefinition): RuntimeFieldType {
+  const candidate = typeof definition.type === "string" ? definition.type.trim().toLowerCase() : "string";
+  return RUNTIME_FIELD_TYPE_SET.has(candidate) ? (candidate as RuntimeFieldType) : "string";
+}
+
+function resolveRuntimeFieldCommands(definition: RuntimeFieldDefinition): RuntimeFieldCommand[] {
+  const normalized = normalizeStringList(definition.commands).filter(
+    (value): value is RuntimeFieldCommand => RUNTIME_FIELD_COMMAND_SET.has(value),
+  );
+  return normalized.length > 0 ? normalized : [...DEFAULT_RUNTIME_FIELD_COMMANDS];
+}
+
+/** The explicit metadata key a definition stores, by the member it is stored under; a null member yields to the next, as `??` reads them. */
+function explicitFieldMetadataKey(definition: RuntimeFieldDefinition): { member: string; value: unknown } | undefined {
+  if (definition.metadata_key != null) return { member: "metadata_key", value: definition.metadata_key };
+  return definition.front_matter_key == null ? undefined : { member: "front_matter_key", value: definition.front_matter_key };
+}
+
+/**
+ * Item keys a metadata-key fallback must never land on: every built-in field and every canonical item metadata
+ * key, `severity` included, although a field may redefine `severity` on purpose by naming it.
+ */
+const FALLBACK_FORBIDDEN_KEYS: ReadonlySet<string> = new Set([...BUILTIN_FIELD_KEYS, ...ITEM_METADATA_KEY_ORDER]);
+
+/**
+ * Whether an explicit metadata key that names nothing would fall back onto built-in item metadata: the fallback
+ * to the field key must never let a hand-written `key: "id"` or `key: "severity"` field write into the item's own
+ * metadata (Codex review).
+ */
+function metadataFallbackHitsBuiltinKey(definition: RuntimeFieldDefinition, key: string): boolean {
+  const explicit = explicitFieldMetadataKey(definition);
+  return explicit !== undefined && normalizeStatusToken(explicit.value).length === 0 && FALLBACK_FORBIDDEN_KEYS.has(key);
+}
+
+/** The item key a field's values are stored under; an explicit key that normalizes to nothing falls back to the field key (pm-x9r2h3). */
+function resolveRuntimeFieldMetadataKey(definition: RuntimeFieldDefinition, key: string): string {
+  const normalized = normalizeStatusToken(explicitFieldMetadataKey(definition)?.value);
+  return normalized.length > 0 ? normalized : key;
+}
+
+/** One line per member of a kept definition that the registry ignores or replaces. */
+function describeIgnoredFieldMembers(definition: RuntimeFieldDefinition, resolved: RuntimeFieldDefinitionResolved): string[] {
+  const typeKept = typeof definition.type === "string" && definition.type.trim().toLowerCase() === resolved.type;
+  const metadataKey = explicitFieldMetadataKey(definition);
+  return [
+    ...(metadataKey === undefined || normalizeStatusToken(metadataKey.value).length > 0 ? [] : [`${metadataKey.member}: ${describeStoredValue(metadataKey.value)} names no item key, so values are stored under the field key`]),
+    ...describeIgnoredListEntries("cli_aliases", definition.cli_aliases, (entry) => normalizeCliToken(entry).length > 0, "a flag spelling"),
+    ...(definition.type === undefined || typeKept ? [] : [`type: ${describeStoredValue(definition.type)} is not a field type, so the field reads as string`]),
+    ...describeIgnoredListEntries("commands", definition.commands, (entry) => RUNTIME_FIELD_COMMAND_SET.has(entry), "a field command"),
+    ...describeIgnoredListEntries("required_types", definition.required_types, (entry) => entry.length > 0, "a type name"),
+    ...(definition.description === undefined || typeof definition.description === "string" ? [] : ["description: is not a string"]),
+    ...describeIgnoredBooleanMembers(definition, resolved),
+    ...describeIgnoredValueSchemaKeywords(definition.value_schema, "value_schema"),
+  ];
+}
+
+/**
+ * Resolve one stored definition and record what the registry discards from
+ * it. The registry and `pm validate` both read this one function, so a
+ * diagnostic can never disagree with what the registry keeps.
+ */
+export function inspectRuntimeFieldDefinition(definition: unknown): {
+  resolved: RuntimeFieldDefinitionResolved | null;
+  loss: RuntimeFieldDefinitionLoss;
+} {
+  const drop = (dropped: RuntimeFieldDefinitionDropReason) => ({ resolved: null, loss: { dropped, ignored: [] } });
+  // One null or scalar entry in schema/fields.json must not fail the whole settings read.
+  if (!isPlainRecord(definition)) {
+    return drop("not_an_object");
+  }
   const key = normalizeStatusToken(definition.key ?? "");
   if (!key) {
-    return null;
+    return drop("key_empty");
   }
-  const metadataKey = normalizeStatusToken(
-    definition.metadata_key ?? definition.front_matter_key ?? key,
-  );
+  if (metadataFallbackHitsBuiltinKey(definition, key)) {
+    return drop("metadata_key_empty");
+  }
   const cliFlag = normalizeCliToken(
     definition.cli_flag ?? keyToDefaultCliFlag(key),
   );
   if (!cliFlag) {
-    return null;
+    return drop("cli_flag_empty");
   }
-  const cliAliases = normalizeStringList(definition.cli_aliases)
-    .map((value) => normalizeCliToken(value))
-    .filter((value) => value.length > 0 && value !== cliFlag);
-  const typeCandidate =
-    typeof definition.type === "string"
-      ? definition.type.trim().toLowerCase()
-      : "string";
-  const type = RUNTIME_FIELD_TYPE_SET.has(typeCandidate)
-    ? (typeCandidate as RuntimeFieldType)
-    : "string";
-  const commands = (() => {
-    const normalized = normalizeStringList(definition.commands).filter(
-      (value): value is RuntimeFieldCommand =>
-        RUNTIME_FIELD_COMMAND_SET.has(value),
-    );
-    if (normalized.length > 0) {
-      return normalized;
-    }
-    return [...DEFAULT_RUNTIME_FIELD_COMMANDS];
-  })();
-  const description = definition.description?.trim();
-  const requiredTypes = normalizeStringList(definition.required_types);
   const valueSchema =
     definition.value_schema === undefined
       ? undefined
       : normalizeRuntimeFieldValueSchema(definition.value_schema);
   if (definition.value_schema !== undefined && valueSchema === undefined) {
-    return null;
+    return drop("value_schema_invalid");
   }
-  return {
+  const type = resolveRuntimeFieldType(definition);
+  const description =
+    typeof definition.description === "string"
+      ? definition.description.trim()
+      : undefined;
+  const resolved: RuntimeFieldDefinitionResolved = {
     key,
-    metadata_key: metadataKey,
+    metadata_key: resolveRuntimeFieldMetadataKey(definition, key),
     cli_flag: cliFlag,
-    cli_aliases: cliAliases,
+    cli_aliases: normalizeStringList(definition.cli_aliases)
+      .map((value) => normalizeCliToken(value))
+      .filter((value) => value.length > 0 && value !== cliFlag),
     description:
       description && description.length > 0 ? description : undefined,
     type,
-    commands,
+    commands: resolveRuntimeFieldCommands(definition),
     repeatable: [
       definition.repeatable === true,
       type === "string_array",
     ].includes(true),
     required: definition.required === true,
     required_on_create: definition.required_on_create === true,
-    required_types: requiredTypes,
+    required_types: normalizeStringList(definition.required_types),
     allow_unset: definition.allow_unset !== false,
     value_schema: valueSchema,
   };
+  return { resolved, loss: { ignored: describeIgnoredFieldMembers(definition, resolved) } };
+}
+
+function normalizeRuntimeFieldDefinition(
+  definition: unknown,
+): RuntimeFieldDefinitionResolved | null {
+  return inspectRuntimeFieldDefinition(definition).resolved;
 }
 
 function normalizeRuntimeStatusDefinitions(
@@ -768,7 +929,8 @@ function readStatusesFromSchemaFile(
   return undefined;
 }
 
-function readFieldsFromSchemaFile(
+/** The definitions list of a parsed fields file, in any of its accepted shapes; undefined for any other shape. */
+export function readFieldsFromSchemaFile(
   parsed: unknown,
 ): RuntimeFieldDefinition[] | undefined {
   if (Array.isArray(parsed)) {
@@ -953,7 +1115,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_types_invalid_json",
   );
   if (parsedTypes !== undefined) {
-    loadedTypeDefinitions = readTypeDefinitionsFromSchemaFile(parsedTypes);
+    loadedTypeDefinitions = guardSchemaFileEntries(readTypeDefinitionsFromSchemaFile(parsedTypes), isUsableTypeEntry, { warningKey: "runtime_schema_types_entry_invalid", warnings, keepPositions: false });
     if (loadedTypeDefinitions === undefined) {
       warnings.push("runtime_schema_types_invalid_shape");
     }
@@ -964,7 +1126,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_statuses_invalid_json",
   );
   if (parsedStatuses !== undefined) {
-    loadedStatuses = readStatusesFromSchemaFile(parsedStatuses);
+    loadedStatuses = guardSchemaFileEntries(readStatusesFromSchemaFile(parsedStatuses), isPlainRecord, { warningKey: "runtime_schema_statuses_entry_invalid", warnings, keepPositions: true });
     if (loadedStatuses === undefined) {
       warnings.push("runtime_schema_statuses_invalid_shape");
     }
@@ -975,7 +1137,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_fields_invalid_json",
   );
   if (parsedFields !== undefined) {
-    loadedFields = readFieldsFromSchemaFile(parsedFields);
+    loadedFields = guardSchemaFileEntries(readFieldsFromSchemaFile(parsedFields), isPlainRecord, { warningKey: "runtime_schema_fields_entry_invalid", warnings, keepPositions: false });
     if (loadedFields === undefined) {
       warnings.push("runtime_schema_fields_invalid_shape");
     }

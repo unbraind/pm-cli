@@ -208,6 +208,24 @@ function assertNotReservedItemFieldName(fieldName: string): void {
   );
 }
 
+/**
+ * Activation warning for an extension item field named after built-in item
+ * metadata (pm-dhlij3). Activation drops only that field, so the package's
+ * other fields and every create and update keep working; package doctor and
+ * health carry this warning, which names the package, the field and a rename.
+ */
+export function formatReservedItemFieldWarning(
+  layer: string,
+  extension: string,
+  field: string,
+): string {
+  const prefix = extension
+    .replace(/^@[^/]+\//u, "")
+    .replaceAll(/[^A-Za-z0-9]+/gu, "_")
+    .toLowerCase();
+  return `extension_item_field_reserved:${layer}:${extension}:${field}:rename=${prefix}_${field}`;
+}
+
 /** Implements collect registered item field names for the public runtime surface of this module. */
 export function collectRegisteredItemFieldNames(
   registrations: ExtensionRegistrationRegistry | null,
@@ -390,5 +408,25 @@ export function applyRegisteredItemFieldDefaultsAndValidation(
         );
       }
     }
+  }
+}
+
+/**
+ * Apply extension field defaults and validation for a create or update write.
+ * A typed refusal, such as conflicting field types across packages, keeps its
+ * code (pm-dhlij3); a value that fails its declared type or allowed values
+ * becomes a usage refusal.
+ */
+export function applyRegisteredItemFieldDefaultsForWrite(
+  itemMetadata: Record<string, unknown>,
+  registrations: ExtensionRegistrationRegistry | null,
+  options: { skipDefaultFields?: ReadonlySet<string> } = {},
+): void {
+  try {
+    applyRegisteredItemFieldDefaultsAndValidation(itemMetadata, registrations, options);
+  } catch (error: unknown) {
+    if (error instanceof PmCliError) throw error;
+    // The validation above throws only Error instances.
+    throw new PmCliError((error as Error).message, EXIT_CODE.USAGE);
   }
 }

@@ -392,7 +392,8 @@ describe("runtime schema command flag registration", () => {
     expect(normalized.fields).toEqual([
       expect.objectContaining({
         key: "release_train",
-        metadata_key: "",
+        // An explicit metadata key that names nothing falls back to the field key instead of the empty item key (pm-x9r2h3).
+        metadata_key: undefined,
         cli_flag: undefined,
         cli_aliases: undefined,
         commands: ["create"],
