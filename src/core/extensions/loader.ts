@@ -139,6 +139,10 @@ import {
   type ServiceOverrideOwnership,
   type VectorStoreAdapterDefinition
 } from "./extension-types.js";
+import {
+  formatReservedItemFieldWarning,
+  RESERVED_ITEM_FIELD_NAMES,
+} from "./item-fields.js";
 import { parseExtensionManifestDocument } from "./manifest-parser.js";
 import { formatExtensionManifestSchemaWarnings } from "./manifest-schema.js";
 import { snapshotExtensionModuleGraph } from "./module-graph-snapshot.js";
@@ -1735,10 +1739,23 @@ class ExtensionApiRegistrar implements ExtensionApi {
         "registerItemFields requires at least one field definition",
       );
     }
+    // A field named after built-in item metadata would make every create and
+    // update refuse, so only that field is dropped, with a warning (pm-dhlij3).
+    // The registration stays, even empty, because the package did register
+    // against the schema capability.
+    const { layer, name } = this.#loadedExtension;
+    const admittedFields = normalizedFields.filter((field) => {
+      const fieldName = field.name.trim();
+      if (!RESERVED_ITEM_FIELD_NAMES.has(fieldName)) return true;
+      this.#activationWarnings.push(
+        formatReservedItemFieldWarning(layer, name, fieldName),
+      );
+      return false;
+    });
     this.#registrationRegistry.item_fields.push({
-      layer: this.#loadedExtension.layer,
-      name: this.#loadedExtension.name,
-      fields: normalizedFields,
+      layer,
+      name,
+      fields: admittedFields,
     });
   }
 

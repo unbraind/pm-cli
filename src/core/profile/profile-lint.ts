@@ -291,7 +291,7 @@ function lintFields(
     }
     seen.add(key);
     // profile apply refuses these fields, so the shared lint that package checks consume must say so too (pm-pta8um, pm-8patuh).
-    const spellingDefects = resolveAddFieldFlagSpellingDefects(normalized);
+    const spellingDefects = resolveAddFieldFlagSpellingDefects(normalized, field);
     if (spellingDefects.length > 0) {
       findings.push({
         severity: "error",

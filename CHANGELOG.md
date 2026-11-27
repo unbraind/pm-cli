@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Two residual admission gaps from the PR \#1772 review: an inactive duplicate inline field can take over a built-in option, and a negated mutation flag passes harness output-control admission ([pm-2nwcgg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2nwcgg.toon))
+- pm validate reports nothing for a stored custom field definition the runtime registry drops, such as cli_flag '--' or a blank alias ([pm-x9r2h3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x9r2h3.toon))
+- An installed extension whose registerItemFields names a reserved item key makes every pm create and pm update fail with untyped command_failed, and package doctor does not name the cause ([pm-dhlij3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dhlij3.toon))
 - GH-1781: secret guard reports a single-quoted reference in compact JSON, and a value of seven backslashes, as password_assignment on 2026.11.25 ([pm-gh1781](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1781.toon))
 - GH-1787: extension workspace discovery ignores GIT_CEILING_DIRECTORIES and binds a non-Git tracker to its parent checkout ([pm-gh1787](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1787.toon))
 - Platform nightly legs regress after the shell-dialect rendering: Windows tests expect POSIX recovery text, and macOS bash 3.2 with history expansion misparses a rendered command at a non-ASCII apostrophe ([pm-jzrtsr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jzrtsr.toon))

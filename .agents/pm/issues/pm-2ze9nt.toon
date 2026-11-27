@@ -1,0 +1,22 @@
+id: pm-2ze9nt
+title: "Two active packages that declare one extension item field with different types still stop every create and update, now with a typed extension_item_field_type_conflict"
+description: "Found 2026-11-27 while fixing pm-dhlij3. collectRegisteredFieldDefinitions (src/core/extensions/item-fields.ts) throws extension_item_field_type_conflict whenever two active registrations give one field name different types, and applyRegisteredItemFieldDefaultsForWrite runs it on every create and update, so one package that declares story_points as number beside another that declares it as string makes every write exit 2, including writes that never touch the field. pm-dhlij3 made the refusal typed (it used to surface as command_failed) and moved reserved-name handling to activation, but the type conflict is still judged per write and no diagnostic names it before a write fails. Duplicate check: searched item field conflicting types, type_conflict and two packages activation; pm-oll8 and pm-tom5xp (closed) own declared type validation, not cross-package conflicts."
+type: Issue
+status: open
+priority: 3
+tags[4]: "area:sdk",extensions,schema,ux
+created_at: "2026-11-27T03:33:33.880Z"
+updated_at: "2026-11-27T03:34:05.151Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "Activation keeps the first declaration of a field and drops each later declaration with a different type, with a warning that names both packages, the field and both types; pm package doctor and pm health report the conflict, and create and update keep working for every field; A spec activates two such packages and drives create and update, with a negative control on a hand-built registry"
+parent: pm-ugqx
+risk: low
+confidence: high
+expected_result: One package's field declaration cannot stop writes for the whole tracker
+actual_result: Every create and update exits 2 with extension_item_field_type_conflict while both packages are active
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dhlij3,discovered_from,"2026-11-27T03:33:33.880Z","harness:claude-code","cli:create:dep",detected
+  pm-oll8,related,"2026-11-27T03:34:04.502Z","harness:claude-code","cli:update:dep",detected
+  pm-tom5xp,related,"2026-11-27T03:34:04.502Z","harness:claude-code","cli:update:dep",detected
+body: ""

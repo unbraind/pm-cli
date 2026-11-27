@@ -2,18 +2,55 @@ id: pm-x9r2h3
 title: "pm validate reports nothing for a stored custom field definition the runtime registry drops, such as cli_flag '--' or a blank alias"
 description: "Raised by the Codex review of PR #1772 (2026-11-23, third pass). The runtime field registry (normalizeRuntimeFieldDefinition in src/core/schema/runtime-schema.ts) returns null for a definition whose cli_flag normalizes to an empty token, an invalid value_schema or an empty key, and drops a blank alias. pm validate --check-metadata scans the resolved registry (scanFieldOptionCollisions in src/sdk/schema/field-option-collisions.ts), so such a stored definition is invisible: the field silently stops working and nothing tells the operator. PR #1772 closes the write paths (add-field, profile apply, rename-field and mutateWorkspaceSettings refuse an empty spelling with schema_field_flag_invalid), but definitions already stored inline or in schema/fields.json stay unreported. Duplicate check: searched validate dropped field definition empty cli_flag registry; pm-8patuh (closed) owns spelling refusals at write time."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: "area:schema",diagnostics,validation
 created_at: "2026-11-23T11:55:14.460Z"
-updated_at: "2026-11-23T11:55:14.460Z"
+updated_at: "2026-11-27T04:03:36.695Z"
+closed_at: "2026-11-27T04:03:36.041Z"
+completed_at: "2026-11-27T04:03:36.041Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "validate --check-metadata reports every stored field definition the registry drops, with the key, the source (inline settings or schema/fields.json) and the reason; A blank or empty-normalizing alias is reported even though the definition itself resolves; A spec seeds each dropped shape and asserts the validate rows, with a negative control on the current release"
 parent: pm-8jdc
 risk: low
 confidence: high
+resolution: "The registry reads inspectRuntimeFieldDefinition, which returns the resolved definition and what it discarded; scanFieldDefinitionLosses reads the stored entries inline and in the fields file and reports validate_schema_field_definition_dropped and _partial rows with source, index, key and reason; schema file entries that are not objects are skipped with runtime_schema_<section>_entry_invalid instead of failing the settings read; a metadata key that names nothing falls back to the field key"
 expected_result: A stored definition that the registry drops or truncates is named by validate with a repair hint
+actual_result: "validate lists every dropped and partial shape with its source and position, both inline and in schema/fields.json; a null schema file entry keeps inline settings; published 2026.11.26 reports none of them and resets settings on a null entry"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-8patuh,discovered_from,"2026-11-23T11:55:14.460Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-27T03:31:49.947Z","harness:claude-code","Fix (2026-11-27, branch fix/field-admission-diagnostics). The registry's per-definition normalizer is now inspectRuntimeFieldDefinition in src/core/schema/runtime-schema.ts: it returns the resolved definition plus a loss record (dropped: not_an_object | key_empty | cli_flag_empty | value_schema_invalid; ignored: one line per member it skips). normalizeRuntimeFieldDefinition reads it, so the diagnostic cannot disagree with the registry. pm validate --check-metadata calls scanFieldDefinitionLosses (src/sdk/schema/field-definition-losses.ts), which reads the stored entries themselves, inline in settings.json and in the configured fields file, and reports rows {source, index, key, dropped|ignored} with validate_schema_field_definition_dropped:<n> and validate_schema_field_definition_partial:<n>. Ignored members covered: blank or non-string aliases, aliases that are not a list, an unknown or non-string type (read as string), unknown commands, blank required_types, a non-string description, and an explicit metadata_key or front_matter_key that names nothing. Two defects found while probing the dropped shapes, fixed here: a null entry in schema/fields.json, statuses.json or types.json threw inside the normalizers, so readSettings failed its merge and every setting fell back to its default (settings_read_merge_failed); entries that are not objects are now skipped with runtime_schema_<section>_entry_invalid:<n>, which health reports. And a description that is not a string threw the same way. Second: a metadata_key that normalizes to nothing stored every value under the empty item key (the item file held a line with an empty key); it now falls back to the field key and validate reports it. Negative control on the published 2026.11.26 build: validate --check-metadata reports nothing for the same fields file and the null entry yields settings_read_merge_failed. Spec: tests/unit/sdk/schema/field-definition-losses.spec.ts (21 cases, including registry parity for every shape)."
+files[4]{path,scope,note}:
+  src/core/schema/runtime-schema.ts,project,inspectRuntimeFieldDefinition shared by the registry and validate; schema file entries that are not objects are skipped with a warning
+  src/sdk/governance/validate.ts,project,wires the loss scan into the metadata check
+  src/sdk/schema/field-definition-losses.ts,project,validate --check-metadata scan of stored field definitions
+  tests/unit/sdk/schema/field-definition-losses.spec.ts,project,"inspection parity, schema file entries, validate rows"
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/sdk/schema/field-definition-losses.spec.ts,project,"harness:claude-code","2026-11-27T03:29:24.662Z",local_mutation,fix/field-admission-diagnostics
+test_runs[1]:
+  - run_id: test-local-mwyghj0f-3ct1zn
+    kind: test
+    status: passed
+    started_at: "2026-11-27T04:02:56.717Z"
+    finished_at: "2026-11-27T04:03:06.495Z"
+    recorded_at: "2026-11-27T04:03:06.495Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/sdk/schema/field-definition-losses.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,validate rows for dropped definitions
+  docs/CONFIGURATION.md,project,dropped and partial field definitions
+close_reason: "validate --check-metadata names every stored field definition the registry drops or reads in part, and one malformed schema file entry no longer resets every setting"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-x9r2h3
+  gate_id: validate-field-definition-losses
+  negative_control: "Published 2026.11.26 reports no row for a fields file holding an empty flag, a blank alias and an invalid value schema, and a null fields.json entry yields settings_read_merge_failed; tests/unit/sdk/schema/field-definition-losses.spec.ts pins every shape against registry parity"
+  local_checks[1]: node scripts/run-tests.mjs test tests/unit/sdk/schema/field-definition-losses.spec.ts tests/unit/core/schema
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

@@ -89,4 +89,28 @@ describe("settings writers share the custom field admission", () => {
       ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_option_collision" }) });
     });
   });
+
+  it("judges an earlier duplicate definition once a proposal makes it the one the registry reads (pm-2nwcgg)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const settingsPath = path.join(pmPath, "settings.json");
+      // The registry reads the last definition of a key, so the shadowing alias of the first one is inactive.
+      const shadowing = { key: "review_owner", type: "string", commands: ["list"], cli_aliases: ["full"] };
+      const winner = { key: "review_owner", type: "string", commands: ["list"] };
+      const raw = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown> & { schema?: Record<string, unknown> };
+      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [shadowing, winner] } }, null, 2)}\n`);
+      const before = await readFile(settingsPath, "utf8");
+      const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
+      // Restating both stored entries keeps the winner effective, so nothing is judged.
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "restate-both", dryRun: true, mutate: (current) => withFields(current, [shadowing, winner] as InlineField[]) }),
+      ).resolves.toMatchObject({ dry_run: true });
+      // Removing the winner leaves an exact stored copy that now takes effect and shadows --full on list.
+      for (const dryRun of [true, false]) {
+        await expect(
+          sdk.mutateWorkspaceSettings({ operationId: `expose-${String(dryRun)}`, dryRun, mutate: (current) => withFields(current, [shadowing] as InlineField[]) }),
+        ).rejects.toMatchObject({ exitCode: 2, context: expect.objectContaining({ code: "schema_field_option_collision", field: "review_owner", flag: "--full" }) });
+      }
+      expect(await readFile(settingsPath, "utf8")).toBe(before);
+    });
+  });
 });

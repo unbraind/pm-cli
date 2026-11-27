@@ -89,7 +89,8 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
  * split, or an option that shadows a built-in option, is refused before
  * anything is written. A definition the proposal leaves exactly as stored is
  * not judged again, so an unrelated write can still preserve a legacy
- * definition, which validate keeps reporting.
+ * definition, which validate keeps reporting, unless it becomes the
+ * definition the registry reads for its key.
  */
 async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown): Promise<void> {
   // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
@@ -112,6 +113,21 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
     if (candidate === undefined || hasEmptySpelling(definition)) return !storedCopy;
     return !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
   });
+  // The registry reads the last definition of each key. A stored copy that becomes that definition, such as an
+  // earlier duplicate the proposal exposes by removing the later one, takes effect now and is judged (pm-2nwcgg).
+  const effective = (fields: readonly unknown[]): Map<string, { definition: unknown; resolved: unknown }> => {
+    const byKey = new Map<string, { definition: unknown; resolved: unknown }>();
+    for (const definition of fields) {
+      const candidate = resolved(definition) as { key: string } | undefined;
+      if (candidate !== undefined) byKey.set(candidate.key, { definition, resolved: candidate });
+    }
+    return byKey;
+  };
+  const before = effective(current.schema.fields);
+  for (const [key, entry] of effective(proposed)) {
+    const definition = entry.definition as (typeof proposed)[number];
+    if (!changed.includes(definition) && !stableValueEquals(before.get(key)?.resolved, entry.resolved)) changed.push(definition);
+  }
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
   for (const definition of changed) assertFieldDefinitionOptionsAvailable(definition);

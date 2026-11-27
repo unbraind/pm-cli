@@ -7,6 +7,7 @@ import { throwFirstItemRevisionConflict } from "../lifecycle/item-revision.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { applyClosureTimestampFix, scanClosureTimestamps } from "./closure-timestamps.js";
 import { scanFieldOptionCollisions } from "../schema/field-option-collisions.js";
+import { scanFieldDefinitionLosses } from "../schema/field-definition-losses.js";
 import { readWorkflowCompletenessCheck } from "./workflow-completeness.js";
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
@@ -3349,6 +3350,9 @@ async function executeRequestedValidateChecks(params: {
     const optionCollisions = scanFieldOptionCollisions(params.settings.schema, diagnosticLimit);
     Object.assign(built.check.details, optionCollisions.details);
     built.warnings.push(...optionCollisions.warnings);
+    const definitionLosses = await scanFieldDefinitionLosses(params.pmRoot, params.settings.schema, diagnosticLimit);
+    Object.assign(built.check.details, definitionLosses.details);
+    built.warnings.push(...definitionLosses.warnings);
     built.check.ok = built.warnings.length === 0;
     built.check.status = built.check.ok ? "ok" : "warn";
     recordValidateCheck(state, built, fixHintsEnabled);

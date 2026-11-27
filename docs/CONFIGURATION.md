@@ -862,6 +862,8 @@ Fields live in `.agents/pm/schema/fields.json` with the shape `{ "fields": [Runt
 - `description` — surfaced in `--help`.
 - `value_schema` — optional recursive JSON-value validation applied after CLI coercion and before create/update persistence. It supports `type`, `const`, `enum`, `min_length`, `min_items`, `format: "date-time"`, object `properties`/`required`/`additional_properties`, array `items`, and exact-one `one_of` variants. This lets project-defined fields enforce domain semantics without custom command code.
 
+The registry skips a definition it cannot use instead of failing: one whose key or `cli_flag` normalizes to nothing, whose `value_schema` is invalid, or which is not an object. It also ignores a blank alias, an unknown `type` (read as `string`) or command, and a `description` that is not a string. `pm validate --check-metadata` names every such stored entry, inline in `settings.json` or in `schema/fields.json`, with its position and reason (`validate_schema_field_definition_dropped:<n>` and `validate_schema_field_definition_partial:<n>`, rows under `schema_field_definition_losses`). A `null` or scalar entry in `schema/fields.json`, `schema/statuses.json` or `schema/types.json` is skipped with a `runtime_schema_<section>_entry_invalid:<n>` warning that `pm health` reports; before, one such entry discarded every setting in favour of its default ([pm-x9r2h3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x9r2h3.toon); repository tracker record, excluded from npm).
+
 End-to-end example — add a required-on-create `component` string field on `Task` items:
 
 ```jsonc

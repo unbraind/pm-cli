@@ -510,70 +510,153 @@ function normalizeTypeWorkflowDefinitions(
   return normalized.length > 0 ? normalized : undefined;
 }
 
-function normalizeRuntimeFieldDefinition(
-  definition: RuntimeFieldDefinition,
-): RuntimeFieldDefinitionResolved | null {
+/** Why the field registry drops a whole stored definition (pm-x9r2h3). */
+export type RuntimeFieldDefinitionDropReason =
+  | "not_an_object"
+  | "key_empty"
+  | "cli_flag_empty"
+  | "value_schema_invalid";
+
+/**
+ * What the field registry discards from one stored definition (pm-x9r2h3):
+ * the whole definition, or members it ignores or replaces while keeping it.
+ */
+export interface RuntimeFieldDefinitionLoss {
+  /** Set when the registry drops the whole definition. */
+  dropped?: RuntimeFieldDefinitionDropReason;
+  /** One line per member the registry ignores or replaces, such as a blank alias. */
+  ignored: string[];
+}
+
+/** One line per entry of a stored list the registry skips; a member that is not a list is skipped whole. */
+function describeIgnoredListEntries(member: string, value: unknown, keeps: (entry: string) => boolean, what: string): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) return [`${member}: is not a list`];
+  return value
+    .filter((entry: unknown) => typeof entry !== "string" || !keeps(entry.trim()))
+    .map((entry: unknown) => `${member}: ${JSON.stringify(entry)} is not ${what}`);
+}
+
+function isPlainRecord(value: unknown): value is RuntimeFieldDefinition {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Keep the object entries of a schema file list (pm-x9r2h3): one null or
+ * scalar entry would otherwise fail the whole settings read, and every setting
+ * would fall back to its default.
+ */
+function keepObjectEntries<T>(entries: T[] | undefined, warningKey: string, warnings: string[]): T[] | undefined {
+  if (entries === undefined) return undefined;
+  const kept = entries.filter((entry) => isPlainRecord(entry));
+  if (kept.length < entries.length) warnings.push(`${warningKey}:${entries.length - kept.length}`);
+  return kept;
+}
+
+function resolveRuntimeFieldType(definition: RuntimeFieldDefinition): RuntimeFieldType {
+  const candidate = typeof definition.type === "string" ? definition.type.trim().toLowerCase() : "string";
+  return RUNTIME_FIELD_TYPE_SET.has(candidate) ? (candidate as RuntimeFieldType) : "string";
+}
+
+function resolveRuntimeFieldCommands(definition: RuntimeFieldDefinition): RuntimeFieldCommand[] {
+  const normalized = normalizeStringList(definition.commands).filter(
+    (value): value is RuntimeFieldCommand => RUNTIME_FIELD_COMMAND_SET.has(value),
+  );
+  return normalized.length > 0 ? normalized : [...DEFAULT_RUNTIME_FIELD_COMMANDS];
+}
+
+/** The explicit metadata key a definition stores, by the member it is stored under. */
+function explicitFieldMetadataKey(definition: RuntimeFieldDefinition): { member: string; value: unknown } | undefined {
+  if (definition.metadata_key !== undefined) return { member: "metadata_key", value: definition.metadata_key };
+  return definition.front_matter_key === undefined ? undefined : { member: "front_matter_key", value: definition.front_matter_key };
+}
+
+/** The item key a field's values are stored under; an explicit key that normalizes to nothing falls back to the field key (pm-x9r2h3). */
+function resolveRuntimeFieldMetadataKey(definition: RuntimeFieldDefinition, key: string): string {
+  const normalized = normalizeStatusToken(explicitFieldMetadataKey(definition)?.value);
+  return normalized.length > 0 ? normalized : key;
+}
+
+/** One line per member of a kept definition that the registry ignores or replaces. */
+function describeIgnoredFieldMembers(definition: RuntimeFieldDefinition, type: RuntimeFieldType): string[] {
+  const typeKept = typeof definition.type === "string" && definition.type.trim().toLowerCase() === type;
+  const metadataKey = explicitFieldMetadataKey(definition);
+  return [
+    ...(metadataKey === undefined || normalizeStatusToken(metadataKey.value).length > 0 ? [] : [`${metadataKey.member}: ${JSON.stringify(metadataKey.value)} names no item key, so values are stored under the field key`]),
+    ...describeIgnoredListEntries("cli_aliases", definition.cli_aliases, (entry) => normalizeCliToken(entry).length > 0, "a flag spelling"),
+    ...(definition.type === undefined || typeKept ? [] : [`type: ${JSON.stringify(definition.type)} is not a field type, so the field reads as string`]),
+    ...describeIgnoredListEntries("commands", definition.commands, (entry) => RUNTIME_FIELD_COMMAND_SET.has(entry), "a field command"),
+    ...describeIgnoredListEntries("required_types", definition.required_types, (entry) => entry.length > 0, "a type name"),
+    ...(definition.description === undefined || typeof definition.description === "string" ? [] : ["description: is not a string"]),
+  ];
+}
+
+/**
+ * Resolve one stored definition and record what the registry discards from
+ * it. The registry and `pm validate` both read this one function, so a
+ * diagnostic can never disagree with what the registry keeps.
+ */
+export function inspectRuntimeFieldDefinition(definition: unknown): {
+  resolved: RuntimeFieldDefinitionResolved | null;
+  loss: RuntimeFieldDefinitionLoss;
+} {
+  const drop = (dropped: RuntimeFieldDefinitionDropReason) => ({ resolved: null, loss: { dropped, ignored: [] } });
+  // One null or scalar entry in schema/fields.json must not fail the whole settings read.
+  if (!isPlainRecord(definition)) {
+    return drop("not_an_object");
+  }
   const key = normalizeStatusToken(definition.key ?? "");
   if (!key) {
-    return null;
+    return drop("key_empty");
   }
-  const metadataKey = normalizeStatusToken(
-    definition.metadata_key ?? definition.front_matter_key ?? key,
-  );
   const cliFlag = normalizeCliToken(
     definition.cli_flag ?? keyToDefaultCliFlag(key),
   );
   if (!cliFlag) {
-    return null;
+    return drop("cli_flag_empty");
   }
-  const cliAliases = normalizeStringList(definition.cli_aliases)
-    .map((value) => normalizeCliToken(value))
-    .filter((value) => value.length > 0 && value !== cliFlag);
-  const typeCandidate =
-    typeof definition.type === "string"
-      ? definition.type.trim().toLowerCase()
-      : "string";
-  const type = RUNTIME_FIELD_TYPE_SET.has(typeCandidate)
-    ? (typeCandidate as RuntimeFieldType)
-    : "string";
-  const commands = (() => {
-    const normalized = normalizeStringList(definition.commands).filter(
-      (value): value is RuntimeFieldCommand =>
-        RUNTIME_FIELD_COMMAND_SET.has(value),
-    );
-    if (normalized.length > 0) {
-      return normalized;
-    }
-    return [...DEFAULT_RUNTIME_FIELD_COMMANDS];
-  })();
-  const description = definition.description?.trim();
-  const requiredTypes = normalizeStringList(definition.required_types);
   const valueSchema =
     definition.value_schema === undefined
       ? undefined
       : normalizeRuntimeFieldValueSchema(definition.value_schema);
   if (definition.value_schema !== undefined && valueSchema === undefined) {
-    return null;
+    return drop("value_schema_invalid");
   }
+  const type = resolveRuntimeFieldType(definition);
+  const description =
+    typeof definition.description === "string"
+      ? definition.description.trim()
+      : undefined;
   return {
-    key,
-    metadata_key: metadataKey,
-    cli_flag: cliFlag,
-    cli_aliases: cliAliases,
-    description:
-      description && description.length > 0 ? description : undefined,
-    type,
-    commands,
-    repeatable: [
-      definition.repeatable === true,
-      type === "string_array",
-    ].includes(true),
-    required: definition.required === true,
-    required_on_create: definition.required_on_create === true,
-    required_types: requiredTypes,
-    allow_unset: definition.allow_unset !== false,
-    value_schema: valueSchema,
+    resolved: {
+      key,
+      metadata_key: resolveRuntimeFieldMetadataKey(definition, key),
+      cli_flag: cliFlag,
+      cli_aliases: normalizeStringList(definition.cli_aliases)
+        .map((value) => normalizeCliToken(value))
+        .filter((value) => value.length > 0 && value !== cliFlag),
+      description:
+        description && description.length > 0 ? description : undefined,
+      type,
+      commands: resolveRuntimeFieldCommands(definition),
+      repeatable: [
+        definition.repeatable === true,
+        type === "string_array",
+      ].includes(true),
+      required: definition.required === true,
+      required_on_create: definition.required_on_create === true,
+      required_types: normalizeStringList(definition.required_types),
+      allow_unset: definition.allow_unset !== false,
+      value_schema: valueSchema,
+    },
+    loss: { ignored: describeIgnoredFieldMembers(definition, type) },
   };
+}
+
+function normalizeRuntimeFieldDefinition(
+  definition: unknown,
+): RuntimeFieldDefinitionResolved | null {
+  return inspectRuntimeFieldDefinition(definition).resolved;
 }
 
 function normalizeRuntimeStatusDefinitions(
@@ -768,7 +851,8 @@ function readStatusesFromSchemaFile(
   return undefined;
 }
 
-function readFieldsFromSchemaFile(
+/** The definitions list of a parsed fields file, in any of its accepted shapes; undefined for any other shape. */
+export function readFieldsFromSchemaFile(
   parsed: unknown,
 ): RuntimeFieldDefinition[] | undefined {
   if (Array.isArray(parsed)) {
@@ -953,7 +1037,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_types_invalid_json",
   );
   if (parsedTypes !== undefined) {
-    loadedTypeDefinitions = readTypeDefinitionsFromSchemaFile(parsedTypes);
+    loadedTypeDefinitions = keepObjectEntries(readTypeDefinitionsFromSchemaFile(parsedTypes), "runtime_schema_types_entry_invalid", warnings);
     if (loadedTypeDefinitions === undefined) {
       warnings.push("runtime_schema_types_invalid_shape");
     }
@@ -964,7 +1048,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_statuses_invalid_json",
   );
   if (parsedStatuses !== undefined) {
-    loadedStatuses = readStatusesFromSchemaFile(parsedStatuses);
+    loadedStatuses = keepObjectEntries(readStatusesFromSchemaFile(parsedStatuses), "runtime_schema_statuses_entry_invalid", warnings);
     if (loadedStatuses === undefined) {
       warnings.push("runtime_schema_statuses_invalid_shape");
     }
@@ -975,7 +1059,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_fields_invalid_json",
   );
   if (parsedFields !== undefined) {
-    loadedFields = readFieldsFromSchemaFile(parsedFields);
+    loadedFields = keepObjectEntries(readFieldsFromSchemaFile(parsedFields), "runtime_schema_fields_entry_invalid", warnings);
     if (loadedFields === undefined) {
       warnings.push("runtime_schema_fields_invalid_shape");
     }
