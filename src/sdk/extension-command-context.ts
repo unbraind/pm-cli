@@ -92,7 +92,7 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
  * definition, which validate keeps reporting, unless it becomes the
  * definition the registry reads for its key.
  */
-async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown): Promise<void> {
+async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown, fileFields: { before: readonly unknown[]; after: readonly unknown[] }): Promise<void> {
   // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
   const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
   if (proposed.length === 0) return;
@@ -113,8 +113,9 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
     if (candidate === undefined || hasEmptySpelling(definition)) return !storedCopy;
     return !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
   });
-  // The registry reads the last definition of each key. A stored copy that becomes that definition, such as an
-  // earlier duplicate the proposal exposes by removing the later one, takes effect now and is judged (pm-2nwcgg).
+  // The registry reads the last definition of each key, the fields file after the inline list. A stored copy that
+  // becomes that definition, such as an earlier duplicate the proposal exposes by removing the later one, takes
+  // effect now and is judged (pm-2nwcgg); one a file-backed definition still masks is not.
   const effective = (fields: readonly unknown[]): Map<string, { definition: unknown; resolved: unknown }> => {
     const byKey = new Map<string, { definition: unknown; resolved: unknown }>();
     for (const definition of fields) {
@@ -123,8 +124,8 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
     }
     return byKey;
   };
-  const before = effective(current.schema.fields);
-  for (const [key, entry] of effective(proposed)) {
+  const before = effective([...current.schema.fields, ...fileFields.before]);
+  for (const [key, entry] of effective([...proposed, ...fileFields.after])) {
     const definition = entry.definition as (typeof proposed)[number];
     if (!changed.includes(definition) && !stableValueEquals(before.get(key)?.resolved, entry.resolved)) changed.push(definition);
   }
@@ -221,7 +222,12 @@ export function createExtensionCommandSdk(
                 EXIT_CODE.USAGE,
               );
             }
-            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields);
+            const { readFieldsFileDefinitions } = await import("./schema/field-definition-losses.js");
+            const proposedSchema = (next as { schema?: PmSettings["schema"] }).schema;
+            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields, {
+              before: await readFieldsFileDefinitions(pmRoot, currentSettings.schema),
+              after: await readFieldsFileDefinitions(pmRoot, proposedSchema),
+            });
             let raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!
               : serializeSettings(next, { source: { raw: current, validated: validatedCurrent.data } });

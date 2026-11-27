@@ -37,7 +37,29 @@ const STORED_SHAPES: Array<[string, unknown, Record<string, unknown>]> = [
   ["an unknown command", { key: "review_owner", commands: ["creat", "update"] }, { ignored: ['commands: "creat" is not a field command'] }],
   ["blank required types", { key: "review_owner", required_types: ["Task", " "] }, { ignored: ['required_types: " " is not a type name'] }],
   ["a description that is not a string", { key: "review_owner", description: 5 }, { ignored: ["description: is not a string"] }],
+  // The registry normalizes a definition more than once, so every leading pair of dashes goes in one pass (Codex review).
+  ["a flag of four dashes", { key: "review_owner", cli_flag: "----" }, { dropped: "cli_flag_empty" }],
+  ["an alias of four dashes", { key: "review_owner", cli_aliases: ["----", "owner"] }, { ignored: ['cli_aliases: "----" is not a flag spelling'] }],
+  // Boolean members that are not booleans leave the default behavior in place (Codex review).
+  ["boolean members that are not booleans", { key: "review_owner", required_on_create: "true", allow_unset: "false", repeatable: 1, required: null }, { ignored: [
+    "repeatable: 1 is not a boolean, so the field takes one value",
+    "required: null is not a boolean, so the field is optional",
+    'required_on_create: "true" is not a boolean, so the field is optional on create',
+    'allow_unset: "false" is not a boolean, so the field can be cleared',
+  ] }],
+  // A value JSON cannot render is still described, and the rest of the definition resolves (Codex review).
+  ["an alias JSON cannot render", { key: "review_owner", cli_aliases: [3n, "owner"] }, { ignored: ["cli_aliases: 3 is not a flag spelling"] }],
 ];
+
+/** The shapes a JSON file can hold; an SDK caller can pass values such as a BigInt that no stored file carries. */
+const FILE_SHAPES = STORED_SHAPES.filter(([, definition]) => {
+  try {
+    JSON.stringify(definition);
+    return true;
+  } catch {
+    return false;
+  }
+});
 
 describe("inspectRuntimeFieldDefinition", () => {
   it.each(STORED_SHAPES)("reports %s exactly as the registry drops or reads it", (_label, definition, loss) => {
@@ -46,6 +68,28 @@ describe("inspectRuntimeFieldDefinition", () => {
     // The registry reads the same function: a dropped definition resolves to nothing, a kept one resolves whole.
     const registry = resolveRuntimeFieldRegistry({ fields: [definition] } as never);
     expect(registry.definitions).toEqual(inspected.resolved === null ? [] : [inspected.resolved]);
+  });
+
+  it("reads flags with any run of leading dash pairs the way repeated normalization does", () => {
+    expect(resolveRuntimeFieldRegistry({ fields: [{ key: "review_owner", cli_flag: "----owner" }] } as never).definitions[0]).toMatchObject({ cli_flag: "owner" });
+    expect(inspectRuntimeFieldDefinition({ key: "review_owner", cli_flag: "----owner" }).resolved).toMatchObject({ cli_flag: "owner" });
+  });
+
+  it("keeps the nullish precedence of metadata_key over front_matter_key (Codex review)", () => {
+    const inspected = inspectRuntimeFieldDefinition({ key: "review_owner", metadata_key: null, front_matter_key: "owner" });
+    expect(inspected).toMatchObject({ resolved: { metadata_key: "owner" }, loss: { ignored: [] } });
+    expect(inspectRuntimeFieldDefinition({ key: "review_owner", metadata_key: null, front_matter_key: " " }).loss.ignored).toEqual([
+      'front_matter_key: " " names no item key, so values are stored under the field key',
+    ]);
+  });
+
+  it("describes a cyclic alias without throwing", () => {
+    const cyclic: Record<string, unknown> = {};
+    cyclic.self = cyclic;
+    expect(inspectRuntimeFieldDefinition({ key: "review_owner", cli_aliases: [cyclic, "owner"] })).toMatchObject({
+      resolved: { cli_aliases: ["owner"] },
+      loss: { ignored: ["cli_aliases: [object Object] is not a flag spelling"] },
+    });
   });
 
   it("reports nothing for a definition the registry keeps whole", () => {
@@ -83,7 +127,7 @@ describe("validate --check-metadata", () => {
       const clean = await client.validate({ checkMetadata: true });
       expect(clean.checks.find((check) => check.name === "metadata")?.details).not.toHaveProperty("schema_field_definition_loss_count");
       await mkdir(path.join(pmPath, "schema"), { recursive: true });
-      await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: STORED_SHAPES.map(([, definition]) => definition) }));
+      await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: FILE_SHAPES.map(([, definition]) => definition) }));
       const settingsPath = path.join(pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { schema?: Record<string, unknown> };
       await writeFile(settingsPath, JSON.stringify({ ...settings, schema: { ...settings.schema, fields: [{ key: "inline_owner", cli_flag: " " }, { key: "inline_lead", cli_aliases: [" "] }] } }));
@@ -91,14 +135,14 @@ describe("validate --check-metadata", () => {
       const registryKeys = resolveRuntimeFieldRegistry((await readSettings(pmPath)).schema).definitions.map((definition) => definition.key);
       expect(registryKeys).not.toContain("inline_owner");
       const result = await client.validate({ checkMetadata: true });
-      const dropped = STORED_SHAPES.filter(([, , loss]) => loss.dropped !== undefined).length + 1;
-      const partial = STORED_SHAPES.length + 2 - dropped;
+      const dropped = FILE_SHAPES.filter(([, , loss]) => loss.dropped !== undefined).length + 1;
+      const partial = FILE_SHAPES.length + 2 - dropped;
       expect(result.warnings).toEqual(expect.arrayContaining([`validate_schema_field_definition_dropped:${dropped}`, `validate_schema_field_definition_partial:${partial}`]));
       const metadata = result.checks.find((check) => check.name === "metadata");
       expect(metadata).toMatchObject({
         ok: false,
         details: {
-          schema_field_definition_loss_count: STORED_SHAPES.length + 2,
+          schema_field_definition_loss_count: FILE_SHAPES.length + 2,
           schema_field_definition_losses_truncated: false,
           schema_field_definition_loss_fix_hint: expect.stringContaining("pm schema add-field"),
         },
@@ -146,13 +190,42 @@ describe("validate --check-metadata", () => {
       });
       await writeFile(fieldsPath, JSON.stringify({ fields: [{ key: "b", type: "integer" }] }));
       await expect(scanFieldDefinitionLosses(pmPath, schema, 10)).resolves.toMatchObject({ warnings: ["validate_schema_field_definition_partial:1"] });
-      // No fields file, and a settings document that does not parse or stores no schema, contribute no rows.
+      // No fields file, and a settings document that does not parse, fails validation or stores no schema, contribute no rows.
       await rm(fieldsPath);
       const settingsPath = path.join(pmPath, "settings.json");
-      for (const raw of ["{", JSON.stringify({ id_prefix: "pm-" })]) {
+      const { schema: _schema, ...schemaless } = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      for (const raw of ["{", JSON.stringify({ id_prefix: "pm-" }), JSON.stringify(schemaless)]) {
         await writeFile(settingsPath, raw);
         await expect(scanFieldDefinitionLosses(pmPath, schema, 10), raw).resolves.toEqual({ details: {}, warnings: [] });
       }
+    });
+  });
+
+  it("judges inline entries as settings validation admits them and keeps scanning when a source cannot be read", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const schema = (await readSettings(pmPath)).schema;
+      const settingsPath = path.join(pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { schema?: Record<string, unknown> };
+      const withInline = (fields: unknown[]) => writeFile(settingsPath, JSON.stringify({ ...settings, schema: { ...settings.schema, fields } }));
+      // Validation strips an inline value_schema, so the field registers and no row is due (Codex review).
+      await withInline([{ key: "review_owner", value_schema: { type: "bogus" } }]);
+      expect(resolveRuntimeFieldRegistry((await readSettings(pmPath)).schema).definitions.map((definition) => definition.key)).toContain("review_owner");
+      await expect(scanFieldDefinitionLosses(pmPath, schema, 10)).resolves.toEqual({ details: {}, warnings: [] });
+      // An inline entry validation refuses replaces the whole document with defaults; the settings read reports that.
+      await withInline([{ key: "review_owner", type: "integer" }]);
+      await expect(scanFieldDefinitionLosses(pmPath, schema, 10)).resolves.toEqual({ details: {}, warnings: [] });
+      // A fields file that is a directory is the settings read's to report; inline rows still come through.
+      await withInline([{ key: "review_lead", cli_flag: "--" }]);
+      const fieldsPath = path.join(pmPath, "schema", "fields.json");
+      await rm(fieldsPath, { force: true });
+      await mkdir(fieldsPath, { recursive: true });
+      await expect(scanFieldDefinitionLosses(pmPath, schema, 10)).resolves.toMatchObject({
+        details: { schema_field_definition_losses: [{ source: "settings.json", key: "review_lead", dropped: "cli_flag_empty" }] },
+        warnings: ["validate_schema_field_definition_dropped:1"],
+      });
+      const result = await new PmClient({ pmRoot: pmPath, noExtensions: true }).validate({ checkMetadata: true });
+      expect(result.warnings).toContain("validate_schema_field_definition_dropped:1");
+      expect(result.checks.find((check) => check.name === "metadata")?.details.schema_field_definition_loss_fix_hint).toContain("value_schema");
     });
   });
 });

@@ -22,6 +22,7 @@ import {
   type RuntimeFieldDefinitionDropReason,
 } from "../../core/schema/runtime-schema.js";
 import { getSettingsPath } from "../../core/store/paths.js";
+import { validateSettings } from "../../core/store/settings-validator.js";
 import type { RuntimeSchemaSettings } from "../../types/index.js";
 
 /** One stored field definition the registry drops whole or reads only in part. */
@@ -38,21 +39,33 @@ export interface FieldDefinitionLossRow {
   ignored?: string[];
 }
 
-/** Parse a stored JSON document, or undefined when it is absent or unreadable; the settings read reports those cases. */
+/**
+ * Parse a stored JSON document, or undefined when it is absent, unreadable (a directory, a permission refusal)
+ * or not JSON; the settings read reports those cases, and the metadata check keeps scanning the other source.
+ */
 async function readStoredJson(filePath: string): Promise<unknown> {
-  const raw = await readFileIfExists(filePath);
-  if (raw === null) return undefined;
   try {
-    return JSON.parse(raw) as unknown;
+    const raw = await readFileIfExists(filePath);
+    return raw === null ? undefined : (JSON.parse(raw) as unknown);
   } catch {
     return undefined;
   }
 }
 
-/** The inline `schema.fields` list of a parsed settings document, or an empty list for any other shape. */
+/**
+ * The inline `schema.fields` list as the settings read admits it: settings validation strips members it does
+ * not know (an inline `value_schema`) before the registry sees the entry, and a document it refuses is replaced
+ * by defaults, so such a document contributes no rows here.
+ */
 function readInlineFieldDefinitions(settings: unknown): unknown[] {
-  const schema = (settings as { schema?: { fields?: unknown } } | undefined)?.schema;
-  return Array.isArray(schema?.fields) ? schema.fields : [];
+  const validated = validateSettings(settings);
+  return validated.success ? (validated.data.schema?.fields ?? []) : [];
+}
+
+/** The definitions stored in the schema fields file the given schema configures, in any accepted file shape. */
+export async function readFieldsFileDefinitions(pmRoot: string, schema: Pick<RuntimeSchemaSettings, "files"> | undefined): Promise<unknown[]> {
+  const fieldsPath = filePathForSchemaSection(pmRoot, schema?.files?.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields);
+  return readFieldsFromSchemaFile(await readStoredJson(fieldsPath)) ?? [];
 }
 
 /** Judge each stored definition with the registry's own inspection and keep the ones it changes. */
@@ -83,10 +96,9 @@ export async function scanFieldDefinitionLosses(
   limit: number,
 ): Promise<{ details: Record<string, unknown>; warnings: string[] }> {
   const fieldsPath = filePathForSchemaSection(pmRoot, schema.files.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields);
-  const fieldsFile = await readStoredJson(fieldsPath);
   const rows = [
     ...collectLosses("settings.json", readInlineFieldDefinitions(await readStoredJson(getSettingsPath(pmRoot)))),
-    ...collectLosses(path.relative(pmRoot, fieldsPath).split(path.sep).join("/"), readFieldsFromSchemaFile(fieldsFile) ?? []),
+    ...collectLosses(path.relative(pmRoot, fieldsPath).split(path.sep).join("/"), await readFieldsFileDefinitions(pmRoot, schema)),
   ];
   if (rows.length === 0) return { details: {}, warnings: [] };
   const dropped = rows.filter((row) => row.dropped !== undefined).length;
@@ -95,7 +107,7 @@ export async function scanFieldDefinitionLosses(
       schema_field_definition_loss_count: rows.length,
       schema_field_definition_losses: rows.slice(0, limit),
       schema_field_definition_losses_truncated: rows.length > limit,
-      schema_field_definition_loss_fix_hint: "A dropped definition registers no option and a field read in part ignores the listed members. Re-register a file-backed field with valid values: pm schema add-field <key> --cli-flag <flag> --alias <alias> --commands <commands>. Edit or remove an entry stored inline in settings.json there.",
+      schema_field_definition_loss_fix_hint: "A dropped definition registers no option and a field read in part ignores the listed members. Re-register a file-backed field with valid values: pm schema add-field <key> --cli-flag <flag> --alias <alias> --commands <commands>. add-field keeps a stored value_schema, so for value_schema_invalid edit or remove that value_schema in the fields file. Edit or remove an entry stored inline in settings.json there.",
     },
     warnings: [
       ...(dropped > 0 ? [`validate_schema_field_definition_dropped:${dropped}`] : []),

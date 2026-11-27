@@ -343,8 +343,10 @@ function normalizeStatusId(value: unknown): string | undefined {
   return normalized.length > 0 ? normalized : undefined;
 }
 
+// Every leading pair of dashes goes in one pass, so normalization is idempotent: the registry
+// normalizes a definition more than once, and `----x` must read as `x` on the first pass too.
 function stripFlagPrefix(value: string): string {
-  return value.startsWith("--") ? value.slice(2) : value;
+  return value.replace(/^(?:--)+/u, "");
 }
 
 /** Normalize a stored field flag token as the registry reads it: trimmed, lower-cased, separators as hyphens, leading dashes removed. */
@@ -528,13 +530,37 @@ export interface RuntimeFieldDefinitionLoss {
   ignored: string[];
 }
 
+/** A stored value as diagnostic text; never throws, so describing a value cannot change whether a definition resolves. */
+function describeStoredValue(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? String(value);
+  } catch {
+    return String(value);
+  }
+}
+
 /** One line per entry of a stored list the registry skips; a member that is not a list is skipped whole. */
 function describeIgnoredListEntries(member: string, value: unknown, keeps: (entry: string) => boolean, what: string): string[] {
   if (value === undefined) return [];
   if (!Array.isArray(value)) return [`${member}: is not a list`];
   return value
     .filter((entry: unknown) => typeof entry !== "string" || !keeps(entry.trim()))
-    .map((entry: unknown) => `${member}: ${JSON.stringify(entry)} is not ${what}`);
+    .map((entry: unknown) => `${member}: ${describeStoredValue(entry)} is not ${what}`);
+}
+
+/** Boolean members and the behavior a stored value that is not a boolean leaves in place. */
+const FIELD_BOOLEAN_MEMBERS = [
+  ["repeatable", "the field takes one value"],
+  ["required", "the field is optional"],
+  ["required_on_create", "the field is optional on create"],
+  ["allow_unset", "the field can be cleared"],
+] as const;
+
+function describeIgnoredBooleanMembers(definition: RuntimeFieldDefinition): string[] {
+  return FIELD_BOOLEAN_MEMBERS.flatMap(([member, effect]) => {
+    const value: unknown = definition[member];
+    return value === undefined || typeof value === "boolean" ? [] : [`${member}: ${describeStoredValue(value)} is not a boolean, so ${effect}`];
+  });
 }
 
 function isPlainRecord(value: unknown): value is RuntimeFieldDefinition {
@@ -565,10 +591,10 @@ function resolveRuntimeFieldCommands(definition: RuntimeFieldDefinition): Runtim
   return normalized.length > 0 ? normalized : [...DEFAULT_RUNTIME_FIELD_COMMANDS];
 }
 
-/** The explicit metadata key a definition stores, by the member it is stored under. */
+/** The explicit metadata key a definition stores, by the member it is stored under; a null member yields to the next, as `??` reads them. */
 function explicitFieldMetadataKey(definition: RuntimeFieldDefinition): { member: string; value: unknown } | undefined {
-  if (definition.metadata_key !== undefined) return { member: "metadata_key", value: definition.metadata_key };
-  return definition.front_matter_key === undefined ? undefined : { member: "front_matter_key", value: definition.front_matter_key };
+  if (definition.metadata_key != null) return { member: "metadata_key", value: definition.metadata_key };
+  return definition.front_matter_key == null ? undefined : { member: "front_matter_key", value: definition.front_matter_key };
 }
 
 /** The item key a field's values are stored under; an explicit key that normalizes to nothing falls back to the field key (pm-x9r2h3). */
@@ -582,12 +608,13 @@ function describeIgnoredFieldMembers(definition: RuntimeFieldDefinition, type: R
   const typeKept = typeof definition.type === "string" && definition.type.trim().toLowerCase() === type;
   const metadataKey = explicitFieldMetadataKey(definition);
   return [
-    ...(metadataKey === undefined || normalizeStatusToken(metadataKey.value).length > 0 ? [] : [`${metadataKey.member}: ${JSON.stringify(metadataKey.value)} names no item key, so values are stored under the field key`]),
+    ...(metadataKey === undefined || normalizeStatusToken(metadataKey.value).length > 0 ? [] : [`${metadataKey.member}: ${describeStoredValue(metadataKey.value)} names no item key, so values are stored under the field key`]),
     ...describeIgnoredListEntries("cli_aliases", definition.cli_aliases, (entry) => normalizeCliToken(entry).length > 0, "a flag spelling"),
-    ...(definition.type === undefined || typeKept ? [] : [`type: ${JSON.stringify(definition.type)} is not a field type, so the field reads as string`]),
+    ...(definition.type === undefined || typeKept ? [] : [`type: ${describeStoredValue(definition.type)} is not a field type, so the field reads as string`]),
     ...describeIgnoredListEntries("commands", definition.commands, (entry) => RUNTIME_FIELD_COMMAND_SET.has(entry), "a field command"),
     ...describeIgnoredListEntries("required_types", definition.required_types, (entry) => entry.length > 0, "a type name"),
     ...(definition.description === undefined || typeof definition.description === "string" ? [] : ["description: is not a string"]),
+    ...describeIgnoredBooleanMembers(definition),
   ];
 }
 

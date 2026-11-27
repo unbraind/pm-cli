@@ -3,7 +3,7 @@
  * the `schema add-field` admission for each inline field definition it adds or
  * changes, while an unrelated write keeps a legacy definition exactly as stored.
  */
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createExtensionCommandSdk } from "../../../../src/sdk/extension-command-context.js";
@@ -111,6 +111,13 @@ describe("settings writers share the custom field admission", () => {
         ).rejects.toMatchObject({ exitCode: 2, context: expect.objectContaining({ code: "schema_field_option_collision", field: "review_owner", flag: "--full" }) });
       }
       expect(await readFile(settingsPath, "utf8")).toBe(before);
+      // A file-backed definition of the key masks the inline list, so exposing the earlier inline entry changes
+      // nothing the registry reads and is not judged (Codex review).
+      await mkdir(path.join(pmPath, "schema"), { recursive: true });
+      await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["create"] }] }));
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "masked", dryRun: true, mutate: (current) => withFields(current, [shadowing] as InlineField[]) }),
+      ).resolves.toMatchObject({ dry_run: true });
     });
   });
 });
