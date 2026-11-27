@@ -337,6 +337,12 @@ describe("extension test harness parity with native dispatch", () => {
     // Without output controls the handler receives the value normalization gives it.
     await runRegisteredCommandForTest(activation.commands, { command: "notes", args: ["pm-x"], options: { "no-S": "1" } });
     expect(seen).toEqual([false]);
+    // An empty negated list is zero occurrences, as normalization delivers it, so it sets nothing (Codex review).
+    const lists = await activate((api) => {
+      api.registerFlags("notes", [{ long: "--stdin", value_type: "boolean", list: true }]);
+      api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
+    });
+    await expect(runRegisteredCommandForTest(lists.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": [] }, global: { outputLimit: "1" } })).resolves.toMatchObject({ handled: true });
     // A handler on the namespaced annotation path: the path resolves first, as native dispatch resolves it, so its
     // positional text is a mutation.
     for (const command of ["item comments", " item comments "]) {

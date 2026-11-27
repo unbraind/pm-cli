@@ -48,6 +48,22 @@ describe("reserved extension item fields at activation", () => {
     expect(result.registration_counts.item_fields).toBe(1);
   });
 
+  it("keeps activating a package whose field name is read through a getter (Codex review)", async () => {
+    class GetterField {
+      public type = "string";
+      get name(): string {
+        return "title";
+      }
+    }
+    const result = await activateSyntheticExtensions([{
+      name: "getter-fields",
+      capabilities: ["schema"],
+      activate: (api) => api.registerItemFields([new GetterField() as never, { name: "review_owner", type: "string" }]),
+    }]);
+    expect(result.failed).toEqual([]);
+    expect(result.registrations.item_fields[0]?.fields.map((field) => field.name)).toContain("review_owner");
+  });
+
   it("derives the rename prefix from the package name without its scope", () => {
     expect(formatReservedItemFieldWarning("global", "@unbrained/pm-Story.Points", "status")).toBe(
       "extension_item_field_reserved:global:@unbrained/pm-Story.Points:status:rename=pm_story_points_status",

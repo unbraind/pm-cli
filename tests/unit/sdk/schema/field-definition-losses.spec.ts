@@ -42,10 +42,23 @@ const STORED_SHAPES: Array<[string, unknown, Record<string, unknown>]> = [
   ["an alias of four dashes", { key: "review_owner", cli_aliases: ["----", "owner"] }, { ignored: ['cli_aliases: "----" is not a flag spelling'] }],
   // Boolean members that are not booleans leave the default behavior in place (Codex review).
   ["boolean members that are not booleans", { key: "review_owner", required_on_create: "true", allow_unset: "false", repeatable: 1, required: null }, { ignored: [
-    "repeatable: 1 is not a boolean, so the field takes one value",
-    "required: null is not a boolean, so the field is optional",
-    'required_on_create: "true" is not a boolean, so the field is optional on create',
-    'allow_unset: "false" is not a boolean, so the field can be cleared',
+    "repeatable: 1 is not a boolean, so it reads as false",
+    "required: null is not a boolean, so it reads as false",
+    'required_on_create: "true" is not a boolean, so it reads as false',
+    'allow_unset: "false" is not a boolean, so it reads as true',
+  ] }],
+  // Value schema keywords the registry does not read are dropped without enforcement, nested schemas included (Codex review).
+  ["value schema keywords the registry does not read", {
+    key: "review_owner",
+    type: "object",
+    value_schema: { type: "object", minLength: 10, properties: { name: { type: "string", maxLength: 3 } }, one_of: [{ type: "object", pattern: "x" }] },
+  }, { ignored: [
+    "value_schema.minLength: is not a value schema keyword, so it is not enforced",
+    "value_schema.properties.name.maxLength: is not a value schema keyword, so it is not enforced",
+    "value_schema.one_of[0].pattern: is not a value schema keyword, so it is not enforced",
+  ] }],
+  ["value schema items keywords", { key: "review_tags", type: "array", value_schema: { type: "array", items: { type: "string", uniqueItems: true } } }, { ignored: [
+    "value_schema.items.uniqueItems: is not a value schema keyword, so it is not enforced",
   ] }],
   // A value JSON cannot render is still described, and the rest of the definition resolves (Codex review).
   ["an alias JSON cannot render", { key: "review_owner", cli_aliases: [3n, "owner"] }, { ignored: ["cli_aliases: 3 is not a flag spelling"] }],
@@ -81,6 +94,13 @@ describe("inspectRuntimeFieldDefinition", () => {
     expect(inspectRuntimeFieldDefinition({ key: "review_owner", metadata_key: null, front_matter_key: " " }).loss.ignored).toEqual([
       'front_matter_key: " " names no item key, so values are stored under the field key',
     ]);
+  });
+
+  it("describes a value neither JSON nor String can render without throwing (Codex review)", () => {
+    expect(inspectRuntimeFieldDefinition({ key: "review_owner", cli_aliases: [{ toString: null, n: 1n }, "owner"] })).toMatchObject({
+      resolved: { cli_aliases: ["owner"] },
+      loss: { ignored: ["cli_aliases: a value that cannot be shown is not a flag spelling"] },
+    });
   });
 
   it("describes a cyclic alias without throwing", () => {
@@ -226,6 +246,20 @@ describe("validate --check-metadata", () => {
       const result = await new PmClient({ pmRoot: pmPath, noExtensions: true }).validate({ checkMetadata: true });
       expect(result.warnings).toContain("validate_schema_field_definition_dropped:1");
       expect(result.checks.find((check) => check.name === "metadata")?.details.schema_field_definition_loss_fix_hint).toContain("value_schema");
+    });
+  });
+
+  it("scans the fields file the stored settings configure, even when the loaded schema is the default (Codex review)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const defaults = (await readSettings(pmPath)).schema;
+      const settingsPath = path.join(pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { schema?: Record<string, unknown> };
+      await writeFile(settingsPath, JSON.stringify({ ...settings, schema: { ...settings.schema, files: { fields: "schema/alternate.json" } } }));
+      await mkdir(path.join(pmPath, "schema"), { recursive: true });
+      await writeFile(path.join(pmPath, "schema", "alternate.json"), JSON.stringify({ fields: [{ key: "review_owner", cli_flag: "--" }] }));
+      await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "unused", cli_flag: "--" }] }));
+      const scanned = await scanFieldDefinitionLosses(pmPath, defaults, 10);
+      expect(scanned.details.schema_field_definition_losses).toEqual([{ source: "schema/alternate.json", index: 0, key: "review_owner", dropped: "cli_flag_empty" }]);
     });
   });
 });

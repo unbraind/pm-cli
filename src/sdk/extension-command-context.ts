@@ -95,7 +95,7 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
 async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown, fileFields: { before: readonly unknown[]; after: readonly unknown[] }): Promise<void> {
   // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
   const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
-  if (proposed.length === 0) return;
+  // No early return for an empty inline list: a proposal can still make a file-backed definition effective.
   const { normalizeCliToken, resolveRuntimeFieldRegistry } = await import("../core/schema/runtime-schema.js");
   // Definitions compare as the registry reads them, so a proposal that JSON round-trips the fields or
   // restates a stored definition without its defaults leaves it unchanged. One the registry drops compares

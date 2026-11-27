@@ -1252,7 +1252,8 @@ export function resolveNegatedDeclaredBooleanOption(
   const index = indexDeclaredOptionSpellings(definitions);
   try {
     const resolved = resolveNegatedBooleanSpelling(index, spelling, value, "");
-    if (resolved.spelling === spelling) return undefined;
+    // An empty list is zero occurrences, as normalization delivers it, so it sets nothing.
+    if (resolved.spelling === spelling || (Array.isArray(resolved.value) && resolved.value.length === 0)) return undefined;
     // The resolved spelling is the declared flag the negation names, so it is always in the index.
     return { key: resolveDeclaredOptionSpelling(index, resolved.spelling)!.handlerKey, value: resolved.value };
   } catch {

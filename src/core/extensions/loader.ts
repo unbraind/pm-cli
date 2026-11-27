@@ -1745,7 +1745,8 @@ class ExtensionApiRegistrar implements ExtensionApi {
     // against the schema capability.
     const { layer, name } = this.#loadedExtension;
     const admittedFields = normalizedFields.filter((field) => {
-      const fieldName = field.name.trim();
+      // The snapshot keeps own enumerable members only, so a name read through a getter is absent here.
+      const fieldName = typeof field.name === "string" ? field.name.trim() : "";
       if (!RESERVED_ITEM_FIELD_NAMES.has(fieldName)) return true;
       this.#activationWarnings.push(
         formatReservedItemFieldWarning(layer, name, fieldName),

@@ -120,4 +120,16 @@ describe("settings writers share the custom field admission", () => {
       ).resolves.toMatchObject({ dry_run: true });
     });
   });
+
+  it("judges a file-backed definition a proposal makes effective, with no inline fields at all (Codex review)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await mkdir(path.join(pmPath, "schema"), { recursive: true });
+      await writeFile(path.join(pmPath, "schema", "alternate.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: ["full"] }] }));
+      const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
+      const pointAtAlternate = (current: PmSettings): PmSettings => ({ ...current, schema: { ...current.schema, fields: [], files: { ...current.schema.files, fields: "schema/alternate.json" } } });
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "switch-file", dryRun: true, mutate: pointAtAlternate }),
+      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_option_collision", field: "review_owner", flag: "--full" }) });
+    });
+  });
 });

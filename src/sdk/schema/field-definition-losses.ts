@@ -57,13 +57,13 @@ async function readStoredJson(filePath: string): Promise<unknown> {
  * not know (an inline `value_schema`) before the registry sees the entry, and a document it refuses is replaced
  * by defaults, so such a document contributes no rows here.
  */
-function readInlineFieldDefinitions(settings: unknown): unknown[] {
+function readInlineSchema(settings: unknown): Partial<RuntimeSchemaSettings> | undefined {
   const validated = validateSettings(settings);
-  return validated.success ? (validated.data.schema?.fields ?? []) : [];
+  return validated.success ? (validated.data.schema as Partial<RuntimeSchemaSettings> | undefined) : undefined;
 }
 
 /** The definitions stored in the schema fields file the given schema configures, in any accepted file shape. */
-export async function readFieldsFileDefinitions(pmRoot: string, schema: Pick<RuntimeSchemaSettings, "files"> | undefined): Promise<unknown[]> {
+export async function readFieldsFileDefinitions(pmRoot: string, schema: Partial<Pick<RuntimeSchemaSettings, "files">> | undefined): Promise<unknown[]> {
   const fieldsPath = filePathForSchemaSection(pmRoot, schema?.files?.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields);
   return readFieldsFromSchemaFile(await readStoredJson(fieldsPath)) ?? [];
 }
@@ -95,10 +95,13 @@ export async function scanFieldDefinitionLosses(
   schema: RuntimeSchemaSettings,
   limit: number,
 ): Promise<{ details: Record<string, unknown>; warnings: string[] }> {
-  const fieldsPath = filePathForSchemaSection(pmRoot, schema.files.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields);
+  // The stored settings name the fields file; the loaded schema is defaults when its hydration failed.
+  const inline = readInlineSchema(await readStoredJson(getSettingsPath(pmRoot)));
+  const configured = inline?.files === undefined ? schema : inline;
+  const fieldsPath = filePathForSchemaSection(pmRoot, configured.files?.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields);
   const rows = [
-    ...collectLosses("settings.json", readInlineFieldDefinitions(await readStoredJson(getSettingsPath(pmRoot)))),
-    ...collectLosses(path.relative(pmRoot, fieldsPath).split(path.sep).join("/"), await readFieldsFileDefinitions(pmRoot, schema)),
+    ...collectLosses("settings.json", inline?.fields ?? []),
+    ...collectLosses(path.relative(pmRoot, fieldsPath).split(path.sep).join("/"), await readFieldsFileDefinitions(pmRoot, configured)),
   ];
   if (rows.length === 0) return { details: {}, warnings: [] };
   const dropped = rows.filter((row) => row.dropped !== undefined).length;
@@ -107,7 +110,7 @@ export async function scanFieldDefinitionLosses(
       schema_field_definition_loss_count: rows.length,
       schema_field_definition_losses: rows.slice(0, limit),
       schema_field_definition_losses_truncated: rows.length > limit,
-      schema_field_definition_loss_fix_hint: "A dropped definition registers no option and a field read in part ignores the listed members. Re-register a file-backed field with valid values: pm schema add-field <key> --cli-flag <flag> --alias <alias> --commands <commands>. add-field keeps a stored value_schema, so for value_schema_invalid edit or remove that value_schema in the fields file. Edit or remove an entry stored inline in settings.json there.",
+      schema_field_definition_loss_fix_hint: "A dropped definition registers no option and a field read in part ignores the listed members. Re-register a file-backed field with valid values: pm schema add-field <key> --cli-flag <flag> --alias <alias> --commands <commands>. add-field replaces the type, commands, description, flag, aliases and requirement settings it is given but keeps value_schema, metadata_key, front_matter_key and repeatable, so edit or remove those members in the fields file. Edit or remove an entry stored inline in settings.json there.",
     },
     warnings: [
       ...(dropped > 0 ? [`validate_schema_field_definition_dropped:${dropped}`] : []),

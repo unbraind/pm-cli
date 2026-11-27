@@ -535,7 +535,11 @@ function describeStoredValue(value: unknown): string {
   try {
     return JSON.stringify(value) ?? String(value);
   } catch {
-    return String(value);
+    try {
+      return String(value);
+    } catch {
+      return "a value that cannot be shown";
+    }
   }
 }
 
@@ -548,19 +552,36 @@ function describeIgnoredListEntries(member: string, value: unknown, keeps: (entr
     .map((entry: unknown) => `${member}: ${describeStoredValue(entry)} is not ${what}`);
 }
 
-/** Boolean members and the behavior a stored value that is not a boolean leaves in place. */
+/** Boolean members and the value the registry reads when the stored one is not a boolean. */
 const FIELD_BOOLEAN_MEMBERS = [
-  ["repeatable", "the field takes one value"],
-  ["required", "the field is optional"],
-  ["required_on_create", "the field is optional on create"],
-  ["allow_unset", "the field can be cleared"],
+  ["repeatable", false],
+  ["required", false],
+  ["required_on_create", false],
+  ["allow_unset", true],
 ] as const;
 
 function describeIgnoredBooleanMembers(definition: RuntimeFieldDefinition): string[] {
-  return FIELD_BOOLEAN_MEMBERS.flatMap(([member, effect]) => {
+  return FIELD_BOOLEAN_MEMBERS.flatMap(([member, fallback]) => {
     const value: unknown = definition[member];
-    return value === undefined || typeof value === "boolean" ? [] : [`${member}: ${describeStoredValue(value)} is not a boolean, so ${effect}`];
+    return value === undefined || typeof value === "boolean" ? [] : [`${member}: ${describeStoredValue(value)} is not a boolean, so it reads as ${String(fallback)}`];
   });
+}
+
+/** The value schema keywords the registry reads; any other keyword is dropped without enforcement. */
+const VALUE_SCHEMA_KEYWORDS: ReadonlySet<string> = new Set([
+  "type", "const", "enum", "min_length", "min_items", "format", "properties", "required", "additional_properties", "items", "one_of",
+]);
+
+/** One line per value schema keyword the registry drops, with its path, nested schemas included. */
+function describeIgnoredValueSchemaKeywords(schema: unknown, at: string): string[] {
+  if (!isPlainObject(schema)) return [];
+  const record = schema as Record<string, unknown>;
+  return [
+    ...Object.keys(record).filter((keyword) => !VALUE_SCHEMA_KEYWORDS.has(keyword)).map((keyword) => `${at}.${keyword}: is not a value schema keyword, so it is not enforced`),
+    ...(isPlainObject(record.properties) ? Object.entries(record.properties as Record<string, unknown>).flatMap(([name, entry]) => describeIgnoredValueSchemaKeywords(entry, `${at}.properties.${name}`)) : []),
+    ...describeIgnoredValueSchemaKeywords(record.items, `${at}.items`),
+    ...(Array.isArray(record.one_of) ? record.one_of.flatMap((entry: unknown, index: number) => describeIgnoredValueSchemaKeywords(entry, `${at}.one_of[${index}]`)) : []),
+  ];
 }
 
 function isPlainRecord(value: unknown): value is RuntimeFieldDefinition {
@@ -615,6 +636,7 @@ function describeIgnoredFieldMembers(definition: RuntimeFieldDefinition, type: R
     ...describeIgnoredListEntries("required_types", definition.required_types, (entry) => entry.length > 0, "a type name"),
     ...(definition.description === undefined || typeof definition.description === "string" ? [] : ["description: is not a string"]),
     ...describeIgnoredBooleanMembers(definition),
+    ...describeIgnoredValueSchemaKeywords(definition.value_schema, "value_schema"),
   ];
 }
 
