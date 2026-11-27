@@ -342,7 +342,7 @@ describe("extension test harness parity with native dispatch", () => {
       api.registerFlags("notes", [{ long: "--stdin", value_type: "boolean", list: true }]);
       api.registerCommand({ name: "notes", run: () => ({ notes: [] }) });
     });
-    for (const entries of [[], [" "], [null], [undefined, ""]]) {
+    for (const entries of [[], [" "], [null], [undefined, ""], [" , "], " , "]) {
       await expect(runRegisteredCommandForTest(lists.commands, { command: "notes", args: ["pm-x"], options: { "--no-stdin": entries }, global: { outputLimit: "1" } }), JSON.stringify(entries)).resolves.toMatchObject({ handled: true });
     }
     // A kept entry still sets the flag, so it is a mutation beside an output control.

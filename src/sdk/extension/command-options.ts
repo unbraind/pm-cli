@@ -1237,11 +1237,6 @@ function resolveNegatedBooleanSpelling(
   return { spelling: negated, value: value === undefined ? value : invertNegatedBooleanEntry(spelling, declared.definition, value, commandPath) };
 }
 
-/** A list entry normalization keeps: blank and nullish entries are dropped, or refused under strict validation. */
-function isKeptListEntry(entry: unknown): boolean {
-  return entry !== null && entry !== undefined && !(typeof entry === "string" && entry.trim().length === 0);
-}
-
 /**
  * The declared boolean a negated direct-caller spelling sets, under its handler key, with the value normalization
  * gives it (pm-2nwcgg). It reads the normalizer's own spelling index and boolean tokens (`true`, `1`, `false`, `0`
@@ -1257,10 +1252,13 @@ export function resolveNegatedDeclaredBooleanOption(
   const index = indexDeclaredOptionSpellings(definitions);
   try {
     const resolved = resolveNegatedBooleanSpelling(index, spelling, value, "");
-    // A list with no entry normalization keeps (empty, blank or nullish entries only) is zero occurrences, so it sets nothing.
-    if (resolved.spelling === spelling || (Array.isArray(resolved.value) && !resolved.value.some(isKeptListEntry))) return undefined;
+    if (resolved.spelling === spelling) return undefined;
     // The resolved spelling is the declared flag the negation names, so it is always in the index.
-    return { key: resolveDeclaredOptionSpelling(index, resolved.spelling)!.handlerKey, value: resolved.value };
+    const declared = resolveDeclaredOptionSpelling(index, resolved.spelling)!;
+    // A list that keeps no entry once normalized (`[]`, `[" , "]`) is zero occurrences, so it sets nothing.
+    const list = declared.definition.list === true || declared.definition.repeatable === true;
+    if (list && !hasLooseListEntries(declared.definition, resolved.value)) return undefined;
+    return { key: declared.handlerKey, value: resolved.value };
   } catch {
     return undefined;
   }
