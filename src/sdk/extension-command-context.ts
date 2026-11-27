@@ -116,7 +116,8 @@ function collectNewlyEffectiveDefinitions(
   const result: unknown[] = [];
   for (const [key, entry] of sides.after) {
     if (sides.judged.includes(entry.definition) || stableValueEquals(sides.before.get(key)?.resolved, entry.resolved)) continue;
-    const stored = entry.inline ? sides.rawStored.find((candidate) => stableValueEquals(resolve(candidate), entry.resolved)) : undefined;
+    // The registry reads the last inline entry of a key, so the last stored match is the one on disk that counts (CodeRabbit review).
+    const stored = entry.inline ? [...sides.rawStored].reverse().find((candidate) => stableValueEquals(resolve(candidate), entry.resolved)) : undefined;
     result.push(stored ?? entry.definition);
   }
   return result;

@@ -151,6 +151,13 @@ describe("settings writers share the custom field admission", () => {
       // (Greptile review): a clean file definition stays admissible while the bad inline entry stays masked ...
       await writeFile(path.join(pmPath, "schema", "clean.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"] }] }));
       await expect(sdk.mutateWorkspaceSettings({ operationId: "clean-file", dryRun: true, mutate: pointAt("schema/clean.json") })).resolves.toMatchObject({ dry_run: true });
+      // Two inline entries resolve the same way once the blank alias is dropped; the registry reads the last one, so a
+      // clean last entry is judged, not the masked earlier one with the blank alias (CodeRabbit review).
+      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [
+        { key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] },
+        { key: "review_owner", type: "string", commands: ["list"] },
+      ] } }, null, 2)}\n`);
+      await expect(sdk.mutateWorkspaceSettings({ operationId: "last-inline", dryRun: true, mutate: pointAt("schema/empty.json") })).resolves.toMatchObject({ dry_run: true });
       // ... and a file definition with a blank alias is refused even when the inline entry is clean.
       await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [{ key: "review_owner", type: "string", commands: ["list"] }] } }, null, 2)}\n`);
       await writeFile(path.join(pmPath, "schema", "blank.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] }] }));
