@@ -113,7 +113,7 @@ function collectNewlyEffectiveDefinitions(before: Map<string, unknown>, after: M
  * definition, which validate keeps reporting, unless it becomes the
  * definition the registry reads for its key.
  */
-async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown, fileFields: { before: readonly unknown[]; after: readonly unknown[] }): Promise<void> {
+async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown, sources: { before: readonly unknown[]; after: readonly unknown[]; inlineAfter: readonly unknown[] }): Promise<void> {
   // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
   const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
   // No early return for an empty inline list: a proposal can still make a file-backed definition effective.
@@ -135,8 +135,8 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
     return !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
   });
   changed.push(...collectNewlyEffectiveDefinitions(
-    effectiveFieldDefinitions(resolved, current.schema.fields, fileFields.before),
-    effectiveFieldDefinitions(resolved, proposed, fileFields.after),
+    effectiveFieldDefinitions(resolved, current.schema.fields, sources.before),
+    effectiveFieldDefinitions(resolved, sources.inlineAfter, sources.after),
   ) as typeof changed);
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
@@ -225,7 +225,8 @@ export function createExtensionCommandSdk(
             }
             const currentSettings = mergeSettings(validatedCurrent.data);
             const next = await options.mutate(structuredClone(currentSettings));
-            if (!validateSettings(next).success) {
+            const validatedNext = validateSettings(next);
+            if (!validatedNext.success) {
               throw new PmCliError(
                 "Workspace settings mutation returned invalid settings.json.",
                 EXIT_CODE.USAGE,
@@ -236,6 +237,9 @@ export function createExtensionCommandSdk(
             await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields, {
               before: await readFieldsFileDefinitions(pmRoot, currentSettings.schema),
               after: await readFieldsFileDefinitions(pmRoot, proposedSchema),
+              // Validation strips members the inline schema does not know (an inline value_schema), as the next
+              // settings read does, so the effective comparison reads the proposal as it persists (Codex review).
+              inlineAfter: validatedNext.data.schema?.fields ?? [],
             });
             let raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!

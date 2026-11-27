@@ -155,6 +155,14 @@ describe("settings writers share the custom field admission", () => {
       await expect(sdk.mutateWorkspaceSettings({ operationId: "shadow-file", dryRun: true, mutate: pointAt("schema/shadow.json") })).rejects.toMatchObject({
         context: expect.objectContaining({ code: "schema_field_option_collision", field: "review_owner", flag: "--full" }),
       });
+      // A restated legacy entry with an inline value_schema, which validation strips on every read, is unchanged as
+      // the registry reads it, so an unrelated write keeps it (Codex review).
+      const legacy = { key: "review_owner", type: "string", commands: ["list"], cli_aliases: ["full"], value_schema: { type: "string" } };
+      await withInline([legacy]);
+      await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [] }));
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "restate-legacy", dryRun: true, mutate: (current) => ({ ...withFields(current, [legacy] as InlineField[]), author_default: "legacy-writer" }) }),
+      ).resolves.toMatchObject({ dry_run: true });
       // A newly supplied blank spelling is still refused, as before.
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "new-blank", dryRun: true, mutate: (current) => withFields(current, [{ key: "review_lead", type: "string", commands: ["list"], cli_aliases: [" "] } as InlineField]) }),
