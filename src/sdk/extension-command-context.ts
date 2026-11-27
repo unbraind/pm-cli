@@ -225,22 +225,12 @@ export function createExtensionCommandSdk(
             }
             const currentSettings = mergeSettings(validatedCurrent.data);
             const next = await options.mutate(structuredClone(currentSettings));
-            const validatedNext = validateSettings(next);
-            if (!validatedNext.success) {
+            if (!validateSettings(next).success) {
               throw new PmCliError(
                 "Workspace settings mutation returned invalid settings.json.",
                 EXIT_CODE.USAGE,
               );
             }
-            const { readFieldsFileDefinitions } = await import("./schema/field-definition-losses.js");
-            const proposedSchema = (next as { schema?: PmSettings["schema"] }).schema;
-            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields, {
-              before: await readFieldsFileDefinitions(pmRoot, currentSettings.schema),
-              after: await readFieldsFileDefinitions(pmRoot, proposedSchema),
-              // Validation strips members the inline schema does not know (an inline value_schema), as the next
-              // settings read does, so the effective comparison reads the proposal as it persists (Codex review).
-              inlineAfter: validatedNext.data.schema?.fields ?? [],
-            });
             let raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!
               : serializeSettings(next, { source: { raw: current, validated: validatedCurrent.data } });
@@ -252,6 +242,15 @@ export function createExtensionCommandSdk(
                 EXIT_CODE.USAGE,
               );
             }
+            // The effective field set is judged as the bytes about to be written read back: serialization and
+            // validation can drop or strip an inline definition, so the proposal itself is not what persists (Codex review).
+            const persisted = validatedResult.data.schema as Partial<PmSettings["schema"]> | undefined;
+            const { readFieldsFileDefinitions } = await import("./schema/field-definition-losses.js");
+            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields, {
+              before: await readFieldsFileDefinitions(pmRoot, currentSettings.schema),
+              after: await readFieldsFileDefinitions(pmRoot, persisted),
+              inlineAfter: persisted?.fields ?? [],
+            });
             return {
               raw,
               result: options.includePreview === true

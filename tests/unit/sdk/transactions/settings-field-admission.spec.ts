@@ -55,6 +55,8 @@ describe("settings writers share the custom field admission", () => {
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "schema-less", dryRun: true, mutate: (current) => withFields(current, [{ key: "full", type: "string", commands: ["list"] } as InlineField]) }),
       ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_option_collision" }) });
+      // A write that leaves the stored bytes as they are keeps a settings file without a schema, and judges nothing.
+      await expect(sdk.mutateWorkspaceSettings({ operationId: "schema-less-unchanged", dryRun: true, mutate: (current) => current })).resolves.toMatchObject({ dry_run: true });
     });
   });
 
@@ -162,6 +164,19 @@ describe("settings writers share the custom field admission", () => {
       await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [] }));
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "restate-legacy", dryRun: true, mutate: (current) => ({ ...withFields(current, [legacy] as InlineField[]), author_default: "legacy-writer" }) }),
+      ).resolves.toMatchObject({ dry_run: true });
+      // The comparison reads the bytes about to be written: serialization drops a definition whose value_schema is
+      // invalid, so making the safe later duplicate invalid exposes the earlier shadowing one, which is refused, and
+      // an invalid trailing duplicate that serialization drops leaves the safe winner in place (Codex review).
+      const shadowing = { key: "review_lead", type: "string", commands: ["list"], cli_aliases: ["full"] };
+      const safe = { key: "review_lead", type: "string", commands: ["list"] };
+      await withInline([legacy, shadowing, safe]);
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "drop-winner", dryRun: true, mutate: (current) => withFields(current, [legacy, shadowing, { ...safe, value_schema: { one_of: [] } }] as InlineField[]) }),
+      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_option_collision", field: "review_lead", flag: "--full" }) });
+      await withInline([legacy, safe]);
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "drop-trailing", dryRun: true, mutate: (current) => withFields(current, [legacy, safe, { ...shadowing, value_schema: { one_of: [] } }] as InlineField[]) }),
       ).resolves.toMatchObject({ dry_run: true });
       // A newly supplied blank spelling is still refused, as before.
       await expect(
