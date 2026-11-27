@@ -32,6 +32,7 @@ const STORED_SHAPES: Array<[string, unknown, Record<string, unknown>]> = [
   // The fallback to the field key never lands on built-in item metadata (Codex review).
   ["a blank metadata key on a built-in key", { key: "id", metadata_key: " ", cli_flag: "external-id" }, { dropped: "metadata_key_empty" }],
   ["a blank front matter key on a built-in key", { key: "status", front_matter_key: "" }, { dropped: "metadata_key_empty" }],
+  ["a blank metadata key on severity, which a field may otherwise redefine", { key: "severity", metadata_key: " ", cli_flag: "impact-score", type: "number" }, { dropped: "metadata_key_empty" }],
   ["a metadata key that normalizes to nothing", { key: "review_owner", metadata_key: "  " }, { ignored: ['metadata_key: "  " names no item key, so values are stored under the field key'] }],
   ["a front matter key that is not a string", { key: "review_owner", front_matter_key: 5 }, { ignored: ["front_matter_key: 5 names no item key, so values are stored under the field key"] }],
   ["a flag that normalizes to nothing", { key: "review_owner", cli_flag: "--" }, { dropped: "cli_flag_empty" }],

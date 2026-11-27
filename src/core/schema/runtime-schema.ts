@@ -12,6 +12,7 @@ import { createFileAtomic } from "../fs/atomic-create.js";
 import {
   DEFAULT_STATUS_DEFINITIONS,
   DEFAULT_WORKFLOW_DEFINITION,
+  ITEM_METADATA_KEY_ORDER,
 } from "../shared/constants.js";
 import {
   RUNTIME_FIELD_COMMAND_VALUES,
@@ -630,12 +631,19 @@ function explicitFieldMetadataKey(definition: RuntimeFieldDefinition): { member:
 }
 
 /**
+ * Item keys a metadata-key fallback must never land on: every built-in field and every canonical item metadata
+ * key, `severity` included, although a field may redefine `severity` on purpose by naming it.
+ */
+const FALLBACK_FORBIDDEN_KEYS: ReadonlySet<string> = new Set([...BUILTIN_FIELD_KEYS, ...ITEM_METADATA_KEY_ORDER]);
+
+/**
  * Whether an explicit metadata key that names nothing would fall back onto built-in item metadata: the fallback
- * to the field key must never let a hand-written `key: "id"` field overwrite an item's own id (Codex review).
+ * to the field key must never let a hand-written `key: "id"` or `key: "severity"` field write into the item's own
+ * metadata (Codex review).
  */
 function metadataFallbackHitsBuiltinKey(definition: RuntimeFieldDefinition, key: string): boolean {
   const explicit = explicitFieldMetadataKey(definition);
-  return explicit !== undefined && normalizeStatusToken(explicit.value).length === 0 && BUILTIN_FIELD_KEYS.has(key);
+  return explicit !== undefined && normalizeStatusToken(explicit.value).length === 0 && FALLBACK_FORBIDDEN_KEYS.has(key);
 }
 
 /** The item key a field's values are stored under; an explicit key that normalizes to nothing falls back to the field key (pm-x9r2h3). */
