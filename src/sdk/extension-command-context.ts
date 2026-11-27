@@ -125,9 +125,14 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
     return byKey;
   };
   const before = effective([...current.schema.fields, ...fileFields.before]);
+  const rawStored: readonly unknown[] = Array.isArray(rawFields) ? rawFields : [];
   for (const [key, entry] of effective([...proposed, ...fileFields.after])) {
     const definition = entry.definition as (typeof proposed)[number];
-    if (!changed.includes(definition) && !stableValueEquals(before.get(key)?.resolved, entry.resolved)) changed.push(definition);
+    if (changed.includes(definition) || stableValueEquals(before.get(key)?.resolved, entry.resolved)) continue;
+    // The proposal holds the normalized copy, which has lost a blank alias the stored entry keeps; judge the
+    // stored spelling that stays on disk when one resolves the same way.
+    const stored = rawStored.find((candidate) => stableValueEquals(resolved(candidate), entry.resolved));
+    changed.push((stored ?? definition) as (typeof proposed)[number]);
   }
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");

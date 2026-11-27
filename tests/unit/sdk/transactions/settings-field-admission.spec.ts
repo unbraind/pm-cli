@@ -132,4 +132,20 @@ describe("settings writers share the custom field admission", () => {
       ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_option_collision", field: "review_owner", flag: "--full" }) });
     });
   });
+
+  it("judges the stored spelling of an inline entry that a file switch makes effective (Codex review)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const settingsPath = path.join(pmPath, "settings.json");
+      const raw = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown> & { schema?: Record<string, unknown> };
+      // The inline entry keeps a blank alias on disk; the file-backed definition of the same key masks it.
+      await writeFile(settingsPath, `${JSON.stringify({ ...raw, schema: { ...raw.schema, fields: [{ key: "review_owner", type: "string", commands: ["list"], cli_aliases: [" "] }] } }, null, 2)}\n`);
+      await mkdir(path.join(pmPath, "schema"), { recursive: true });
+      await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["create"] }] }));
+      await writeFile(path.join(pmPath, "schema", "empty.json"), JSON.stringify({ fields: [] }));
+      const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "unmask", dryRun: true, mutate: (current) => ({ ...current, schema: { ...current.schema, files: { ...current.schema.files, fields: "schema/empty.json" } } }) }),
+      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_flag_invalid", field: "review_owner" }) });
+    });
+  });
 });
