@@ -97,6 +97,8 @@ describe("value-list recovery", () => {
     [["files", "pm-x", "--maybe", "v", "--add", "a", "b"], ["files", "pm-x", "--maybe", "v", "--add", "a", "--add", "b"]],
     [["files", "pm-x", "--maybe", "--add", "a", "b"], ["files", "pm-x", "--maybe", "--add", "a", "--add", "b"]],
     [["files", "pm-x", "--add", "-", "b"], ["files", "pm-x", "--add", "-", "--add", "b"]],
+    // Commander takes the first operand as the id even after a flag's value, then reads later lists (Codex review).
+    [["item", "files", "--add", "a.ts", "pm-x", "--remove", "b.ts", "c.ts"], ["item", "files", "--add", "a.ts", "pm-x", "--remove", "b.ts", "--remove", "c.ts"]],
     // Global options are the program's own declared options, read wherever Commander reads them (Codex review).
     [["files", "--json", "pm-x", "--add", "a", "b"], ["files", "--json", "pm-x", "--add", "a", "--add", "b"]],
     [["--pm-path", "/t/.agents/pm", "files", "pm-x", "--add", "a", "b", "--pm-path=/t/.agents/pm"], ["--pm-path", "/t/.agents/pm", "files", "pm-x", "--add", "a", "--add", "b", "--pm-path=/t/.agents/pm"]],
@@ -172,6 +174,7 @@ describe("value-list recovery", () => {
     ["files", ["--json"]],
     ["files", ["files"]],
     ["files", ["files", "--add", "a", "b"]],
+    ["files", ["files", "--add", "a", "b", "c"]],
     ["files", ["files", "-", "--add", "a", "b"]],
     ["files", ["files", "pm-x", "extra", "--add", "a", "b"]],
     ["files", ["files", "pm-x", "--add", "a", "--", "b"]],

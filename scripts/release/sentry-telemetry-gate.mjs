@@ -710,8 +710,12 @@ function parseSentryTime(value) {
  */
 function sentryLinkHasNextPage(link) {
   if (link === null || link === undefined) return false;
-  const next = String(link).split(",").find((part) => /;\s*rel="next"/u.test(part));
-  return next === undefined || !/^\s*<[^<>\s]+>/u.test(next) || !/;\s*results="false"/u.test(next);
+  const nexts = String(link).split(",").filter((part) => /;\s*rel="next"/u.test(part));
+  if (nexts.length !== 1) return true;
+  const [target, ...parameters] = nexts[0].split(";").map((part) => part.trim());
+  const results = parameters.filter((parameter) => parameter.startsWith("results="));
+  // Exactly one next link, with a target and one results marker, and that marker says "false".
+  return !/^<[^<>\s]+>$/u.test(target) || results.length !== 1 || results[0] !== 'results="false"';
 }
 
 /** The latest activity entry of the given types, with its time, or undefined. */
@@ -738,7 +742,8 @@ function retryAfterMs(response) {
   const text = typeof header === "string" ? header.trim() : "";
   const seconds = /^\d+$/u.test(text) ? Number(text) : Number.NaN;
   if (Number.isFinite(seconds)) return seconds * 1000;
-  const at = text.length > 0 ? Date.parse(text) : Number.NaN;
+  // An HTTP date names GMT (RFC 9110); a zone-less form would be read in the runner's local time, so it falls back.
+  const at = /\bGMT$/u.test(text) ? Date.parse(text) : Number.NaN;
   return Number.isFinite(at) ? Math.max(0, at - Date.now()) : 1000;
 }
 
@@ -781,7 +786,9 @@ async function fetchSentryPage(url, token, deadline) {
  * back to an older cycle.
  */
 async function readLatestResolutionTime(issueUrl, token, deadline) {
-  const activity = (await fetchSentryPage(issueUrl, token, deadline))?.json?.activity;
+  const page = await fetchSentryPage(issueUrl, token, deadline);
+  // An activity feed that advertises another page is not the whole history.
+  const activity = page === undefined || page.hasNext ? undefined : page.json?.activity;
   const transitions = (Array.isArray(activity) ? activity : []).filter(
     (entry) => SENTRY_RESOLUTION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_REGRESSION_ACTIVITY_TYPES.has(entry?.type),
   );

@@ -354,9 +354,9 @@ issue already judged those events). Receipt time decides, not the event's own
 timestamp, so a late production event with an old timestamp still blocks.
 Lookups run one at a time within the request budget, no request starts or
 response is accepted once it is spent, and a throttled lookup is retried after
-its `Retry-After` (delay seconds or an HTTP date). A missing or unorderable transition (including a regression stamped at the resolution's own instant, or a timestamp that is not an ISO 8601 string with a zone naming a real calendar instant), a non-test event
+its `Retry-After` (delay seconds or a GMT HTTP date). A missing or unorderable transition (including a regression stamped at the resolution's own instant, or a timestamp that is not an ISO 8601 string with a zone naming a real calendar instant), a non-test event
 received after the resolution or without a receipt time, a second page of
-events or a present pagination header without a well-formed next link that reports no results, a failed, throttled or malformed lookup, and a listing read through the
+events, a present pagination header without exactly one well-formed next link carrying one `results="false"` marker, an activity feed that advertises another page, a failed, throttled or malformed lookup, and a listing read through the
 `sentry` CLI without an API token keep the issue blocking
 ([pm-kxmu54](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kxmu54.toon)).
 

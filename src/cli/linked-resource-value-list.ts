@@ -205,8 +205,8 @@ function scanOption(command: string, argv: readonly string[], index: number, tab
   const option = argv[index] === "--" ? undefined : readOptionToken(argv, index, table);
   if (!option) return undefined;
   const following = option.arity.repeatable && option.value !== undefined ? followingOperands(argv, option.end) : [];
-  if (following.length === 0) return option.end;
-  if (scan.idAt === undefined) return undefined;
+  // Before the item id, the next operand is the id, as Commander assigns operands; a later one is then a stray.
+  if (following.length === 0 || scan.idAt === undefined) return option.end;
   const reading = readValueList(command, option.arity.name, [option.value!, ...following.map((at) => argv[at]!)]);
   if (reading === "decline") return undefined;
   scan.exact &&= reading === "exact";

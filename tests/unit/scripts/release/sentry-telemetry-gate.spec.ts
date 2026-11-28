@@ -291,6 +291,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     nonTest?: unknown;
     nextPage?: boolean;
     link?: string;
+    detailsLink?: string;
     detailsStatus?: number;
     eventsStatus?: number;
     eventsThrows?: boolean;
@@ -314,7 +315,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
           issue.throttle -= 1;
           return respond({ detail: "slow down" }, 429, { retryAfter: "0" });
         }
-        if (detail[2] === undefined) return respond({ activity: issue.activity }, issue.detailsStatus);
+        if (detail[2] === undefined) return respond({ activity: issue.activity }, issue.detailsStatus, issue.detailsLink === undefined ? {} : { link: issue.detailsLink });
         if (issue.eventsThrows) throw new Error("socket hang up");
         expect(url.searchParams.get("query")).toBe("!environment:test !pm.source_context:test");
         expect(url.searchParams.get("full")).toBe("true");
@@ -376,6 +377,24 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       // Date.parse would coerce an array of one timestamp; only strings are timestamps (Codex review).
       { shortId: "PM-ARRAY-RECEIPT", id: "120", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: ["2026-11-26T10:44:31Z"] }] },
       { shortId: "PM-ARRAY-TRANSITION", id: "121", substatus: "regressed", activity: [{ type: "set_resolved", dateCreated: [RESOLVED_AT] }, { type: "set_regression", dateCreated: "2026-11-28T13:39:40Z" }], nonTest: judged },
+    ], seen);
+    const { json } = await gate(fetchSpy);
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-THROTTLED"]);
+    expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
+    expect(json.sentry.blocking_short_ids).toEqual([
+      "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
+      "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-NO-FIRST-SEEN", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
+      "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
+    ]);
+    // The whole life of the issue is read: from an hour before its first event to an hour past now.
+    expect(seen[0]?.start).toBe("2026-11-26T09:44:30.000Z");
+    expect(Date.parse(seen[0]!.end)).toBeGreaterThan(Date.now() + 59 * 60 * 1000);
+    // Issues that cannot qualify cost no lookups.
+    for (const id of ["111", "117"]) expect(fetchSpy.mock.calls.some(([input]) => String(input).includes(`/issues/${id}/`))).toBe(false);
+  });
+
+  it("treats a timestamp or a pagination marker it cannot read as missing evidence (pm-kxmu54, Codex review)", async () => {
+    const { json } = await gate(regressionSearch([
       // Date.parse would read "0" as a year; only ISO timestamps with a zone count (Codex review).
       { shortId: "PM-BARE-RECEIPT", id: "122", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: "0" }] },
       // Pagination is read in any parameter order, and a header without a readable next link is not proof of one page.
@@ -388,21 +407,16 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       // Date.parse rolls 2026-02-30 into March; an impossible calendar date is not a timestamp (Codex review).
       { shortId: "PM-IMPOSSIBLE-DATE", id: "128", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: "2026-02-30T10:00:00Z" }] },
       { shortId: "PM-IMPOSSIBLE-CLOCK", id: "129", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: "2026-11-01T24:00:00Z" }] },
-    ], seen);
-    const { json } = await gate(fetchSpy);
-    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-THROTTLED", "PM-LAST-PAGE"]);
-    expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
+      // Conflicting markers, two next links, or an activity feed with another page are not proof of completeness (Codex review).
+      { shortId: "PM-CONFLICTING-NEXT", id: "130", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<b>; rel="next"; results="true"; results="false"' },
+      { shortId: "PM-TWO-NEXT", id: "131", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="next"; results="false", <b>; rel="next"; results="false"' },
+      { shortId: "PM-PAGED-ACTIVITY", id: "132", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, detailsLink: '<a>; rel="next"; results="true"' },
+    ]));
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-LAST-PAGE"]);
     expect(json.sentry.blocking_short_ids).toEqual([
-      "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
-      "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-NO-FIRST-SEEN", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
-      "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION", "PM-BARE-RECEIPT",
-      "PM-REORDERED-NEXT", "PM-NO-NEXT-LINK", "PM-BLANK-LINK", "PM-TARGETLESS-NEXT", "PM-IMPOSSIBLE-DATE", "PM-IMPOSSIBLE-CLOCK",
+      "PM-BARE-RECEIPT", "PM-REORDERED-NEXT", "PM-NO-NEXT-LINK", "PM-BLANK-LINK", "PM-TARGETLESS-NEXT", "PM-IMPOSSIBLE-DATE",
+      "PM-IMPOSSIBLE-CLOCK", "PM-CONFLICTING-NEXT", "PM-TWO-NEXT", "PM-PAGED-ACTIVITY",
     ]);
-    // The whole life of the issue is read: from an hour before its first event to an hour past now.
-    expect(seen[0]?.start).toBe("2026-11-26T09:44:30.000Z");
-    expect(Date.parse(seen[0]!.end)).toBeGreaterThan(Date.now() + 59 * 60 * 1000);
-    // Issues that cannot qualify cost no lookups.
-    for (const id of ["111", "117"]) expect(fetchSpy.mock.calls.some(([input]) => String(input).includes(`/issues/${id}/`))).toBe(false);
   });
 
   it("keeps a regression blocking once its throttled retries run out (pm-kxmu54)", async () => {
