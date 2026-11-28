@@ -295,6 +295,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     eventsThrows?: boolean;
     throttle?: number;
     delayMs?: number;
+    bodyDelayMs?: number;
   }
   function regressionSearch(issues: RegressionFixture[], seen: Array<{ start: string; end: string }> = []) {
     const respond = (body: unknown, status = 200, extra: { retryAfter?: string; link?: string } = {}) => ({
@@ -318,7 +319,9 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
         expect(url.searchParams.get("full")).toBe("true");
         expect(url.searchParams.get("per_page")).toBe("100");
         seen.push({ start: url.searchParams.get("start")!, end: url.searchParams.get("end")! });
-        return respond(issue.nonTest, issue.eventsStatus, issue.nextPage ? { link: `<${url}&cursor=n>; rel="next"; results="true"` } : {});
+        const page = respond(issue.nonTest, issue.eventsStatus, issue.nextPage ? { link: `<${url}&cursor=n>; rel="next"; results="true"` } : {});
+        const body = page.text;
+        return issue.bodyDelayMs === undefined ? page : { ...page, text: async () => { await new Promise((resolve) => setTimeout(resolve, issue.bodyDelayMs)); return body(); } };
       }
       return respond(issues.map(({ shortId, id, substatus, firstSeen }) => ({
         shortId, id, substatus, firstSeen: firstSeen ?? "2026-11-26T10:44:30Z", level: "error", logger: "node", isUnhandled: true,
@@ -367,6 +370,11 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-ONGOING", id: "117", substatus: "ongoing" },
       // Throttled lookups are retried after their Retry-After delay.
       { shortId: "PM-THROTTLED", id: "118", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, throttle: 2 },
+      // A regression at the resolution's own instant is not ordered after it (Codex review).
+      { shortId: "PM-TIED-TRANSITIONS", id: "119", substatus: "regressed", activity: history([RESOLVED_AT], RESOLVED_AT), nonTest: judged },
+      // Date.parse would coerce an array of one timestamp; only strings are timestamps (Codex review).
+      { shortId: "PM-ARRAY-RECEIPT", id: "120", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: ["2026-11-26T10:44:31Z"] }] },
+      { shortId: "PM-ARRAY-TRANSITION", id: "121", substatus: "regressed", activity: [{ type: "set_resolved", dateCreated: [RESOLVED_AT] }, { type: "set_regression", dateCreated: "2026-11-28T13:39:40Z" }], nonTest: judged },
     ], seen);
     const { json } = await gate(fetchSpy);
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-THROTTLED"]);
@@ -374,7 +382,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(json.sentry.blocking_short_ids).toEqual([
       "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
       "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-NO-FIRST-SEEN", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
-      "PM-EVENTS-EMPTY", "PM-ONGOING",
+      "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
     ]);
     // The whole life of the issue is read: from an hour before its first event to an hour past now.
     expect(seen[0]?.start).toBe("2026-11-26T09:44:30.000Z");
@@ -409,6 +417,13 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       return listing(input, init);
     });
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-NO-HEADER"]);
+  });
+
+  it("accepts no page whose body is read after the shared budget (pm-kxmu54, Codex review)", async () => {
+    const { json } = await gate(regressionSearch([
+      { shortId: "PM-SLOW-BODY", id: "401", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, bodyDelayMs: 150 },
+    ]), ["--sentry-request-timeout-ms", "100"]);
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-SLOW-BODY"]);
   });
 
   it("accepts no response, and starts no request, once the shared budget is spent (pm-kxmu54, Codex review)", async () => {

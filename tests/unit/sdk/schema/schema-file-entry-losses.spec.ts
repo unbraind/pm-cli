@@ -145,6 +145,14 @@ describe("stored type definitions", () => {
     expect(records.definition?.command_option_policies).toBeUndefined();
     expect(records.loss.ignored).toEqual(["options[0]: null is not an option with a key", "command_option_policies[0]: 7 is not a create or update policy with an option"]);
     expect(inspectItemTypeDefinition({ name: "Task", options: [] }, "schema_file").definition?.options).toEqual([]);
+    // A supplied allowlist with no usable value drops the option instead of admitting any value (Codex review).
+    const allowlist = inspectItemTypeDefinition({ name: "Task", options: [{ key: "approval", values: [null, " "] }, { key: "risk", values: [] }] }, "schema_file");
+    expect(allowlist.definition?.options).toEqual([{ key: "risk", values: [], required: undefined, aliases: undefined, description: undefined }]);
+    expect(allowlist.loss.ignored).toEqual([
+      "options[0].values: null is not a string",
+      'options[0].values: " " is blank',
+      "options[0]: values has no usable value, so the option is dropped",
+    ]);
     // Through the registry the built-in Task requirements survive such an override.
     const registry = resolveItemTypeRegistry({ item_types: { definitions: [blank.definition!] } } as never);
     expect(resolveTypeDefinition("Task", registry)?.required_create_fields.length).toBeGreaterThan(0);
@@ -174,8 +182,9 @@ describe("stored type definitions", () => {
 
   it("reads an extension registration as before: wrong-typed members are dropped, an unknown role is refused", () => {
     const registrations = (types: unknown[]) => ({ item_types: [{ types }] }) as never;
-    const registry = resolveItemTypeRegistry(NO_SETTINGS, registrations([{ name: "Spike", description: 5, aliases: [5, "spk"], options: [7, { key: "k", values: [1] }] }, null]));
-    expect(resolveTypeDefinition("Spike", registry)).toMatchObject({ aliases: ["spk"], options: [{ key: "k", values: [] }] });
+    const registry = resolveItemTypeRegistry(NO_SETTINGS, registrations([{ name: "Spike", description: 5, aliases: [5, "spk"], options: [7, { key: "k", values: [1, "a"] }, { key: "x", values: [1] }] }, null]));
+    // The unusable allowlist of x drops that option rather than admitting any value.
+    expect(resolveTypeDefinition("Spike", registry)).toMatchObject({ aliases: ["spk"], options: [{ key: "k", values: ["a"] }] });
     expect(() => resolveItemTypeRegistry(NO_SETTINGS, registrations([{ name: "Spike", execution_role: "humna" }]))).toThrow("execution_role");
   });
 });

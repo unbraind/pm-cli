@@ -162,7 +162,9 @@ function readOptionToken(
   if (equals >= 0) return arity.value === "none" ? undefined : { end: index, spelling, arity, value: token.slice(equals + 1) };
   if (arity.value === "none") return { end: index, spelling, arity };
   const next = argv[index + 1];
-  if (arity.value === "required") return next === undefined ? undefined : { end: index + 1, spelling, arity, value: next };
+  // A required value that reads as an option is where Commander's ancestor-first parse can disagree with a flat
+  // scan (`--message --json` gives `--json` to the program), so no span is claimed for it.
+  if (arity.value === "required") return next === undefined || isOptionLike(next) ? undefined : { end: index + 1, spelling, arity, value: next };
   return next !== undefined && !isOptionLike(next) ? { end: index + 1, spelling, arity, value: next } : { end: index, spelling, arity };
 }
 
@@ -188,9 +190,10 @@ interface ValueListScan {
   exact: boolean;
 }
 
-/** Take an operand as the item id; a second operand outside a value chain, or stdin `-`, declines. */
-function scanOperand(argv: readonly string[], index: number, scan: ValueListScan): number | undefined {
-  if (scan.idAt !== undefined || argv[index] === "-") return undefined;
+/** Take an operand as the item id; a second operand outside a value chain, stdin `-`, or a subcommand name declines. */
+function scanOperand(argv: readonly string[], index: number, scan: ValueListScan, subcommands: ReadonlySet<string>): number | undefined {
+  // A subcommand name after an option (`files --note N discover`) means the subcommand refused, not this command.
+  if (scan.idAt !== undefined || argv[index] === "-" || subcommands.has(argv[index]!)) return undefined;
   scan.idAt = index;
   return index;
 }
@@ -216,10 +219,10 @@ function scanOption(command: string, argv: readonly string[], index: number, tab
  * other shape: an undeclared option, a stray operand, values before the item
  * id, an end-of-options marker, or a value list this recovery does not own.
  */
-function scanValueLists(command: string, argv: readonly string[], from: number, table: OptionArityTable): ValueListScan | undefined {
+function scanValueLists(command: string, argv: readonly string[], from: number, table: OptionArityTable, subcommands: ReadonlySet<string>): ValueListScan | undefined {
   const scan: ValueListScan = { extras: [], exact: true };
   for (let index = from; index < argv.length; index += 1) {
-    const last = isOptionLike(argv[index]!) ? scanOption(command, argv, index, table, scan) : scanOperand(argv, index, scan);
+    const last = isOptionLike(argv[index]!) ? scanOption(command, argv, index, table, scan) : scanOperand(argv, index, scan, subcommands);
     if (last === undefined) return undefined;
     index = last;
   }
@@ -236,10 +239,11 @@ export function resolveLinkedResourceValueListRecovery(
   command: string | undefined,
   argv: readonly string[],
   table: OptionArityTable,
+  subcommands: ReadonlySet<string> = new Set(),
 ): LinkedResourceValueListRecovery | undefined {
   if (command === undefined || !LINKED_RESOURCE_VALUE_LIST_COMMANDS.has(command)) return undefined;
   const from = commandArgumentsStart(command, argv);
-  const scan = from === undefined ? undefined : scanValueLists(command, argv, from, table);
+  const scan = from === undefined ? undefined : scanValueLists(command, argv, from, table, subcommands);
   if (scan?.idAt === undefined || scan.extras.length === 0) return undefined;
   const insertions = new Map(scan.extras.map(({ at, flag }) => [at, flag]));
   const retryArgs = argv.flatMap((token, index) => (insertions.has(index) ? [insertions.get(index)!, token] : [token]));
@@ -264,5 +268,7 @@ export function resolveUsageValueListRecovery(
 ): LinkedResourceValueListRecovery | undefined {
   if (commandName === undefined || !LINKED_RESOURCE_VALUE_LIST_COMMANDS.has(commandName)) return undefined;
   const command = findInvokedCommand(rootProgram, invocationArgv, commandName);
-  return command ? resolveLinkedResourceValueListRecovery(commandName, invocationArgv, readCommandOptionArity(command)) : undefined;
+  if (!command) return undefined;
+  const subcommands = new Set(command.commands.flatMap((child) => [child.name(), ...child.aliases()]));
+  return resolveLinkedResourceValueListRecovery(commandName, invocationArgv, readCommandOptionArity(command), subcommands);
 }

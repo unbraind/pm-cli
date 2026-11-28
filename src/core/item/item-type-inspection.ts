@@ -100,9 +100,15 @@ function readOption(raw: unknown, at: string, ignored: string[], source: ItemTyp
     return null;
   }
   const prefix = `${at}.`;
+  const values = readStringList(raw, "values", prefix, ignored);
+  // A supplied allowlist with no usable value must not become an unrestricted option, so the option is dropped.
+  if (raw.values !== undefined && values === undefined) {
+    ignored.push(`${at}: values has no usable value, so the option is dropped`);
+    return null;
+  }
   return {
     key: raw.key,
-    values: readStringList(raw, "values", prefix, ignored) ?? [],
+    values: values ?? [],
     required: readSwitch(raw, "required", prefix, ignored, source),
     aliases: readStringList(raw, "aliases", prefix, ignored),
     description: readString(raw, "description", prefix, ignored),

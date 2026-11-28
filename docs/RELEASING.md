@@ -354,7 +354,7 @@ issue already judged those events). Receipt time decides, not the event's own
 timestamp, so a late production event with an old timestamp still blocks.
 Lookups run one at a time within the request budget, no request starts or
 response is accepted once it is spent, and a throttled lookup is retried after
-its `Retry-After`. A missing or unorderable transition, a non-test event
+its `Retry-After`. A missing or unorderable transition (including a regression stamped at the resolution's own instant, or a timestamp that is not a string), a non-test event
 received after the resolution or without a receipt time, a second page of
 events, a failed, throttled or malformed lookup, and a listing read through the
 `sentry` CLI without an API token keep the issue blocking

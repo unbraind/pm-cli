@@ -682,11 +682,16 @@ const SENTRY_RESOLUTION_ACTIVITY_TYPES = new Set([
 ]);
 const SENTRY_NON_TEST_EVENT_QUERY = "!environment:test !pm.source_context:test";
 
+/** A Sentry timestamp as milliseconds, or NaN for anything but a parseable string (Date.parse would coerce an array). */
+function parseSentryTime(value) {
+  return typeof value === "string" ? Date.parse(value) : Number.NaN;
+}
+
 /** The latest activity entry of the given types, with its time, or undefined. */
 function latestActivity(activity, types) {
   let latest;
   for (const entry of activity) {
-    const time = Date.parse(entry.dateCreated);
+    const time = parseSentryTime(entry.dateCreated);
     if (types.has(entry.type) && (latest === undefined || time > latest.time)) latest = { entry, time };
   }
   return latest;
@@ -727,8 +732,11 @@ async function fetchSentryPage(url, token, deadline) {
       headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
     });
-    if (Date.now() > deadline) return undefined;
-    if (response.status !== 429) return readSentryPage(response);
+    if (response.status !== 429) {
+      // The body counts against the budget too: a page read after the deadline is not accepted.
+      const page = await readSentryPage(response);
+      return Date.now() > deadline ? undefined : page;
+    }
     const delay = retryAfterMs(response);
     // No attempt follows the last one, so it is not worth a wait.
     if (attempt >= SENTRY_LOOKUP_ATTEMPTS || Date.now() + delay >= deadline) return undefined;
@@ -747,10 +755,11 @@ async function readLatestResolutionTime(issueUrl, token, deadline) {
   const transitions = (Array.isArray(activity) ? activity : []).filter(
     (entry) => SENTRY_RESOLUTION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_REGRESSION_ACTIVITY_TYPES.has(entry?.type),
   );
-  if (transitions.some((entry) => !Number.isFinite(Date.parse(entry.dateCreated)))) return undefined;
+  if (transitions.some((entry) => !Number.isFinite(parseSentryTime(entry.dateCreated)))) return undefined;
   const resolution = latestActivity(transitions, SENTRY_RESOLUTION_ACTIVITY_TYPES);
   const regression = latestActivity(transitions, SENTRY_REGRESSION_ACTIVITY_TYPES);
-  return resolution !== undefined && regression !== undefined && regression.time >= resolution.time ? resolution.time : undefined;
+  // A regression stamped at the resolution's own instant is not ordered after it.
+  return resolution !== undefined && regression !== undefined && regression.time > resolution.time ? resolution.time : undefined;
 }
 
 /**
@@ -764,7 +773,7 @@ async function readLatestResolutionTime(issueUrl, token, deadline) {
  * keeps the issue blocking.
  */
 async function isTestOnlyRegression(issue, org, token, deadline) {
-  const firstSeen = Date.parse(issue?.firstSeen);
+  const firstSeen = parseSentryTime(issue?.firstSeen);
   if (issue?.substatus !== "regressed" || typeof issue.id !== "string" || !Number.isFinite(firstSeen)) return false;
   const issueUrl = new URL(`/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/`, sentryBaseUrl());
   try {
@@ -778,7 +787,7 @@ async function isTestOnlyRegression(issue, org, token, deadline) {
     eventsUrl.searchParams.set("end", new Date(Date.now() + SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
     const page = await fetchSentryPage(eventsUrl, token, deadline);
     if (page === undefined || page.hasNext || !Array.isArray(page.json)) return false;
-    return page.json.every((event) => Date.parse(event?.dateReceived) < resolvedAt);
+    return page.json.every((event) => parseSentryTime(event?.dateReceived) < resolvedAt);
   } catch {
     return false;
   }

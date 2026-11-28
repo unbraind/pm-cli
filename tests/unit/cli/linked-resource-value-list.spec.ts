@@ -130,8 +130,6 @@ describe("value-list recovery", () => {
       ["files", "pm-x", "--add", "path=a.ts,scope=project", "path=b.ts"],
       ["files", "pm-x", "--migrate", "from=a,to=b", "from=c,to=d"],
       ["files", "pm-x", "--add", "path=a.ts", "path=b.ts,lable=x"],
-      // Commander takes an option-like token as a required value; that is never the caller's intent.
-      ["files", "pm-x", "--add", "--json", "a", "b"],
     ]) {
       const recovery = resolve(argv[0], argv, { ...FILES, ...table({ "--other": repeatable }) });
       expect(recovery?.extraValues.length).toBeGreaterThan(0);
@@ -188,8 +186,17 @@ describe("value-list recovery", () => {
     ["files", ["files", "pm-x", "--add", "a", "b", "--pm-path"]],
     // Commander gives --output-limit the next token as its value, so --add is never a flag here (Codex review).
     ["files", ["files", "pm-x", "--output-limit", "--add", "a", "b", "--json"]],
+    // A required value that reads as an option is where Commander's ancestor-first parse disagrees with a flat scan.
+    ["files", ["files", "pm-x", "--add", "--json", "a", "b"]],
+    ["files", ["files", "pm-x", "--message", "--json", "--add", "a", "b"]],
   ] as const)("does not guess for %s %j", (command, argv) => {
     expect(resolve(command, [...argv])).toBeUndefined();
+  });
+
+  it("declines when a subcommand, not the collection command, refused the invocation (Codex review)", () => {
+    const argv = ["files", "--note", "N", "discover", "--add", "a", "pm-x", "b"];
+    expect(resolveLinkedResourceValueListRecovery("files", argv, FILES, new Set(["discover", "lookup"]))).toBeUndefined();
+    expect(resolveLinkedResourceValueListRecovery("files", ["files", "pm-x", "--add", "a", "b"], FILES, new Set(["discover"]))?.retryArgs).toBeDefined();
   });
 });
 
@@ -249,7 +256,8 @@ describe("usage context arity", () => {
   /** A program whose collection command is registered under its namespace, as the CLI registers it. */
   function program(): Command {
     const root = new Command().name("pm").option("--json");
-    root.command("item").command("files").argument("<id>").option("--add <value>", "add", collect);
+    const files = root.command("item").command("files").argument("<id>").option("--add <value>", "add", collect);
+    files.command("discover").alias("find").argument("<id>");
     return root;
   }
 
@@ -278,6 +286,7 @@ describe("usage context arity", () => {
     ["error: too many arguments for 'get'", ["get", "pm-x", "y"]],
     ["error: too many arguments for 'files'", ["files", "lookup", "a", "b"]],
     ["error: too many arguments", []],
+    ["error: too many arguments for 'discover'", ["files", "--json", "find", "pm-x", "--add", "a", "b"]],
   ])("reads nothing for %s %j", async (message, argv) => {
     process.argv = ["node", "pm", ...argv];
     const context = await resolveCommanderUsageContext({ message }, program(), new Map());
