@@ -346,7 +346,9 @@ up to `--sentry-limit` (default `200`); when active issues remain beyond it, the
 gate fails, because it cannot judge issues it never read. A regressed issue is
 judged by the receipt time of its non-test events: when the issue's activity
 records a resolution followed by a regression, every transition in it is
-dated, and every event of the issue outside test traffic (read over Sentry's
+dated, and every event of the issue outside test traffic (listed with only the
+`pm.source_context` filter, because Sentry's `!environment:test` also drops events with
+no environment, then judged by each event's own tags; read over Sentry's
 90-day retention horizon rather than the listed `firstSeen`, which an older
 event can move back; one page of up to 10, Sentry's cap for full event payloads) was received before that latest
 resolution, then whatever reopened it is test traffic and the gate skips it,
@@ -355,7 +357,7 @@ issue already judged those events). Receipt time decides, not the event's own
 timestamp, so a late production event with an old timestamp still blocks.
 Lookups run one at a time within the request budget, no request starts or
 response is accepted once it is spent, and a throttled lookup is retried after
-its `Retry-After` (delay seconds or an IMF-fixdate HTTP date). Only Sentry's exact wire shapes are evidence: a complete `200` response, and Link entries of the form `<target>; key="value"`. A missing or unorderable transition (including a regression stamped at the resolution's own instant, or a timestamp that is not an ISO 8601 string with a zone naming a real calendar instant), a non-test event
+its `Retry-After` (delay seconds or an IMF-fixdate HTTP date). Only Sentry's exact wire shapes are evidence: a complete `200` response, Link entries of the form `<target>; key="value"` with exactly one `rel` each, and an IMF-fixdate that round-trips. The window's lower bound is padded for clock skew as well. A missing or unorderable transition (including a regression stamped at the resolution's own instant, or a timestamp that is not an ISO 8601 string with a zone naming a real calendar instant), a non-test event
 received after the resolution or without a receipt time, a second page of
 events, a present pagination header without exactly one well-formed next link carrying one `results="false"` marker, an activity feed that advertises another page, a failed, throttled or malformed lookup, and a listing read through the
 `sentry` CLI without an API token keep the issue blocking

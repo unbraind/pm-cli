@@ -680,7 +680,18 @@ const SENTRY_RESOLUTION_ACTIVITY_TYPES = new Set([
   "set_resolved_in_commit",
   "set_resolved_in_pull_request",
 ]);
-const SENTRY_NON_TEST_EVENT_QUERY = "!environment:test !pm.source_context:test";
+/**
+ * The regression lookup filters only on the pm.source_context tag: Sentry reads `!environment:test` as
+ * `environment != 'test'`, which also drops events with no environment, while a missing tag reads as empty
+ * and stays. Events in environment test are then set aside by their own tags.
+ */
+const SENTRY_REGRESSION_EVENT_QUERY = "!pm.source_context:test";
+
+/** Whether an event's own tags mark it as test traffic; an event without readable tags is not. */
+function isTestTrafficEvent(event) {
+  const tags = Array.isArray(event?.tags) ? event.tags : [];
+  return tags.some((tag) => (tag?.key === "environment" || tag?.key === "pm.source_context") && tag?.value === "test");
+}
 
 /** An ISO 8601 timestamp as Sentry writes them, with a time and an explicit zone. */
 const SENTRY_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/u;
@@ -716,6 +727,8 @@ function sentryLinkHasNextPage(link) {
   const entries = String(link).split(",").map((entry) => entry.trim());
   if (!entries.every((entry) => SENTRY_LINK_ENTRY.test(entry))) return true;
   const parameters = entries.map((entry) => [...entry.matchAll(/;\s*([a-z]+)="([^"]*)"/gu)].map(([, key, value]) => [key, value]));
+  // Every entry names exactly one relation, so no entry can be both the previous and the next page.
+  if (!parameters.every((entry) => entry.filter(([key]) => key === "rel").length === 1)) return true;
   const nexts = parameters.filter((entry) => entry.some(([key, value]) => key === "rel" && value === "next"));
   const results = nexts.length === 1 ? nexts[0].filter(([key]) => key === "results") : [];
   return results.length !== 1 || results[0][1] !== "false";
@@ -751,7 +764,9 @@ function retryAfterMs(response) {
   const seconds = /^\d+$/u.test(text) ? Number(text) : Number.NaN;
   if (Number.isFinite(seconds)) return seconds * 1000;
   // Only the IMF-fixdate form (RFC 9110) is read; Date.parse would also take zone-less or slash forms.
+  // The date must round-trip, which rejects an impossible day (30 Feb) and a weekday that does not match.
   const at = IMF_FIXDATE.test(text) ? Date.parse(text) : Number.NaN;
+  if (Number.isFinite(at) && new Date(at).toUTCString() !== text) return 1000;
   return Number.isFinite(at) ? Math.max(0, at - Date.now()) : 1000;
 }
 
@@ -826,15 +841,15 @@ async function isTestOnlyRegression(issue, org, token, deadline) {
     const resolvedAt = await readLatestResolutionTime(issueUrl, token, deadline);
     if (resolvedAt === undefined) return false;
     const eventsUrl = new URL("events/", issueUrl);
-    eventsUrl.searchParams.set("query", SENTRY_NON_TEST_EVENT_QUERY);
+    eventsUrl.searchParams.set("query", SENTRY_REGRESSION_EVENT_QUERY);
     eventsUrl.searchParams.set("full", "true");
     eventsUrl.searchParams.set("per_page", String(SENTRY_REGRESSION_EVENT_LIMIT));
     // The window spans Sentry's retention horizon, never the listed firstSeen: an older event moves first_seen back.
-    eventsUrl.searchParams.set("start", new Date(Date.now() - SENTRY_EVENT_RETENTION_MS).toISOString());
+    eventsUrl.searchParams.set("start", new Date(Date.now() - SENTRY_EVENT_RETENTION_MS - SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
     eventsUrl.searchParams.set("end", new Date(Date.now() + SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
     const page = await fetchSentryPage(eventsUrl, token, deadline);
     if (page === undefined || page.hasNext || !Array.isArray(page.json)) return false;
-    return page.json.every((event) => parseSentryTime(event?.dateReceived) < resolvedAt);
+    return page.json.every((event) => isTestTrafficEvent(event) || parseSentryTime(event?.dateReceived) < resolvedAt);
   } catch {
     return false;
   }

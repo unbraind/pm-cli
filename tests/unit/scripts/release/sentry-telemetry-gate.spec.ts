@@ -309,7 +309,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
   /** The filtered event-list page for one issue, asserting the query the gate sends. */
   function eventsResponse(issue: RegressionFixture, url: URL, seen: Array<{ start: string; end: string }>): FixtureResponse {
     if (issue.eventsThrows) throw new Error("socket hang up");
-    expect(url.searchParams.get("query")).toBe("!environment:test !pm.source_context:test");
+    expect(url.searchParams.get("query")).toBe("!pm.source_context:test");
     expect(url.searchParams.get("full")).toBe("true");
     expect(url.searchParams.get("per_page")).toBe("10");
     seen.push({ start: url.searchParams.get("start")!, end: url.searchParams.get("end")! });
@@ -360,6 +360,10 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     const fetchSpy = regressionSearch([
       { shortId: "PM-TEST-REGRESSION", id: "101", substatus: "regressed", activity: history(["2026-11-26T12:17:14Z", RESOLVED_AT]), nonTest: judged },
       { shortId: "PM-QUIET", id: "102", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [] },
+      // Events in environment test are set aside by their own tags, even when received after the resolution.
+      { shortId: "PM-TEST-ENV-LISTED", id: "136", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [...judged, { dateReceived: "2026-11-28T13:39:46Z", tags: [{ key: "environment", value: "test" }] }] },
+      // An event with no environment is not test traffic, which `!environment:test` would have dropped (Codex review).
+      { shortId: "PM-NO-ENVIRONMENT", id: "137", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [...judged, { dateReceived: "2026-11-28T13:40:00Z", tags: [{ key: "level", value: "error" }] }] },
       // A production event received after the resolution blocks even with an old timestamp (Codex review).
       { shortId: "PM-LATE-PRODUCTION", id: "103", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [...judged, { dateCreated: "2026-11-28T11:59:00Z", dateReceived: "2026-11-28T13:40:02Z" }] },
       { shortId: "PM-NO-RECEIPT", id: "104", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateCreated: "2026-11-26T10:44:30Z" }] },
@@ -386,15 +390,16 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-ARRAY-TRANSITION", id: "121", substatus: "regressed", activity: [{ type: "set_resolved", dateCreated: [RESOLVED_AT] }, { type: "set_regression", dateCreated: "2026-11-28T13:39:40Z" }], nonTest: judged },
     ], seen);
     const { json } = await gate(fetchSpy);
-    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-THROTTLED"]);
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-TEST-ENV-LISTED", "PM-THROTTLED"]);
     expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
     expect(json.sentry.blocking_short_ids).toEqual([
-      "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
+      "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
       "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
       "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
     ]);
     // Sentry's whole retention horizon is read, never the listed firstSeen, which an older event moves back (CodeRabbit review).
-    expect(Date.parse(seen[0]!.start)).toBeLessThan(Date.now() - 89 * 24 * 60 * 60 * 1000);
+    // The lower bound is padded for clock skew too (Codex review).
+    expect(Date.parse(seen[0]!.start)).toBeLessThan(Date.now() - 90 * 24 * 60 * 60 * 1000 - 59 * 60 * 1000);
     expect(Date.parse(seen[0]!.end)).toBeGreaterThan(Date.now() + 59 * 60 * 1000);
     // An issue that cannot qualify costs no lookups.
     expect(fetchSpy.mock.calls.some(([input]) => String(input).includes("/issues/117/"))).toBe(false);
@@ -422,12 +427,13 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-UNQUOTED-NEXT", id: "133", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="next"; results="false", <b>; rel=next; results="true"' },
       { shortId: "PM-SUFFIXED-REL", id: "134", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="next"x; results="false"' },
       { shortId: "PM-PARTIAL-CONTENT", id: "135", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, eventsStatus: 206 },
+      { shortId: "PM-DOUBLE-REL", id: "138", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="previous"; rel="next"; results="false"' },
     ]));
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-LAST-PAGE"]);
     expect(json.sentry.blocking_short_ids).toEqual([
       "PM-BARE-RECEIPT", "PM-REORDERED-NEXT", "PM-NO-NEXT-LINK", "PM-BLANK-LINK", "PM-TARGETLESS-NEXT", "PM-IMPOSSIBLE-DATE",
       "PM-IMPOSSIBLE-CLOCK", "PM-CONFLICTING-NEXT", "PM-TWO-NEXT", "PM-PAGED-ACTIVITY", "PM-UNQUOTED-NEXT", "PM-SUFFIXED-REL",
-      "PM-PARTIAL-CONTENT",
+      "PM-PARTIAL-CONTENT", "PM-DOUBLE-REL",
     ]);
   });
 
@@ -471,6 +477,19 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       return listing(input, init);
     });
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-HTTP-DATE"]);
+  });
+
+  it("waits the fallback second for an IMF-fixdate that does not round-trip (pm-kxmu54, Codex review)", async () => {
+    let throttled = 0;
+    const listing = regressionSearch([{ shortId: "PM-FEB-30", id: "205", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged }]);
+    const { json } = await gate(async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).endsWith("/issues/205/") && throttled === 0) {
+        throttled += 1;
+        return { ok: false, status: 429, headers: { get: () => "Mon, 30 Feb 2026 12:00:00 GMT" }, text: async () => "" };
+      }
+      return listing(input, init);
+    });
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-FEB-30"]);
   });
 
   it("accepts no page whose body is read after the shared budget (pm-kxmu54, Codex review)", async () => {
