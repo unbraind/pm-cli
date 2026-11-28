@@ -29,6 +29,7 @@ import {
   type PmProjectedDiagnostic,
 } from "../sdk/cli-contracts/agent-output-contracts.js";
 import { renderPmCommand } from "./argv-utils.js";
+import { resolveCommandShellDialect } from "../core/shared/command-line.js";
 import type { LinkedResourceValueListRecovery } from "./linked-resource-value-list.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
@@ -2506,7 +2507,10 @@ function buildLinkedResourceValueListGuidance(
   if (!/too many arguments/i.test(message) || recovery === undefined) return null;
   const flag = recovery.flags[0]!;
   const flagList = recovery.flags.join(", ");
-  const retry = recovery.retryArgs ? renderPmCommand(recovery.retryArgs) : undefined;
+  // cmd.exe cannot carry a line break in a copied command (it renders as a space, GH-1774), so such a retry is
+  // offered as argv only; the copyable form would register a different value.
+  const argvOnly = recovery.retryArgs?.some((arg) => /[\r\n]/u.test(arg)) === true && resolveCommandShellDialect(process.platform) === "cmd";
+  const retry = recovery.retryArgs && !argvOnly ? renderPmCommand(recovery.retryArgs) : undefined;
   const glob = commandName !== "test" && recovery.flags.includes("--add");
   const template = `pm ${commandName} ${recovery.itemId} ${flag} <value> ${flag} <value>`;
   const count = recovery.extraValues.length;
@@ -2516,7 +2520,9 @@ function buildLinkedResourceValueListGuidance(
     happened: `${count} more value${count === 1 ? "" : "s"} followed the value of ${flagList}. pm ${commandName} takes one value per occurrence, so they were read as extra positional arguments and nothing was changed.`,
     required: retry
       ? `Retry with one ${flag} per value: ${retry}`
-      : `Write one ${flag} per value, and quote a value that contains spaces or commas so the shell passes it as one argument: ${template}`,
+      : argvOnly
+        ? `Retry with one ${flag} per value by replaying recovery.suggested_retry_args: a value holds a line break, which cmd.exe cannot pass in a copied command (PowerShell can).`
+        : `Write one ${flag} per value, and quote a value that contains spaces or commas so the shell passes it as one argument: ${template}`,
     why: `Each occurrence of a repeatable flag takes exactly one value, so an item id written after the flag (pm ${commandName} ${flag} <value> <id>) stays unambiguous.`,
     examples: [retry ?? template, ...(glob ? [`pm ${commandName} ${recovery.itemId} --add-glob "<pattern>"`] : []), `pm ${commandName} --help`],
     recovery: buildCommanderRecoveryPayload(context, {

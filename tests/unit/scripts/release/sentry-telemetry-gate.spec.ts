@@ -291,6 +291,8 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     nextPage?: boolean;
     link?: string;
     detailsLink?: string;
+    trigger?: unknown;
+    triggerStatus?: number;
     detailsStatus?: number;
     eventsStatus?: number;
     eventsThrows?: boolean;
@@ -319,20 +321,24 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     return { ...page, text: async () => { await new Promise((resolve) => setTimeout(resolve, issue.bodyDelayMs)); return page.text(); } };
   }
   /** Issue details or its events, after any delay or throttling the fixture asks for. */
-  async function issueResponse(issue: RegressionFixture, url: URL, events: boolean, seen: Array<{ start: string; end: string }>): Promise<FixtureResponse> {
+  /** The event that triggered the regression, a test event unless the fixture says otherwise. */
+  const TEST_TRIGGER = { eventID: "evt-test", tags: [{ key: "environment", value: "test" }] };
+  async function issueResponse(issue: RegressionFixture, url: URL, eventId: string | undefined, seen: Array<{ start: string; end: string }>): Promise<FixtureResponse> {
     if (issue.delayMs !== undefined) await new Promise((resolve) => setTimeout(resolve, issue.delayMs));
     if (issue.throttle !== undefined && issue.throttle > 0) {
       issue.throttle -= 1;
       return fixtureResponse({ detail: "slow down" }, 429, { retryAfter: "0" });
     }
-    if (!events) return fixtureResponse({ activity: issue.activity }, issue.detailsStatus, issue.detailsLink === undefined ? {} : { link: issue.detailsLink });
+    if (eventId === undefined) return fixtureResponse({ activity: issue.activity }, issue.detailsStatus, issue.detailsLink === undefined ? {} : { link: issue.detailsLink });
+    if (eventId.length > 0) return fixtureResponse(issue.trigger ?? TEST_TRIGGER, issue.triggerStatus);
     return eventsResponse(issue, url, seen);
   }
   function regressionSearch(issues: RegressionFixture[], seen: Array<{ start: string; end: string }> = []) {
     return vi.fn(async (input: string | URL | Request) => {
       const url = new URL(String(input));
-      const detail = /\/organizations\/[^/]+\/issues\/([^/]+)\/(events\/)?$/u.exec(url.pathname);
-      if (detail) return issueResponse(issues.find((candidate) => candidate.id === decodeURIComponent(detail[1]!))!, url, detail[2] !== undefined, seen);
+      // Issue details, one event by id, or the filtered event list (an empty id).
+      const detail = /\/organizations\/[^/]+\/issues\/([^/]+)\/(?:events\/([^/]*)\/?)?$/u.exec(url.pathname);
+      if (detail) return issueResponse(issues.find((candidate) => candidate.id === decodeURIComponent(detail[1]!))!, url, detail[2], seen);
       return fixtureResponse(issues.map(({ shortId, id, substatus }) => ({
         shortId, id, substatus, level: "error", logger: "node", isUnhandled: true,
         title: "Error: boom", metadata: { value: "boom", type: "Error" },
@@ -342,7 +348,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
 
   const RESOLVED_AT = "2026-11-28T13:27:21Z";
   const history = (resolved: string[], regressedAt = "2026-11-28T13:39:40Z") => [
-    { type: "set_regression", dateCreated: regressedAt },
+    { type: "set_regression", dateCreated: regressedAt, data: { event_id: "evt-test" } },
     ...resolved.map((dateCreated) => ({ type: "set_resolved", dateCreated })),
     { type: "note", dateCreated: "not a date" },
     null,
@@ -362,6 +368,10 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-QUIET", id: "102", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [] },
       // Events in environment test are set aside by their own tags, even when received after the resolution.
       { shortId: "PM-TEST-ENV-LISTED", id: "136", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [...judged, { dateReceived: "2026-11-28T13:39:46Z", tags: [{ key: "environment", value: "test" }] }] },
+      // The triggering event is read by id, since the event list may not index it yet (Codex review).
+      { shortId: "PM-PRODUCTION-TRIGGER", id: "139", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, trigger: { eventID: "evt-test", tags: [{ key: "environment", value: "production" }] } },
+      { shortId: "PM-UNINDEXED-TRIGGER", id: "140", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, triggerStatus: 404 },
+      { shortId: "PM-NO-TRIGGER-ID", id: "141", substatus: "regressed", activity: [{ type: "set_resolved", dateCreated: RESOLVED_AT }, { type: "set_regression", dateCreated: "2026-11-28T13:39:40Z", data: {} }], nonTest: judged },
       // An event with no environment is not test traffic, which `!environment:test` would have dropped (Codex review).
       { shortId: "PM-NO-ENVIRONMENT", id: "137", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [...judged, { dateReceived: "2026-11-28T13:40:00Z", tags: [{ key: "level", value: "error" }] }] },
       // A production event received after the resolution blocks even with an old timestamp (Codex review).
@@ -393,7 +403,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-TEST-ENV-LISTED", "PM-THROTTLED"]);
     expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
     expect(json.sentry.blocking_short_ids).toEqual([
-      "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
+      "PM-PRODUCTION-TRIGGER", "PM-UNINDEXED-TRIGGER", "PM-NO-TRIGGER-ID", "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
       "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
       "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
     ]);

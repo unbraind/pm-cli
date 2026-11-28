@@ -4,7 +4,7 @@
  * and the exact retry, judged with Commander's own option arity.
  */
 import { Command } from "commander";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveCommanderUsageContext } from "../../../src/cli/commander-usage.js";
 import { formatCommanderErrorForDisplay, formatCommanderErrorForJson } from "../../../src/cli/error-guidance.js";
 import {
@@ -246,6 +246,25 @@ describe("value-list guidance", () => {
     expect(envelope.detail).toContain("1 more value followed");
     expect(envelope.recovery?.suggested_retry).toBeUndefined();
     expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+  });
+
+  it("offers a multiline retry as argv only under cmd.exe, which turns a line break into a space (Codex review)", () => {
+    const argv = ["test", "pm-x", "--add", "command=echo a\necho b", "command=node -v"];
+    vi.stubEnv("PM_COMMAND_SHELL", "cmd");
+    try {
+      const envelope = formatCommanderErrorForJson("too many arguments", "test", "Task", 2, context(argv, TEST));
+      expect(envelope.recovery?.suggested_retry).toBeUndefined();
+      expect(envelope.recovery?.suggested_retry_args).toEqual(["test", "pm-x", "--add", "command=echo a\necho b", "--add", "command=node -v"]);
+      expect(envelope.required).toContain("cmd.exe cannot pass in a copied command");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    vi.stubEnv("PM_COMMAND_SHELL", "posix");
+    try {
+      expect(formatCommanderErrorForJson("too many arguments", "test", "Task", 2, context(argv, TEST)).recovery?.suggested_retry).toBeDefined();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("offers no glob for linked tests or for a flag other than --add", () => {

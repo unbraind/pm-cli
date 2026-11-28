@@ -809,7 +809,7 @@ async function fetchSentryPage(url, token, deadline) {
  * latest resolution; undefined otherwise, so an unorderable feed never falls
  * back to an older cycle.
  */
-async function readLatestResolutionTime(issueUrl, token, deadline) {
+async function readLatestRegression(issueUrl, token, deadline) {
   const page = await fetchSentryPage(issueUrl, token, deadline);
   // An activity feed that advertises another page is not the whole history.
   const activity = page === undefined || page.hasNext ? undefined : page.json?.activity;
@@ -819,15 +819,30 @@ async function readLatestResolutionTime(issueUrl, token, deadline) {
   if (transitions.some((entry) => !Number.isFinite(parseSentryTime(entry.dateCreated)))) return undefined;
   const resolution = latestActivity(transitions, SENTRY_RESOLUTION_ACTIVITY_TYPES);
   const regression = latestActivity(transitions, SENTRY_REGRESSION_ACTIVITY_TYPES);
+  const triggerId = regression?.entry?.data?.event_id;
   // A regression stamped at the resolution's own instant is not ordered after it.
-  return resolution !== undefined && regression !== undefined && regression.time > resolution.time ? resolution.time : undefined;
+  return resolution !== undefined && regression !== undefined && regression.time > resolution.time && typeof triggerId === "string"
+    ? { resolvedAt: resolution.time, triggerId }
+    : undefined;
+}
+
+/**
+ * Whether the event that triggered the regression is test traffic. Sentry
+ * records the regression before the event is indexed, so the event list may
+ * not show it yet; it is read by id under the same budget, and a lookup that
+ * cannot establish its tags keeps the issue blocking.
+ */
+async function isTestTrigger(issueUrl, triggerId, token, deadline) {
+  const page = await fetchSentryPage(new URL(`events/${encodeURIComponent(triggerId)}/`, issueUrl), token, deadline);
+  return page !== undefined && isTestTrafficEvent(page.json);
 }
 
 /**
  * Whether a regressed issue regressed only through test traffic (pm-kxmu54):
  * every stored non-test event of the issue (environment and pm.source_context
  * not test, read over Sentry's retention horizon) was received before its
- * latest resolution, so whoever resolved it
+ * latest resolution, and the event that triggered the regression is itself
+ * test traffic, so whoever resolved it
  * judged them all and what reopened it is test traffic, as pm-usn5k2 treats an
  * issue made only of test events. Receipt time, not the event's own
  * timestamp, decides, so a late production event with an old timestamp still
@@ -838,8 +853,9 @@ async function isTestOnlyRegression(issue, org, token, deadline) {
   if (issue?.substatus !== "regressed" || typeof issue.id !== "string") return false;
   const issueUrl = new URL(`/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/`, sentryBaseUrl());
   try {
-    const resolvedAt = await readLatestResolutionTime(issueUrl, token, deadline);
-    if (resolvedAt === undefined) return false;
+    const regression = await readLatestRegression(issueUrl, token, deadline);
+    if (regression === undefined || !(await isTestTrigger(issueUrl, regression.triggerId, token, deadline))) return false;
+    const { resolvedAt } = regression;
     const eventsUrl = new URL("events/", issueUrl);
     eventsUrl.searchParams.set("query", SENTRY_REGRESSION_EVENT_QUERY);
     eventsUrl.searchParams.set("full", "true");
