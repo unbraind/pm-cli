@@ -685,22 +685,20 @@ const SENTRY_NON_TEST_EVENT_QUERY = "!environment:test !pm.source_context:test";
 /** The latest activity entry of the given types, with its time, or undefined. */
 function latestActivity(activity, types) {
   let latest;
-  for (const entry of Array.isArray(activity) ? activity : []) {
-    const time = typeof entry?.dateCreated === "string" ? Date.parse(entry.dateCreated) : Number.NaN;
-    if (types.has(entry?.type) && Number.isFinite(time) && (latest === undefined || time > latest.time)) latest = { entry, time };
+  for (const entry of activity) {
+    const time = Date.parse(entry.dateCreated);
+    if (types.has(entry.type) && (latest === undefined || time > latest.time)) latest = { entry, time };
   }
   return latest;
 }
 
 const SENTRY_REGRESSION_ACTIVITY_TYPES = new Set(["set_regression"]);
-/** Sentry accepts event timestamps somewhat ahead of its own clock, so the event window extends past now. */
-const SENTRY_EVENT_WINDOW_SKEW_MS = 10 * 60 * 1000;
-
-/** Whether an event is test traffic as the gate's listings define it: environment test or pm.source_context test. */
-function isTestTrafficEvent(event) {
-  const tags = Array.isArray(event?.tags) ? event.tags : [];
-  return tags.some((tag) => (tag?.key === "environment" || tag?.key === "pm.source_context") && tag?.value === "test");
-}
+/** Sentry accepts event timestamps somewhat off its own clock, so the event window extends on both sides. */
+const SENTRY_EVENT_WINDOW_SKEW_MS = 60 * 60 * 1000;
+/** Attempts per lookup, the first included, when Sentry throttles it. */
+const SENTRY_LOOKUP_ATTEMPTS = 3;
+/** Events read per regression; an issue with more non-test events than this keeps blocking. */
+const SENTRY_REGRESSION_EVENT_LIMIT = 100;
 
 /** The wait a 429 asks for: its Retry-After seconds, or one second when the header is absent or unusable. */
 function retryAfterMs(response) {
@@ -709,77 +707,78 @@ function retryAfterMs(response) {
   return (Number.isFinite(seconds) && seconds >= 0 ? seconds : 1) * 1000;
 }
 
+/** The JSON body of an OK response and whether another page follows, or undefined for a failed or empty one. */
+async function readSentryPage(response) {
+  if (!response.ok) return undefined;
+  const body = await response.text();
+  return body.trim().length > 0 ? { json: JSON.parse(body), hasNext: nextSentryPage(response.headers?.get("link")) !== undefined } : undefined;
+}
+
 /**
- * One authorized JSON read within a shared deadline. A 429 is retried after
- * its Retry-After delay while the deadline allows; any other failure, an
- * empty body or an expired deadline yields undefined.
+ * One authorized read within a shared deadline. No request starts, and no
+ * response is accepted, once the deadline has passed. A 429 is retried after
+ * its Retry-After delay while the deadline allows; any other failure or an
+ * empty body yields undefined.
  */
-async function fetchSentryJson(url, token, deadline) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    // A spent budget aborts the request at once, which the caller reads as a failed lookup.
+async function fetchSentryPage(url, token, deadline) {
+  for (let attempt = 1; ; attempt += 1) {
+    if (Date.now() >= deadline) return undefined;
     const response = await fetch(url, {
       headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
     });
-    if (response.status !== 429) return readSentryJsonBody(response);
+    if (Date.now() > deadline) return undefined;
+    if (response.status !== 429) return readSentryPage(response);
     const delay = retryAfterMs(response);
-    if (Date.now() + delay >= deadline) return undefined;
+    // No attempt follows the last one, so it is not worth a wait.
+    if (attempt >= SENTRY_LOOKUP_ATTEMPTS || Date.now() + delay >= deadline) return undefined;
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
-  return undefined;
-}
-
-/** The JSON body of an OK response, or undefined for a failed or empty one. */
-async function readSentryJsonBody(response) {
-  if (!response.ok) return undefined;
-  const body = await response.text();
-  return body.trim().length > 0 ? JSON.parse(body) : undefined;
 }
 
 /**
- * The window a regression's events fall in: from the earlier of the latest
- * resolution and the event that triggered the regression, which must be test
- * traffic, to past the issue's last event. Undefined when the activity lacks
- * either record, the regression predates the resolution, or the trigger is
- * not test traffic.
+ * When the issue was last resolved, from an activity feed whose resolutions
+ * and regressions are all dated and whose latest regression follows the
+ * latest resolution; undefined otherwise, so an unorderable feed never falls
+ * back to an older cycle.
  */
-async function readTestRegressionWindow(issue, issueUrl, token, deadline) {
-  const activity = (await fetchSentryJson(issueUrl, token, deadline))?.activity;
-  const resolution = latestActivity(activity, SENTRY_RESOLUTION_ACTIVITY_TYPES);
-  const regression = latestActivity(activity, SENTRY_REGRESSION_ACTIVITY_TYPES);
-  const triggerId = regression?.entry?.data?.event_id;
-  if (resolution === undefined || regression === undefined || regression.time < resolution.time || typeof triggerId !== "string") return undefined;
-  const trigger = await fetchSentryJson(new URL(`events/${encodeURIComponent(triggerId)}/`, issueUrl), token, deadline);
-  const triggerTime = Date.parse(trigger?.dateCreated);
-  if (!isTestTrafficEvent(trigger) || !Number.isFinite(triggerTime)) return undefined;
-  const lastSeen = Date.parse(issue.lastSeen);
-  return {
-    start: Math.min(resolution.time, triggerTime),
-    end: Math.max(Date.now(), triggerTime, Number.isFinite(lastSeen) ? lastSeen : 0) + SENTRY_EVENT_WINDOW_SKEW_MS,
-  };
+async function readLatestResolutionTime(issueUrl, token, deadline) {
+  const activity = (await fetchSentryPage(issueUrl, token, deadline))?.json?.activity;
+  const transitions = (Array.isArray(activity) ? activity : []).filter(
+    (entry) => SENTRY_RESOLUTION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_REGRESSION_ACTIVITY_TYPES.has(entry?.type),
+  );
+  if (transitions.some((entry) => !Number.isFinite(Date.parse(entry.dateCreated)))) return undefined;
+  const resolution = latestActivity(transitions, SENTRY_RESOLUTION_ACTIVITY_TYPES);
+  const regression = latestActivity(transitions, SENTRY_REGRESSION_ACTIVITY_TYPES);
+  return resolution !== undefined && regression !== undefined && regression.time >= resolution.time ? resolution.time : undefined;
 }
 
 /**
  * Whether a regressed issue regressed only through test traffic (pm-kxmu54):
- * its activity records a resolution followed by a regression whose triggering
- * event is test traffic, and Sentry lists no non-test event in the
- * regression's window. Whoever resolved the issue judged its earlier events,
- * so such a regression is test noise, as pm-usn5k2 treats an issue made only
- * of test events. Any failed lookup or missing record keeps it blocking.
+ * every non-test event the issue ever had (environment and pm.source_context
+ * not test) was received before its latest resolution, so whoever resolved it
+ * judged them all and what reopened it is test traffic, as pm-usn5k2 treats an
+ * issue made only of test events. Receipt time, not the event's own
+ * timestamp, decides, so a late production event with an old timestamp still
+ * blocks. Any failed or truncated lookup, or a missing or unorderable record,
+ * keeps the issue blocking.
  */
 async function isTestOnlyRegression(issue, org, token, deadline) {
-  if (issue?.substatus !== "regressed" || typeof issue.id !== "string") return false;
+  const firstSeen = Date.parse(issue?.firstSeen);
+  if (issue?.substatus !== "regressed" || typeof issue.id !== "string" || !Number.isFinite(firstSeen)) return false;
   const issueUrl = new URL(`/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/`, sentryBaseUrl());
   try {
-    const window = await readTestRegressionWindow(issue, issueUrl, token, deadline);
-    if (window === undefined) return false;
+    const resolvedAt = await readLatestResolutionTime(issueUrl, token, deadline);
+    if (resolvedAt === undefined) return false;
     const eventsUrl = new URL("events/", issueUrl);
     eventsUrl.searchParams.set("query", SENTRY_NON_TEST_EVENT_QUERY);
-    eventsUrl.searchParams.set("start", new Date(window.start).toISOString());
-    eventsUrl.searchParams.set("end", new Date(window.end).toISOString());
-    eventsUrl.searchParams.set("per_page", "1");
-    const events = await fetchSentryJson(eventsUrl, token, deadline);
-    return Array.isArray(events) && events.length === 0;
+    eventsUrl.searchParams.set("full", "true");
+    eventsUrl.searchParams.set("per_page", String(SENTRY_REGRESSION_EVENT_LIMIT));
+    eventsUrl.searchParams.set("start", new Date(firstSeen - SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
+    eventsUrl.searchParams.set("end", new Date(Date.now() + SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
+    const page = await fetchSentryPage(eventsUrl, token, deadline);
+    if (page === undefined || page.hasNext || !Array.isArray(page.json)) return false;
+    return page.json.every((event) => Date.parse(event?.dateReceived) < resolvedAt);
   } catch {
     return false;
   }

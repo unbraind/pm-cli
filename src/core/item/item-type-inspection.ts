@@ -52,8 +52,8 @@ function describeValue(value: unknown): string {
 }
 
 /**
- * The string members of a stored list, with one ignored line per other entry.
- * A non-list, or a non-empty list without one string, reads as absent: an
+ * The non-blank string members of a stored list, with one ignored line per
+ * other entry. A non-list, or a non-empty list without one, reads as absent: an
  * empty list is an explicit override (no create requirements), which a list
  * of wrong-typed entries never meant.
  */
@@ -66,9 +66,10 @@ function readStringList(record: StoredRecord, member: string, at: string, ignore
   }
   for (const entry of value as unknown[]) {
     if (typeof entry !== "string") ignored.push(`${at}${member}: ${describeValue(entry)} is not a string`);
+    else if (entry.trim().length === 0) ignored.push(`${at}${member}: ${describeValue(entry)} is blank`);
   }
-  const strings = (value as unknown[]).filter((entry): entry is string => typeof entry === "string");
-  return strings.length === 0 && value.length > 0 ? undefined : strings;
+  const usable = (value as unknown[]).filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+  return usable.length === 0 && value.length > 0 ? undefined : usable;
 }
 
 /** A stored string member, or undefined with an ignored line when it has another type. */
@@ -124,7 +125,11 @@ function readPolicy(raw: unknown, at: string, ignored: string[], source: ItemTyp
   };
 }
 
-/** The entries of a stored list of records, each read by `read`; a non-list is ignored whole. */
+/**
+ * The entries of a stored list of records, each read by `read`. A non-list,
+ * or a non-empty list without one usable record, reads as absent: an empty
+ * list would override the options or policies a type already has.
+ */
 function readRecordList<T>(
   record: StoredRecord,
   member: string,
@@ -138,7 +143,8 @@ function readRecordList<T>(
     ignored.push(`${member}: is not a list`);
     return undefined;
   }
-  return (value as unknown[]).flatMap((entry, index) => read(entry, `${member}[${index}]`, ignored, source) ?? []);
+  const records = (value as unknown[]).flatMap((entry, index) => read(entry, `${member}[${index}]`, ignored, source) ?? []);
+  return records.length === 0 && value.length > 0 ? undefined : records;
 }
 
 function readExecutionRole(record: StoredRecord, source: ItemTypeDefinitionSource, ignored: string[]): ItemTypeDefinition["execution_role"] {

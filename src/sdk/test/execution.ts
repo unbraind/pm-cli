@@ -1128,7 +1128,7 @@ export function admitsLinkedTestFlagValue(flag: string, value: string): boolean 
   try {
     if (flag === "--add") return looksLikeStructuredLinkedTestEntry(value.trim()) && parseAddEntries([value]).length === 1;
     if (flag === "--add-json") return parseAddJsonEntries([value]).length > 0;
-    if (flag === "--remove") return /^(?:command|path)\s*=/iu.test(value.trim()) && parseRemoveEntries([value]).length === 1;
+    if (flag === "--remove") return /^(?:command|path)\s*[:=]/iu.test(value.trim()) && parseRemoveEntries([value]).length === 1;
     if (flag === "--remove-index") return parseRemoveIndexes([value]).length === 1;
     return flag === "--measure" && parseTestRunMeasurements([value], new Date(0).toISOString()).length === 1;
   } catch {

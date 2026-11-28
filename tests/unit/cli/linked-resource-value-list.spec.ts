@@ -28,7 +28,16 @@ function table(entries: Record<string, Arity & { name?: string }>): OptionArityT
   return Object.fromEntries(Object.entries(entries).map(([spelling, arity]) => [spelling, { name: spelling, ...arity }]));
 }
 
+/** The global options the program declares, which every command's arity table inherits. */
+const GLOBAL = {
+  "--json": toggle,
+  "--output-budget": single,
+  "--output-limit": single,
+  "--pm-path": single,
+};
+
 const FILES = table({
+  ...GLOBAL,
   "--add": repeatable,
   "--add-glob": repeatable,
   "--remove": repeatable,
@@ -39,6 +48,7 @@ const FILES = table({
   "--maybe": { value: "optional", repeatable: false },
 });
 const TEST = table({
+  ...GLOBAL,
   "--other": repeatable,
   "--add": repeatable,
   "--add-json": repeatable,
@@ -81,20 +91,15 @@ describe("value-list recovery", () => {
     [["files", "pm-x", "--add", "a.ts", "b.ts", "c.ts"], ["files", "pm-x", "--add", "a.ts", "--add", "b.ts", "--add", "c.ts"]],
     [["item", "docs", "pm-x", "--add", "README.md", "CHANGELOG.md", "--json"], ["item", "docs", "pm-x", "--add", "README.md", "--add", "CHANGELOG.md", "--json"]],
     [["files", "pm-x", "--add=a.ts", "b.ts"], ["files", "pm-x", "--add=a.ts", "--add", "b.ts"]],
-    [["files", "pm-x", "--add", "path=a.ts,scope=project", "path=b.ts"], ["files", "pm-x", "--add", "path=a.ts,scope=project", "--add", "path=b.ts"]],
     [["files", "pm-x", "--note", "hi", "--add", "a", "b", "--message", "m", "--list"], ["files", "pm-x", "--note", "hi", "--add", "a", "--add", "b", "--message", "m", "--list"]],
     [["files", "pm-x", "--add", "x", "--add-glob", "src/*.ts", "lib/*.ts"], ["files", "pm-x", "--add", "x", "--add-glob", "src/*.ts", "--add-glob", "lib/*.ts"]],
-    [["files", "pm-x", "--migrate", "from=a,to=b", "from=c,to=d"], ["files", "pm-x", "--migrate", "from=a,to=b", "--migrate", "from=c,to=d"]],
     [["files", "pm-x", "--add", "a", "b", "--output-budget", "500", "--json"], ["files", "pm-x", "--add", "a", "--add", "b", "--output-budget", "500", "--json"]],
     [["files", "pm-x", "--maybe", "v", "--add", "a", "b"], ["files", "pm-x", "--maybe", "v", "--add", "a", "--add", "b"]],
     [["files", "pm-x", "--maybe", "--add", "a", "b"], ["files", "pm-x", "--maybe", "--add", "a", "--add", "b"]],
     [["files", "pm-x", "--add", "-", "b"], ["files", "pm-x", "--add", "-", "--add", "b"]],
-    // Global options are stripped before Commander wherever they stand, and stay where they were written (Codex review).
+    // Global options are the program's own declared options, read wherever Commander reads them (Codex review).
     [["files", "--json", "pm-x", "--add", "a", "b"], ["files", "--json", "pm-x", "--add", "a", "--add", "b"]],
-    [["files", "pm-x", "--add", "--json", "a", "b"], ["files", "pm-x", "--add", "--json", "a", "--add", "b"]],
-    [["--pm-path", "/t/.agents/pm", "files", "pm-x", "--add", "a", "--pm-path=/t/.agents/pm", "b"], ["--pm-path", "/t/.agents/pm", "files", "pm-x", "--add", "a", "--pm-path=/t/.agents/pm", "--add", "b"]],
-    // A global value flag with no value left is stripped alone.
-    [["files", "pm-x", "--add", "a", "b", "--pm-path"], ["files", "pm-x", "--add", "a", "--add", "b", "--pm-path"]],
+    [["--pm-path", "/t/.agents/pm", "files", "pm-x", "--add", "a", "b", "--pm-path=/t/.agents/pm"], ["--pm-path", "/t/.agents/pm", "files", "pm-x", "--add", "a", "--add", "b", "--pm-path=/t/.agents/pm"]],
   ])("gives each value its own occurrence: %j", (argv, retry) => {
     const command = argv.find((token) => ["files", "docs", "test"].includes(token));
     expect(resolve(command, argv)?.retryArgs).toEqual(retry);
@@ -118,12 +123,17 @@ describe("value-list recovery", () => {
       ["files", "pm-x", "--add", "a.ts", "note=x"],
       ["files", "pm-x", "--add", "path=a.ts", "note=x"],
       ["files", "pm-x", "--list", "--note", "n", "--other", "k=v", "k=w"],
-      // A colon-form entry is structured for the artifact parser, so bare words after it may be its split note (Codex review).
+      // Structured values may be one argument the shell split: colon forms, globs with notes, doc labels (Codex review).
       ["files", "pm-x", "--add", "path:a,note:fix", "the", "bug"],
-      // A value the parser refuses gets no executable retry either.
+      ["files", "pm-x", "--add-glob", "pattern:src,note:fix", "the", "bug"],
+      ["docs", "pm-x", "--add", "Release", "notes,https://example.org"],
+      ["files", "pm-x", "--add", "path=a.ts,scope=project", "path=b.ts"],
+      ["files", "pm-x", "--migrate", "from=a,to=b", "from=c,to=d"],
       ["files", "pm-x", "--add", "path=a.ts", "path=b.ts,lable=x"],
+      // Commander takes an option-like token as a required value; that is never the caller's intent.
+      ["files", "pm-x", "--add", "--json", "a", "b"],
     ]) {
-      const recovery = resolve("files", argv, { ...FILES, ...table({ "--other": repeatable }) });
+      const recovery = resolve(argv[0], argv, { ...FILES, ...table({ "--other": repeatable }) });
       expect(recovery?.extraValues.length).toBeGreaterThan(0);
       expect(recovery?.retryArgs).toBeUndefined();
     }
@@ -134,6 +144,7 @@ describe("value-list recovery", () => {
     [["item", "test", "pm-x", "--add-json", '{"command":"a"}', '[{"command":"b"}]']],
     [["test", "pm-x", "--remove-index", "1", "2", "--run"]],
     [["test", "pm-x", "--remove", "command=a", "command=b"]],
+    [["test", "pm-x", "--remove", "command:a", "path:t.spec.ts"]],
     [["test", "pm-x", "--measure", "p95=3,unit=ms", "p99=4"]],
   ])("replays complete linked-test entries: %j", (argv) => {
     expect(resolve("test", argv, TEST)?.retryArgs).toBeDefined();
@@ -172,6 +183,11 @@ describe("value-list recovery", () => {
     ["files", ["files", "pm-x", "--add", "a", "-"]],
     ["files", ["files", "pm-x", "--add", "a", "--add", "b"]],
     ["files", ["files", "pm-x", "--maybe", "--list"]],
+    // A value that does not directly follow its flag, and a global flag missing its value, are Commander's operands (Codex review).
+    ["files", ["files", "pm-x", "--add", "a", "--pm-path=/t", "b"]],
+    ["files", ["files", "pm-x", "--add", "a", "b", "--pm-path"]],
+    // Commander gives --output-limit the next token as its value, so --add is never a flag here (Codex review).
+    ["files", ["files", "pm-x", "--output-limit", "--add", "a", "b", "--json"]],
   ] as const)("does not guess for %s %j", (command, argv) => {
     expect(resolve(command, [...argv])).toBeUndefined();
   });
@@ -286,6 +302,22 @@ describe("value-list refusal through the CLI (GH-1791)", () => {
       const text = context.runCli(["docs", id, "--add", "a.md", "b.md"]);
       expect(text.code).toBe(2);
       expect(`${text.stdout}${text.stderr}`).toContain("Error: Repeat --add once per value (or use --add-glob)");
+    });
+  });
+
+  it("offers no executable retry where the shell may have split one value or Commander owns the token (Codex review)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Ambiguous value lists" });
+      const refusal = (argv: string[]) => JSON.parse(context.runCli(argv).stderr || "{}") as { code?: string; recovery?: { suggested_retry_args?: string[] } };
+      for (const argv of [
+        ["files", id, "--add-glob", "pattern:src,note:fix", "the", "bug", "--json"],
+        ["docs", id, "--add", "Release", "notes,https://example.org", "--json"],
+      ]) {
+        expect(refusal(argv)).toMatchObject({ code: "linked_resource_value_list" });
+        expect(refusal(argv).recovery?.suggested_retry_args).toBeUndefined();
+      }
+      // Commander reads --add as the value of --output-limit, so this is not a value list at all.
+      expect(refusal(["files", id, "--output-limit", "--add", "a", "b", "--json"]).code).not.toBe("linked_resource_value_list");
     });
   });
 });

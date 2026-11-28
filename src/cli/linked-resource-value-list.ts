@@ -11,22 +11,21 @@
  * Every token is classified with Commander's own reading: an option consumes
  * the next token when its value is required, or when it is optional and the
  * next token is not option-like, and a repeatable option is one whose value
- * processor is the shared `collect`. Global options are read with the
- * bootstrap's own rule, which strips them before Commander. A token this
- * module cannot classify leaves the refusal to the other guidance builders
- * instead of guessing.
+ * processor is the shared `collect`. The table walks the command's ancestors
+ * up to the program, which declares the global options, so it is the whole
+ * parse. A token this module cannot classify leaves the refusal to the other
+ * guidance builders instead of guessing.
  */
 import type { Command, Option } from "commander";
 import { findPmNamespacedCommand } from "../sdk/cli-contracts/command-aliases.js";
 import {
-  looksLikeStructuredPathEntry,
   parseAddEntries,
   parseAddGlobEntries,
   parseMigrateEntries,
   parseRemoveEntries,
 } from "../sdk/linked-artifacts.js";
 import { admitsLinkedTestFlagValue } from "../sdk/test/execution.js";
-import { findBootstrapCommandTokenIndex, globalBootstrapTokenSpan } from "./bootstrap-args.js";
+import { findBootstrapCommandTokenIndex } from "./bootstrap-args.js";
 import { collect } from "./registration-helpers.js";
 
 /** How Commander reads one option spelling. */
@@ -113,21 +112,28 @@ function parses(parse: (value: string, noun: "file" | "doc") => unknown, value: 
 }
 
 /**
+ * A value no shell split can have produced or broken: no whitespace, and none
+ * of the separators the entry grammars read (`,` between members, `=` and `:`
+ * between a key and its value, as in `path:a,note:…` or a doc label before a
+ * URL).
+ */
+const PLAIN_VALUE = /^[^\s,=:]+$/u;
+
+/**
  * Judge a value list with each flag's own parser. A linked-test list replays
  * only when its parser admits every value as a complete entry; anything else
  * is a command that needs quoting, which the linked-test guidance owns. A file
- * or doc list replays when every value parses and the values are all
- * structured entries (`path=`, `path:`, `pattern=`, `from=`) or all bare
- * paths. A structured entry followed by bare words may be one value the shell
- * split (`path:a.ts,note:fix the bug`), so it gets no executable retry.
+ * or doc list replays only when every value is plain and the flag's parser
+ * accepts it: a structured value (`path=`, `path:`, `pattern:`, a doc label
+ * before a URL) may be one argument the shell split, so it gets the quoting
+ * hint without an executable retry.
  */
 function readValueList(command: string, flag: string, values: readonly string[]): ValueListReading {
   if (command === "test") return values.every((value) => admitsLinkedTestFlagValue(flag, value)) ? "exact" : "decline";
   const parse = ARTIFACT_VALUE_PARSERS[flag];
   const noun = command === "files" ? "file" : "doc";
-  const structured = values.map((value) => looksLikeStructuredPathEntry(value.trim()));
-  const uniform = structured.every(Boolean) || !structured.some(Boolean);
-  return parse !== undefined && uniform && values.every((value) => parses(parse, value, noun)) ? "exact" : "ambiguous";
+  // A value that reads as an option (`--add --json a`) is Commander's reading, never the caller's intent.
+  return parse !== undefined && values.every((value) => !isOptionLike(value) && PLAIN_VALUE.test(value) && parses(parse, value, noun)) ? "exact" : "ambiguous";
 }
 
 /** One repeatable flag that received several values, and the replay that gives each its own occurrence. */
@@ -160,32 +166,12 @@ function readOptionToken(
   return next !== undefined && !isOptionLike(next) ? { end: index + 1, spelling, arity, value: next } : { end: index, spelling, arity };
 }
 
-/**
- * The tokens Commander parses, with their positions in argv: global options
- * are stripped first by the bootstrap's own rule, wherever they are written.
- * Undefined when argv holds an end-of-options marker, whose operands this
- * recovery does not judge.
- */
-function commanderTokens(argv: readonly string[]): { tokens: string[]; positions: number[] } | undefined {
-  const positions: number[] = [];
-  for (let index = 0; index < argv.length; ) {
-    if (argv[index] === "--") return undefined;
-    const span = globalBootstrapTokenSpan(argv, index);
-    if (span === 0) positions.push(index);
-    index += Math.max(span, 1);
-  }
-  return { tokens: positions.map((index) => argv[index]!), positions };
-}
-
-/** Where the item operand stands: the first operand after the command, or undefined. */
-function itemOperandIndex(command: string, tokens: readonly string[]): number | undefined {
-  const start = findBootstrapCommandTokenIndex([...tokens]);
+/** Where the command's own tokens start: after the command path, or undefined when argv does not invoke `command`. */
+function commandArgumentsStart(command: string, argv: readonly string[]): number | undefined {
+  const start = findBootstrapCommandTokenIndex([...argv]);
   if (start === undefined) return undefined;
-  const namespaced = findPmNamespacedCommand(tokens.slice(start));
-  if ((namespaced?.alias ?? tokens[start]) !== command) return undefined;
-  const index = start + (namespaced?.canonical_argv.length ?? 1);
-  const itemId = tokens[index];
-  return itemId === undefined || isOptionLike(itemId) || itemId === "-" ? undefined : index;
+  const namespaced = findPmNamespacedCommand(argv.slice(start));
+  return (namespaced?.alias ?? argv[start]) === command ? start + (namespaced?.canonical_argv.length ?? 1) : undefined;
 }
 
 /** The positions of the operands that directly follow `index`, up to the next option-like token. */
@@ -195,41 +181,56 @@ function followingOperands(tokens: readonly string[], index: number): number[] {
   return following;
 }
 
-/** Every value written after a repeatable flag's own value, with the flag it belongs to. */
+/** The item operand, and every value written after a repeatable flag's own value with the flag it belongs to. */
 interface ValueListScan {
+  idAt?: number;
   extras: Array<{ at: number; flag: string }>;
   exact: boolean;
 }
 
+/** Take an operand as the item id; a second operand outside a value chain, or stdin `-`, declines. */
+function scanOperand(argv: readonly string[], index: number, scan: ValueListScan): number | undefined {
+  if (scan.idAt !== undefined || argv[index] === "-") return undefined;
+  scan.idAt = index;
+  return index;
+}
+
+/** Read one option with its value and any values written after it; the index of its last token, or undefined to decline. */
+function scanOption(command: string, argv: readonly string[], index: number, table: OptionArityTable, scan: ValueListScan): number | undefined {
+  const option = argv[index] === "--" ? undefined : readOptionToken(argv, index, table);
+  if (!option) return undefined;
+  const following = option.arity.repeatable && option.value !== undefined ? followingOperands(argv, option.end) : [];
+  if (following.length === 0) return option.end;
+  if (scan.idAt === undefined) return undefined;
+  const reading = readValueList(command, option.arity.name, [option.value!, ...following.map((at) => argv[at]!)]);
+  if (reading === "decline") return undefined;
+  scan.exact &&= reading === "exact";
+  scan.extras.push(...following.map((at) => ({ at, flag: option.spelling })));
+  return following.at(-1)!;
+}
+
 /**
- * Walk the options after the item operand. Every token must be an option the
- * command declares, or an operand that directly follows a repeatable flag's
- * value; undefined otherwise, or when a value list is not this recovery's.
+ * Walk the command's tokens as Commander parses them. Options consume values
+ * by their declared arity; the first operand is the item id; every later
+ * operand must directly follow a repeatable flag's value. Undefined for any
+ * other shape: an undeclared option, a stray operand, values before the item
+ * id, an end-of-options marker, or a value list this recovery does not own.
  */
-function scanValueLists(command: string, tokens: readonly string[], idIndex: number, table: OptionArityTable): ValueListScan | undefined {
+function scanValueLists(command: string, argv: readonly string[], from: number, table: OptionArityTable): ValueListScan | undefined {
   const scan: ValueListScan = { extras: [], exact: true };
-  for (let index = idIndex + 1; index < tokens.length; index += 1) {
-    const option = isOptionLike(tokens[index]!) ? readOptionToken(tokens, index, table) : undefined;
-    if (!option) return undefined;
-    index = option.end;
-    const following = option.arity.repeatable && option.value !== undefined ? followingOperands(tokens, index) : [];
-    if (following.length === 0) continue;
-    const reading = readValueList(command, option.arity.name, [option.value!, ...following.map((at) => tokens[at]!)]);
-    if (reading === "decline") return undefined;
-    scan.exact &&= reading === "exact";
-    scan.extras.push(...following.map((at) => ({ at, flag: option.spelling })));
-    index = following.at(-1)!;
+  for (let index = from; index < argv.length; index += 1) {
+    const last = isOptionLike(argv[index]!) ? scanOption(command, argv, index, table, scan) : scanOperand(argv, index, scan);
+    if (last === undefined) return undefined;
+    index = last;
   }
   return scan;
 }
 
 /**
  * Resolve `pm <files|docs|test> <id> --flag a b c` into one occurrence per
- * value. The tokens are judged as Commander parses them, and every insertion
- * is mapped back to the token's place in argv. Every extra operand must
- * directly follow a repeatable flag's value, the item id must be the first
- * operand after the command, and every option must be one the command
- * declares.
+ * value, judged with the command's Commander arity, including the global
+ * options the program declares. Every extra operand must directly follow a
+ * repeatable flag's value, and the item id must be the first operand.
  */
 export function resolveLinkedResourceValueListRecovery(
   command: string | undefined,
@@ -237,16 +238,15 @@ export function resolveLinkedResourceValueListRecovery(
   table: OptionArityTable,
 ): LinkedResourceValueListRecovery | undefined {
   if (command === undefined || !LINKED_RESOURCE_VALUE_LIST_COMMANDS.has(command)) return undefined;
-  const parsed = commanderTokens(argv);
-  const idIndex = parsed === undefined ? undefined : itemOperandIndex(command, parsed.tokens);
-  const scan = idIndex === undefined ? undefined : scanValueLists(command, parsed!.tokens, idIndex, table);
-  if (scan === undefined || scan.extras.length === 0) return undefined;
-  const insertions = new Map(scan.extras.map(({ at, flag }) => [parsed!.positions[at]!, flag]));
+  const from = commandArgumentsStart(command, argv);
+  const scan = from === undefined ? undefined : scanValueLists(command, argv, from, table);
+  if (scan?.idAt === undefined || scan.extras.length === 0) return undefined;
+  const insertions = new Map(scan.extras.map(({ at, flag }) => [at, flag]));
   const retryArgs = argv.flatMap((token, index) => (insertions.has(index) ? [insertions.get(index)!, token] : [token]));
   return {
-    itemId: parsed!.tokens[idIndex!]!,
+    itemId: argv[scan.idAt]!,
     flags: [...new Set(scan.extras.map(({ flag }) => flag))],
-    extraValues: scan.extras.map(({ at }) => parsed!.tokens[at]!),
+    extraValues: scan.extras.map(({ at }) => argv[at]!),
     ...(scan.exact ? { retryArgs } : {}),
   };
 }

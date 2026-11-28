@@ -134,6 +134,20 @@ describe("stored type definitions", () => {
     expect(wrong.definition?.aliases).toBeUndefined();
     expect(wrong.loss.ignored).toEqual(["aliases: 1 is not a string", "aliases: 2 is not a string", "required_create_fields: 5 is not a string"]);
     expect(inspectItemTypeDefinition({ name: "Task", required_create_fields: [] }, "schema_file").definition?.required_create_fields).toEqual([]);
+    // A blank entry is as unusable as a wrong-typed one, so it cannot make the list an explicit override (Codex review).
+    const blank = inspectItemTypeDefinition({ name: "Task", required_create_fields: [5, " "], required_create_repeatables: ["", "tags"] }, "schema_file");
+    expect(blank.definition).toMatchObject({ required_create_repeatables: ["tags"] });
+    expect(blank.definition?.required_create_fields).toBeUndefined();
+    expect(blank.loss.ignored).toEqual(['required_create_fields: 5 is not a string', 'required_create_fields: " " is blank', 'required_create_repeatables: "" is blank']);
+    // A list of records with no usable record reads as absent too, so it cannot clear inherited options (CodeRabbit review).
+    const records = inspectItemTypeDefinition({ name: "Task", options: [null], command_option_policies: [7] }, "schema_file");
+    expect(records.definition?.options).toBeUndefined();
+    expect(records.definition?.command_option_policies).toBeUndefined();
+    expect(records.loss.ignored).toEqual(["options[0]: null is not an option with a key", "command_option_policies[0]: 7 is not a create or update policy with an option"]);
+    expect(inspectItemTypeDefinition({ name: "Task", options: [] }, "schema_file").definition?.options).toEqual([]);
+    // Through the registry the built-in Task requirements survive such an override.
+    const registry = resolveItemTypeRegistry({ item_types: { definitions: [blank.definition!] } } as never);
+    expect(resolveTypeDefinition("Task", registry)?.required_create_fields.length).toBeGreaterThan(0);
   });
 
   it.each([

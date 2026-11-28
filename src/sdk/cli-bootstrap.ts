@@ -198,28 +198,6 @@ export function parseBootstrapGlobalOptions(
   };
 }
 
-/**
- * How many tokens at `index` are a global bootstrap option, with its value,
- * that the program strips before Commander parses the command; 0 when the
- * token is not one. {@link stripGlobalBootstrapTokens} reads this one rule.
- */
-export function globalBootstrapTokenSpan(argv: readonly string[], index: number): number {
-  const token = argv[index]!;
-  if (
-    BOOTSTRAP_BOOLEAN_FLAGS.has(token) ||
-    token === "--profile" ||
-    token === "--id-only" ||
-    token === "--full-changed-fields" ||
-    token === "--explain"
-  ) {
-    return 1;
-  }
-  if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
-    return consumesBootstrapValue(token, argv[index + 1]) ? 2 : 1;
-  }
-  return isInlineGlobalValueToken(token) ? 1 : 0;
-}
-
 /** Implements strip global bootstrap tokens for the public runtime surface of this module. */
 export function stripGlobalBootstrapTokens(argv: string[]): string[] {
   const remaining: string[] = [];
@@ -229,9 +207,26 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
     if (token === "--") {
       break;
     }
-    const span = globalBootstrapTokenSpan(argv, index);
-    if (span === 0) remaining.push(token);
-    index += Math.max(span, 1);
+    if (
+      BOOTSTRAP_BOOLEAN_FLAGS.has(token) ||
+      token === "--profile" ||
+      token === "--id-only" ||
+      token === "--full-changed-fields" ||
+      token === "--explain"
+    ) {
+      index += 1;
+      continue;
+    }
+    if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
+      index += consumesBootstrapValue(token, argv[index + 1]) ? 2 : 1;
+      continue;
+    }
+    if (isInlineGlobalValueToken(token)) {
+      index += 1;
+      continue;
+    }
+    remaining.push(token);
+    index += 1;
   }
   return remaining;
 }
