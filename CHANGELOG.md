@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The release Sentry gate blocks on a resolved issue that regressed only through environment=test events, because it judges test traffic per issue instead of per regression ([pm-kxmu54](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kxmu54.toon))
+- The settings writer judges field definitions as if the current schema hydrated, so a proposal that repairs a broken schema file path activates stored definitions without judging them ([pm-8dbagz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8dbagz.toon))
+- Two active packages that declare one extension item field with different types still stop every create and update, now with a typed extension_item_field_type_conflict ([pm-2ze9nt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ze9nt.toon))
+- PmClient.schemaAddField reads a whitespace-only cliFlag as omitted and registers the default flag, while pm schema add-field --cli-flag ' ' refuses it with schema_field_flag_invalid ([pm-f0s4g8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f0s4g8.toon))
+- A wrong-typed member in schema/statuses.json or schema/types.json (a numeric description, a numeric alias) throws in its normalizer and resets every setting to its default ([pm-x17o8l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x17o8l.toon))
+- GH-1791: several paths after one --add on pm files/docs/test fail with a generic usage error that names neither the repeat-flag fix nor a retry ([pm-gh1791](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1791.toon))
+
+### Other
+
+- Refresh matured fast-json-patch 3.1.2 and pm-changelog 2026.11.27 ([pm-928ng6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-928ng6.toon))
+
 ## 2026.11.28 - 2026-11-28
 
 ### Fixed
