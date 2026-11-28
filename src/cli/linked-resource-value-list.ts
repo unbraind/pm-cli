@@ -18,12 +18,6 @@
  */
 import type { Command, Option } from "commander";
 import { findPmNamespacedCommand } from "../sdk/cli-contracts/command-aliases.js";
-import {
-  parseAddEntries,
-  parseAddGlobEntries,
-  parseMigrateEntries,
-  parseRemoveEntries,
-} from "../sdk/linked-artifacts.js";
 import { admitsLinkedTestFlagValue } from "../sdk/test/execution.js";
 import { findBootstrapCommandTokenIndex } from "./bootstrap-args.js";
 import { collect } from "./registration-helpers.js";
@@ -93,23 +87,12 @@ function isOptionLike(token: string): boolean {
 /** How a list of values for one flag may be replayed. */
 type ValueListReading = "exact" | "ambiguous" | "decline";
 
-/** The native parser of each repeatable file or doc flag, for one value. */
-const ARTIFACT_VALUE_PARSERS: Readonly<Record<string, (value: string, noun: "file" | "doc") => unknown>> = {
-  "--add": (value, noun) => parseAddEntries([value], noun),
-  "--add-glob": (value) => parseAddGlobEntries([value]),
-  "--remove": (value) => parseRemoveEntries([value]),
-  "--migrate": (value) => parseMigrateEntries([value]),
-};
-
-/** Whether the native parser admits one value. */
-function parses(parse: (value: string, noun: "file" | "doc") => unknown, value: string, noun: "file" | "doc"): boolean {
-  try {
-    parse(value, noun);
-    return true;
-  } catch {
-    return false;
-  }
-}
+/**
+ * Repeatable file and doc flags whose entry grammar reads a value without
+ * separators as one bare path or glob, so such a value replays unchanged.
+ * `--migrate` is not among them: its entries always name `from=` and `to=`.
+ */
+const BARE_VALUE_ARTIFACT_FLAGS: ReadonlySet<string> = new Set(["--add", "--add-glob", "--remove"]);
 
 /**
  * A value no shell split can have produced or broken: no whitespace, and none
@@ -123,17 +106,15 @@ const PLAIN_VALUE = /^[^\s,=:]+$/u;
  * Judge a value list with each flag's own parser. A linked-test list replays
  * only when its parser admits every value as a complete entry; anything else
  * is a command that needs quoting, which the linked-test guidance owns. A file
- * or doc list replays only when every value is plain and the flag's parser
- * accepts it: a structured value (`path=`, `path:`, `pattern:`, a doc label
+ * or doc list replays only when every value is plain, which its flag reads as
+ * one bare path or glob: a structured value (`path=`, `path:`, `pattern:`, a doc label
  * before a URL) may be one argument the shell split, so it gets the quoting
  * hint without an executable retry.
  */
 function readValueList(command: string, flag: string, values: readonly string[]): ValueListReading {
   if (command === "test") return values.every((value) => admitsLinkedTestFlagValue(flag, value)) ? "exact" : "decline";
-  const parse = ARTIFACT_VALUE_PARSERS[flag];
-  const noun = command === "files" ? "file" : "doc";
   // A value that reads as an option (`--add --json a`) is Commander's reading, never the caller's intent.
-  return parse !== undefined && values.every((value) => !isOptionLike(value) && PLAIN_VALUE.test(value) && parses(parse, value, noun)) ? "exact" : "ambiguous";
+  return BARE_VALUE_ARTIFACT_FLAGS.has(flag) && values.every((value) => !isOptionLike(value) && PLAIN_VALUE.test(value)) ? "exact" : "ambiguous";
 }
 
 /** One repeatable flag that received several values, and the replay that gives each its own occurrence. */

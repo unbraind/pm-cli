@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,error-guidance,"gh:1791",linked-resources
 created_at: "2026-11-28T13:31:46.012Z"
-updated_at: "2026-11-28T17:27:04.507Z"
+updated_at: "2026-11-28T18:04:19.152Z"
 closed_at: "2026-11-28T13:43:40.969Z"
 completed_at: "2026-11-28T13:43:40.969Z"
 author: "harness:claude-code"
@@ -31,8 +31,9 @@ comments[11]{created_at,author,text}:
   "2026-11-28T16:47:31.603Z","harness:claude-code","Codex review round 7, 2026-11-28, P3, fixed: an --add or --add-json entry must also pass the write path's own executability check (assertLinkedTestContext), so an assignment-only command such as command=MODE=ci, which the parser admits but the write path refuses as linked_test_command_not_executable, gets no executable retry."
   "2026-11-28T17:13:35.643Z","harness:claude-code","Codex review round 9, 2026-11-28, P2, valid and fixed: under PM_COMMAND_SHELL=cmd (the Windows default), the copyable retry turns a line break into a space by design (GH-1774), so a multiline command= value would paste as a different command. When a retry argument holds a line break and the shell is cmd, the refusal now omits recovery.suggested_retry and the copyable example, keeps suggested_retry_args, and names argv replay (or PowerShell) in required."
   "2026-11-28T17:27:04.506Z","harness:claude-code","Codex review round 10, 2026-11-28: three P2s, valid, settled by one principle: the copyable command is offered only when it IS the exact argv. (a) Text output replaces control characters (a tab in printf \"a<TAB>b\"), so any retry argument with a C0 control character or DEL leaves only suggested_retry_args. (b) Under cmd, only arguments that need no cmd quoting are copyable, because npm's pm.cmd re-parses a quoted metacharacter and cmd.exe drops line breaks. (c) --measure gets no value-list replay, because the bootstrap coalesces its attribute grammar (--measure latency=12 threshold=5 reads as one metric with a threshold). The argv retry stays exact in every case."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-11-28T13:43:14.056Z","harness:claude-code","Collection commands (files, docs, test, comments, notes, learnings) are registered under the item namespace, not at the top level. Find a command's Commander object by walking findPmNamespacedCommand(...).canonical_argv from the root program. rootProgram.commands.find(name) misses them silently."
+  "2026-11-28T18:04:19.151Z","harness:claude-code","Coverage after review rounds: a diff-only coverage check (added lines only) misses lines that LATER logic makes unreachable. Here the plain-value rule made the round-2 native-parser call and its catch dead code, and Gates (coverage) caught it at 99.99%. After every review round that changes a decision, re-check FULL-file coverage of each touched module, not just the new lines."
 files[8]{path,scope,note}:
   scripts/generate-error-code-catalog.mjs,project,GH-1791 value-list refusal
   src/cli/commander-usage.ts,project,GH-1791 value-list refusal
