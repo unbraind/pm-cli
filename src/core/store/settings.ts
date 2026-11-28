@@ -1281,6 +1281,37 @@ function buildProviderSettings(
   };
 }
 
+/**
+ * Hydrate merged settings with the schema files, as the settings read does.
+ * It throws where the read falls back to defaults (`settings_read_merge_failed`),
+ * so a settings writer can tell whether the stored schema definitions are
+ * active before and after its proposal (pm-8dbagz).
+ */
+export async function hydrateMergedSettings(
+  pmRoot: string,
+  mergedSettings: PmSettings,
+): Promise<{ settings: PmSettings; warnings: string[] }> {
+  const loadedSchemaSections = await loadRuntimeSchemaFromOptionalFiles(
+    pmRoot,
+    mergedSettings.schema,
+  );
+  return {
+    settings: {
+      ...mergedSettings,
+      item_types: {
+        definitions: normalizeItemTypeDefinitions([
+          ...mergedSettings.item_types.definitions,
+          ...arrayOrEmpty<ItemTypeDefinition>(
+            loadedSchemaSections.type_definitions_from_file,
+          ),
+        ]),
+      },
+      schema: loadedSchemaSections.schema,
+    },
+    warnings: loadedSchemaSections.warnings,
+  };
+}
+
 /** Implements normalize item type definitions for the public runtime surface of this module. */
 export function normalizeItemTypeDefinitions(
   definitions: ItemTypeDefinition[] | undefined,
@@ -2126,24 +2157,10 @@ export async function readSettingsWithMetadata(
     trackedPathsForFailure = trackedPaths;
     const signaturesBeforeSchemaLoad =
       await collectSettingsReadCacheSignatures(trackedPaths);
-    const loadedSchemaSections = await loadRuntimeSchemaFromOptionalFiles(
-      pmRoot,
-      mergedSettings.schema,
-    );
+    const hydrated = await hydrateMergedSettings(pmRoot, mergedSettings);
     const signaturesAfterSchemaLoad =
       await collectSettingsReadCacheSignatures(trackedPaths);
-    const settings: PmSettings = {
-      ...mergedSettings,
-      item_types: {
-        definitions: normalizeItemTypeDefinitions([
-          ...mergedSettings.item_types.definitions,
-          ...arrayOrEmpty<ItemTypeDefinition>(
-            loadedSchemaSections.type_definitions_from_file,
-          ),
-        ]),
-      },
-      schema: loadedSchemaSections.schema,
-    };
+    const settings = hydrated.settings;
     attachSettingsPersistSourceSnapshot(
       settings,
       buildSettingsPersistSourceSnapshot(validated.data, settings),
@@ -2157,7 +2174,7 @@ export async function readSettingsWithMetadata(
         ...(validated.data.item_format === "json_markdown"
           ? ["settings_item_format_legacy_json_markdown_coerced_to_toon"]
           : []),
-        ...loadedSchemaSections.warnings,
+        ...hydrated.warnings,
       ],
     };
     if (

@@ -140,6 +140,8 @@ import {
   type VectorStoreAdapterDefinition
 } from "./extension-types.js";
 import {
+  findConflictingItemFieldDeclaration,
+  formatItemFieldTypeConflictWarning,
   formatReservedItemFieldWarning,
   RESERVED_ITEM_FIELD_NAMES,
 } from "./item-fields.js";
@@ -1739,25 +1741,28 @@ class ExtensionApiRegistrar implements ExtensionApi {
         "registerItemFields requires at least one field definition",
       );
     }
-    // A field named after built-in item metadata would make every create and
-    // update refuse, so only that field is dropped, with a warning (pm-dhlij3).
+    // A field named after built-in item metadata (pm-dhlij3), or one an
+    // admitted declaration gives another type (pm-2ze9nt), would make every
+    // create and update refuse, so only that field is dropped, with a warning.
     // The registration stays, even empty, because the package did register
     // against the schema capability.
     const { layer, name } = this.#loadedExtension;
-    const admittedFields = normalizedFields.filter((field) => {
+    const registration = { layer, name, fields: [] as typeof normalizedFields };
+    for (const field of normalizedFields) {
       // The snapshot keeps own enumerable members only, so a name read through a getter is absent here.
       const fieldName = typeof field.name === "string" ? field.name.trim() : "";
-      if (!RESERVED_ITEM_FIELD_NAMES.has(fieldName)) return true;
-      this.#activationWarnings.push(
-        formatReservedItemFieldWarning(layer, name, fieldName),
-      );
-      return false;
-    });
-    this.#registrationRegistry.item_fields.push({
-      layer,
-      name,
-      fields: admittedFields,
-    });
+      if (RESERVED_ITEM_FIELD_NAMES.has(fieldName)) {
+        this.#activationWarnings.push(formatReservedItemFieldWarning(layer, name, fieldName));
+        continue;
+      }
+      const kept = findConflictingItemFieldDeclaration([...this.#registrationRegistry.item_fields, registration], field);
+      if (kept) {
+        this.#activationWarnings.push(formatItemFieldTypeConflictWarning(layer, name, field, kept));
+        continue;
+      }
+      registration.fields.push(field);
+    }
+    this.#registrationRegistry.item_fields.push(registration);
   }
 
   public registerItemTypes(types: SchemaItemTypeDefinition[]): void {

@@ -3,9 +3,11 @@
  * the `schema add-field` admission for each inline field definition it adds or
  * changes, while an unrelated write keeps a legacy definition exactly as stored.
  */
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { readSettingsWithMetadata } from "../../../../src/core/store/settings.js";
 import { createExtensionCommandSdk } from "../../../../src/sdk/extension-command-context.js";
 import { PmClient } from "../../../../src/sdk/runtime.js";
 import type { PmSettings } from "../../../../src/types/index.js";
@@ -182,6 +184,56 @@ describe("settings writers share the custom field admission", () => {
       await expect(
         sdk.mutateWorkspaceSettings({ operationId: "new-blank", dryRun: true, mutate: (current) => withFields(current, [{ key: "review_lead", type: "string", commands: ["list"], cli_aliases: [" "] } as InlineField]) }),
       ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_flag_invalid", field: "review_lead" }) });
+    });
+  });
+});
+
+describe("a settings writer over a schema that does not hydrate (pm-8dbagz)", () => {
+  /** A tracker whose statuses path is a directory, so the settings read falls back and no stored field is active. */
+  async function brokenHydration(pmPath: string): Promise<{ settingsPath: string; stored: Record<string, unknown> & { schema: { files: Record<string, string> } } }> {
+    const settingsPath = path.join(pmPath, "settings.json");
+    const stored = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown> & { schema: { files: Record<string, string> } };
+    await mkdir(path.join(pmPath, "schema", "statuses-dir"), { recursive: true });
+    stored.schema.files.statuses = "schema/statuses-dir";
+    await writeFile(settingsPath, `${JSON.stringify(stored, null, 2)}\n`);
+    // A shadowing definition stored in the fields file, which no writer admitted.
+    await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "full", type: "string", commands: ["list"] }] }));
+    return { settingsPath, stored };
+  }
+
+  it("judges every stored definition a repair makes active, and nothing while hydration still fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await brokenHydration(pmPath);
+      const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
+      const repairPath = (current: PmSettings): PmSettings => ({ ...current, schema: { ...current.schema, files: { ...current.schema.files, statuses: "schema/statuses.json" } } });
+      // Repairing only the path activates the stored `full` field, which shadows pm list --full.
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "repair-path", dryRun: true, mutate: repairPath }),
+      ).rejects.toMatchObject({ exitCode: 2, context: expect.objectContaining({ code: "schema_field_option_collision" }) });
+      // A write that leaves hydration failing activates nothing, so the stored definition is not judged.
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "unrelated", dryRun: true, mutate: (current) => ({ ...current, id_prefix: "zz-" }) }),
+      ).resolves.toMatchObject({ dry_run: true });
+      // Once the shadowing definition is gone, the repair is admitted.
+      await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "review_owner", type: "string", commands: ["list"] }] }));
+      await expect(sdk.mutateWorkspaceSettings({ operationId: "repair-clean", mutate: repairPath })).resolves.toMatchObject({ changed: true });
+    });
+  });
+
+  it.skipIf(process.platform === "win32")("repairs a schema path that names a named pipe without stalling (Codex review)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const settingsPath = path.join(pmPath, "settings.json");
+      const stored = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown> & { schema: { files: Record<string, string> } };
+      execFileSync("mkfifo", [path.join(pmPath, "schema", "statuses-pipe")]);
+      stored.schema.files.statuses = "schema/statuses-pipe";
+      await writeFile(settingsPath, `${JSON.stringify(stored, null, 2)}\n`);
+      await writeFile(path.join(pmPath, "schema", "fields.json"), JSON.stringify({ fields: [{ key: "full", type: "string", commands: ["list"] }] }));
+      // The settings read falls back instead of waiting for a writer on the pipe.
+      expect((await readSettingsWithMetadata(pmPath)).warnings).toContain("settings_read_merge_failed");
+      const sdk = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
+      await expect(
+        sdk.mutateWorkspaceSettings({ operationId: "repair-pipe", dryRun: true, mutate: (current) => ({ ...current, schema: { ...current.schema, files: { ...current.schema.files, statuses: "schema/statuses.json" } } }) }),
+      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "schema_field_option_collision" }) });
     });
   });
 });

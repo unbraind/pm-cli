@@ -53,6 +53,7 @@ import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 import { redactRefusalArgv } from "./runtime/refusal-credential-redaction.js";
 import { redactUrlCredentialsInText } from "../sdk/command-line.js";
+import type { LinkedResourceValueListRecovery } from "./linked-resource-value-list.js";
 
 /** Supported values accepted by the builtin type help contract. */
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
@@ -1188,10 +1189,23 @@ export async function resolveCommanderUsageContext(
     unknownOptionScope: unknownOption.scope,
     suggestedRetryCommand,
     verifiedCollectionItemId: workspaceUsage.verifiedCollectionItemId,
+    linkedResourceValueList: await resolveLinkedResourceValueList(message, commandName, rootProgram, invocationArgv),
     ...splitSchemaSubcommand,
     ...unknownCommandGuidance,
     ...guidanceOverrides,
   };
+}
+
+/** The value-list recovery of a linked-resource command whose operands overflowed (pm-gh1791), loaded only for that refusal. */
+async function resolveLinkedResourceValueList(
+  message: string,
+  commandName: string | undefined,
+  rootProgram: Command,
+  invocationArgv: readonly string[],
+): Promise<LinkedResourceValueListRecovery | undefined> {
+  if (!/too many arguments/i.test(message)) return undefined;
+  const { resolveUsageValueListRecovery } = await import("./linked-resource-value-list.js");
+  return resolveUsageValueListRecovery(commandName, rootProgram, invocationArgv);
 }
 
 /** Implements format commander usage message for the public runtime surface of this module. */

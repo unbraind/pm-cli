@@ -89,11 +89,25 @@ function runMcpSchemaReadOrRemoveAction(
   return handler ? handler() : null;
 }
 
+/**
+ * A flag spelling as the caller supplied it. The transport usually reads a
+ * blank string as omitted, but add-field judges a supplied spelling that
+ * normalizes to nothing and refuses it, as it does for argv, so a blank
+ * `cliFlag` or alias must reach it (pm-f0s4g8).
+ */
+function readSuppliedSpelling(ctx: McpActionDispatchContext, key: string): string | undefined {
+  // The first string wins, blank or not: a non-string top-level value falls back to the options record.
+  return [ctx.args[key], ctx.options[key]].find((value): value is string => typeof value === "string");
+}
+
 /** Translate transport field declarations, requirement policies and aliases into the SDK schema field creation contract. */
 function runMcpSchemaAddFieldAction(
   schema: McpSchemaContext,
 ): Promise<unknown> {
-  const { ctx, name, author, force, aliases } = schema;
+  const { ctx, name, author, force } = schema;
+  const aliasSource = ctx.args.alias ?? ctx.options.alias;
+  // Every supplied alias entry reaches the spelling check, blank ones included.
+  const aliases = Array.isArray(aliasSource) ? aliasSource.map((entry) => String(entry)) : schema.aliases;
   const commandsSource = ctx.args.commands ?? ctx.options.commands;
   const requiredTypesSource =
     ctx.args.requiredTypes ?? ctx.options.requiredTypes;
@@ -110,8 +124,7 @@ function runMcpSchemaAddFieldAction(
       description:
         readString(ctx.args, "description") ??
         readString(ctx.options, "description"),
-      cliFlag:
-        readString(ctx.args, "cliFlag") ?? readString(ctx.options, "cliFlag"),
+      cliFlag: readSuppliedSpelling(ctx, "cliFlag"),
       alias: aliases,
       required: ctx.args.required === true || ctx.options.required === true,
       requiredOnCreate:

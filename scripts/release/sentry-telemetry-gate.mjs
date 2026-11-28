@@ -271,6 +271,11 @@ function parseSentryProject(project) {
   return { org, projectSlug };
 }
 
+/** The Sentry API origin the gate queries. */
+function sentryBaseUrl() {
+  return process.env.SENTRY_URL || process.env.SENTRY_BASE_URL || "https://sentry.io";
+}
+
 const SENTRY_GATE_BASE_QUERY = "is:unresolved level:[fatal,error]";
 /** Unresolved issues with at least one event outside environment=test, at any time. */
 // pm-usn5k2: an event is test traffic when its environment is test or its pm.source_context is test
@@ -289,10 +294,7 @@ function buildSentryGateQuery(windowDays) {
 }
 
 function buildSentryIssuesUrl(project, query, limit) {
-  const baseUrl =
-    process.env.SENTRY_URL ||
-    process.env.SENTRY_BASE_URL ||
-    "https://sentry.io";
+  const baseUrl = sentryBaseUrl();
   const { org, projectSlug } = parseSentryProject(project);
   const url = new URL(
     `/api/0/projects/${encodeURIComponent(org)}/${encodeURIComponent(projectSlug)}/issues/`,
@@ -323,10 +325,7 @@ async function enrichSentryIssueWithLatestEvent(
   if (!needsSentryContractEnrichment(issue) || typeof issue.id !== "string") {
     return issue;
   }
-  const baseUrl =
-    process.env.SENTRY_URL ||
-    process.env.SENTRY_BASE_URL ||
-    "https://sentry.io";
+  const baseUrl = sentryBaseUrl();
   const eventUrl = new URL(
     `/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/events/latest/`,
     baseUrl,
@@ -670,7 +669,243 @@ async function fetchSentryGateIssues(project, windowDays, limit, allowCliFallbac
   if (active.issues.length === 0) return active;
   const nonTest = await fetchSentryIssues(project, SENTRY_NON_TEST_QUERY, limit, allowCliFallback, windowDays, requestTimeoutMs, false);
   if (!nonTest.ok) return { ...nonTest, reason: `sentry_environment_query_failed:${nonTest.reason}` };
-  return excludeTestOnlyIssues(active, nonTest, limit);
+  return excludeTestOnlyRegressions(excludeTestOnlyIssues(active, nonTest, limit), project, requestTimeoutMs);
+}
+
+/** Activity types that record an issue's resolution. */
+const SENTRY_RESOLUTION_ACTIVITY_TYPES = new Set([
+  "set_resolved",
+  "set_resolved_in_release",
+  "set_resolved_by_age",
+  "set_resolved_in_commit",
+  "set_resolved_in_pull_request",
+]);
+/**
+ * The regression lookup filters only on the pm.source_context tag: Sentry reads `!environment:test` as
+ * `environment != 'test'`, which also drops events with no environment, while a missing tag reads as empty
+ * and stays. Events in environment test are then set aside by their own tags.
+ */
+const SENTRY_REGRESSION_EVENT_QUERY = "!pm.source_context:test";
+
+/** Whether an event's own tags mark it as test traffic; an event without readable tags is not. */
+function isTestTrafficEvent(event) {
+  const tags = Array.isArray(event?.tags) ? event.tags : [];
+  return tags.some((tag) => (tag?.key === "environment" || tag?.key === "pm.source_context") && tag?.value === "test");
+}
+
+/** An ISO 8601 timestamp as Sentry writes them, with a time and an explicit zone. */
+const SENTRY_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/u;
+
+/** Whether the calendar and clock components name a real instant (Date.parse rolls 02-30 into March). */
+function isRealCalendarTime([year, month, day, hour, minute, second]) {
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth && hour < 24 && minute < 60 && second < 60;
+}
+
+/**
+ * A Sentry timestamp as milliseconds, or NaN for anything but an ISO 8601
+ * string with a zone that names a real calendar instant: Date.parse would
+ * read an array, a bare "0" or 2026-02-30 as a date. Sub-millisecond digits
+ * are dropped, so a tie fails closed.
+ */
+function parseSentryTime(value) {
+  const match = typeof value === "string" ? SENTRY_TIMESTAMP.exec(value) : null;
+  return match && isRealCalendarTime(match.slice(1, 7).map(Number)) ? Date.parse(value) : Number.NaN;
+}
+
+/** One Link entry as Sentry writes it: a target, then quoted `key="value"` parameters. */
+const SENTRY_LINK_ENTRY = /^<[^<>\s]+>(?:\s*;\s*[a-z]+="[^"]*")*$/u;
+
+/**
+ * Whether a Link header leaves another page possible. Only a missing header
+ * means one page. A present one proves the last page only when every entry is
+ * in Sentry's exact shape and exactly one has rel="next", with exactly one
+ * results parameter, which is "false"; anything else is unproven.
+ */
+function sentryLinkHasNextPage(link) {
+  if (link === null || link === undefined) return false;
+  const entries = String(link).split(",").map((entry) => entry.trim());
+  if (!entries.every((entry) => SENTRY_LINK_ENTRY.test(entry))) return true;
+  const parameters = entries.map((entry) => [...entry.matchAll(/;\s*([a-z]+)="([^"]*)"/gu)].map(([, key, value]) => [key, value]));
+  // Every entry names exactly one relation, so no entry can be both the previous and the next page.
+  if (!parameters.every((entry) => entry.filter(([key]) => key === "rel").length === 1)) return true;
+  const nexts = parameters.filter((entry) => entry.some(([key, value]) => key === "rel" && value === "next"));
+  const results = nexts.length === 1 ? nexts[0].filter(([key]) => key === "results") : [];
+  return results.length !== 1 || results[0][1] !== "false";
+}
+
+/** The latest activity entry of the given types, with its time, or undefined. */
+function latestActivity(activity, types) {
+  let latest;
+  for (const entry of activity) {
+    const time = parseSentryTime(entry.dateCreated);
+    if (types.has(entry.type) && (latest === undefined || time > latest.time)) latest = { entry, time };
+  }
+  return latest;
+}
+
+const SENTRY_REGRESSION_ACTIVITY_TYPES = new Set(["set_regression"]);
+/** Activity that changes which events an issue holds: a proof about the issue as resolved does not survive it. */
+const SENTRY_IDENTITY_ACTIVITY_TYPES = new Set(["merge", "unmerge_source", "unmerge_destination", "reprocess"]);
+/** Sentry accepts event timestamps somewhat off its own clock, so the event window extends on both sides. */
+const SENTRY_EVENT_WINDOW_SKEW_MS = 60 * 60 * 1000;
+/** Sentry's longest event retention: the regression lookup reads every stored non-test event within it. */
+const SENTRY_EVENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+/** Rows issue details return in `activity` at most; a feed this long may have been cut. */
+const SENTRY_ACTIVITY_CAP = 100;
+/** Attempts per lookup, the first included, when Sentry throttles it. */
+const SENTRY_LOOKUP_ATTEMPTS = 3;
+/** Events read per regression: Sentry caps a `full=true` page at 10, and an issue with more non-test events keeps blocking. */
+const SENTRY_REGRESSION_EVENT_LIMIT = 10;
+
+/** An HTTP date in RFC 9110's preferred IMF-fixdate form, such as `Sun, 06 Nov 1994 08:49:37 GMT`. */
+const IMF_FIXDATE = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/u;
+
+/** The wait a 429 asks for: Retry-After as delay seconds or as an HTTP date, else one second. */
+function retryAfterMs(response) {
+  const header = response.headers?.get("retry-after");
+  const text = typeof header === "string" ? header.trim() : "";
+  const seconds = /^\d+$/u.test(text) ? Number(text) : Number.NaN;
+  if (Number.isFinite(seconds)) return seconds * 1000;
+  // Only the IMF-fixdate form (RFC 9110) is read; Date.parse would also take zone-less or slash forms.
+  // The date must round-trip, which rejects an impossible day (30 Feb) and a weekday that does not match.
+  const at = IMF_FIXDATE.test(text) ? Date.parse(text) : Number.NaN;
+  if (Number.isFinite(at) && new Date(at).toUTCString() !== text) return 1000;
+  return Number.isFinite(at) ? Math.max(0, at - Date.now()) : 1000;
+}
+
+/** The JSON body of an OK response and whether another page follows, or undefined for a failed or empty one. */
+async function readSentryPage(response) {
+  // Only a complete 200 is evidence; a 206 or any other success status may hold part of the history.
+  if (response.status !== 200) return undefined;
+  const body = await response.text();
+  return body.trim().length > 0 ? { json: JSON.parse(body), hasNext: sentryLinkHasNextPage(response.headers?.get("link")) } : undefined;
+}
+
+/**
+ * One authorized read within a shared deadline. No request starts, and no
+ * response is accepted, once the deadline has passed. A 429 is retried after
+ * its Retry-After delay while the deadline allows; any other failure or an
+ * empty body yields undefined.
+ */
+async function fetchSentryPage(url, token, deadline) {
+  for (let attempt = 1; ; attempt += 1) {
+    if (Date.now() >= deadline) return undefined;
+    const response = await fetch(url, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
+    });
+    if (response.status !== 429) {
+      // The body counts against the budget too: a page read after the deadline is not accepted.
+      const page = await readSentryPage(response);
+      return Date.now() >= deadline ? undefined : page;
+    }
+    const delay = retryAfterMs(response);
+    // No attempt follows the last one, so it is not worth a wait.
+    if (attempt >= SENTRY_LOOKUP_ATTEMPTS || Date.now() + delay >= deadline) return undefined;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+
+/**
+ * The activity feed of an issue-details page when it is proven complete, else
+ * an empty feed. A page that advertises another page is not the whole history,
+ * and issue details cut the feed silently at 100 rows (the Action Log
+ * serializer appends first_seen even then): only a feed below the cap that
+ * holds the issue's first_seen entry, its oldest, is whole.
+ */
+function completeActivity(page) {
+  const listed = page === undefined || page.hasNext ? undefined : page.json?.activity;
+  const whole = Array.isArray(listed) && listed.length < SENTRY_ACTIVITY_CAP && listed.some((entry) => entry?.type === "first_seen");
+  return whole ? listed : [];
+}
+
+/**
+ * When the issue was last resolved, from an activity feed whose resolutions
+ * and regressions are all dated and whose latest regression follows the
+ * latest resolution; undefined otherwise, so an unorderable feed never falls
+ * back to an older cycle.
+ */
+async function readLatestRegression(issueUrl, token, deadline) {
+  const activity = completeActivity(await fetchSentryPage(issueUrl, token, deadline));
+  const transitions = activity.filter(
+    (entry) => SENTRY_RESOLUTION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_REGRESSION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_IDENTITY_ACTIVITY_TYPES.has(entry?.type),
+  );
+  if (transitions.some((entry) => !Number.isFinite(parseSentryTime(entry.dateCreated)))) return undefined;
+  const resolution = latestActivity(transitions, SENTRY_RESOLUTION_ACTIVITY_TYPES);
+  const regression = latestActivity(transitions, SENTRY_REGRESSION_ACTIVITY_TYPES);
+  const triggerId = regression?.entry?.data?.event_id;
+  // Sentry records a merge when it queues the move and completes it later, so no timestamp proves which events a
+  // resolution judged once an issue was regrouped: such an issue is never waived.
+  const regrouped = latestActivity(transitions, SENTRY_IDENTITY_ACTIVITY_TYPES);
+  // A regression stamped at the resolution's own instant is not ordered after it.
+  return resolution !== undefined && regression !== undefined && regression.time > resolution.time && typeof triggerId === "string" && regrouped === undefined
+    ? { resolvedAt: resolution.time, triggerId }
+    : undefined;
+}
+
+/**
+ * Whether the event that triggered the regression is test traffic. Sentry
+ * records the regression before the event is indexed, so the event list may
+ * not show it yet; it is read by id under the same budget, and a lookup that
+ * cannot establish its tags keeps the issue blocking.
+ */
+async function isTestTrigger(issueUrl, triggerId, token, deadline) {
+  const page = await fetchSentryPage(new URL(`events/${encodeURIComponent(triggerId)}/`, issueUrl), token, deadline);
+  return page !== undefined && isTestTrafficEvent(page.json);
+}
+
+/**
+ * Whether a regressed issue regressed only through test traffic (pm-kxmu54):
+ * every stored non-test event of the issue (environment and pm.source_context
+ * not test, read over Sentry's retention horizon) was received before its
+ * latest resolution, and the event that triggered the regression is itself
+ * test traffic, so whoever resolved it
+ * judged them all and what reopened it is test traffic, as pm-usn5k2 treats an
+ * issue made only of test events. Receipt time, not the event's own
+ * timestamp, decides, so a late production event with an old timestamp still
+ * blocks. Any failed or truncated lookup, or a missing or unorderable record,
+ * keeps the issue blocking.
+ */
+async function isTestOnlyRegression(issue, org, token, deadline) {
+  if (issue?.substatus !== "regressed" || typeof issue.id !== "string") return false;
+  const issueUrl = new URL(`/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/`, sentryBaseUrl());
+  try {
+    const regression = await readLatestRegression(issueUrl, token, deadline);
+    if (regression === undefined || !(await isTestTrigger(issueUrl, regression.triggerId, token, deadline))) return false;
+    const { resolvedAt } = regression;
+    const eventsUrl = new URL("events/", issueUrl);
+    eventsUrl.searchParams.set("query", SENTRY_REGRESSION_EVENT_QUERY);
+    eventsUrl.searchParams.set("full", "true");
+    eventsUrl.searchParams.set("per_page", String(SENTRY_REGRESSION_EVENT_LIMIT));
+    // The window spans Sentry's retention horizon, never the listed firstSeen: an older event moves first_seen back.
+    eventsUrl.searchParams.set("start", new Date(Date.now() - SENTRY_EVENT_RETENTION_MS - SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
+    eventsUrl.searchParams.set("end", new Date(Date.now() + SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
+    const page = await fetchSentryPage(eventsUrl, token, deadline);
+    if (page === undefined || page.hasNext || !Array.isArray(page.json)) return false;
+    return page.json.every((event) => isTestTrafficEvent(event) || parseSentryTime(event?.dateReceived) < resolvedAt);
+  } catch {
+    return false;
+  }
+}
+
+/** Move the issues that regressed only through test traffic to the test-only set; needs the API token the listing used. */
+async function excludeTestOnlyRegressions(partitioned, project, requestTimeoutMs) {
+  const token = redactedTokenCandidates().find(([source]) => source === partitioned.token_source)?.[1];
+  if (token === undefined) return partitioned;
+  const { org } = parseSentryProject(project);
+  // One lookup at a time within one budget: Sentry rate-limits issue details per organization.
+  const deadline = Date.now() + requestTimeoutMs;
+  const verdicts = [];
+  for (const issue of partitioned.issues) verdicts.push(await isTestOnlyRegression(issue, org, token, deadline));
+  const regressions = partitioned.issues.filter((_issue, index) => verdicts[index]);
+  if (regressions.length === 0) return partitioned;
+  return {
+    ...partitioned,
+    issues: partitioned.issues.filter((_issue, index) => !verdicts[index]),
+    test_only: [...partitioned.test_only, ...regressions],
+    test_only_regressions: regressions,
+  };
 }
 
 function usage() {
@@ -886,6 +1121,9 @@ function buildSentryTelemetryGateResult(params) {
         .slice(0, 25),
       ignored_test_only_total: (params.sentryFetch.test_only ?? []).length,
       ignored_test_only_short_ids: (params.sentryFetch.test_only ?? [])
+        .map((issue) => issue.shortId)
+        .slice(0, 25),
+      ignored_test_only_regression_short_ids: (params.sentryFetch.test_only_regressions ?? [])
         .map((issue) => issue.shortId)
         .slice(0, 25),
       environment_listing_complete:

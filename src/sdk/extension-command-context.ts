@@ -15,7 +15,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { asRecordOrNull } from "../core/shared/primitives.js";
 import { stableValueEquals } from "../core/shared/serialization.js";
 import { getSettingsPath } from "../core/store/paths.js";
-import { mergeSettings, readSettings, runWithConfigurationOnlySettings, serializeSettings } from "../core/store/settings.js";
+import { hydrateMergedSettings, mergeSettings, readSettings, runWithConfigurationOnlySettings, serializeSettings } from "../core/store/settings.js";
 import { clearSettingsReadCache } from "../core/store/settings-read-cache.js";
 import { readSettingsSection, writeSettingsSection } from "../core/store/settings-sections.js";
 import { validateSettings } from "../core/store/settings-validator.js";
@@ -113,7 +113,7 @@ function collectNewlyEffectiveDefinitions(before: Map<string, unknown>, after: M
  * definition, which validate keeps reporting, unless it becomes the
  * definition the registry reads for its key.
  */
-async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown, sources: { before: readonly unknown[]; after: readonly unknown[]; inlineAfter: readonly unknown[] }): Promise<void> {
+async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmSettings, rawFields: unknown, sources: { before?: readonly unknown[]; after?: readonly unknown[]; inlineAfter: readonly unknown[] }): Promise<void> {
   // A JavaScript proposal may omit schema or schema.fields, which settings validation accepts as no fields.
   const proposed = (next as { schema?: { fields?: PmSettings["schema"]["fields"] } }).schema?.fields ?? [];
   // No early return for an empty inline list: a proposal can still make a file-backed definition effective.
@@ -134,13 +134,37 @@ async function assertChangedSchemaFieldsAvailable(current: PmSettings, next: PmS
     if (candidate === undefined || hasEmptySpelling(definition)) return !storedCopy;
     return !stored.some((entry) => stableValueEquals(entry.resolved, candidate));
   });
+  // Sources absent for a side whose schema does not hydrate: nothing stored is active there.
   changed.push(...collectNewlyEffectiveDefinitions(
-    effectiveFieldDefinitions(resolved, current.schema.fields, sources.before),
-    effectiveFieldDefinitions(resolved, sources.inlineAfter, sources.after),
+    sources.before === undefined ? new Map() : effectiveFieldDefinitions(resolved, current.schema.fields, sources.before),
+    sources.after === undefined ? new Map() : effectiveFieldDefinitions(resolved, sources.inlineAfter, sources.after),
   ) as typeof changed);
   if (changed.length === 0) return;
   const { assertFieldDefinitionOptionsAvailable } = await import("./schema/field-option-collisions.js");
   for (const definition of changed) assertFieldDefinitionOptionsAvailable(definition);
+}
+
+/**
+ * The stored field definitions a settings writer compares, before and after its
+ * proposal. A side whose schema files do not hydrate reads as defaults, so none
+ * of its stored definitions is active there and its source is absent: a
+ * proposal that repairs hydration makes every stored definition effective
+ * (pm-8dbagz).
+ */
+async function readFieldAdmissionSources(
+  pmRoot: string,
+  current: PmSettings,
+  proposed: PmSettings,
+  persisted: Partial<PmSettings["schema"]> | undefined,
+): Promise<{ before?: readonly unknown[]; after?: readonly unknown[]; inlineAfter: readonly unknown[] }> {
+  const { readFieldsFileDefinitions } = await import("./schema/field-definition-losses.js");
+  const hydrates = (settings: PmSettings): Promise<boolean> => hydrateMergedSettings(pmRoot, settings).then(() => true, () => false);
+  const [activeBefore, activeAfter] = await Promise.all([hydrates(current), hydrates(proposed)]);
+  return {
+    before: activeBefore ? await readFieldsFileDefinitions(pmRoot, current.schema) : undefined,
+    after: activeAfter ? await readFieldsFileDefinitions(pmRoot, persisted) : undefined,
+    inlineAfter: persisted?.fields ?? [],
+  };
 }
 
 /** Bind public SDK services to one tracker and one caller-owned client. */
@@ -244,13 +268,12 @@ export function createExtensionCommandSdk(
             }
             // The effective field set is judged as the bytes about to be written read back: serialization and
             // validation can drop or strip an inline definition, so the proposal itself is not what persists (Codex review).
-            const persisted = validatedResult.data.schema as Partial<PmSettings["schema"]> | undefined;
-            const { readFieldsFileDefinitions } = await import("./schema/field-definition-losses.js");
-            await assertChangedSchemaFieldsAvailable(currentSettings, next, (current as { schema?: { fields?: unknown } }).schema?.fields, {
-              before: await readFieldsFileDefinitions(pmRoot, currentSettings.schema),
-              after: await readFieldsFileDefinitions(pmRoot, persisted),
-              inlineAfter: persisted?.fields ?? [],
-            });
+            await assertChangedSchemaFieldsAvailable(
+              currentSettings,
+              next,
+              (current as { schema?: { fields?: unknown } }).schema?.fields,
+              await readFieldAdmissionSources(pmRoot, currentSettings, mergeSettings(validatedResult.data), validatedResult.data.schema as Partial<PmSettings["schema"]> | undefined),
+            );
             return {
               raw,
               result: options.includePreview === true

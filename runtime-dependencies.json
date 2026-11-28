@@ -11,7 +11,7 @@
         "@sentry/node": "10.78.0",
         "@toon-format/toon": "^4.4.0",
         "commander": "^15.1.0",
-        "fast-json-patch": "^3.1.1",
+        "fast-json-patch": "^3.1.2",
         "npm-package-arg": "^13.0.2",
         "semver": "7.8.6",
         "tar": "7.5.23",
@@ -324,9 +324,9 @@
       "integrity": "sha512-BldNY5mwkVu+cQ5Ymn3e6hB9Sx8XHx4ZevWbiUyZbfKxJxYO27Hf0wfzkxIaD5CAJMaGl3YspKELj0ff/7nCMA=="
     },
     "node_modules/fast-json-patch": {
-      "version": "3.1.1",
-      "resolved": "https://registry.npmjs.org/fast-json-patch/-/fast-json-patch-3.1.1.tgz",
-      "integrity": "sha512-vf6IHUX2SBcA+5/+4883dsIjpBTqmfBjmYiWK1savxQmFk4JfBMLa7ynTYOs1Rolp/T1betJxHiGD3g1Mn8lUQ=="
+      "version": "3.1.2",
+      "resolved": "https://registry.npmjs.org/fast-json-patch/-/fast-json-patch-3.1.2.tgz",
+      "integrity": "sha512-Dhr5mVii8hIvjkp0Xdrun9B3GlXe3j+L4Ymv8J0h3Di996xoBi8qSDQ/sqSNKZd1NEqx55ZfcseG1MphW7MkHg=="
     },
     "node_modules/has-flag": {
       "version": "4.0.0",

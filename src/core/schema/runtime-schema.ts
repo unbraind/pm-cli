@@ -6,7 +6,7 @@
 import path from "node:path";
 import {
   pathExists,
-  readFileIfExists,
+  readOptionalRegularFile,
 } from "../fs/fs-utils.js";
 import { createFileAtomic } from "../fs/atomic-create.js";
 import {
@@ -35,6 +35,7 @@ import type {
 } from "../../types/index.js";
 import { BUILTIN_FIELD_KEYS } from "./fields-file.js";
 import { normalizeStatusToken } from "./status-token.js";
+import { inspectItemTypeDefinition } from "../item/item-type-inspection.js";
 
 export type { RuntimeFieldCommand } from "../../types/index.js";
 
@@ -326,7 +327,7 @@ function normalizeRuntimeFieldValueSchema(
   ) as RuntimeFieldValueSchema;
 }
 
-function normalizeStringList(values: string[] | undefined): string[] {
+function normalizeStringList(values: unknown): string[] {
   const candidates = Array.isArray(values) ? values : [];
   return [
     ...new Set(
@@ -381,37 +382,64 @@ function toCamelCase(input: string): string {
   return `${first}${rest.map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`).join("")}`;
 }
 
-function normalizeRuntimeStatusDefinition(
-  definition: RuntimeStatusDefinition,
+/** Why the status registry drops a whole stored definition. */
+export type RuntimeStatusDefinitionDropReason = "not_an_object" | "id_empty";
+
+/** What the status registry discards from one stored definition: the whole entry, or the members it ignores. */
+export interface RuntimeStatusDefinitionLoss {
+  /** Set when the registry drops the whole definition. */
+  dropped?: RuntimeStatusDefinitionDropReason;
+  /** One line per member the registry ignores while it keeps the definition. */
+  ignored: string[];
+}
+
+/**
+ * Resolve one stored status definition and record what the registry discards
+ * from it (pm-x17o8l). A wrong-typed member, such as a numeric description, is
+ * ignored instead of failing the settings read, and the registry and
+ * `pm validate` read this one function.
+ */
+export function inspectRuntimeStatusDefinition(
+  definition: unknown,
   fallbackOrder: number,
-): RuntimeStatusDefinitionResolved | null {
-  const id = normalizeStatusId(definition.id);
-  if (!id) {
-    return null;
-  }
+): { resolved: RuntimeStatusDefinitionResolved | null; loss: RuntimeStatusDefinitionLoss } {
+  if (!isPlainRecord(definition)) return { resolved: null, loss: { dropped: "not_an_object", ignored: [] } };
+  const stored = definition as Readonly<Partial<Record<keyof RuntimeStatusDefinition, unknown>>>;
+  const id = normalizeStatusId(stored.id);
+  if (!id) return { resolved: null, loss: { dropped: "id_empty", ignored: [] } };
   const aliases = [
     ...new Set(
-      normalizeStringList(definition.aliases)
+      normalizeStringList(stored.aliases)
         .map(normalizeStatusToken)
         .filter((value) => value.length > 0),
     ),
   ].sort((left, right) => left.localeCompare(right));
-  const roles = normalizeStringList(definition.roles).filter(
+  const roles = normalizeStringList(stored.roles).filter(
     (value): value is RuntimeStatusRole => RUNTIME_STATUS_ROLE_SET.has(value),
   );
-  const description = definition.description?.trim();
-  const order =
-    typeof definition.order === "number" && Number.isFinite(definition.order)
-      ? definition.order
-      : fallbackOrder;
-  return {
+  const description = typeof stored.description === "string" ? stored.description.trim() : undefined;
+  const orderKept = typeof stored.order === "number" && Number.isFinite(stored.order);
+  const resolved: RuntimeStatusDefinitionResolved = {
     id,
     aliases,
     roles,
-    description:
-      description && description.length > 0 ? description : undefined,
-    order,
+    description: description && description.length > 0 ? description : undefined,
+    order: orderKept ? (stored.order as number) : fallbackOrder,
   };
+  const ignored = [
+    ...describeIgnoredListEntries("aliases", stored.aliases, (entry) => normalizeStatusToken(entry).length > 0, "a status name"),
+    ...describeIgnoredListEntries("roles", stored.roles, (entry) => RUNTIME_STATUS_ROLE_SET.has(entry), "a status role"),
+    ...(stored.description === undefined || typeof stored.description === "string" ? [] : ["description: is not a string"]),
+    ...(stored.order === undefined || orderKept ? [] : [`order: ${describeStoredValue(stored.order)} is not a number, so the status keeps its position`]),
+  ];
+  return { resolved, loss: { ignored } };
+}
+
+function normalizeRuntimeStatusDefinition(
+  definition: unknown,
+  fallbackOrder: number,
+): RuntimeStatusDefinitionResolved | null {
+  return inspectRuntimeStatusDefinition(definition, fallbackOrder).resolved;
 }
 
 function normalizeRuntimeWorkflow(
@@ -607,9 +635,16 @@ function guardSchemaFileEntries<T>(
     : entries.filter((entry) => usable(entry));
 }
 
-/** A type entry the type normalizer can read: an object whose name is a string. */
-function isUsableTypeEntry(entry: unknown): boolean {
-  return isPlainRecord(entry) && typeof (entry as { name?: unknown }).name === "string";
+/**
+ * Type entries of a schema file read as the registry reads them (pm-x17o8l): an entry that is not an object
+ * or has no name is dropped and counted, and a wrong-typed member is ignored, so one bad entry never fails
+ * the settings read. An unknown execution role fails closed for that type.
+ */
+function readSchemaFileTypeDefinitions(entries: unknown[] | undefined, warnings: string[]): ItemTypeDefinition[] | undefined {
+  if (entries === undefined) return undefined;
+  const definitions = entries.flatMap((entry) => inspectItemTypeDefinition(entry, "schema_file").definition ?? []);
+  if (definitions.length < entries.length) warnings.push(`runtime_schema_types_entry_invalid:${entries.length - definitions.length}`);
+  return definitions;
 }
 
 function resolveRuntimeFieldType(definition: RuntimeFieldDefinition): RuntimeFieldType {
@@ -888,29 +923,31 @@ function parseOptionalJson(
   }
 }
 
-function readTypeDefinitionsFromSchemaFile(
+/** The definitions list of a parsed types file, in any of its accepted shapes; undefined for any other shape. */
+export function readTypeDefinitionsFromSchemaFile(
   parsed: unknown,
-): ItemTypeDefinition[] | undefined {
+): unknown[] | undefined {
   if (Array.isArray(parsed)) {
-    return parsed as ItemTypeDefinition[];
+    return parsed;
   }
   if (typeof parsed !== "object" || parsed === null) {
     return undefined;
   }
   const record = parsed as Record<string, unknown>;
   if (Array.isArray(record.definitions)) {
-    return record.definitions as ItemTypeDefinition[];
+    return record.definitions;
   }
   if (typeof record.item_types === "object" && record.item_types !== null) {
     const itemTypesRecord = record.item_types as Record<string, unknown>;
     if (Array.isArray(itemTypesRecord.definitions)) {
-      return itemTypesRecord.definitions as ItemTypeDefinition[];
+      return itemTypesRecord.definitions;
     }
   }
   return undefined;
 }
 
-function readStatusesFromSchemaFile(
+/** The definitions list of a parsed statuses file, in any of its accepted shapes; undefined for any other shape. */
+export function readStatusesFromSchemaFile(
   parsed: unknown,
 ): RuntimeStatusDefinition[] | undefined {
   if (Array.isArray(parsed)) {
@@ -1103,7 +1140,8 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     targetPath: string,
     warningKey: string,
   ): Promise<unknown | undefined> => {
-    const raw = await readFileIfExists(targetPath);
+    // A schema path that names a directory or a named pipe fails the read, so hydration falls back instead of stalling.
+    const raw = await readOptionalRegularFile(targetPath);
     if (raw === null) {
       return undefined;
     }
@@ -1115,7 +1153,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     "runtime_schema_types_invalid_json",
   );
   if (parsedTypes !== undefined) {
-    loadedTypeDefinitions = guardSchemaFileEntries(readTypeDefinitionsFromSchemaFile(parsedTypes), isUsableTypeEntry, { warningKey: "runtime_schema_types_entry_invalid", warnings, keepPositions: false });
+    loadedTypeDefinitions = readSchemaFileTypeDefinitions(readTypeDefinitionsFromSchemaFile(parsedTypes), warnings);
     if (loadedTypeDefinitions === undefined) {
       warnings.push("runtime_schema_types_invalid_shape");
     }

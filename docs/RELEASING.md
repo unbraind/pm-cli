@@ -343,7 +343,27 @@ production event predates the window while a test event falls inside it. When
 the listing of issues with non-test events may be truncated, nothing is skipped,
 and a failed listing fails the gate. Both listings follow Sentry's next-page links
 up to `--sentry-limit` (default `200`); when active issues remain beyond it, the
-gate fails, because it cannot judge issues it never read.
+gate fails, because it cannot judge issues it never read. A regressed issue is
+judged by the receipt time of its non-test events: when the issue's activity
+records a resolution followed by a regression, every transition in it is
+dated, and every event of the issue outside test traffic (listed with only the
+`pm.source_context` filter, because Sentry's `!environment:test` also drops events with
+no environment, then judged by each event's own tags; read over Sentry's
+90-day retention horizon rather than the listed `firstSeen`, which an older
+event can move back; one page of up to 10, Sentry's cap for full event payloads) was received before that latest
+resolution, and the event that triggered the regression, read by its id because Sentry
+records the regression before the event is indexed, is itself test traffic,
+then whatever reopened it is test traffic and the gate skips it,
+reported under `ignored_test_only_regression_short_ids` (whoever resolved the
+issue already judged those events). Receipt time decides, not the event's own
+timestamp, so a late production event with an old timestamp still blocks.
+Lookups run one at a time within the request budget, no request starts or
+response is accepted once it is spent, and a throttled lookup is retried after
+its `Retry-After` (delay seconds or an IMF-fixdate HTTP date). Only Sentry's exact wire shapes are evidence: a complete `200` response, Link entries of the form `<target>; key="value"` with exactly one `rel` each, and an IMF-fixdate that round-trips. The window's lower bound is padded for clock skew as well. An activity feed without the issue's `first_seen` entry, or at the 100-row cap (issue details cut the feed silently, and the Action Log serializer appends `first_seen` even then), any merge, unmerge or reprocess in the issue's activity (Sentry records a merge when it queues it and moves the events later, so no timestamp proves which events the resolution judged), a missing or unorderable transition (including a regression stamped at the resolution's own instant, or a timestamp that is not an ISO 8601 string with a zone naming a real calendar instant), a non-test event
+received after the resolution or without a receipt time, a second page of
+events, a present pagination header without exactly one well-formed next link carrying one `results="false"` marker, an activity feed that advertises another page, a failed, throttled or malformed lookup, and a listing read through the
+`sentry` CLI without an API token keep the issue blocking
+([pm-kxmu54](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kxmu54.toon)).
 
 Sentry API requests use a 120-second deadline by default. Operators can set
 `--sentry-request-timeout-ms` between `1` and `300000` when reproducing
