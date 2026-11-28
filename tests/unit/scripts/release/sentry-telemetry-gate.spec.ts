@@ -352,6 +352,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     ...resolved.map((dateCreated) => ({ type: "set_resolved", dateCreated })),
     { type: "note", dateCreated: "not a date" },
     null,
+    { type: "first_seen", dateCreated: "2026-11-26T10:44:30Z" },
   ];
   // Non-test events received before the latest resolution, which whoever resolved the issue judged.
   const judged = [{ dateReceived: "2026-11-26T10:44:31Z" }, { dateReceived: "2026-11-27T11:18:39Z" }];
@@ -368,6 +369,8 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-QUIET", id: "102", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [] },
       // Events in environment test are set aside by their own tags, even when received after the resolution.
       { shortId: "PM-TEST-ENV-LISTED", id: "136", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [...judged, { dateReceived: "2026-11-28T13:39:46Z", tags: [{ key: "environment", value: "test" }] }] },
+      // Issue details cap the activity feed silently; without its first_seen entry the feed is not proven whole (Codex review).
+      { shortId: "PM-CAPPED-ACTIVITY", id: "144", substatus: "regressed", activity: history([RESOLVED_AT]).filter((entry) => entry?.type !== "first_seen"), nonTest: judged },
       // A regrouped issue is never waived: Sentry records a merge when queued and moves events later (Codex review).
       { shortId: "PM-MERGED-AFTER", id: "142", substatus: "regressed", activity: [...history([RESOLVED_AT]), { type: "merge", dateCreated: "2026-11-28T13:30:00Z" }], nonTest: judged },
       { shortId: "PM-MERGED-BEFORE", id: "143", substatus: "regressed", activity: [...history([RESOLVED_AT]), { type: "merge", dateCreated: "2026-11-27T09:00:00Z" }], nonTest: judged },
@@ -406,7 +409,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-TEST-ENV-LISTED", "PM-THROTTLED"]);
     expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
     expect(json.sentry.blocking_short_ids).toEqual([
-      "PM-MERGED-AFTER", "PM-MERGED-BEFORE", "PM-PRODUCTION-TRIGGER", "PM-UNINDEXED-TRIGGER", "PM-NO-TRIGGER-ID", "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
+      "PM-CAPPED-ACTIVITY", "PM-MERGED-AFTER", "PM-MERGED-BEFORE", "PM-PRODUCTION-TRIGGER", "PM-UNINDEXED-TRIGGER", "PM-NO-TRIGGER-ID", "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
       "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
       "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
     ]);

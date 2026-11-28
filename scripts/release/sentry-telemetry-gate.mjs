@@ -813,8 +813,10 @@ async function fetchSentryPage(url, token, deadline) {
  */
 async function readLatestRegression(issueUrl, token, deadline) {
   const page = await fetchSentryPage(issueUrl, token, deadline);
-  // An activity feed that advertises another page is not the whole history.
-  const activity = page === undefined || page.hasNext ? undefined : page.json?.activity;
+  // An activity feed that advertises another page is not the whole history, and issue details cap the feed
+  // silently: only a feed that still holds the issue's first_seen entry, its oldest, is proven complete.
+  const listed = page === undefined || page.hasNext ? undefined : page.json?.activity;
+  const activity = Array.isArray(listed) && listed.some((entry) => entry?.type === "first_seen") ? listed : undefined;
   const transitions = (Array.isArray(activity) ? activity : []).filter(
     (entry) => SENTRY_RESOLUTION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_REGRESSION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_IDENTITY_ACTIVITY_TYPES.has(entry?.type),
   );
