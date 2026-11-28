@@ -371,6 +371,8 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-TEST-ENV-LISTED", id: "136", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [...judged, { dateReceived: "2026-11-28T13:39:46Z", tags: [{ key: "environment", value: "test" }] }] },
       // Issue details cap the activity feed silently; without its first_seen entry the feed is not proven whole (Codex review).
       { shortId: "PM-CAPPED-ACTIVITY", id: "144", substatus: "regressed", activity: history([RESOLVED_AT]).filter((entry) => entry?.type !== "first_seen"), nonTest: judged },
+      // A feed at the 100-row cap may be cut even when first_seen is appended to it (Action Log serializer, Codex review).
+      { shortId: "PM-FULL-ACTIVITY", id: "145", substatus: "regressed", activity: [...Array.from({ length: 95 }, () => ({ type: "note", dateCreated: "2026-11-28T14:00:00Z" })), ...history([RESOLVED_AT])], nonTest: judged },
       // A regrouped issue is never waived: Sentry records a merge when queued and moves events later (Codex review).
       { shortId: "PM-MERGED-AFTER", id: "142", substatus: "regressed", activity: [...history([RESOLVED_AT]), { type: "merge", dateCreated: "2026-11-28T13:30:00Z" }], nonTest: judged },
       { shortId: "PM-MERGED-BEFORE", id: "143", substatus: "regressed", activity: [...history([RESOLVED_AT]), { type: "merge", dateCreated: "2026-11-27T09:00:00Z" }], nonTest: judged },
@@ -409,7 +411,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-TEST-ENV-LISTED", "PM-THROTTLED"]);
     expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
     expect(json.sentry.blocking_short_ids).toEqual([
-      "PM-CAPPED-ACTIVITY", "PM-MERGED-AFTER", "PM-MERGED-BEFORE", "PM-PRODUCTION-TRIGGER", "PM-UNINDEXED-TRIGGER", "PM-NO-TRIGGER-ID", "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
+      "PM-CAPPED-ACTIVITY", "PM-FULL-ACTIVITY", "PM-MERGED-AFTER", "PM-MERGED-BEFORE", "PM-PRODUCTION-TRIGGER", "PM-UNINDEXED-TRIGGER", "PM-NO-TRIGGER-ID", "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
       "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
       "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
     ]);

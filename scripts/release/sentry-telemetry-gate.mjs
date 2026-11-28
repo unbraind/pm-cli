@@ -751,6 +751,8 @@ const SENTRY_IDENTITY_ACTIVITY_TYPES = new Set(["merge", "unmerge_source", "unme
 const SENTRY_EVENT_WINDOW_SKEW_MS = 60 * 60 * 1000;
 /** Sentry's longest event retention: the regression lookup reads every stored non-test event within it. */
 const SENTRY_EVENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+/** Rows issue details return in `activity` at most; a feed this long may have been cut. */
+const SENTRY_ACTIVITY_CAP = 100;
 /** Attempts per lookup, the first included, when Sentry throttles it. */
 const SENTRY_LOOKUP_ATTEMPTS = 3;
 /** Events read per regression: Sentry caps a `full=true` page at 10, and an issue with more non-test events keeps blocking. */
@@ -806,18 +808,27 @@ async function fetchSentryPage(url, token, deadline) {
 }
 
 /**
+ * The activity feed of an issue-details page when it is proven complete, else
+ * an empty feed. A page that advertises another page is not the whole history,
+ * and issue details cut the feed silently at 100 rows (the Action Log
+ * serializer appends first_seen even then): only a feed below the cap that
+ * holds the issue's first_seen entry, its oldest, is whole.
+ */
+function completeActivity(page) {
+  const listed = page === undefined || page.hasNext ? undefined : page.json?.activity;
+  const whole = Array.isArray(listed) && listed.length < SENTRY_ACTIVITY_CAP && listed.some((entry) => entry?.type === "first_seen");
+  return whole ? listed : [];
+}
+
+/**
  * When the issue was last resolved, from an activity feed whose resolutions
  * and regressions are all dated and whose latest regression follows the
  * latest resolution; undefined otherwise, so an unorderable feed never falls
  * back to an older cycle.
  */
 async function readLatestRegression(issueUrl, token, deadline) {
-  const page = await fetchSentryPage(issueUrl, token, deadline);
-  // An activity feed that advertises another page is not the whole history, and issue details cap the feed
-  // silently: only a feed that still holds the issue's first_seen entry, its oldest, is proven complete.
-  const listed = page === undefined || page.hasNext ? undefined : page.json?.activity;
-  const activity = Array.isArray(listed) && listed.some((entry) => entry?.type === "first_seen") ? listed : undefined;
-  const transitions = (Array.isArray(activity) ? activity : []).filter(
+  const activity = completeActivity(await fetchSentryPage(issueUrl, token, deadline));
+  const transitions = activity.filter(
     (entry) => SENTRY_RESOLUTION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_REGRESSION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_IDENTITY_ACTIVITY_TYPES.has(entry?.type),
   );
   if (transitions.some((entry) => !Number.isFinite(parseSentryTime(entry.dateCreated)))) return undefined;
