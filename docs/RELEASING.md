@@ -347,16 +347,16 @@ gate fails, because it cannot judge issues it never read. A regressed issue is
 judged by the receipt time of its non-test events: when the issue's activity
 records a resolution followed by a regression, every transition in it is
 dated, and every event of the issue outside test traffic (read over the
-issue's whole life, one page of up to 100) was received before that latest
+issue's whole life, one page of up to 10, Sentry's cap for full event payloads) was received before that latest
 resolution, then whatever reopened it is test traffic and the gate skips it,
 reported under `ignored_test_only_regression_short_ids` (whoever resolved the
 issue already judged those events). Receipt time decides, not the event's own
 timestamp, so a late production event with an old timestamp still blocks.
 Lookups run one at a time within the request budget, no request starts or
 response is accepted once it is spent, and a throttled lookup is retried after
-its `Retry-After`. A missing or unorderable transition (including a regression stamped at the resolution's own instant, or a timestamp that is not a string), a non-test event
+its `Retry-After`. A missing or unorderable transition (including a regression stamped at the resolution's own instant, or a timestamp that is not an ISO 8601 string with a zone), a non-test event
 received after the resolution or without a receipt time, a second page of
-events, a failed, throttled or malformed lookup, and a listing read through the
+events or a pagination header without a readable next link, a failed, throttled or malformed lookup, and a listing read through the
 `sentry` CLI without an API token keep the issue blocking
 ([pm-kxmu54](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kxmu54.toon)).
 

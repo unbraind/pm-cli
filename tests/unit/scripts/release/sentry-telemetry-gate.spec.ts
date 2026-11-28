@@ -290,6 +290,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     activity?: unknown;
     nonTest?: unknown;
     nextPage?: boolean;
+    link?: string;
     detailsStatus?: number;
     eventsStatus?: number;
     eventsThrows?: boolean;
@@ -317,9 +318,9 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
         if (issue.eventsThrows) throw new Error("socket hang up");
         expect(url.searchParams.get("query")).toBe("!environment:test !pm.source_context:test");
         expect(url.searchParams.get("full")).toBe("true");
-        expect(url.searchParams.get("per_page")).toBe("100");
+        expect(url.searchParams.get("per_page")).toBe("10");
         seen.push({ start: url.searchParams.get("start")!, end: url.searchParams.get("end")! });
-        const page = respond(issue.nonTest, issue.eventsStatus, issue.nextPage ? { link: `<${url}&cursor=n>; rel="next"; results="true"` } : {});
+        const page = respond(issue.nonTest, issue.eventsStatus, issue.nextPage ? { link: `<${url}&cursor=n>; rel="next"; results="true"` } : issue.link === undefined ? {} : { link: issue.link });
         const body = page.text;
         return issue.bodyDelayMs === undefined ? page : { ...page, text: async () => { await new Promise((resolve) => setTimeout(resolve, issue.bodyDelayMs)); return body(); } };
       }
@@ -375,14 +376,22 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       // Date.parse would coerce an array of one timestamp; only strings are timestamps (Codex review).
       { shortId: "PM-ARRAY-RECEIPT", id: "120", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: ["2026-11-26T10:44:31Z"] }] },
       { shortId: "PM-ARRAY-TRANSITION", id: "121", substatus: "regressed", activity: [{ type: "set_resolved", dateCreated: [RESOLVED_AT] }, { type: "set_regression", dateCreated: "2026-11-28T13:39:40Z" }], nonTest: judged },
+      // Date.parse would read "0" as a year; only ISO timestamps with a zone count (Codex review).
+      { shortId: "PM-BARE-RECEIPT", id: "122", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: "0" }] },
+      // Pagination is read in any parameter order, and a header without a readable next link is not proof of one page.
+      { shortId: "PM-REORDERED-NEXT", id: "123", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; results="false"; rel="previous", <b>; results="true"; rel="next"' },
+      { shortId: "PM-NO-NEXT-LINK", id: "124", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="previous"; results="false"' },
+      { shortId: "PM-LAST-PAGE", id: "125", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="previous"; results="false", <b>; rel="next"; results="false"' },
+      { shortId: "PM-BLANK-LINK", id: "126", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: " " },
     ], seen);
     const { json } = await gate(fetchSpy);
-    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-THROTTLED"]);
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-THROTTLED", "PM-LAST-PAGE", "PM-BLANK-LINK"]);
     expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
     expect(json.sentry.blocking_short_ids).toEqual([
       "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
       "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-NO-FIRST-SEEN", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
-      "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
+      "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION", "PM-BARE-RECEIPT",
+      "PM-REORDERED-NEXT", "PM-NO-NEXT-LINK",
     ]);
     // The whole life of the issue is read: from an hour before its first event to an hour past now.
     expect(seen[0]?.start).toBe("2026-11-26T09:44:30.000Z");

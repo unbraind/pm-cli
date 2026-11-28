@@ -189,8 +189,10 @@ describe("value-list recovery", () => {
     // A required value that reads as an option is where Commander's ancestor-first parse disagrees with a flat scan.
     ["files", ["files", "pm-x", "--add", "--json", "a", "b"]],
     ["files", ["files", "pm-x", "--message", "--json", "--add", "a", "b"]],
+    // An attached value that reads as an option is declined like a separate one (Codex review).
+    ["test", ["test", "pm-x", "--measure=--p95=3", "p99=4", "--run"]],
   ] as const)("does not guess for %s %j", (command, argv) => {
-    expect(resolve(command, [...argv])).toBeUndefined();
+    expect(resolve(command, [...argv], command === "test" ? TEST : FILES)).toBeUndefined();
   });
 
   it("declines when a subcommand, not the collection command, refused the invocation (Codex review)", () => {

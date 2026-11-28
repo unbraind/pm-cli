@@ -682,9 +682,27 @@ const SENTRY_RESOLUTION_ACTIVITY_TYPES = new Set([
 ]);
 const SENTRY_NON_TEST_EVENT_QUERY = "!environment:test !pm.source_context:test";
 
-/** A Sentry timestamp as milliseconds, or NaN for anything but a parseable string (Date.parse would coerce an array). */
+/** An ISO 8601 timestamp as Sentry writes them, with a time and an explicit zone. */
+const SENTRY_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/u;
+
+/**
+ * A Sentry timestamp as milliseconds, or NaN for anything but an ISO 8601
+ * string with a zone: Date.parse would read an array, or a bare "0", as a
+ * date. Sub-millisecond digits are dropped, so a tie fails closed.
+ */
 function parseSentryTime(value) {
-  return typeof value === "string" ? Date.parse(value) : Number.NaN;
+  return typeof value === "string" && SENTRY_TIMESTAMP.test(value) ? Date.parse(value) : Number.NaN;
+}
+
+/**
+ * Whether a Link header promises another page, read in any parameter order.
+ * A header without an interpretable next link counts as more pages, so an
+ * incomplete listing never reads as complete; no header means one page.
+ */
+function sentryLinkHasNextPage(link) {
+  if (typeof link !== "string" || link.trim().length === 0) return false;
+  const next = link.split(",").find((part) => /;\s*rel="next"/u.test(part));
+  return next === undefined || !/;\s*results="false"/u.test(next);
 }
 
 /** The latest activity entry of the given types, with its time, or undefined. */
@@ -702,8 +720,8 @@ const SENTRY_REGRESSION_ACTIVITY_TYPES = new Set(["set_regression"]);
 const SENTRY_EVENT_WINDOW_SKEW_MS = 60 * 60 * 1000;
 /** Attempts per lookup, the first included, when Sentry throttles it. */
 const SENTRY_LOOKUP_ATTEMPTS = 3;
-/** Events read per regression; an issue with more non-test events than this keeps blocking. */
-const SENTRY_REGRESSION_EVENT_LIMIT = 100;
+/** Events read per regression: Sentry caps a `full=true` page at 10, and an issue with more non-test events keeps blocking. */
+const SENTRY_REGRESSION_EVENT_LIMIT = 10;
 
 /** The wait a 429 asks for: its Retry-After seconds, or one second when the header is absent or unusable. */
 function retryAfterMs(response) {
@@ -716,7 +734,7 @@ function retryAfterMs(response) {
 async function readSentryPage(response) {
   if (!response.ok) return undefined;
   const body = await response.text();
-  return body.trim().length > 0 ? { json: JSON.parse(body), hasNext: nextSentryPage(response.headers?.get("link")) !== undefined } : undefined;
+  return body.trim().length > 0 ? { json: JSON.parse(body), hasNext: sentryLinkHasNextPage(response.headers?.get("link")) } : undefined;
 }
 
 /**

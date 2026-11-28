@@ -159,7 +159,9 @@ function readOptionToken(
   const spelling = equals >= 0 ? token.slice(0, equals) : token;
   const arity = Object.hasOwn(table, spelling) ? table[spelling] : undefined;
   if (!arity) return undefined;
-  if (equals >= 0) return arity.value === "none" ? undefined : { end: index, spelling, arity, value: token.slice(equals + 1) };
+  const inline = token.slice(equals + 1);
+  // An attached value that reads as an option (`--measure=--p95=3`) is declined like a separate one.
+  if (equals >= 0) return arity.value === "none" || isOptionLike(inline) ? undefined : { end: index, spelling, arity, value: inline };
   if (arity.value === "none") return { end: index, spelling, arity };
   const next = argv[index + 1];
   // A required value that reads as an option is where Commander's ancestor-first parse can disagree with a flat
