@@ -702,20 +702,23 @@ function parseSentryTime(value) {
   return match && isRealCalendarTime(match.slice(1, 7).map(Number)) ? Date.parse(value) : Number.NaN;
 }
 
+/** One Link entry as Sentry writes it: a target, then quoted `key="value"` parameters. */
+const SENTRY_LINK_ENTRY = /^<[^<>\s]+>(?:\s*;\s*[a-z]+="[^"]*")*$/u;
+
 /**
- * Whether a Link header leaves another page possible, read in any parameter
- * order. Only a missing header means one page; a present one proves the last
- * page only with a well-formed next link (`<target>`) whose results are
- * "false", so an unreadable header never reads as complete.
+ * Whether a Link header leaves another page possible. Only a missing header
+ * means one page. A present one proves the last page only when every entry is
+ * in Sentry's exact shape and exactly one has rel="next", with exactly one
+ * results parameter, which is "false"; anything else is unproven.
  */
 function sentryLinkHasNextPage(link) {
   if (link === null || link === undefined) return false;
-  const nexts = String(link).split(",").filter((part) => /;\s*rel="next"/u.test(part));
-  if (nexts.length !== 1) return true;
-  const [target, ...parameters] = nexts[0].split(";").map((part) => part.trim());
-  const results = parameters.filter((parameter) => parameter.startsWith("results="));
-  // Exactly one next link, with a target and one results marker, and that marker says "false".
-  return !/^<[^<>\s]+>$/u.test(target) || results.length !== 1 || results[0] !== 'results="false"';
+  const entries = String(link).split(",").map((entry) => entry.trim());
+  if (!entries.every((entry) => SENTRY_LINK_ENTRY.test(entry))) return true;
+  const parameters = entries.map((entry) => [...entry.matchAll(/;\s*([a-z]+)="([^"]*)"/gu)].map(([, key, value]) => [key, value]));
+  const nexts = parameters.filter((entry) => entry.some(([key, value]) => key === "rel" && value === "next"));
+  const results = nexts.length === 1 ? nexts[0].filter(([key]) => key === "results") : [];
+  return results.length !== 1 || results[0][1] !== "false";
 }
 
 /** The latest activity entry of the given types, with its time, or undefined. */
@@ -736,20 +739,24 @@ const SENTRY_LOOKUP_ATTEMPTS = 3;
 /** Events read per regression: Sentry caps a `full=true` page at 10, and an issue with more non-test events keeps blocking. */
 const SENTRY_REGRESSION_EVENT_LIMIT = 10;
 
+/** An HTTP date in RFC 9110's preferred IMF-fixdate form, such as `Sun, 06 Nov 1994 08:49:37 GMT`. */
+const IMF_FIXDATE = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/u;
+
 /** The wait a 429 asks for: Retry-After as delay seconds or as an HTTP date, else one second. */
 function retryAfterMs(response) {
   const header = response.headers?.get("retry-after");
   const text = typeof header === "string" ? header.trim() : "";
   const seconds = /^\d+$/u.test(text) ? Number(text) : Number.NaN;
   if (Number.isFinite(seconds)) return seconds * 1000;
-  // An HTTP date names GMT (RFC 9110); a zone-less form would be read in the runner's local time, so it falls back.
-  const at = /\bGMT$/u.test(text) ? Date.parse(text) : Number.NaN;
+  // Only the IMF-fixdate form (RFC 9110) is read; Date.parse would also take zone-less or slash forms.
+  const at = IMF_FIXDATE.test(text) ? Date.parse(text) : Number.NaN;
   return Number.isFinite(at) ? Math.max(0, at - Date.now()) : 1000;
 }
 
 /** The JSON body of an OK response and whether another page follows, or undefined for a failed or empty one. */
 async function readSentryPage(response) {
-  if (!response.ok) return undefined;
+  // Only a complete 200 is evidence; a 206 or any other success status may hold part of the history.
+  if (response.status !== 200) return undefined;
   const body = await response.text();
   return body.trim().length > 0 ? { json: JSON.parse(body), hasNext: sentryLinkHasNextPage(response.headers?.get("link")) } : undefined;
 }
@@ -770,7 +777,7 @@ async function fetchSentryPage(url, token, deadline) {
     if (response.status !== 429) {
       // The body counts against the budget too: a page read after the deadline is not accepted.
       const page = await readSentryPage(response);
-      return Date.now() > deadline ? undefined : page;
+      return Date.now() >= deadline ? undefined : page;
     }
     const delay = retryAfterMs(response);
     // No attempt follows the last one, so it is not worth a wait.

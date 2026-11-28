@@ -411,11 +411,16 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-CONFLICTING-NEXT", id: "130", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<b>; rel="next"; results="true"; results="false"' },
       { shortId: "PM-TWO-NEXT", id: "131", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="next"; results="false", <b>; rel="next"; results="false"' },
       { shortId: "PM-PAGED-ACTIVITY", id: "132", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, detailsLink: '<a>; rel="next"; results="true"' },
+      // Only Sentry's exact Link shape and a complete 200 are evidence (Codex review).
+      { shortId: "PM-UNQUOTED-NEXT", id: "133", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="next"; results="false", <b>; rel=next; results="true"' },
+      { shortId: "PM-SUFFIXED-REL", id: "134", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="next"x; results="false"' },
+      { shortId: "PM-PARTIAL-CONTENT", id: "135", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, eventsStatus: 206 },
     ]));
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-LAST-PAGE"]);
     expect(json.sentry.blocking_short_ids).toEqual([
       "PM-BARE-RECEIPT", "PM-REORDERED-NEXT", "PM-NO-NEXT-LINK", "PM-BLANK-LINK", "PM-TARGETLESS-NEXT", "PM-IMPOSSIBLE-DATE",
-      "PM-IMPOSSIBLE-CLOCK", "PM-CONFLICTING-NEXT", "PM-TWO-NEXT", "PM-PAGED-ACTIVITY",
+      "PM-IMPOSSIBLE-CLOCK", "PM-CONFLICTING-NEXT", "PM-TWO-NEXT", "PM-PAGED-ACTIVITY", "PM-UNQUOTED-NEXT", "PM-SUFFIXED-REL",
+      "PM-PARTIAL-CONTENT",
     ]);
   });
 

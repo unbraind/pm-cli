@@ -162,6 +162,9 @@ describe("value-list recovery", () => {
     [["test", "pm-x", "--remove", "cmd=a", "cmd=b"]],
     [["test", "pm-x", "--remove-index", "1", "0"]],
     [["test", "pm-x", "--other", "a", "b"]],
+    // An assignment-only command passes the entry parser but not the write path's executability check (Codex review).
+    [["test", "pm-x", "--add", "command=node -v", "command=MODE=ci"]],
+    [["test", "pm-x", "--add-json", '{"command":"node -v"}', '{"command":"MODE=ci"}']],
   ])("leaves a linked-test value that is not a complete entry to the quoting guidance: %j", (argv) => {
     expect(resolve("test", argv, TEST)).toBeUndefined();
   });
