@@ -29,7 +29,7 @@ import {
   type PmProjectedDiagnostic,
 } from "../sdk/cli-contracts/agent-output-contracts.js";
 import { renderPmCommand } from "./argv-utils.js";
-import { resolveCommandShellDialect } from "../core/shared/command-line.js";
+import { resolveCommandShellDialect } from "../sdk/command-line.js";
 import type { LinkedResourceValueListRecovery } from "./linked-resource-value-list.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
