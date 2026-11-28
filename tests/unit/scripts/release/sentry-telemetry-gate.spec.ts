@@ -368,6 +368,9 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-QUIET", id: "102", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [] },
       // Events in environment test are set aside by their own tags, even when received after the resolution.
       { shortId: "PM-TEST-ENV-LISTED", id: "136", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [...judged, { dateReceived: "2026-11-28T13:39:46Z", tags: [{ key: "environment", value: "test" }] }] },
+      // A merge after the resolution brings in events it never judged; one before it was judged (Codex review).
+      { shortId: "PM-MERGED-AFTER", id: "142", substatus: "regressed", activity: [...history([RESOLVED_AT]), { type: "merge", dateCreated: "2026-11-28T13:30:00Z" }], nonTest: judged },
+      { shortId: "PM-MERGED-BEFORE", id: "143", substatus: "regressed", activity: [...history([RESOLVED_AT]), { type: "merge", dateCreated: "2026-11-27T09:00:00Z" }], nonTest: judged },
       // The triggering event is read by id, since the event list may not index it yet (Codex review).
       { shortId: "PM-PRODUCTION-TRIGGER", id: "139", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, trigger: { eventID: "evt-test", tags: [{ key: "environment", value: "production" }] } },
       { shortId: "PM-UNINDEXED-TRIGGER", id: "140", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, triggerStatus: 404 },
@@ -400,10 +403,10 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-ARRAY-TRANSITION", id: "121", substatus: "regressed", activity: [{ type: "set_resolved", dateCreated: [RESOLVED_AT] }, { type: "set_regression", dateCreated: "2026-11-28T13:39:40Z" }], nonTest: judged },
     ], seen);
     const { json } = await gate(fetchSpy);
-    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-TEST-ENV-LISTED", "PM-THROTTLED"]);
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-TEST-ENV-LISTED", "PM-MERGED-BEFORE", "PM-THROTTLED"]);
     expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
     expect(json.sentry.blocking_short_ids).toEqual([
-      "PM-PRODUCTION-TRIGGER", "PM-UNINDEXED-TRIGGER", "PM-NO-TRIGGER-ID", "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
+      "PM-MERGED-AFTER", "PM-PRODUCTION-TRIGGER", "PM-UNINDEXED-TRIGGER", "PM-NO-TRIGGER-ID", "PM-NO-ENVIRONMENT", "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
       "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
       "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
     ]);

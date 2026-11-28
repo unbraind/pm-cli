@@ -145,7 +145,6 @@ describe("value-list recovery", () => {
     [["test", "pm-x", "--remove-index", "1", "2", "--run"]],
     [["test", "pm-x", "--remove", "command=a", "command=b"]],
     [["test", "pm-x", "--remove", "command:a", "path:t.spec.ts"]],
-    [["test", "pm-x", "--measure", "p95=3,unit=ms", "p99=4"]],
   ])("replays complete linked-test entries: %j", (argv) => {
     expect(resolve("test", argv, TEST)?.retryArgs).toBeDefined();
   });
@@ -156,6 +155,8 @@ describe("value-list recovery", () => {
     [["test", "pm-x", "--add-json", "{}", "5"]],
     [["test", "pm-x", "--remove-index", "1", "two"]],
     [["test", "pm-x", "--measure", "p95=3", "slow"]],
+    // --measure has its own attribute grammar, which bootstrap coalesces, so it gets no replay (Codex review).
+    [["test", "pm-x", "--measure", "latency=12", "threshold=5", "--run"]],
     // Each value is judged by the flag's own parser (Codex review): path= alone is metadata, --remove takes no cmd=, positions start at 1.
     [["test", "pm-x", "--add", "command=check", "path=t.spec.ts"]],
     [["test", "pm-x", "--add", "command=check", "node -e 1"]],
@@ -248,23 +249,28 @@ describe("value-list guidance", () => {
     expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
   });
 
-  it("offers a multiline retry as argv only under cmd.exe, which turns a line break into a space (Codex review)", () => {
-    const argv = ["test", "pm-x", "--add", "command=echo a\necho b", "command=node -v"];
-    vi.stubEnv("PM_COMMAND_SHELL", "cmd");
-    try {
-      const envelope = formatCommanderErrorForJson("too many arguments", "test", "Task", 2, context(argv, TEST));
+  it("offers the copyable retry only when it is the exact argv, and argv otherwise (Codex review)", () => {
+    const retryFor = (shell: string, argv: string[]) => {
+      vi.stubEnv("PM_COMMAND_SHELL", shell);
+      try {
+        return formatCommanderErrorForJson("too many arguments", "test", "Task", 2, context(argv, TEST));
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    };
+    const multiline = ["test", "pm-x", "--add", "command=echo a\necho b", "command=node -v"];
+    const json = ["test", "pm-x", "--add-json", '{"command":"node tests/A&B.js"}', '{"command":"node -v"}'];
+    const tab = ["test", "pm-x", "--add", 'command=printf "a\tb"', "command=node -v"];
+    // cmd.exe cannot carry a line break, and npm's pm.cmd re-parses a quoted metacharacter; text output replaces a tab.
+    for (const [shell, argv] of [["cmd", multiline], ["cmd", json], ["posix", tab]] as const) {
+      const envelope = retryFor(shell, [...argv]);
       expect(envelope.recovery?.suggested_retry).toBeUndefined();
-      expect(envelope.recovery?.suggested_retry_args).toEqual(["test", "pm-x", "--add", "command=echo a\necho b", "--add", "command=node -v"]);
-      expect(envelope.required).toContain("cmd.exe cannot pass in a copied command");
-    } finally {
-      vi.unstubAllEnvs();
+      expect(envelope.recovery?.suggested_retry_args).toHaveLength(argv.length + 1);
+      expect(envelope.required).toContain("replaying recovery.suggested_retry_args");
     }
-    vi.stubEnv("PM_COMMAND_SHELL", "posix");
-    try {
-      expect(formatCommanderErrorForJson("too many arguments", "test", "Task", 2, context(argv, TEST)).recovery?.suggested_retry).toBeDefined();
-    } finally {
-      vi.unstubAllEnvs();
-    }
+    expect(retryFor("posix", multiline).recovery?.suggested_retry).toBeUndefined();
+    expect(retryFor("posix", json).recovery?.suggested_retry).toBeDefined();
+    expect(retryFor("cmd", ["test", "pm-x", "--add", "command=a", "command=b"]).recovery?.suggested_retry).toBe("pm test pm-x --add command=a --add command=b");
   });
 
   it("offers no glob for linked tests or for a flag other than --add", () => {

@@ -1137,8 +1137,8 @@ export function admitsLinkedTestFlagValue(flag: string, value: string): boolean 
     if (flag === "--add") return looksLikeStructuredLinkedTestEntry(value.trim()) && admitsEach(parseAddEntries([value]));
     if (flag === "--add-json") return admitsEach(parseAddJsonEntries([value]));
     if (flag === "--remove") return /^(?:command|path)\s*[:=]/iu.test(value.trim()) && parseRemoveEntries([value]).length === 1;
-    if (flag === "--remove-index") return parseRemoveIndexes([value]).length === 1;
-    return flag === "--measure" && parseTestRunMeasurements([value], new Date(0).toISOString()).length === 1;
+    // --measure has its own attribute grammar, which bootstrap coalesces (`--measure a=1 threshold=5`), so it gets no replay.
+    return flag === "--remove-index" && parseRemoveIndexes([value]).length === 1;
   } catch {
     return false;
   }

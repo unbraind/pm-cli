@@ -745,6 +745,8 @@ function latestActivity(activity, types) {
 }
 
 const SENTRY_REGRESSION_ACTIVITY_TYPES = new Set(["set_regression"]);
+/** Activity that changes which events an issue holds: a proof about the issue as resolved does not survive it. */
+const SENTRY_IDENTITY_ACTIVITY_TYPES = new Set(["merge", "unmerge_source", "unmerge_destination", "reprocess"]);
 /** Sentry accepts event timestamps somewhat off its own clock, so the event window extends on both sides. */
 const SENTRY_EVENT_WINDOW_SKEW_MS = 60 * 60 * 1000;
 /** Sentry's longest event retention: the regression lookup reads every stored non-test event within it. */
@@ -814,14 +816,17 @@ async function readLatestRegression(issueUrl, token, deadline) {
   // An activity feed that advertises another page is not the whole history.
   const activity = page === undefined || page.hasNext ? undefined : page.json?.activity;
   const transitions = (Array.isArray(activity) ? activity : []).filter(
-    (entry) => SENTRY_RESOLUTION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_REGRESSION_ACTIVITY_TYPES.has(entry?.type),
+    (entry) => SENTRY_RESOLUTION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_REGRESSION_ACTIVITY_TYPES.has(entry?.type) || SENTRY_IDENTITY_ACTIVITY_TYPES.has(entry?.type),
   );
   if (transitions.some((entry) => !Number.isFinite(parseSentryTime(entry.dateCreated)))) return undefined;
   const resolution = latestActivity(transitions, SENTRY_RESOLUTION_ACTIVITY_TYPES);
   const regression = latestActivity(transitions, SENTRY_REGRESSION_ACTIVITY_TYPES);
   const triggerId = regression?.entry?.data?.event_id;
+  // A merge or unmerge after the resolution brings in events the resolution never judged.
+  const regrouped = latestActivity(transitions, SENTRY_IDENTITY_ACTIVITY_TYPES);
   // A regression stamped at the resolution's own instant is not ordered after it.
   return resolution !== undefined && regression !== undefined && regression.time > resolution.time && typeof triggerId === "string"
+    && (regrouped === undefined || regrouped.time < resolution.time)
     ? { resolvedAt: resolution.time, triggerId }
     : undefined;
 }
