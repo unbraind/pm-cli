@@ -94,7 +94,8 @@ schema file path that names a directory, for example), the read falls back to
 defaults and no stored definition is active, so a proposal that repairs
 hydration judges each definition that becomes effective (the last one per key,
 as the registry reads them), while a proposal that leaves hydration failing
-activates and judges none
+activates and judges no stored definition (its own new or changed inline
+definitions are judged either way)
 ([pm-8dbagz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8dbagz.toon);
 tracker record excluded from npm).
 

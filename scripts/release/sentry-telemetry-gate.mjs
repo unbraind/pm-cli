@@ -734,6 +734,8 @@ function latestActivity(activity, types) {
 const SENTRY_REGRESSION_ACTIVITY_TYPES = new Set(["set_regression"]);
 /** Sentry accepts event timestamps somewhat off its own clock, so the event window extends on both sides. */
 const SENTRY_EVENT_WINDOW_SKEW_MS = 60 * 60 * 1000;
+/** Sentry's longest event retention: the regression lookup reads every stored non-test event within it. */
+const SENTRY_EVENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 /** Attempts per lookup, the first included, when Sentry throttles it. */
 const SENTRY_LOOKUP_ATTEMPTS = 3;
 /** Events read per regression: Sentry caps a `full=true` page at 10, and an issue with more non-test events keeps blocking. */
@@ -808,8 +810,9 @@ async function readLatestResolutionTime(issueUrl, token, deadline) {
 
 /**
  * Whether a regressed issue regressed only through test traffic (pm-kxmu54):
- * every non-test event the issue ever had (environment and pm.source_context
- * not test) was received before its latest resolution, so whoever resolved it
+ * every stored non-test event of the issue (environment and pm.source_context
+ * not test, read over Sentry's retention horizon) was received before its
+ * latest resolution, so whoever resolved it
  * judged them all and what reopened it is test traffic, as pm-usn5k2 treats an
  * issue made only of test events. Receipt time, not the event's own
  * timestamp, decides, so a late production event with an old timestamp still
@@ -817,8 +820,7 @@ async function readLatestResolutionTime(issueUrl, token, deadline) {
  * keeps the issue blocking.
  */
 async function isTestOnlyRegression(issue, org, token, deadline) {
-  const firstSeen = parseSentryTime(issue?.firstSeen);
-  if (issue?.substatus !== "regressed" || typeof issue.id !== "string" || !Number.isFinite(firstSeen)) return false;
+  if (issue?.substatus !== "regressed" || typeof issue.id !== "string") return false;
   const issueUrl = new URL(`/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/`, sentryBaseUrl());
   try {
     const resolvedAt = await readLatestResolutionTime(issueUrl, token, deadline);
@@ -827,7 +829,8 @@ async function isTestOnlyRegression(issue, org, token, deadline) {
     eventsUrl.searchParams.set("query", SENTRY_NON_TEST_EVENT_QUERY);
     eventsUrl.searchParams.set("full", "true");
     eventsUrl.searchParams.set("per_page", String(SENTRY_REGRESSION_EVENT_LIMIT));
-    eventsUrl.searchParams.set("start", new Date(firstSeen - SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
+    // The window spans Sentry's retention horizon, never the listed firstSeen: an older event moves first_seen back.
+    eventsUrl.searchParams.set("start", new Date(Date.now() - SENTRY_EVENT_RETENTION_MS).toISOString());
     eventsUrl.searchParams.set("end", new Date(Date.now() + SENTRY_EVENT_WINDOW_SKEW_MS).toISOString());
     const page = await fetchSentryPage(eventsUrl, token, deadline);
     if (page === undefined || page.hasNext || !Array.isArray(page.json)) return false;

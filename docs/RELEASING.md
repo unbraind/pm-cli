@@ -346,8 +346,9 @@ up to `--sentry-limit` (default `200`); when active issues remain beyond it, the
 gate fails, because it cannot judge issues it never read. A regressed issue is
 judged by the receipt time of its non-test events: when the issue's activity
 records a resolution followed by a regression, every transition in it is
-dated, and every event of the issue outside test traffic (read over the
-issue's whole life, one page of up to 10, Sentry's cap for full event payloads) was received before that latest
+dated, and every event of the issue outside test traffic (read over Sentry's
+90-day retention horizon rather than the listed `firstSeen`, which an older
+event can move back; one page of up to 10, Sentry's cap for full event payloads) was received before that latest
 resolution, then whatever reopened it is test traffic and the gate skips it,
 reported under `ignored_test_only_regression_short_ids` (whoever resolved the
 issue already judged those events). Receipt time decides, not the event's own

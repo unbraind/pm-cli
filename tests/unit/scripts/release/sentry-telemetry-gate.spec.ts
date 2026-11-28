@@ -286,7 +286,6 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     shortId: string;
     id: string;
     substatus?: string;
-    firstSeen?: string;
     activity?: unknown;
     nonTest?: unknown;
     nextPage?: boolean;
@@ -299,34 +298,43 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     delayMs?: number;
     bodyDelayMs?: number;
   }
-  function regressionSearch(issues: RegressionFixture[], seen: Array<{ start: string; end: string }> = []) {
-    const respond = (body: unknown, status = 200, extra: { retryAfter?: string; link?: string } = {}) => ({
+  type FixtureResponse = ReturnType<typeof fixtureResponse>;
+  function fixtureResponse(body: unknown, status = 200, extra: { retryAfter?: string; link?: string } = {}) {
+    return {
       ok: status < 400, status,
       headers: { get: (name: string) => (name === "retry-after" ? extra.retryAfter ?? null : name === "link" ? extra.link ?? null : null) },
       text: async () => (body === undefined ? "" : JSON.stringify(body)),
-    });
+    };
+  }
+  /** The filtered event-list page for one issue, asserting the query the gate sends. */
+  function eventsResponse(issue: RegressionFixture, url: URL, seen: Array<{ start: string; end: string }>): FixtureResponse {
+    if (issue.eventsThrows) throw new Error("socket hang up");
+    expect(url.searchParams.get("query")).toBe("!environment:test !pm.source_context:test");
+    expect(url.searchParams.get("full")).toBe("true");
+    expect(url.searchParams.get("per_page")).toBe("10");
+    seen.push({ start: url.searchParams.get("start")!, end: url.searchParams.get("end")! });
+    const link = issue.nextPage ? `<${url}&cursor=n>; rel="next"; results="true"` : issue.link;
+    const page = fixtureResponse(issue.nonTest, issue.eventsStatus, link === undefined ? {} : { link });
+    if (issue.bodyDelayMs === undefined) return page;
+    return { ...page, text: async () => { await new Promise((resolve) => setTimeout(resolve, issue.bodyDelayMs)); return page.text(); } };
+  }
+  /** Issue details or its events, after any delay or throttling the fixture asks for. */
+  async function issueResponse(issue: RegressionFixture, url: URL, events: boolean, seen: Array<{ start: string; end: string }>): Promise<FixtureResponse> {
+    if (issue.delayMs !== undefined) await new Promise((resolve) => setTimeout(resolve, issue.delayMs));
+    if (issue.throttle !== undefined && issue.throttle > 0) {
+      issue.throttle -= 1;
+      return fixtureResponse({ detail: "slow down" }, 429, { retryAfter: "0" });
+    }
+    if (!events) return fixtureResponse({ activity: issue.activity }, issue.detailsStatus, issue.detailsLink === undefined ? {} : { link: issue.detailsLink });
+    return eventsResponse(issue, url, seen);
+  }
+  function regressionSearch(issues: RegressionFixture[], seen: Array<{ start: string; end: string }> = []) {
     return vi.fn(async (input: string | URL | Request) => {
       const url = new URL(String(input));
       const detail = /\/organizations\/[^/]+\/issues\/([^/]+)\/(events\/)?$/u.exec(url.pathname);
-      if (detail) {
-        const issue = issues.find((candidate) => candidate.id === decodeURIComponent(detail[1]!))!;
-        if (issue.delayMs !== undefined) await new Promise((resolve) => setTimeout(resolve, issue.delayMs));
-        if (issue.throttle !== undefined && issue.throttle > 0) {
-          issue.throttle -= 1;
-          return respond({ detail: "slow down" }, 429, { retryAfter: "0" });
-        }
-        if (detail[2] === undefined) return respond({ activity: issue.activity }, issue.detailsStatus, issue.detailsLink === undefined ? {} : { link: issue.detailsLink });
-        if (issue.eventsThrows) throw new Error("socket hang up");
-        expect(url.searchParams.get("query")).toBe("!environment:test !pm.source_context:test");
-        expect(url.searchParams.get("full")).toBe("true");
-        expect(url.searchParams.get("per_page")).toBe("10");
-        seen.push({ start: url.searchParams.get("start")!, end: url.searchParams.get("end")! });
-        const page = respond(issue.nonTest, issue.eventsStatus, issue.nextPage ? { link: `<${url}&cursor=n>; rel="next"; results="true"` } : issue.link === undefined ? {} : { link: issue.link });
-        const body = page.text;
-        return issue.bodyDelayMs === undefined ? page : { ...page, text: async () => { await new Promise((resolve) => setTimeout(resolve, issue.bodyDelayMs)); return body(); } };
-      }
-      return respond(issues.map(({ shortId, id, substatus, firstSeen }) => ({
-        shortId, id, substatus, firstSeen: firstSeen ?? "2026-11-26T10:44:30Z", level: "error", logger: "node", isUnhandled: true,
+      if (detail) return issueResponse(issues.find((candidate) => candidate.id === decodeURIComponent(detail[1]!))!, url, detail[2] !== undefined, seen);
+      return fixtureResponse(issues.map(({ shortId, id, substatus }) => ({
+        shortId, id, substatus, level: "error", logger: "node", isUnhandled: true,
         title: "Error: boom", metadata: { value: "boom", type: "Error" },
       })));
     });
@@ -362,7 +370,6 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-NO-REGRESSION", id: "108", substatus: "regressed", activity: [{ type: "set_resolved", dateCreated: RESOLVED_AT }] },
       { shortId: "PM-NO-RESOLUTION", id: "109", substatus: "regressed", activity: [{ type: "set_regression", dateCreated: RESOLVED_AT }] },
       { shortId: "PM-NO-ACTIVITY", id: "110", substatus: "regressed", activity: "none" },
-      { shortId: "PM-NO-FIRST-SEEN", id: "111", substatus: "regressed", firstSeen: "unknown" },
       { shortId: "PM-DETAILS-FAIL", id: "112", substatus: "regressed", detailsStatus: 500 },
       { shortId: "PM-EVENTS-FAIL", id: "113", substatus: "regressed", activity: history([RESOLVED_AT]), eventsStatus: 500 },
       { shortId: "PM-EVENTS-THROW", id: "114", substatus: "regressed", activity: history([RESOLVED_AT]), eventsThrows: true },
@@ -383,14 +390,14 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
     expect(json.sentry.blocking_short_ids).toEqual([
       "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
-      "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-NO-FIRST-SEEN", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
+      "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
       "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION",
     ]);
-    // The whole life of the issue is read: from an hour before its first event to an hour past now.
-    expect(seen[0]?.start).toBe("2026-11-26T09:44:30.000Z");
+    // Sentry's whole retention horizon is read, never the listed firstSeen, which an older event moves back (CodeRabbit review).
+    expect(Date.parse(seen[0]!.start)).toBeLessThan(Date.now() - 89 * 24 * 60 * 60 * 1000);
     expect(Date.parse(seen[0]!.end)).toBeGreaterThan(Date.now() + 59 * 60 * 1000);
-    // Issues that cannot qualify cost no lookups.
-    for (const id of ["111", "117"]) expect(fetchSpy.mock.calls.some(([input]) => String(input).includes(`/issues/${id}/`))).toBe(false);
+    // An issue that cannot qualify costs no lookups.
+    expect(fetchSpy.mock.calls.some(([input]) => String(input).includes("/issues/117/"))).toBe(false);
   });
 
   it("treats a timestamp or a pagination marker it cannot read as missing evidence (pm-kxmu54, Codex review)", async () => {

@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: "area:sdk",schema,settings,validation
 created_at: "2026-11-27T04:49:36.163Z"
-updated_at: "2026-11-28T15:50:44.704Z"
+updated_at: "2026-11-28T16:51:14.801Z"
 closed_at: "2026-11-28T14:02:58.981Z"
 completed_at: "2026-11-28T14:02:58.981Z"
 author: "harness:claude-code"
@@ -20,10 +20,11 @@ expected_result: A proposal that repairs a broken schema file path is refused wh
 actual_result: "With the statuses path set to a directory and a stored 'full' field, the path repair is refused with schema_field_option_collision, though main admitted it. An unrelated write keeps passing, and the repair is admitted once the shadowing definition is gone. 7 tests pass with 100% coverage of the changed lines"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-2nwcgg,discovered_from,"2026-11-27T04:49:36.163Z","harness:claude-code","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-28T14:02:57.319Z","harness:claude-code","Reproduced and fixed (2026-11-28). The reproduction: schema.files.statuses names a directory, so readSettings falls back with settings_read_merge_failed and no custom field is active, and the fields file stores {key: full, commands: [list]}, which shadows pm list --full. A mutateWorkspaceSettings proposal that only repairs the statuses path resolved changed: true on main. Its before and after effective sets were equal, because both were computed as if hydration had succeeded. Fix: the settings read's hydration step was extracted into hydrateMergedSettings(pmRoot, merged) in core/store/settings.ts. readSettings calls it, and the writer calls it for the current and the persisted settings. A side that does not hydrate contributes no effective definitions, so a repair makes every stored definition newly effective and each is judged, while a proposal that leaves hydration failing judges none. The proposal's own new or changed inline definitions are judged in both cases, as before. The negative control is the same spec against main's extension-command-context.ts, which fails with promise resolved instead of rejecting."
   "2026-11-28T14:45:16.943Z","harness:claude-code","Codex review round 1 (2026-11-28), P2, valid: a schema path naming a POSIX FIFO with no writer stalled hydrateMergedSettings under the workspace lock. fs.readFile blocks on a pipe, and the ordinary settings read hung the same way for every command. Schema files are now read with readOptionalRegularFile (core/fs/fs-utils.ts): a non-blocking open, absent reads as null, and anything but a regular file throws, so a pipe fails hydration like a directory. The spec repairs a FIFO-backed statuses path through mutateWorkspaceSettings (dry run, refused for the stored shadowing field) without stalling, and the reader's own spec covers a regular file, an absent file, a directory, a FIFO and EACCES."
   "2026-11-28T15:50:44.703Z","harness:claude-code","CodeRabbit Minor on PR #1795, 2026-11-28, docs wording, valid: when keys repeat, a hydration repair activates the definition that becomes effective (the last one per key, as the registry reads them), not every stored definition. docs/SDK_AUDITED_MUTATIONS.md now says so. The code already judged only the newly effective definitions."
+  "2026-11-28T16:51:14.801Z","harness:claude-code","CodeRabbit Minor on PR #1795, 2026-11-28, docs, valid: when hydration stays broken, the writer judges no STORED definition, while the proposal's own new or changed inline definitions are still judged. docs/SDK_AUDITED_MUTATIONS.md now says so."
 files[5]{path,scope,note}:
   src/core/fs/fs-utils.ts,project,non-blocking schema file reads (Codex review)
   src/core/store/settings.ts,project,pm-8dbagz writer judges sides as hydration reads them
