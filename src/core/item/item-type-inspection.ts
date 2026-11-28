@@ -122,13 +122,21 @@ function readPolicy(raw: unknown, at: string, ignored: string[], source: ItemTyp
     return null;
   }
   const prefix = `${at}.`;
-  return {
+  const before = ignored.length;
+  const policy: ItemTypeCommandOptionPolicy = {
     command,
     option: raw.option,
     required: readSwitch(raw, "required", prefix, ignored, source),
     visible: readSwitch(raw, "visible", prefix, ignored, source),
     enabled: readSwitch(raw, "enabled", prefix, ignored, source),
   };
+  // Policies for one option collapse to the last, so a schema-file policy with an ignored switch is dropped whole:
+  // it must never replace an earlier, valid restriction for the same option.
+  if (source === "schema_file" && ignored.length > before) {
+    ignored.push(`${at}: has a switch that is not a boolean, so the policy is dropped`);
+    return null;
+  }
+  return policy;
 }
 
 /**

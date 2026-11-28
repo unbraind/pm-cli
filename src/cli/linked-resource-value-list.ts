@@ -232,6 +232,21 @@ function scanValueLists(command: string, argv: readonly string[], from: number, 
 }
 
 /**
+ * Whether the options written before the command path read as Commander reads
+ * them: every one declared, none whose value reads as an option
+ * (`--pm-path=--sandbox`), and no operand among them besides the command path.
+ */
+function rootOptionsAreReadable(argv: readonly string[], table: OptionArityTable): boolean {
+  const pathStart = findBootstrapCommandTokenIndex([...argv])!;
+  for (let index = 0; index < pathStart; index += 1) {
+    const option = isOptionLike(argv[index]!) ? readOptionToken(argv, index, table) : undefined;
+    if (!option) return false;
+    index = option.end;
+  }
+  return true;
+}
+
+/**
  * Resolve `pm <files|docs|test> <id> --flag a b c` into one occurrence per
  * value, judged with the command's Commander arity, including the global
  * options the program declares. Every extra operand must directly follow a
@@ -245,7 +260,7 @@ export function resolveLinkedResourceValueListRecovery(
 ): LinkedResourceValueListRecovery | undefined {
   if (command === undefined || !LINKED_RESOURCE_VALUE_LIST_COMMANDS.has(command)) return undefined;
   const from = commandArgumentsStart(command, argv);
-  const scan = from === undefined ? undefined : scanValueLists(command, argv, from, table, subcommands);
+  const scan = from === undefined || !rootOptionsAreReadable(argv, table) ? undefined : scanValueLists(command, argv, from, table, subcommands);
   if (scan?.idAt === undefined || scan.extras.length === 0) return undefined;
   const insertions = new Map(scan.extras.map(({ at, flag }) => [at, flag]));
   const retryArgs = argv.flatMap((token, index) => (insertions.has(index) ? [insertions.get(index)!, token] : [token]));

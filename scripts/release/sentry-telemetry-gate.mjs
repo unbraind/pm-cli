@@ -683,26 +683,35 @@ const SENTRY_RESOLUTION_ACTIVITY_TYPES = new Set([
 const SENTRY_NON_TEST_EVENT_QUERY = "!environment:test !pm.source_context:test";
 
 /** An ISO 8601 timestamp as Sentry writes them, with a time and an explicit zone. */
-const SENTRY_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/u;
+const SENTRY_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/u;
 
-/**
- * A Sentry timestamp as milliseconds, or NaN for anything but an ISO 8601
- * string with a zone: Date.parse would read an array, or a bare "0", as a
- * date. Sub-millisecond digits are dropped, so a tie fails closed.
- */
-function parseSentryTime(value) {
-  return typeof value === "string" && SENTRY_TIMESTAMP.test(value) ? Date.parse(value) : Number.NaN;
+/** Whether the calendar and clock components name a real instant (Date.parse rolls 02-30 into March). */
+function isRealCalendarTime([year, month, day, hour, minute, second]) {
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth && hour < 24 && minute < 60 && second < 60;
 }
 
 /**
- * Whether a Link header promises another page, read in any parameter order.
- * A header without an interpretable next link counts as more pages, so an
- * incomplete listing never reads as complete; no header means one page.
+ * A Sentry timestamp as milliseconds, or NaN for anything but an ISO 8601
+ * string with a zone that names a real calendar instant: Date.parse would
+ * read an array, a bare "0" or 2026-02-30 as a date. Sub-millisecond digits
+ * are dropped, so a tie fails closed.
+ */
+function parseSentryTime(value) {
+  const match = typeof value === "string" ? SENTRY_TIMESTAMP.exec(value) : null;
+  return match && isRealCalendarTime(match.slice(1, 7).map(Number)) ? Date.parse(value) : Number.NaN;
+}
+
+/**
+ * Whether a Link header leaves another page possible, read in any parameter
+ * order. Only a missing header means one page; a present one proves the last
+ * page only with a well-formed next link (`<target>`) whose results are
+ * "false", so an unreadable header never reads as complete.
  */
 function sentryLinkHasNextPage(link) {
-  if (typeof link !== "string" || link.trim().length === 0) return false;
-  const next = link.split(",").find((part) => /;\s*rel="next"/u.test(part));
-  return next === undefined || !/;\s*results="false"/u.test(next);
+  if (link === null || link === undefined) return false;
+  const next = String(link).split(",").find((part) => /;\s*rel="next"/u.test(part));
+  return next === undefined || !/^\s*<[^<>\s]+>/u.test(next) || !/;\s*results="false"/u.test(next);
 }
 
 /** The latest activity entry of the given types, with its time, or undefined. */
@@ -723,11 +732,14 @@ const SENTRY_LOOKUP_ATTEMPTS = 3;
 /** Events read per regression: Sentry caps a `full=true` page at 10, and an issue with more non-test events keeps blocking. */
 const SENTRY_REGRESSION_EVENT_LIMIT = 10;
 
-/** The wait a 429 asks for: its Retry-After seconds, or one second when the header is absent or unusable. */
+/** The wait a 429 asks for: Retry-After as delay seconds or as an HTTP date, else one second. */
 function retryAfterMs(response) {
   const header = response.headers?.get("retry-after");
-  const seconds = typeof header === "string" && header.trim().length > 0 ? Number(header) : Number.NaN;
-  return (Number.isFinite(seconds) && seconds >= 0 ? seconds : 1) * 1000;
+  const text = typeof header === "string" ? header.trim() : "";
+  const seconds = /^\d+$/u.test(text) ? Number(text) : Number.NaN;
+  if (Number.isFinite(seconds)) return seconds * 1000;
+  const at = text.length > 0 ? Date.parse(text) : Number.NaN;
+  return Number.isFinite(at) ? Math.max(0, at - Date.now()) : 1000;
 }
 
 /** The JSON body of an OK response and whether another page follows, or undefined for a failed or empty one. */

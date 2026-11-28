@@ -191,8 +191,18 @@ describe("value-list recovery", () => {
     ["files", ["files", "pm-x", "--message", "--json", "--add", "a", "b"]],
     // An attached value that reads as an option is declined like a separate one (Codex review).
     ["test", ["test", "pm-x", "--measure=--p95=3", "p99=4", "--run"]],
+    // Options before the command path are read the same way (Codex review).
+    ["files", ["--pm-path=--sandbox", "files", "pm-x", "--add", "a", "b"]],
+    ["files", ["--unknown", "files", "pm-x", "--add", "a", "b"]],
   ] as const)("does not guess for %s %j", (command, argv) => {
     expect(resolve(command, [...argv], command === "test" ? TEST : FILES)).toBeUndefined();
+  });
+
+  it("declines when Commander would read a prefix token as an operand the bootstrap took as a value", () => {
+    // Here the table declares --pm-path a switch, so its bootstrap value would be a stray root operand.
+    const switchPath = { ...FILES, ...table({ "--pm-path": toggle }) };
+    expect(resolveLinkedResourceValueListRecovery("files", ["--pm-path", "/t", "files", "pm-x", "--add", "a", "b"], switchPath)).toBeUndefined();
+    expect(resolveLinkedResourceValueListRecovery("files", ["--pm-path", "/t", "files", "pm-x", "--add", "a", "b"], FILES)?.retryArgs).toEqual(["--pm-path", "/t", "files", "pm-x", "--add", "a", "--add", "b"]);
   });
 
   it("declines when a subcommand, not the collection command, refused the invocation (Codex review)", () => {

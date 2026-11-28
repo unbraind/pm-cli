@@ -382,16 +382,21 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       { shortId: "PM-REORDERED-NEXT", id: "123", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; results="false"; rel="previous", <b>; results="true"; rel="next"' },
       { shortId: "PM-NO-NEXT-LINK", id: "124", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="previous"; results="false"' },
       { shortId: "PM-LAST-PAGE", id: "125", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '<a>; rel="previous"; results="false", <b>; rel="next"; results="false"' },
+      // A present header must carry a well-formed next link that says results="false" (Codex review).
       { shortId: "PM-BLANK-LINK", id: "126", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: " " },
+      { shortId: "PM-TARGETLESS-NEXT", id: "127", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged, link: '; rel="next"; results="false"' },
+      // Date.parse rolls 2026-02-30 into March; an impossible calendar date is not a timestamp (Codex review).
+      { shortId: "PM-IMPOSSIBLE-DATE", id: "128", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: "2026-02-30T10:00:00Z" }] },
+      { shortId: "PM-IMPOSSIBLE-CLOCK", id: "129", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: [{ dateReceived: "2026-11-01T24:00:00Z" }] },
     ], seen);
     const { json } = await gate(fetchSpy);
-    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-THROTTLED", "PM-LAST-PAGE", "PM-BLANK-LINK"]);
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-QUIET", "PM-THROTTLED", "PM-LAST-PAGE"]);
     expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
     expect(json.sentry.blocking_short_ids).toEqual([
       "PM-LATE-PRODUCTION", "PM-NO-RECEIPT", "PM-TRUNCATED", "PM-MALFORMED-TRANSITION", "PM-STALE-REGRESSION", "PM-NO-REGRESSION",
       "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-NO-FIRST-SEEN", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
       "PM-EVENTS-EMPTY", "PM-ONGOING", "PM-TIED-TRANSITIONS", "PM-ARRAY-RECEIPT", "PM-ARRAY-TRANSITION", "PM-BARE-RECEIPT",
-      "PM-REORDERED-NEXT", "PM-NO-NEXT-LINK",
+      "PM-REORDERED-NEXT", "PM-NO-NEXT-LINK", "PM-BLANK-LINK", "PM-TARGETLESS-NEXT", "PM-IMPOSSIBLE-DATE", "PM-IMPOSSIBLE-CLOCK",
     ]);
     // The whole life of the issue is read: from an hour before its first event to an hour past now.
     expect(seen[0]?.start).toBe("2026-11-26T09:44:30.000Z");
@@ -426,6 +431,20 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       return listing(input, init);
     });
     expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-NO-HEADER"]);
+  });
+
+  it("honours a Retry-After written as an HTTP date (pm-kxmu54, Codex review)", async () => {
+    let throttled = 0;
+    const listing = regressionSearch([{ shortId: "PM-HTTP-DATE", id: "204", substatus: "regressed", activity: history([RESOLVED_AT]), nonTest: judged }]);
+    const { json } = await gate(async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).endsWith("/issues/204/") && throttled === 0) {
+        throttled += 1;
+        // A date already past asks for no wait at all.
+        return { ok: false, status: 429, headers: { get: () => new Date(Date.now() - 5000).toUTCString() }, text: async () => "" };
+      }
+      return listing(input, init);
+    });
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-HTTP-DATE"]);
   });
 
   it("accepts no page whose body is read after the shared budget (pm-kxmu54, Codex review)", async () => {

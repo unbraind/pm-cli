@@ -78,6 +78,7 @@ const TYPE_MEMBERS: Array<[string, Record<string, unknown>, string[]]> = [
     "command_option_policies[0].required: 0 is not a boolean, so it is ignored",
     "command_option_policies[0].visible: 1 is not a boolean, so it is ignored",
     'command_option_policies[0].enabled: "no" is not a boolean, so it is ignored',
+    "command_option_policies[0]: has a switch that is not a boolean, so the policy is dropped",
     'command_option_policies[1]: {"command":"x","option":"y"} is not a create or update policy with an option',
     'command_option_policies[2]: {"command":"create","option":4} is not a create or update policy with an option',
     "command_option_policies[3]: null is not a create or update policy with an option",
@@ -113,14 +114,16 @@ describe("stored type definitions", () => {
       options: [{ key: "k", values: [1, "a"], required: "yes" }, 7],
       command_option_policies: [{ command: " CREATE ", option: "x", visible: 1 }],
     }, "schema_file");
-    // A switch that is not a boolean is ignored in a schema file, so `required: "yes"` adds no requirement.
-    expect(definition).toMatchObject({
-      aliases: ["spk"],
-      options: [{ key: "k", values: ["a"] }],
-      command_option_policies: [{ command: "create", option: "x" }],
-    });
+    // A switch that is not a boolean is ignored in a schema file, so `required: "yes"` adds no requirement, and a
+    // policy carrying one is dropped whole, so it cannot replace a valid policy for the same option (Codex review).
+    expect(definition).toMatchObject({ aliases: ["spk"], options: [{ key: "k", values: ["a"] }] });
     expect(definition?.options?.[0]?.required).toBeUndefined();
-    expect(definition?.command_option_policies?.[0]?.visible).toBeUndefined();
+    expect(definition?.command_option_policies).toBeUndefined();
+    const duplicates = inspectItemTypeDefinition({
+      name: "Spike",
+      command_option_policies: [{ command: "update", option: "priority", enabled: false }, { command: "update", option: "priority", enabled: 0 }],
+    }, "schema_file");
+    expect(duplicates.definition?.command_option_policies).toEqual([{ command: "update", option: "priority", required: undefined, visible: undefined, enabled: false }]);
     // An extension registration keeps its earlier Boolean reading.
     expect(inspectItemTypeDefinition({ name: "Spike", options: [{ key: "k", required: "false" }] }, "extension")).toMatchObject({
       definition: { options: [{ key: "k", required: true }] },
