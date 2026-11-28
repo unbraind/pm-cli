@@ -226,6 +226,49 @@ export function formatReservedItemFieldWarning(
   return `extension_item_field_reserved:${layer}:${extension}:${field}:rename=${prefix}_${field}`;
 }
 
+/** An admitted item field declaration, as activation and the write path read it. */
+export interface ItemFieldDeclaration {
+  /** Layer of the package that declared the field. */
+  layer: string;
+  /** Package that declared the field. */
+  name: string;
+  /** The declared field type. */
+  type: KnownItemFieldType;
+}
+
+/**
+ * The admitted declaration that gives a field another type, judged with the
+ * write path's own name and type rules (pm-2ze9nt). Activation keeps the first
+ * declaration and drops a later one with another type, so two packages that
+ * disagree on one field no longer stop every create and update.
+ */
+export function findConflictingItemFieldDeclaration(
+  registrations: ExtensionRegistrationRegistry["item_fields"],
+  field: { name?: unknown; type?: unknown },
+): ItemFieldDeclaration | undefined {
+  const fieldName = normalizeFieldName(field.name);
+  const fieldType = normalizeFieldType(field.type);
+  if (!fieldName || !fieldType) return undefined;
+  for (const registration of registrations) {
+    for (const declared of registration.fields) {
+      const declaredType = normalizeFieldType(declared.type);
+      if (normalizeFieldName(declared.name) !== fieldName || !declaredType) continue;
+      return declaredType === fieldType ? undefined : { layer: registration.layer, name: registration.name, type: declaredType };
+    }
+  }
+  return undefined;
+}
+
+/** Activation warning for a dropped declaration: the field, both packages and both types (pm-2ze9nt). */
+export function formatItemFieldTypeConflictWarning(
+  layer: string,
+  extension: string,
+  field: { name?: unknown; type?: unknown },
+  kept: ItemFieldDeclaration,
+): string {
+  return `extension_item_field_type_conflict:${layer}:${extension}:${normalizeFieldName(field.name)}:${normalizeFieldType(field.type)}:kept=${kept.layer}:${kept.name}:${kept.type}`;
+}
+
 /** Implements collect registered item field names for the public runtime surface of this module. */
 export function collectRegisteredItemFieldNames(
   registrations: ExtensionRegistrationRegistry | null,

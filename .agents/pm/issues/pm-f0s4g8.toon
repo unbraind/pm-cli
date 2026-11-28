@@ -2,21 +2,42 @@ id: pm-f0s4g8
 title: "PmClient.schemaAddField reads a whitespace-only cliFlag as omitted and registers the default flag, while pm schema add-field --cli-flag ' ' refuses it with schema_field_flag_invalid"
 description: "Found 2026-11-27 while fixing pm-2nwcgg. After that fix, the CLI refuses a supplied --cli-flag or --alias that normalizes to nothing. Through the SDK, new PmClient({ pmRoot }).schemaAddField('review_owner', { type: 'string', commands: ['list'], cliFlag: ' ' }) resolves and registers the default --review-owner flag, while cliFlag '--' and alias ['  '] are refused as on the CLI. So somewhere on the PmClient.runTyped path a whitespace-only string option is dropped before runSchemaAddField sees it. Find where, and decide whether the transport should keep a supplied blank string for every command (as argv does) or whether schema options need their own exception. Duplicate check: searched blank option string omitted, whitespace option SDK transport; no open item covers it."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: "area:sdk",schema,transport-parity
 created_at: "2026-11-27T03:33:50.298Z"
-updated_at: "2026-11-27T04:49:35.617Z"
+updated_at: "2026-11-28T14:45:22.413Z"
+closed_at: "2026-11-28T13:57:32.873Z"
+completed_at: "2026-11-28T13:57:32.873Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "Reproduce the SDK and CLI divergence and name the transport stage that drops the blank string; PmClient.schemaAddField with a whitespace-only cliFlag is refused with schema_field_flag_invalid as the CLI refuses it, or the transport rule is documented with a reason; A parity spec drives the CLI and the SDK with the same blank spelling"
 parent: pm-ugqx
 risk: low
 confidence: medium
-expected_result: A blank cliFlag gets the same verdict through the SDK and the CLI
-actual_result: The SDK registers the default flag; the CLI refuses with schema_field_flag_invalid
+resolution: "The schema add-field transport passes supplied spellings through: cliFlag is read as given (readSuppliedSpelling), and the alias list keeps blank entries, so runSchemaAddField's spelling check judges them. The generic readRuntimeString rule (blank = omitted) stays for every other option, and the reason is recorded."
+expected_result: "PmClient.schemaAddField with a whitespace-only cliFlag is refused with schema_field_flag_invalid, as the CLI refuses it"
+actual_result: "The parity spec drives the CLI and the SDK with ' ', '', '--', [''] and ['ok','  ']: all five are refused with schema_field_flag_invalid on both. An omitted flag keeps the default, an options-record spelling is judged and a top-level one wins, with 100% coverage of the changed lines"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-2nwcgg,discovered_from,"2026-11-27T03:33:50.298Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-27T04:49:35.617Z","harness:claude-code","Stage located by the Codex review of the field-admission branch (2026-11-27), confirmed by reading the code: the SDK schema dispatch (createMcpSchemaContext in src/sdk/runtime/schema.ts) reads aliases through readRuntimeStringArray (src/sdk/runtime-input.ts), which maps entries with String and drops every empty one, so alias [''] never reaches add-field; cliFlag goes through readRuntimeString, which drops a blank value the same way. A two-space alias survives (it is not empty), which is why it was refused through the SDK while cliFlag ' ' was not. A fix can keep raw entries for add-field's cliFlag and alias, or decide the transport rule for every command."
+  "2026-11-28T13:57:31.271Z","harness:claude-code","Root cause (2026-11-28): two transport stages in src/sdk/runtime/schema.ts drop the blank string before runSchemaAddField sees it. readRuntimeString treats a whitespace-only cliFlag as absent, and the shared alias reader readRuntimeStringArray filters out empty entries. Decision: keep the generic transport rule (93 readRuntimeString call sites rely on blank = omitted for author, path, limit and the like). Add-field gets its own exception, because it is the receiver that judges supplied spellings: readSuppliedSpelling passes any supplied string for cliFlag (top-level args first, then options), and the add-field alias list keeps every entry. Result: cliFlag ' ', '' and '--' and alias [''] or ['  '] are refused with schema_field_flag_invalid through PmClient.schemaAddField, run('schema') and MCP, exactly as the CLI refuses them. An omitted cliFlag still registers the default flag."
+  "2026-11-28T14:45:22.412Z","harness:claude-code","Codex review round 1 (2026-11-28), P3, valid and fixed: top-level cliFlag: null with options.cliFlag 'team-lead' registered the default flag, because the supplied-spelling reader took the top-level value before checking its type. It now takes the first string (top level, then options), blank or not. The parity spec covers the fallback."
+files[2]{path,scope,note}:
+  src/sdk/runtime/schema.ts,project,pm-f0s4g8 supplied blank spellings reach add-field
+  tests/unit/sdk/schema/add-field-blank-spelling-parity.spec.ts,project,pm-f0s4g8 supplied blank spellings reach add-field
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema/add-field-blank-spelling-parity.spec.ts,project,"harness:claude-code","2026-11-28T13:57:30.140Z",local_mutation,fix/schema-member-admission-add-lists
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,SDK and MCP refuse blank spellings as the CLI does
+close_reason: The SDK and MCP refuse a blank add-field flag or alias as the CLI does
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-f0s4g8
+  gate_id: add-field-blank-spelling-parity
+  negative_control: "tests/unit/sdk/schema/add-field-blank-spelling-parity.spec.ts fails before the fix: PmClient.schemaAddField with cliFlag a single space or alias an empty string registered the field while the CLI refused it"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/schema/add-field-blank-spelling-parity.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

@@ -278,6 +278,175 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(queries).toContain("is:unresolved level:[fatal,error] !environment:test !pm.source_context:test");
   });
 
+  /**
+   * pm-kxmu54: issues listed by both searches, each with a resolution history, the event that triggered its
+   * regression and the non-test events in a window, answered per issue the way Sentry's issue details, event
+   * details and filtered event list answer.
+   */
+  interface RegressionFixture {
+    shortId: string;
+    id: string;
+    substatus?: string;
+    lastSeen?: string;
+    activity?: unknown;
+    trigger?: unknown;
+    nonTestBetween?: (start: string, end: string) => unknown;
+    detailsStatus?: number;
+    triggerStatus?: number;
+    eventsStatus?: number;
+    eventsThrows?: boolean;
+    throttle?: number;
+  }
+  function regressionSearch(issues: RegressionFixture[]) {
+    const respond = (body: unknown, status = 200, retryAfter?: string) => ({
+      ok: status < 400, status, headers: { get: (name: string) => (name === "retry-after" ? retryAfter ?? null : null) },
+      text: async () => (body === undefined ? "" : JSON.stringify(body)),
+    });
+    return vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input));
+      const detail = /\/organizations\/[^/]+\/issues\/([^/]+)\/(?:events\/([^/]*)\/?)?$/u.exec(url.pathname);
+      if (detail) {
+        const issue = issues.find((candidate) => candidate.id === decodeURIComponent(detail[1]!))!;
+        if (issue.throttle !== undefined && issue.throttle > 0) {
+          issue.throttle -= 1;
+          return respond({ detail: "slow down" }, 429, "0");
+        }
+        if (!url.pathname.includes("/events/")) return respond({ activity: issue.activity }, issue.detailsStatus);
+        if (detail[2]) return respond(issue.trigger, issue.triggerStatus);
+        if (issue.eventsThrows) throw new Error("socket hang up");
+        expect(url.searchParams.get("query")).toBe("!environment:test !pm.source_context:test");
+        expect(url.searchParams.get("per_page")).toBe("1");
+        return respond(issue.nonTestBetween?.(url.searchParams.get("start")!, url.searchParams.get("end")!), issue.eventsStatus);
+      }
+      return respond(issues.map(({ shortId, id, substatus, lastSeen }) => ({
+        shortId, id, substatus, lastSeen, level: "error", logger: "node", isUnhandled: true,
+        title: "Error: boom", metadata: { value: "boom", type: "Error" },
+      })));
+    });
+  }
+
+  const RESOLVED_AT = "2026-11-28T13:27:21Z";
+  const history = (resolved: string[], regressionId: unknown = "evt-test") => [
+    { type: "set_regression", dateCreated: "2026-11-28T13:39:40Z", data: { event_id: regressionId } },
+    ...resolved.map((dateCreated) => ({ type: "set_resolved", dateCreated })),
+    { type: "set_resolved_in_release", dateCreated: "not a date" },
+    { type: "note", dateCreated: "2026-11-28T14:00:00Z" },
+    null,
+  ];
+  const testTrigger = { dateCreated: "2026-11-28T13:39:37Z", tags: [{ key: "environment", value: "test" }] };
+  const contextTrigger = { dateCreated: "2026-11-28T13:39:37Z", tags: [{ key: "pm.source_context", value: "test" }, null] };
+  const quiet = () => [];
+
+  it("judges a regression by its trigger and the events since the latest resolution, failing closed (pm-kxmu54)", async () => {
+    const windows: Array<[string, string]> = [];
+    const fetchSpy = regressionSearch([
+      // Resolved twice: the window starts at the latest resolution and reaches past the issue's last event.
+      {
+        shortId: "PM-TEST-REGRESSION", id: "101", substatus: "regressed", lastSeen: "2099-01-01T00:00:00Z",
+        activity: history(["2026-11-26T12:17:14Z", RESOLVED_AT]), trigger: testTrigger,
+        nonTestBetween: (start, end) => {
+          windows.push([start, end]);
+          return start === "2026-11-28T13:27:21.000Z" && end >= "2099-01-01T00:00" ? [] : [{ id: "older" }];
+        },
+      },
+      { shortId: "PM-CONTEXT-REGRESSION", id: "102", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: contextTrigger, nonTestBetween: quiet },
+      // A trigger stamped before the resolution moves the window start back to it.
+      { shortId: "PM-EARLY-TRIGGER", id: "103", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: { ...testTrigger, dateCreated: "2026-11-28T13:00:00Z" }, nonTestBetween: (start) => (start === "2026-11-28T13:00:00.000Z" ? [] : [{ id: "x" }]) },
+      { shortId: "PM-REAL-REGRESSION", id: "104", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: testTrigger, nonTestBetween: () => [{ id: "e2" }] },
+      { shortId: "PM-PRODUCTION-TRIGGER", id: "105", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: { dateCreated: "2026-11-28T13:39:37Z", tags: [{ key: "environment", value: "production" }] }, nonTestBetween: quiet },
+      { shortId: "PM-UNDATED-TRIGGER", id: "106", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: { tags: testTrigger.tags }, nonTestBetween: quiet },
+      { shortId: "PM-TRIGGER-FAIL", id: "107", substatus: "regressed", activity: history([RESOLVED_AT]), triggerStatus: 404 },
+      { shortId: "PM-NO-TRIGGER-ID", id: "108", substatus: "regressed", activity: history([RESOLVED_AT], 7), trigger: testTrigger, nonTestBetween: quiet },
+      { shortId: "PM-STALE-REGRESSION", id: "109", substatus: "regressed", activity: [{ type: "set_regression", dateCreated: "2026-11-27T11:18:43Z", data: { event_id: "e" } }, { type: "set_resolved", dateCreated: RESOLVED_AT }], trigger: testTrigger, nonTestBetween: quiet },
+      { shortId: "PM-NO-REGRESSION", id: "110", substatus: "regressed", activity: [{ type: "set_resolved", dateCreated: RESOLVED_AT }] },
+      { shortId: "PM-NO-RESOLUTION", id: "111", substatus: "regressed", activity: [{ type: "first_seen", dateCreated: "2026-11-26T10:44:30Z" }] },
+      { shortId: "PM-NO-ACTIVITY", id: "112", substatus: "regressed", activity: "none" },
+      { shortId: "PM-DETAILS-FAIL", id: "113", substatus: "regressed", detailsStatus: 500 },
+      { shortId: "PM-EVENTS-FAIL", id: "114", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: testTrigger, eventsStatus: 500 },
+      { shortId: "PM-EVENTS-THROW", id: "115", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: testTrigger, eventsThrows: true },
+      { shortId: "PM-EVENTS-SHAPE", id: "116", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: testTrigger, nonTestBetween: () => ({ data: [] }) },
+      // An empty event-list body is not a list.
+      { shortId: "PM-EVENTS-EMPTY", id: "117", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: testTrigger },
+      { shortId: "PM-ONGOING", id: "118", substatus: "ongoing" },
+      // Throttled lookups are retried after their Retry-After delay.
+      { shortId: "PM-THROTTLED", id: "119", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: testTrigger, nonTestBetween: quiet, throttle: 2 },
+    ]);
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "0", "--max-critical", "0"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-TEST-REGRESSION", "PM-CONTEXT-REGRESSION", "PM-EARLY-TRIGGER", "PM-THROTTLED"]);
+    expect(json.sentry.ignored_test_only_short_ids).toEqual(json.sentry.ignored_test_only_regression_short_ids);
+    expect(json.sentry.blocking_short_ids).toEqual([
+      "PM-REAL-REGRESSION", "PM-PRODUCTION-TRIGGER", "PM-UNDATED-TRIGGER", "PM-TRIGGER-FAIL", "PM-NO-TRIGGER-ID", "PM-STALE-REGRESSION",
+      "PM-NO-REGRESSION", "PM-NO-RESOLUTION", "PM-NO-ACTIVITY", "PM-DETAILS-FAIL", "PM-EVENTS-FAIL", "PM-EVENTS-THROW", "PM-EVENTS-SHAPE",
+      "PM-EVENTS-EMPTY", "PM-ONGOING",
+    ]);
+    expect(windows).toEqual([["2026-11-28T13:27:21.000Z", "2099-01-01T00:10:00.000Z"]]);
+    // An ongoing issue costs no lookups.
+    expect(fetchSpy.mock.calls.some(([input]) => String(input).includes("/issues/118/"))).toBe(false);
+  });
+
+  it("keeps a regression blocking once its throttled retries run out (pm-kxmu54)", async () => {
+    const fetchSpy = regressionSearch([
+      { shortId: "PM-ALWAYS-THROTTLED", id: "201", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: testTrigger, nonTestBetween: quiet, throttle: 3 },
+    ]);
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "0", "--max-critical", "0"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-ALWAYS-THROTTLED"]);
+  });
+
+  it("does not wait for a Retry-After past the shared budget (pm-kxmu54)", async () => {
+    const listing = regressionSearch([{ shortId: "PM-LONG-WAIT", id: "202", substatus: "regressed" }]);
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "0", "--max-critical", "0", "--sentry-request-timeout-ms", "1000"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: (async (input: string | URL | Request, init?: RequestInit) => (String(input).includes("/issues/202/")
+        ? { ok: false, status: 429, headers: { get: () => "600" }, text: async () => "" }
+        : listing(input, init))) as unknown as typeof fetch,
+    });
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-LONG-WAIT"]);
+  });
+
+  it("waits one second for a 429 without a usable Retry-After (pm-kxmu54)", async () => {
+    let throttled = 0;
+    const listing = regressionSearch([{ shortId: "PM-NO-HEADER", id: "203", substatus: "regressed", activity: history([RESOLVED_AT]), trigger: testTrigger, nonTestBetween: quiet }]);
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "0", "--max-critical", "0"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: (async (input: string | URL | Request, init?: RequestInit) => {
+        if (String(input).endsWith("/issues/203/") && throttled === 0) {
+          throttled += 1;
+          return { ok: false, status: 429, headers: { get: () => null }, text: async () => "" };
+        }
+        return listing(input, init);
+      }) as unknown as typeof fetch,
+    });
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual(["PM-NO-HEADER"]);
+  });
+
+  it("keeps a regression blocking when the listing came from the sentry CLI, which has no API token (pm-kxmu54)", async () => {
+    const fetchSpy = vi.fn();
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "required", "--telemetry-command", "telemetry.sh", "--max-high", "0", "--max-critical", "0"],
+      existsSync: true,
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+      runCommand: (command, args) => {
+        if (command === "sentry" && args[1] === "list") {
+          return { status: 0, stdout: JSON.stringify([{ shortId: "PM-CLI-REGRESSION", id: "201", substatus: "regressed", level: "error", isUnhandled: true }]), stderr: "" };
+        }
+        return command === "bash" ? { status: 0, stdout: TELEMETRY_CSV, stderr: "" } : { status: 0, stdout: "[]", stderr: "" };
+      },
+    });
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-CLI-REGRESSION"]);
+    expect(json.sentry.ignored_test_only_regression_short_ids).toEqual([]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it("treats a test-context event in a non-test environment as test traffic, keeping mixed issues blocking (pm-usn5k2)", async () => {
     const fetchSpy = sentrySearch([
       environmentIssue("PM-CI-TEST-CONTEXT", [["ci", 0, "test"]]),

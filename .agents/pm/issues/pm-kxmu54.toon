@@ -1,0 +1,43 @@
+id: pm-kxmu54
+title: "The release Sentry gate blocks on a resolved issue that regressed only through environment=test events, because it judges test traffic per issue instead of per regression"
+description: "Observed 2026-11-28. Blocker #1794's blocker_retry run 46149734279 failed at the sentry-telemetry-gate on PM-CLI-42. The issue had been resolved at 13:25Z after its two automation events (11-26, 11-27) were explained. At 13:39Z, four new events from a pm-github reproduction harness arrived correctly labelled environment=test, and they regressed it. pm-usn5k2 made the gate drop an unresolved issue only when a complete listing of issues with any non-test event (!environment:test !pm.source_context:test, at any time) lacks it. PM-CLI-42 still has its old automation events, so its test-only regression counts as release-blocking. Today's retry marker was then spent, so the day's release needed an operator dispatch and a time-boxed archive. Expected: a regression is judged by the events since the issue was last resolved. When every event after the last resolution is test traffic (environment test or pm.source_context test), the issue is test-only for the gate. An issue never resolved, a regression with any non-test event, or a lookup that fails or is incomplete keeps blocking (fail closed). Duplicate check: searched 'sentry gate test-only regression resolved issue environment test events'. pm-usn5k2 (closed) owns the per-issue test-only rule, and no item owns post-resolution judgement."
+type: Issue
+status: closed
+priority: 1
+tags[6]: auto-release,gate,release,sentry,telemetry,test-isolation
+created_at: "2026-11-28T14:08:32.363Z"
+updated_at: "2026-11-28T14:45:15.381Z"
+closed_at: "2026-11-28T14:12:51.089Z"
+completed_at: "2026-11-28T14:12:51.089Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "An unresolved issue whose events since its last resolution are all environment=test or pm.source_context=test is reported as test-only and does not block; A never-resolved issue, a regression with any non-test event since the resolution, and a failed or truncated activity or event lookup keep blocking; The gate spec covers each case with mocked Sentry responses, and a live gate run reports the classification"
+parent: pm-5oj5
+risk: medium
+confidence: 80
+severity: high
+resolution: "The Sentry release gate judges a regressed issue by its events since its latest resolution, read from the issue's activity and the filtered event list. A regression made only of test traffic is skipped and reported under ignored_test_only_regression_short_ids. Every other case fails closed: no resolution, a non-test event since it, a failed or malformed lookup, or a CLI listing without an API token."
+expected_result: "PM-CLI-42-like regressions made of environment=test events do not block, while any non-test regression still does"
+actual_result: "Gate spec: of 10 regressed or ongoing issues, only the one with no non-test event since its latest resolution is skipped. The other 9 (real regression, no resolution, malformed activity, details 500, events 500, events throw, non-list body, empty body, ongoing) block, and a CLI listing keeps blocking with no fetch. The live API probe confirms the queries return 0 since today's resolution and 1 before it, and 76 gate tests pass with 100% coverage of the changed lines"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-usn5k2,discovered_from,"2026-11-28T14:08:32.363Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-28T14:12:49.271Z","harness:claude-code","Implementation note (2026-11-28): after the pm-usn5k2 partition, excludeTestOnlyRegressions judges every remaining issue whose substatus is regressed. It reads the issue's activity (GET /organizations/{org}/issues/{id}/), takes the latest set_resolved* entry, then lists non-test events since then (GET .../issues/{id}/events/?query=!environment:test !pm.source_context:test&start=<resolution>&end=<now>&per_page=1). An empty list moves the issue to test_only and reports it under ignored_test_only_regression_short_ids. It fails closed when the activity has no resolution, when the details or events request is not OK or throws, when the body is empty or not a list, and when the listing came through the sentry CLI with no API token. Live API probe on PM-CLI-42: the activity shows set_resolved 13:27:21Z and set_regression 13:39:40Z, the non-test event list since 13:30Z holds 0 events and the one since 11-27 holds 1 (the automation event), so the rule would have skipped today's test-only regression. A live gate run against the project now reports ok with ignored_test_only_regression_short_ids []. PM-CLI-42 is archived until 02:59Z, so it is not listed."
+  "2026-11-28T14:45:15.380Z","harness:claude-code","Codex review round 1, gpt-6.2-sol xhigh, 2026-11-28. Both findings were valid and are fixed. P1: a production event timestamped ahead of the gate's clock could mark the issue regressed yet fall after the event query's end, so an empty list was not proof. The gate now reads the set_regression activity's data.event_id and requires that triggering event itself to be test traffic (environment or pm.source_context test). The window starts at the earlier of the resolution and the trigger, and ends 10 minutes past max(now, trigger, issue lastSeen). P2: Promise.all fired one issue-details request per regression, against Sentry's 5 GETs per second per organization. Lookups now run one at a time within one budget, and a 429 is retried up to 3 times after its Retry-After (1 s when absent or invalid) unless that would pass the budget. Each of these failure modes keeps the issue blocking. The spec has 19 fixture issues, covering throttled retries, an exhausted throttle, a Retry-After past the budget and a 429 with no header."
+files[2]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,pm-kxmu54 post-resolution regression judgement
+  tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,pm-kxmu54 post-resolution regression judgement
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,"harness:claude-code","2026-11-28T14:12:34.744Z",local_mutation,fix/schema-member-admission-add-lists
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,test-only regression rule
+close_reason: A resolved issue that regressed only through test events no longer blocks the release gate
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-kxmu54
+  gate_id: sentry-telemetry-gate
+  negative_control: "blocker_retry run 46149734279 failed on PM-CLI-42, whose only post-resolution events were environment=test; the new spec case PM-TEST-REGRESSION is blocking on the previous gate"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

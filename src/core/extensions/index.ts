@@ -183,7 +183,8 @@ interface SourceDiscovery {
 /**
  * Discover the source workspace the way Git discovers a repository: along
  * the physical ancestors of the start directory, which resolves as spelled
- * (so `link/..` names the link target's parent) and is always examined,
+ * (so `link/..` names the link target's parent; Windows collapses `..`
+ * lexically before it opens a path, as Git for Windows does) and is always examined,
  * never moving up into a discovery ceiling (GH-1787). The nearest directory
  * holding a `.git` marker is the checkout and the source; without one, the
  * source is the start directory itself. Each keeps the caller's spelling

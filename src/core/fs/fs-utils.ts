@@ -60,6 +60,30 @@ export async function readFileIfExists(
 }
 
 /**
+ * Read an optional file without blocking on a special one: null when it is
+ * absent, its UTF-8 text when it is a regular file, and a thrown error for
+ * anything else. The open is non-blocking where Node exposes O_NONBLOCK, so a
+ * named pipe with no writer fails like a directory instead of stalling the
+ * read. Links are followed.
+ */
+export async function readOptionalRegularFile(targetPath: string): Promise<string | null> {
+  let handle: fs.FileHandle;
+  try {
+    // O_NONBLOCK is undefined on Windows, where the bitwise OR reads it as 0.
+    handle = await fs.open(targetPath, constants.O_RDONLY | constants.O_NONBLOCK);
+  } catch (error: unknown) {
+    if (isFileAbsentError(error)) return null;
+    throw error;
+  }
+  try {
+    if (!(await handle.stat()).isFile()) throw new Error(`Not a regular file: ${targetPath}`);
+    return await handle.readFile("utf8");
+  } finally {
+    await handle.close();
+  }
+}
+
+/**
  * Read UTF-8 bytes after checking that the opened descriptor is a regular file.
  * Callers validate entries, ancestors and optional-file absence before opening.
  * Where Node exposes O_NOFOLLOW and O_NONBLOCK, the open also requests those

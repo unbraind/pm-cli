@@ -2,18 +2,44 @@ id: pm-8dbagz
 title: "The settings writer judges field definitions as if the current schema hydrated, so a proposal that repairs a broken schema file path activates stored definitions without judging them"
 description: "Raised by the Codex review of the field-admission branch (2026-11-27, round 3), not reproduced here. When a configured schema file is unusable (for example schema.files.statuses names a directory), readSettings falls back to defaults and no custom field is active. assertChangedSchemaFieldsAvailable in src/sdk/extension-command-context.ts compares the inline list plus the fields file before and after the proposal, as if both were active, so a proposal that only repairs the broken path activates every stored definition, including one whose alias shadows a built-in option, and nothing is judged. pm-2nwcgg made the writer judge the definition the registry will read for each key, but it reads stored entries, not the hydrated registry. Resolve both sides with the runtime's hydration and fallback rules (without hooks or scaffolding), so a definition that becomes active because hydration starts to succeed is judged. Duplicate check: searched settings writer hydration fallback schema file path admission; pm-2nwcgg (closed) owns the effective-definition rule."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: "area:sdk",schema,settings,validation
 created_at: "2026-11-27T04:49:36.163Z"
-updated_at: "2026-11-27T04:49:36.163Z"
+updated_at: "2026-11-28T14:45:29.944Z"
+closed_at: "2026-11-28T14:02:58.981Z"
+completed_at: "2026-11-28T14:02:58.981Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Reproduce with a settings file whose statuses path is a directory and a stored shadowing field, then a proposal that repairs only the path; The writer judges every definition that becomes active because hydration starts to succeed, and only those; A spec covers the repair proposal and a proposal that leaves hydration failing"
 parent: pm-ugqx
 risk: low
 confidence: medium
-expected_result: A settings proposal cannot activate a shadowing field without the add-field admission
+resolution: "hydrateMergedSettings is the one hydration step that the settings read and the settings writer share. A side whose schema files do not hydrate has no active stored definitions, so a proposal that repairs hydration judges every definition it activates, and one that leaves hydration failing judges only what it newly supplies."
+expected_result: A proposal that repairs a broken schema file path is refused when it activates a stored definition that shadows a built-in option
+actual_result: "With the statuses path set to a directory and a stored 'full' field, the path repair is refused with schema_field_option_collision, though main admitted it. An unrelated write keeps passing, and the repair is admitted once the shadowing definition is gone. 7 tests pass with 100% coverage of the changed lines"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-2nwcgg,discovered_from,"2026-11-27T04:49:36.163Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-28T14:02:57.319Z","harness:claude-code","Reproduced and fixed (2026-11-28). The reproduction: schema.files.statuses names a directory, so readSettings falls back with settings_read_merge_failed and no custom field is active, and the fields file stores {key: full, commands: [list]}, which shadows pm list --full. A mutateWorkspaceSettings proposal that only repairs the statuses path resolved changed: true on main. Its before and after effective sets were equal, because both were computed as if hydration had succeeded. Fix: the settings read's hydration step was extracted into hydrateMergedSettings(pmRoot, merged) in core/store/settings.ts. readSettings calls it, and the writer calls it for the current and the persisted settings. A side that does not hydrate contributes no effective definitions, so a repair makes every stored definition newly effective and each is judged, while a proposal that leaves hydration failing judges none. The proposal's own new or changed inline definitions are judged in both cases, as before. The negative control is the same spec against main's extension-command-context.ts, which fails with promise resolved instead of rejecting."
+  "2026-11-28T14:45:16.943Z","harness:claude-code","Codex review round 1 (2026-11-28), P2, valid: a schema path naming a POSIX FIFO with no writer stalled hydrateMergedSettings under the workspace lock. fs.readFile blocks on a pipe, and the ordinary settings read hung the same way for every command. Schema files are now read with readOptionalRegularFile (core/fs/fs-utils.ts): a non-blocking open, absent reads as null, and anything but a regular file throws, so a pipe fails hydration like a directory. The spec repairs a FIFO-backed statuses path through mutateWorkspaceSettings (dry run, refused for the stored shadowing field) without stalling, and the reader's own spec covers a regular file, an absent file, a directory, a FIFO and EACCES."
+files[5]{path,scope,note}:
+  src/core/fs/fs-utils.ts,project,non-blocking schema file reads (Codex review)
+  src/core/store/settings.ts,project,pm-8dbagz writer judges sides as hydration reads them
+  src/sdk/extension-command-context.ts,project,pm-8dbagz writer judges sides as hydration reads them
+  tests/unit/core/fs/optional-regular-file.spec.ts,project,non-blocking schema file reads (Codex review)
+  tests/unit/sdk/transactions/settings-field-admission.spec.ts,project,pm-8dbagz writer judges sides as hydration reads them
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-field-admission.spec.ts,project,"harness:claude-code","2026-11-28T14:02:56.529Z",local_mutation,fix/schema-member-admission-add-lists
+docs[1]{path,scope,note}:
+  docs/SDK_AUDITED_MUTATIONS.md,project,hydration-aware writer admission
+close_reason: The settings writer judges each side as the settings read hydrates it
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-8dbagz
+  gate_id: settings-writer-hydration-aware-admission
+  negative_control: "tests/unit/sdk/transactions/settings-field-admission.spec.ts pm-8dbagz case fails against main extension-command-context.ts: the path repair resolves changed true instead of refusing schema_field_option_collision"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-field-admission.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

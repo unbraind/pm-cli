@@ -1,0 +1,32 @@
+id: pm-928ng6
+title: Refresh matured fast-json-patch 3.1.2 and pm-changelog 2026.11.27
+description: "Dependency pass 2026-11-28 under the seven-day cooldown (Dependabot default-days 7). Eligible: fast-json-patch 3.1.2 (runtime, published 2026-11-21T14:19Z), adopted with the runtime lock re-applied. Inside the window, so they stay: @types/node 26.6.11, vitest and @vitest/coverage-v8 5.1.2, eslint-plugin-sonarjs 4.2.3, tar 7.5.24, fast-check 4.11.0, knip 6.48.0, marked 18.3.0 and typescript-eslint 8.74.0. Held by their owners: @codspeed/vitest-plugin 6.1.1 (the @codspeed/core 6.1.0 patch pin), the @sentry/node 11 major (the dependabot ignore rule), the TypeScript 7 major (pm-do5b) and npm-package-arg 14 (pm-ksr40d). pm-changelog moves from 2026.11.20 to the latest published 2026.11.27, reinstalled through pnpm changelog:pm:install so the managed source spec stays npm:pm-changelog. Duplicate check: the previous refresh is closed. There are no open Dependabot PRs or alerts."
+type: Chore
+status: closed
+priority: 2
+tags[2]: dependencies,quality
+created_at: "2026-11-28T14:13:23.949Z"
+updated_at: "2026-11-28T15:17:32.405Z"
+closed_at: "2026-11-28T15:17:31.782Z"
+completed_at: "2026-11-28T15:17:31.782Z"
+author: "harness:claude-code"
+estimated_minutes: 30
+acceptance_criteria: fast-json-patch resolves to 3.1.2 in the lockfile and the runtime lock check passes; pm-changelog 2026.11.27 is the managed version and regenerates the changelog; Packages inside the cooldown window and held majors are left unchanged with their owners named
+parent: pm-u9d0
+risk: low
+confidence: 90
+resolution: "fast-json-patch ^3.1.2: the lockfile resolves 3.1.2 and runtime-dependencies.json was re-applied with runtime-lock apply. pm-changelog moved 2026.11.20 -> 2026.11.27 through pnpm changelog:pm:install, so the managed source spec stays npm:pm-changelog. Left unchanged: the cooldown-window updates (@types/node, vitest/coverage-v8, sonarjs, tar, fast-check, knip, marked, typescript-eslint) and the held updates (codspeed patch pin, Sentry 11, TypeScript 7 under pm-do5b, npm-package-arg 14 under pm-ksr40d)."
+expected_result: "fast-json-patch 3.1.2 in the lockfile with a passing runtime lock, pm-changelog 2026.11.27 active, nothing else moved"
+actual_result: "runtime-lock check: ok (39 packages). pm package list shows pm-changelog 2026.11.27 managed. The full coverage suite (14196 tests, 100%) and quality:static pass on the bumped lockfile"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-do5b,related,"2026-11-28T14:13:23.949Z","harness:claude-code","cli:create:dep",detected
+  pm-ksr40d,related,"2026-11-28T14:13:23.949Z","harness:claude-code","cli:create:dep",detected
+files[4]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,fast-json-patch 3.1.2 and pm-changelog 2026.11.27
+  package.json,project,fast-json-patch 3.1.2 and pm-changelog 2026.11.27
+  pnpm-lock.yaml,project,fast-json-patch 3.1.2 and pm-changelog 2026.11.27
+  runtime-dependencies.json,project,fast-json-patch 3.1.2 and pm-changelog 2026.11.27
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/runtime-lock.mjs check,project,"harness:claude-code","2026-11-28T15:17:31.043Z",local_mutation,fix/schema-member-admission-add-lists
+close_reason: Matured fast-json-patch and the latest pm-changelog adopted; younger and held updates left with their owners
+body: ""

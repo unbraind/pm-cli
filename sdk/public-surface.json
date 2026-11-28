@@ -41347,6 +41347,7 @@
     "linked_artifact_note_conflict",
     "linked_artifact_note_key_misread",
     "linked_resource_positional_value",
+    "linked_resource_value_list",
     "linked_test_command_immutable",
     "linked_test_command_not_executable",
     "linked_test_context_invalid",

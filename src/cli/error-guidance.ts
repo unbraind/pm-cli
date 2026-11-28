@@ -29,6 +29,7 @@ import {
   type PmProjectedDiagnostic,
 } from "../sdk/cli-contracts/agent-output-contracts.js";
 import { renderPmCommand } from "./argv-utils.js";
+import type { LinkedResourceValueListRecovery } from "./linked-resource-value-list.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
 import {
@@ -281,6 +282,8 @@ export interface CommanderGuidanceContext {
   suggestedRetryArgs?: string[];
   /** Existing item id verified against the selected tracker for collection recovery. */
   verifiedCollectionItemId?: string;
+  /** Recovery for several values after one repeatable linked-resource flag, resolved with the command's option arity (pm-gh1791). */
+  linkedResourceValueList?: LinkedResourceValueListRecovery;
   /** Installed extensions whose activation failed for this invocation. */
   failedExtensions?: Array<{ name: string }>;
 }
@@ -2493,6 +2496,36 @@ function buildLinkedResourcePositionalGuidance(
   });
 }
 
+/** Several values after one repeatable linked-resource flag: name the repeat-flag fix and the exact retry (pm-gh1791). */
+function buildLinkedResourceValueListGuidance(
+  message: string,
+  commandName: string | undefined,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  const recovery = context?.linkedResourceValueList;
+  if (!/too many arguments/i.test(message) || recovery === undefined) return null;
+  const flag = recovery.flags[0]!;
+  const flagList = recovery.flags.join(", ");
+  const retry = recovery.retryArgs ? renderPmCommand(recovery.retryArgs) : undefined;
+  const glob = commandName !== "test" && recovery.flags.includes("--add");
+  const template = `pm ${commandName} ${recovery.itemId} ${flag} <value> ${flag} <value>`;
+  const count = recovery.extraValues.length;
+  return makeGuidanceMessage({
+    code: "linked_resource_value_list",
+    title: `Repeat ${flag} once per value${glob ? " (or use --add-glob)" : ""}`,
+    happened: `${count} more value${count === 1 ? "" : "s"} followed the value of ${flagList}. pm ${commandName} takes one value per occurrence, so they were read as extra positional arguments and nothing was changed.`,
+    required: retry
+      ? `Retry with one ${flag} per value: ${retry}`
+      : `Write one ${flag} per value, and quote a value that contains spaces or commas so the shell passes it as one argument: ${template}`,
+    why: `Each occurrence of a repeatable flag takes exactly one value, so an item id written after the flag (pm ${commandName} ${flag} <value> <id>) stays unambiguous.`,
+    examples: [retry ?? template, ...(glob ? [`pm ${commandName} ${recovery.itemId} --add-glob "<pattern>"`] : []), `pm ${commandName} --help`],
+    recovery: buildCommanderRecoveryPayload(context, {
+      suggested_retry: retry,
+      suggested_retry_args: recovery.retryArgs,
+    }),
+  });
+}
+
 function buildTransposedCollectionActionGuidance(
   message: string,
   commandName: string | undefined,
@@ -2633,6 +2666,7 @@ function buildCommanderErrorGuidance(
     buildUnknownCommandGuidance(message, context) ??
     buildUnknownSubcommandGuidance(context) ??
     buildTransposedCollectionActionGuidance(message, commandName, context) ??
+    buildLinkedResourceValueListGuidance(message, commandName, context) ??
     buildLinkedTestValueNotQuotedGuidance(message, commandName, context) ??
     buildLinkedResourcePositionalGuidance(message, commandName, context) ??
     buildContextItemArgumentGuidance(message, commandName, context);

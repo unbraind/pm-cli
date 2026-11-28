@@ -1,0 +1,50 @@
+id: pm-gh1791
+title: "GH-1791: several paths after one --add on pm files/docs/test fail with a generic usage error that names neither the repeat-flag fix nor a retry"
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1791. Reproduced on 2026.11.27 in a sandbox tracker: pm files <id> --add a.ts b.ts c.ts exits 2 with code invalid_command_usage, required 'Use the command with valid arguments and options.' and no suggested retry; the JSON envelope has detail (Commander's message) but no recovery.suggested_retry. pm docs behaves the same. pm test already has targeted guidance (linked_test_value_not_quoted) for an unquoted command split by the shell, which is a different shape. A variadic --add <value...> would swallow an item id written after the flag (pm files --add a.ts <id> is valid today), so the safe fix is a targeted refusal: when every extra positional directly follows a repeatable flag's value and the item id is the first operand, name the repeat-flag fix in the first line and give the exact rewritten command (one --add per value, or --add-glob) in text and in recovery.suggested_retry / suggested_retry_args. Duplicate check: searched repeated --add several paths, too many arguments collection guidance; the transposed 'add' subcommand and linked-resource positional guidance cover other shapes, no item covers this one."
+type: Issue
+status: closed
+priority: 2
+tags[5]: agent-ux,cli,error-guidance,"gh:1791",linked-resources
+created_at: "2026-11-28T13:31:46.012Z"
+updated_at: "2026-11-28T14:45:32.811Z"
+closed_at: "2026-11-28T13:43:40.969Z"
+completed_at: "2026-11-28T13:43:40.969Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "pm files <id> --add a b c and pm docs <id> --add a b c fail with a targeted code whose first text line names the repeat-flag fix and whose recovery carries the exact retry with one --add per value; pm test <id> --add with several complete entry values gets the same retry, and an unquoted command split by the shell keeps linked_test_value_not_quoted; Repeated --add, --add-glob and an item id written after the flag behave exactly as today, and a positional that does not follow a repeatable flag keeps its current guidance; The suggested retry, replayed in a sandbox, links every value"
+parent: pm-mpbb
+risk: low
+confidence: 85
+severity: low
+resolution: "New linked_resource_value_list refusal (exit 2) for pm files, docs and test. It reads the invoked command's Commander option arity (required/optional value, collect = repeatable), and it fires only when every extra operand directly follows a repeatable flag's value and the item id is the first operand. The title names the repeat-flag fix (or --add-glob), and recovery.suggested_retry_args gives one flag occurrence per value. A keyed value followed by bare words gets the quoting hint without an executable retry. Linked tests replay only complete entries, and a shell-split command keeps linked_test_value_not_quoted. A variadic --add was rejected because it would swallow an item id written after the flag."
+expected_result: pm files <id> --add a b c fails with a first line naming the repeat-flag fix and a JSON retry that links every value
+actual_result: "Sandbox on the built CLI: 'Error: Repeat --add once per value (or use --add-glob)', suggested_retry_args 'item files <id> --add a.ts --add b.ts --add c.ts' replayed to link all three. docs, test (complete entries) and --add-glob give the same, pm files --add a.ts <id> still links, and the 89 focused tests pass with 100% coverage of the added lines"
+comments[3]{created_at,author,text}:
+  "2026-11-28T13:31:46.012Z","harness:claude-code","Duplicate check: searched 'repeated --add several paths one flag usage error' and collection-guidance terms; no open or closed item owns extra values after one --add. Filed from GH-1791 on 2026-11-28."
+  "2026-11-28T13:43:13.397Z","harness:claude-code","Implementation note (2026-11-28): src/cli/linked-resource-value-list.ts classifies every token after the item id the way Commander reads it. A required value consumes the next token, an optional one consumes it unless it is option-like, and a repeatable option is one whose parseArg is the shared collect processor. The arity is read from the Commander declaration of the invoked command, found by walking the canonical namespaced path (files/docs/test are registered under item), with the bootstrap global flag sets as the fallback. Any token it cannot classify (an unknown flag, a positional outside a value chain, a bare --) declines, and the earlier builders keep the refusal. File/doc lists that are all bare words or all identity entries (path=, pattern=, from=) get an exact retry. A keyed value followed by bare words may be one split value, so it gets the quoting hint and no executable retry. Linked-test lists replay only complete entries, and everything else stays linked_test_value_not_quoted. Verified in a sandbox: the replayed suggested_retry_args linked a.ts, b.ts and c.ts, and pm files --add a.ts <id> still links."
+  "2026-11-28T14:45:18.440Z","harness:claude-code","Codex review round 1 (2026-11-28), three P2 findings, all valid and fixed. (1) Colon-form entries: path:a,note:fix the bug got an executable retry because only = marked a value as structured. Values are now judged by the artifact parser's own looksLikeStructuredPathEntry and parse functions (parseAddEntries, parseAddGlobEntries, parseRemoveEntries, parseMigrateEntries): a mix of structured and bare values, or a value the parser refuses, gets the quoting hint and no retry. (2) Ancestor options: pm files --json <id> --add a b got the generic error, and pm files <id> --add --json a b took --json as the value of --add. The resolver now classifies the tokens Commander sees, with global options stripped by the bootstrap's own globalBootstrapTokenSpan, which stripGlobalBootstrapTokens now also reads, and maps each insertion back to its argv position. (3) Linked-test entries: path= alone, cmd= for --remove and 0 for --remove-index got a retry. sdk/test/execution.ts now exports admitsLinkedTestFlagValue, which calls the flag's own parser (parseAddEntry, parseAddJsonEntries, parseRemoveEntries, parseRemoveIndexes, parseTestRunMeasurements). Also caught by the full suite: the module had statically pulled registration-helpers (commander) and the parsers into error-guidance, which is on the boot path, so pm --version without runtime dependencies failed. commander-usage now resolves the recovery asynchronously with a dynamic import, only for a too-many-arguments refusal, and error-guidance only formats the result."
+learnings[1]{created_at,author,text}:
+  "2026-11-28T13:43:14.056Z","harness:claude-code","Collection commands (files, docs, test, comments, notes, learnings) are registered under the item namespace, not at the top level. Find a command's Commander object by walking findPmNamespacedCommand(...).canonical_argv from the root program. rootProgram.commands.find(name) misses them silently."
+files[8]{path,scope,note}:
+  scripts/generate-error-code-catalog.mjs,project,GH-1791 value-list refusal
+  src/cli/commander-usage.ts,project,GH-1791 value-list refusal
+  src/cli/error-guidance.ts,project,GH-1791 value-list refusal
+  src/cli/linked-resource-value-list.ts,project,GH-1791 value-list refusal
+  src/sdk/cli-bootstrap.ts,project,shared global-token rule and native linked-test admission (Codex review)
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,GH-1791 value-list refusal
+  src/sdk/test/execution.ts,project,shared global-token rule and native linked-test admission (Codex review)
+  tests/unit/cli/linked-resource-value-list.spec.ts,project,GH-1791 value-list refusal
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-value-list.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts,project,"harness:claude-code","2026-11-28T13:43:04.317Z",local_mutation,fix/schema-member-admission-add-lists
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,linked_resource_value_list contract
+close_reason: Several values after one repeatable linked-resource flag are refused with the repeat-flag fix and the exact retry
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1791
+  gate_id: linked-resource-value-list-refusal
+  negative_control: "tests/unit/cli/linked-resource-value-list.spec.ts fails on the published 2026.11.27 host, where pm files <id> --add a b c returns invalid_command_usage with no suggested_retry"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-value-list.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

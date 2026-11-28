@@ -88,6 +88,13 @@ registry drops (a blank alias) cannot shadow an option, so on a stored entry it
 stays a `pm validate --check-metadata` report; only a newly supplied one is
 refused
 ([pm-2nwcgg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2nwcgg.toon);
+tracker record excluded from npm). Each side is judged as the settings read
+hydrates it: when the schema files of the stored settings do not hydrate (a
+schema file path that names a directory, for example), the read falls back to
+defaults and no stored definition is active, so a proposal that repairs
+hydration makes every stored definition effective and each is judged, while a
+proposal that leaves hydration failing activates and judges none
+([pm-8dbagz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8dbagz.toon);
 tracker record excluded from npm).
 
 Request `includePreview: true` to receive an optional `preview` settings tree

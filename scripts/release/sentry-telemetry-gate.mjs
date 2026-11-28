@@ -271,6 +271,11 @@ function parseSentryProject(project) {
   return { org, projectSlug };
 }
 
+/** The Sentry API origin the gate queries. */
+function sentryBaseUrl() {
+  return process.env.SENTRY_URL || process.env.SENTRY_BASE_URL || "https://sentry.io";
+}
+
 const SENTRY_GATE_BASE_QUERY = "is:unresolved level:[fatal,error]";
 /** Unresolved issues with at least one event outside environment=test, at any time. */
 // pm-usn5k2: an event is test traffic when its environment is test or its pm.source_context is test
@@ -289,10 +294,7 @@ function buildSentryGateQuery(windowDays) {
 }
 
 function buildSentryIssuesUrl(project, query, limit) {
-  const baseUrl =
-    process.env.SENTRY_URL ||
-    process.env.SENTRY_BASE_URL ||
-    "https://sentry.io";
+  const baseUrl = sentryBaseUrl();
   const { org, projectSlug } = parseSentryProject(project);
   const url = new URL(
     `/api/0/projects/${encodeURIComponent(org)}/${encodeURIComponent(projectSlug)}/issues/`,
@@ -323,10 +325,7 @@ async function enrichSentryIssueWithLatestEvent(
   if (!needsSentryContractEnrichment(issue) || typeof issue.id !== "string") {
     return issue;
   }
-  const baseUrl =
-    process.env.SENTRY_URL ||
-    process.env.SENTRY_BASE_URL ||
-    "https://sentry.io";
+  const baseUrl = sentryBaseUrl();
   const eventUrl = new URL(
     `/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/events/latest/`,
     baseUrl,
@@ -670,7 +669,139 @@ async function fetchSentryGateIssues(project, windowDays, limit, allowCliFallbac
   if (active.issues.length === 0) return active;
   const nonTest = await fetchSentryIssues(project, SENTRY_NON_TEST_QUERY, limit, allowCliFallback, windowDays, requestTimeoutMs, false);
   if (!nonTest.ok) return { ...nonTest, reason: `sentry_environment_query_failed:${nonTest.reason}` };
-  return excludeTestOnlyIssues(active, nonTest, limit);
+  return excludeTestOnlyRegressions(excludeTestOnlyIssues(active, nonTest, limit), project, requestTimeoutMs);
+}
+
+/** Activity types that record an issue's resolution. */
+const SENTRY_RESOLUTION_ACTIVITY_TYPES = new Set([
+  "set_resolved",
+  "set_resolved_in_release",
+  "set_resolved_by_age",
+  "set_resolved_in_commit",
+  "set_resolved_in_pull_request",
+]);
+const SENTRY_NON_TEST_EVENT_QUERY = "!environment:test !pm.source_context:test";
+
+/** The latest activity entry of the given types, with its time, or undefined. */
+function latestActivity(activity, types) {
+  let latest;
+  for (const entry of Array.isArray(activity) ? activity : []) {
+    const time = typeof entry?.dateCreated === "string" ? Date.parse(entry.dateCreated) : Number.NaN;
+    if (types.has(entry?.type) && Number.isFinite(time) && (latest === undefined || time > latest.time)) latest = { entry, time };
+  }
+  return latest;
+}
+
+const SENTRY_REGRESSION_ACTIVITY_TYPES = new Set(["set_regression"]);
+/** Sentry accepts event timestamps somewhat ahead of its own clock, so the event window extends past now. */
+const SENTRY_EVENT_WINDOW_SKEW_MS = 10 * 60 * 1000;
+
+/** Whether an event is test traffic as the gate's listings define it: environment test or pm.source_context test. */
+function isTestTrafficEvent(event) {
+  const tags = Array.isArray(event?.tags) ? event.tags : [];
+  return tags.some((tag) => (tag?.key === "environment" || tag?.key === "pm.source_context") && tag?.value === "test");
+}
+
+/** The wait a 429 asks for: its Retry-After seconds, or one second when the header is absent or unusable. */
+function retryAfterMs(response) {
+  const header = response.headers?.get("retry-after");
+  const seconds = typeof header === "string" && header.trim().length > 0 ? Number(header) : Number.NaN;
+  return (Number.isFinite(seconds) && seconds >= 0 ? seconds : 1) * 1000;
+}
+
+/**
+ * One authorized JSON read within a shared deadline. A 429 is retried after
+ * its Retry-After delay while the deadline allows; any other failure, an
+ * empty body or an expired deadline yields undefined.
+ */
+async function fetchSentryJson(url, token, deadline) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    // A spent budget aborts the request at once, which the caller reads as a failed lookup.
+    const response = await fetch(url, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
+    });
+    if (response.status !== 429) return readSentryJsonBody(response);
+    const delay = retryAfterMs(response);
+    if (Date.now() + delay >= deadline) return undefined;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+  return undefined;
+}
+
+/** The JSON body of an OK response, or undefined for a failed or empty one. */
+async function readSentryJsonBody(response) {
+  if (!response.ok) return undefined;
+  const body = await response.text();
+  return body.trim().length > 0 ? JSON.parse(body) : undefined;
+}
+
+/**
+ * The window a regression's events fall in: from the earlier of the latest
+ * resolution and the event that triggered the regression, which must be test
+ * traffic, to past the issue's last event. Undefined when the activity lacks
+ * either record, the regression predates the resolution, or the trigger is
+ * not test traffic.
+ */
+async function readTestRegressionWindow(issue, issueUrl, token, deadline) {
+  const activity = (await fetchSentryJson(issueUrl, token, deadline))?.activity;
+  const resolution = latestActivity(activity, SENTRY_RESOLUTION_ACTIVITY_TYPES);
+  const regression = latestActivity(activity, SENTRY_REGRESSION_ACTIVITY_TYPES);
+  const triggerId = regression?.entry?.data?.event_id;
+  if (resolution === undefined || regression === undefined || regression.time < resolution.time || typeof triggerId !== "string") return undefined;
+  const trigger = await fetchSentryJson(new URL(`events/${encodeURIComponent(triggerId)}/`, issueUrl), token, deadline);
+  const triggerTime = Date.parse(trigger?.dateCreated);
+  if (!isTestTrafficEvent(trigger) || !Number.isFinite(triggerTime)) return undefined;
+  const lastSeen = Date.parse(issue.lastSeen);
+  return {
+    start: Math.min(resolution.time, triggerTime),
+    end: Math.max(Date.now(), triggerTime, Number.isFinite(lastSeen) ? lastSeen : 0) + SENTRY_EVENT_WINDOW_SKEW_MS,
+  };
+}
+
+/**
+ * Whether a regressed issue regressed only through test traffic (pm-kxmu54):
+ * its activity records a resolution followed by a regression whose triggering
+ * event is test traffic, and Sentry lists no non-test event in the
+ * regression's window. Whoever resolved the issue judged its earlier events,
+ * so such a regression is test noise, as pm-usn5k2 treats an issue made only
+ * of test events. Any failed lookup or missing record keeps it blocking.
+ */
+async function isTestOnlyRegression(issue, org, token, deadline) {
+  if (issue?.substatus !== "regressed" || typeof issue.id !== "string") return false;
+  const issueUrl = new URL(`/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/`, sentryBaseUrl());
+  try {
+    const window = await readTestRegressionWindow(issue, issueUrl, token, deadline);
+    if (window === undefined) return false;
+    const eventsUrl = new URL("events/", issueUrl);
+    eventsUrl.searchParams.set("query", SENTRY_NON_TEST_EVENT_QUERY);
+    eventsUrl.searchParams.set("start", new Date(window.start).toISOString());
+    eventsUrl.searchParams.set("end", new Date(window.end).toISOString());
+    eventsUrl.searchParams.set("per_page", "1");
+    const events = await fetchSentryJson(eventsUrl, token, deadline);
+    return Array.isArray(events) && events.length === 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Move the issues that regressed only through test traffic to the test-only set; needs the API token the listing used. */
+async function excludeTestOnlyRegressions(partitioned, project, requestTimeoutMs) {
+  const token = redactedTokenCandidates().find(([source]) => source === partitioned.token_source)?.[1];
+  if (token === undefined) return partitioned;
+  const { org } = parseSentryProject(project);
+  // One lookup at a time within one budget: Sentry rate-limits issue details per organization.
+  const deadline = Date.now() + requestTimeoutMs;
+  const verdicts = [];
+  for (const issue of partitioned.issues) verdicts.push(await isTestOnlyRegression(issue, org, token, deadline));
+  const regressions = partitioned.issues.filter((_issue, index) => verdicts[index]);
+  if (regressions.length === 0) return partitioned;
+  return {
+    ...partitioned,
+    issues: partitioned.issues.filter((_issue, index) => !verdicts[index]),
+    test_only: [...partitioned.test_only, ...regressions],
+    test_only_regressions: regressions,
+  };
 }
 
 function usage() {
@@ -886,6 +1017,9 @@ function buildSentryTelemetryGateResult(params) {
         .slice(0, 25),
       ignored_test_only_total: (params.sentryFetch.test_only ?? []).length,
       ignored_test_only_short_ids: (params.sentryFetch.test_only ?? [])
+        .map((issue) => issue.shortId)
+        .slice(0, 25),
+      ignored_test_only_regression_short_ids: (params.sentryFetch.test_only_regressions ?? [])
         .map((issue) => issue.shortId)
         .slice(0, 25),
       environment_listing_complete:

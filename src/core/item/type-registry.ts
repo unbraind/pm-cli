@@ -17,8 +17,8 @@ import {
   normalizeItemTypeDefinition as normalizeSharedItemTypeDefinition,
   normalizeItemTypeStringList,
   strictPolicyCommand,
-  parseItemExecutionRole,
 } from "./item-type-definition.js";
+import { inspectItemTypeDefinition } from "./item-type-inspection.js";
 
 /** Default dispatch roles for built-in types whose work requires human input or outcome verification. Custom definitions can override these through the same registry. */
 export const BUILTIN_ITEM_EXECUTION_ROLES: Readonly<Record<string, "human" | "gate">> = Object.freeze({ decision: "human", milestone: "gate" });
@@ -446,133 +446,6 @@ function normalizeTypeDefinition(
   });
 }
 
-function readStringArray(
-  record: Record<string, unknown>,
-  key: string,
-): string[] | undefined {
-  const value = record[key];
-  return Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === "string")
-    : undefined;
-}
-
-function coerceOptionDefinitionFromUnknown(
-  raw: unknown,
-): ItemTypeOptionDefinition | null {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return null;
-  }
-  const optionRecord = raw as Record<string, unknown>;
-  if (typeof optionRecord.key !== "string") {
-    return null;
-  }
-  return {
-    key: optionRecord.key,
-    values: readStringArray(optionRecord, "values") ?? [],
-    required:
-      optionRecord.required === undefined
-        ? undefined
-        : Boolean(optionRecord.required),
-    aliases: readStringArray(optionRecord, "aliases"),
-    description:
-      typeof optionRecord.description === "string"
-        ? optionRecord.description
-        : undefined,
-  };
-}
-
-function coerceCommandOptionPolicyFromUnknown(
-  raw: unknown,
-): ItemTypeCommandOptionPolicy | null {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return null;
-  }
-  const policyRecord = raw as Record<string, unknown>;
-  if (
-    typeof policyRecord.command !== "string" ||
-    typeof policyRecord.option !== "string"
-  ) {
-    return null;
-  }
-  const normalizedCommand = policyRecord.command.trim().toLowerCase();
-  if (normalizedCommand !== "create" && normalizedCommand !== "update") {
-    return null;
-  }
-  return {
-    command: normalizedCommand,
-    option: policyRecord.option,
-    required:
-      policyRecord.required === undefined
-        ? undefined
-        : Boolean(policyRecord.required),
-    visible:
-      policyRecord.visible === undefined
-        ? undefined
-        : Boolean(policyRecord.visible),
-    enabled:
-      policyRecord.enabled === undefined
-        ? undefined
-        : Boolean(policyRecord.enabled),
-  };
-}
-
-function coerceOptionDefinitionsFromRecord(
-  record: Record<string, unknown>,
-): ItemTypeOptionDefinition[] | undefined {
-  if (!Array.isArray(record.options)) {
-    return undefined;
-  }
-  return record.options
-    .map((entry) => coerceOptionDefinitionFromUnknown(entry))
-    .filter((entry): entry is ItemTypeOptionDefinition => entry !== null);
-}
-
-function coerceCommandOptionPoliciesFromRecord(
-  record: Record<string, unknown>,
-): ItemTypeCommandOptionPolicy[] | undefined {
-  if (!Array.isArray(record.command_option_policies)) {
-    return undefined;
-  }
-  return record.command_option_policies
-    .map((entry) => coerceCommandOptionPolicyFromUnknown(entry))
-    .filter((entry): entry is ItemTypeCommandOptionPolicy => entry !== null);
-}
-
-function coerceTypeDefinitionFromUnknown(
-  raw: unknown,
-): ItemTypeDefinition | null {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return null;
-  }
-  const record = raw as Record<string, unknown>;
-  const name = typeof record.name === "string" ? record.name : "";
-  if (name.trim().length === 0) {
-    return null;
-  }
-  const folder = typeof record.folder === "string" ? record.folder : undefined;
-  const description =
-    typeof record.description === "string" ? record.description : undefined;
-  const defaultStatus =
-    typeof record.default_status === "string"
-      ? record.default_status
-      : undefined;
-  return {
-    name,
-    description,
-    default_status: defaultStatus,
-    execution_role: parseItemExecutionRole(record.execution_role),
-    folder,
-    aliases: readStringArray(record, "aliases"),
-    required_create_fields: readStringArray(record, "required_create_fields"),
-    required_create_repeatables: readStringArray(
-      record,
-      "required_create_repeatables",
-    ),
-    options: coerceOptionDefinitionsFromRecord(record),
-    command_option_policies: coerceCommandOptionPoliciesFromRecord(record),
-  };
-}
-
 function resolveDefinitionRequiredCreateFields(
   normalizedDefinition: ItemTypeDefinition,
   existing: ResolvedItemTypeDefinition | undefined,
@@ -690,7 +563,8 @@ function collectExtensionTypeDefinitions(
       continue;
     }
     for (const rawDefinition of typeDefinitionsRaw) {
-      const normalized = coerceTypeDefinitionFromUnknown(rawDefinition);
+      // A registration is read as a schema file entry is, except that an unknown execution role is refused.
+      const normalized = inspectItemTypeDefinition(rawDefinition, "extension").definition;
       if (normalized) {
         definitions.push(normalized);
       }

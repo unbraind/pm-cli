@@ -2,21 +2,43 @@ id: pm-2ze9nt
 title: "Two active packages that declare one extension item field with different types still stop every create and update, now with a typed extension_item_field_type_conflict"
 description: "Found 2026-11-27 while fixing pm-dhlij3. collectRegisteredFieldDefinitions (src/core/extensions/item-fields.ts) throws extension_item_field_type_conflict whenever two active registrations give one field name different types, and applyRegisteredItemFieldDefaultsForWrite runs it on every create and update, so one package that declares story_points as number beside another that declares it as string makes every write exit 2, including writes that never touch the field. pm-dhlij3 made the refusal typed (it used to surface as command_failed) and moved reserved-name handling to activation, but the type conflict is still judged per write and no diagnostic names it before a write fails. Duplicate check: searched item field conflicting types, type_conflict and two packages activation; pm-oll8 and pm-tom5xp (closed) own declared type validation, not cross-package conflicts."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: "area:sdk",extensions,schema,ux
 created_at: "2026-11-27T03:33:33.880Z"
-updated_at: "2026-11-27T03:34:05.151Z"
+updated_at: "2026-11-28T14:00:15.538Z"
+closed_at: "2026-11-28T14:00:14.794Z"
+completed_at: "2026-11-28T14:00:14.794Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Activation keeps the first declaration of a field and drops each later declaration with a different type, with a warning that names both packages, the field and both types; pm package doctor and pm health report the conflict, and create and update keep working for every field; A spec activates two such packages and drives create and update, with a negative control on a hand-built registry"
 parent: pm-ugqx
 risk: low
 confidence: high
-expected_result: One package's field declaration cannot stop writes for the whole tracker
-actual_result: Every create and update exits 2 with extension_item_field_type_conflict while both packages are active
+resolution: "registerItemFields drops a declaration whose type disagrees with an admitted one (findConflictingItemFieldDeclaration, using the write path's own name and type normalizers). It records an activation warning naming the field, both packages and both types, which package doctor and health report. Same-type redeclarations stay, and the write-path refusal remains as the guard for hand-built registries."
+expected_result: "Two installed packages declaring story_points as number and as string no longer stop any create or update, and doctor and health name the conflict"
+actual_result: "Built CLI with two installed packages: create --field story_points=5 and update succeed, and the item keeps story_points 5 (number, first declaration). doctor and health warn extension_item_field_type_conflict:project:pkg-b:story_points:string:kept=project:pkg-a:number. The synthetic activation keeps the free fields of the dropping package, and the hand-built-registry negative control still refuses. 9 tests pass with 100% coverage of the changed lines"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dhlij3,discovered_from,"2026-11-27T03:33:33.880Z","harness:claude-code","cli:create:dep",detected
   pm-oll8,related,"2026-11-27T03:34:04.502Z","harness:claude-code","cli:update:dep",detected
   pm-tom5xp,related,"2026-11-27T03:34:04.502Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-28T14:00:13.238Z","harness:claude-code","Implementation note (2026-11-28): registerItemFields now judges each field against the declarations already admitted to the shared registration registry, plus the fields admitted earlier in the same call. It uses findConflictingItemFieldDeclaration in item-fields.ts, which reads names and types with the write path's own normalizeFieldName and normalizeFieldType, so activation and collectRegisteredFieldDefinitions can never disagree. The first declaration in activation order wins. A later one with another type is dropped with extension_item_field_type_conflict:<layer>:<package>:<field>:<type>:kept=<layer>:<package>:<type>, which package doctor and health carry as activation warnings, the same path the reserved-field warning takes. A same-type redeclaration is kept. A rolled-back package's declarations are truncated from the registry before later packages are judged (captureExtensionActivationRollback), so a failed package never shadows a later one. collectRegisteredFieldDefinitions keeps its typed refusal for hand-built registries, and the existing negative control still proves that refusal on create and update."
+files[3]{path,scope,note}:
+  src/core/extensions/item-fields.ts,project,pm-2ze9nt cross-package field type conflicts at activation
+  src/core/extensions/loader.ts,project,pm-2ze9nt cross-package field type conflicts at activation
+  tests/unit/extensions/extension-item-field-admission.spec.ts,project,pm-2ze9nt cross-package field type conflicts at activation
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-item-field-admission.spec.ts,project,"harness:claude-code","2026-11-28T14:00:12.351Z",local_mutation,fix/schema-member-admission-add-lists
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,extension_item_field_type_conflict activation warning
+close_reason: "Activation keeps the first declaration of a field and drops a later one with another type, so create and update keep working"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-2ze9nt
+  gate_id: extension-item-field-type-conflict-activation
+  negative_control: "A hand-built registry that bypasses activation (two packages, story_points number and string) still makes update refuse with extension_item_field_type_conflict in tests/unit/extensions/extension-item-field-admission.spec.ts; activation of the same pair now admits only the first"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-item-field-admission.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

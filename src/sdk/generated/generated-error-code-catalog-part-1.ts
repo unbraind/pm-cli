@@ -1255,6 +1255,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["cli/error-guidance.ts"],
   },
   {
+    code: "linked_resource_value_list",
+    exit_code: 2,
+    sources: ["cli/error-guidance.ts"],
+  },
+  {
     code: "linked_test_command_immutable",
     exit_code: 2,
     sources: ["sdk/test/update.ts"],

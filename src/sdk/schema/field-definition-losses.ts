@@ -45,7 +45,7 @@ export interface FieldDefinitionLossRow {
  * unreadable or not JSON; the settings read reports those cases, and the metadata check keeps scanning the other
  * source.
  */
-async function readStoredJson(filePath: string): Promise<unknown> {
+export async function readStoredJson(filePath: string): Promise<unknown> {
   try {
     // A non-blocking open and a descriptor check: a named pipe at a configured path must not stall a settings
     // writer that holds the workspace lock. Links are followed, as the settings read follows them.
@@ -76,20 +76,59 @@ export async function readFieldsFileDefinitions(pmRoot: string, schema: Partial<
   return readFieldsFromSchemaFile(await readStoredJson(fieldsPath)) ?? [];
 }
 
-/** Judge each stored definition with the registry's own inspection and keep the ones it changes. */
-function collectLosses(source: string, definitions: readonly unknown[]): FieldDefinitionLossRow[] {
+/** What a registry's own inspection discards from one stored definition. */
+export interface StoredDefinitionLoss {
+  /** Why the whole definition is dropped, when it is. */
+  dropped?: string;
+  /** Members ignored while the definition is kept. */
+  ignored: string[];
+}
+
+/**
+ * Judge each stored definition with the registry's own inspection and keep the
+ * ones it changes, naming each by its stored identity member (`key`, `id`,
+ * `name`) as written, or null when that member is not a string.
+ */
+export function collectDefinitionLosses<Member extends string>(
+  source: string,
+  definitions: readonly unknown[],
+  member: Member,
+  inspect: (definition: unknown, index: number) => StoredDefinitionLoss,
+): Array<{ source: string; index: number; dropped?: string; ignored?: string[] } & Record<Member, string | null>> {
   return definitions.flatMap((definition, index) => {
-    const { loss } = inspectRuntimeFieldDefinition(definition);
+    const loss = inspect(definition, index);
     if (loss.dropped === undefined && loss.ignored.length === 0) return [];
-    const storedKey = (definition as { key?: unknown } | null)?.key;
+    const stored = (definition as Record<string, unknown> | null)?.[member];
     return [{
       source,
       index,
-      key: typeof storedKey === "string" ? storedKey : null,
+      [member]: typeof stored === "string" ? stored : null,
       ...(loss.dropped === undefined ? {} : { dropped: loss.dropped }),
       ...(loss.ignored.length === 0 ? {} : { ignored: loss.ignored }),
-    }];
+    } as { source: string; index: number; dropped?: string; ignored?: string[] } & Record<Member, string | null>];
   });
+}
+
+/** Judge each stored field definition with the field registry's own inspection. */
+function collectLosses(source: string, definitions: readonly unknown[]): FieldDefinitionLossRow[] {
+  return collectDefinitionLosses(source, definitions, "key", (definition) => inspectRuntimeFieldDefinition(definition).loss) as FieldDefinitionLossRow[];
+}
+
+/**
+ * The stored inline schema, and the schema whose `files` name the schema files: the stored one when it sets
+ * them, else the loaded one (whose hydration may have fallen back to defaults).
+ */
+export async function readConfiguredSchema(
+  pmRoot: string,
+  schema: RuntimeSchemaSettings,
+): Promise<{ inline: Partial<RuntimeSchemaSettings> | undefined; configured: Partial<RuntimeSchemaSettings> }> {
+  const inline = readInlineSchema(await readStoredJson(getSettingsPath(pmRoot)));
+  return { inline, configured: inline?.files === undefined ? schema : inline };
+}
+
+/** A schema file path relative to the tracker root, with forward slashes. */
+export function trackerRelativePath(pmRoot: string, filePath: string): string {
+  return path.relative(pmRoot, filePath).split(path.sep).join("/");
 }
 
 /**
@@ -104,12 +143,11 @@ export async function scanFieldDefinitionLosses(
   limit: number,
 ): Promise<{ details: Record<string, unknown>; warnings: string[] }> {
   // The stored settings name the fields file; the loaded schema is defaults when its hydration failed.
-  const inline = readInlineSchema(await readStoredJson(getSettingsPath(pmRoot)));
-  const configured = inline?.files === undefined ? schema : inline;
+  const { inline, configured } = await readConfiguredSchema(pmRoot, schema);
   const fieldsPath = filePathForSchemaSection(pmRoot, configured.files?.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields);
   const rows = [
     ...collectLosses("settings.json", inline?.fields ?? []),
-    ...collectLosses(path.relative(pmRoot, fieldsPath).split(path.sep).join("/"), await readFieldsFileDefinitions(pmRoot, configured)),
+    ...collectLosses(trackerRelativePath(pmRoot, fieldsPath), await readFieldsFileDefinitions(pmRoot, configured)),
   ];
   if (rows.length === 0) return { details: {}, warnings: [] };
   const dropped = rows.filter((row) => row.dropped !== undefined).length;

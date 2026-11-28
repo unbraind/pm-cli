@@ -8,6 +8,7 @@ import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { applyClosureTimestampFix, scanClosureTimestamps } from "./closure-timestamps.js";
 import { scanFieldOptionCollisions } from "../schema/field-option-collisions.js";
 import { scanFieldDefinitionLosses } from "../schema/field-definition-losses.js";
+import { scanSchemaFileEntryLosses } from "../schema/schema-file-entry-losses.js";
 import { readWorkflowCompletenessCheck } from "./workflow-completeness.js";
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
@@ -79,6 +80,7 @@ import {
 } from "../../core/validate/missing-link-owners.js";
 import type {
   LinkedTest,
+  RuntimeSchemaSettings,
   ValidateMetadataProfile,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
@@ -3279,6 +3281,24 @@ interface ValidateCheckExecutionState {
   staleLinkPruneRows: StaleLinkPruneRow[];
 }
 
+/** Append the stored schema definition scans to the metadata check: option collisions, and field, status and type entries the registries drop or read in part. */
+async function appendSchemaDefinitionScans(
+  built: { check: ValidateCheck; warnings: string[] },
+  pmRoot: string,
+  schema: RuntimeSchemaSettings,
+  limit: number,
+): Promise<void> {
+  const scans = [
+    scanFieldOptionCollisions(schema, limit),
+    await scanFieldDefinitionLosses(pmRoot, schema, limit),
+    await scanSchemaFileEntryLosses(pmRoot, schema, limit),
+  ];
+  for (const scan of scans) {
+    Object.assign(built.check.details, scan.details);
+    built.warnings.push(...scan.warnings);
+  }
+}
+
 function recordValidateCheck(
   state: ValidateCheckExecutionState,
   built: { check: ValidateCheck; warnings: string[] },
@@ -3347,12 +3367,7 @@ async function executeRequestedValidateChecks(params: {
     state.closureTimestampFixes = timestamps.fixes;
     Object.assign(built.check.details, timestamps.details);
     built.warnings.push(...timestamps.warnings);
-    const optionCollisions = scanFieldOptionCollisions(params.settings.schema, diagnosticLimit);
-    Object.assign(built.check.details, optionCollisions.details);
-    built.warnings.push(...optionCollisions.warnings);
-    const definitionLosses = await scanFieldDefinitionLosses(params.pmRoot, params.settings.schema, diagnosticLimit);
-    Object.assign(built.check.details, definitionLosses.details);
-    built.warnings.push(...definitionLosses.warnings);
+    await appendSchemaDefinitionScans(built, params.pmRoot, params.settings.schema, diagnosticLimit);
     built.check.ok = built.warnings.length === 0;
     built.check.status = built.check.ok ? "ok" : "warn";
     recordValidateCheck(state, built, fixHintsEnabled);

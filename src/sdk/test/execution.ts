@@ -1117,6 +1117,25 @@ function parseRemoveIndexes(raw: Array<string | number> | undefined): number[] {
   ];
 }
 
+/**
+ * Whether one value of a repeatable linked-test flag is a complete entry its
+ * own parser admits (pm-gh1791). A usage refusal replays several values after
+ * one flag as one occurrence each only when every value is admitted on its
+ * own. A bare `--add` value is not, because it may be a word of a command the
+ * shell split.
+ */
+export function admitsLinkedTestFlagValue(flag: string, value: string): boolean {
+  try {
+    if (flag === "--add") return looksLikeStructuredLinkedTestEntry(value.trim()) && parseAddEntries([value]).length === 1;
+    if (flag === "--add-json") return parseAddJsonEntries([value]).length > 0;
+    if (flag === "--remove") return /^(?:command|path)\s*=/iu.test(value.trim()) && parseRemoveEntries([value]).length === 1;
+    if (flag === "--remove-index") return parseRemoveIndexes([value]).length === 1;
+    return flag === "--measure" && parseTestRunMeasurements([value], new Date(0).toISOString()).length === 1;
+  } catch {
+    return false;
+  }
+}
+
 function closeLinkedTestStdin(child: ChildProcess): void {
   // Force EOF on child stdin so non-interactive runs do not wait on input.
   try {

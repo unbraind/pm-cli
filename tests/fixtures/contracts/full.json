@@ -25621,6 +25621,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "linked_resource_value_list",
+      "class": "usage",
+      "code": "linked_resource_value_list",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Linked resource value list condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "linked_test_command_immutable",
       "class": "usage",
       "code": "linked_test_command_immutable",

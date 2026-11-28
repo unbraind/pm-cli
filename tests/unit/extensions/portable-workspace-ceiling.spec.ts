@@ -110,13 +110,22 @@ describe("Git's own reading of ceilings and links (Codex review)", () => {
     expect(resolveFor(child, ["", path.parse(root).root])).toEqual(parentCheckout());
   });
 
-  it("resolves a start spelled through a link before collapsing `..`, as Git's chdir does (Codex round 2)", async () => {
+  it("resolves a start spelled through a link before collapsing `..`, as Git's chdir does (Codex round 2)", async (context) => {
     const physical = path.join(parent, "ws", "child2");
     const link = path.join(root, "wslink");
     await mkdir(physical, { recursive: true });
     await symlink(physical, link, linkType);
-    // `wslink/..` is parent/ws for Git, which may not move up into the parent ceiling.
     const spelled = `${link}${path.sep}..`;
+    if (process.platform === "win32") {
+      // Windows collapses `..` lexically before it opens a path (as Git for Windows' chdir does), so
+      // `wslink\..` is the link's own parent: the fixture root, which holds no checkout (GH-1792).
+      if (insideCheckout(path.dirname(root))) context.skip();
+      const lexical = { source_workspace_root: root, pm_root_rel: "parent/child/.agents/pm" };
+      expect(resolveFor(spelled, [parent])).toEqual(lexical);
+      expect(resolveFor(spelled)).toEqual(lexical);
+      return;
+    }
+    // `wslink/..` is parent/ws for Git, which may not move up into the parent ceiling.
     // Without a checkout the source is the directory the walk started from, so the tracker is outside it (Codex round 3).
     expect(resolveFor(spelled, [parent])).toEqual({ source_workspace_root: path.join(parent, "ws") });
     expect(resolveFor(spelled)).toEqual({ source_workspace_root: parent, repo_root: parent, pm_root_rel: "child/.agents/pm" });

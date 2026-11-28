@@ -343,7 +343,19 @@ production event predates the window while a test event falls inside it. When
 the listing of issues with non-test events may be truncated, nothing is skipped,
 and a failed listing fails the gate. Both listings follow Sentry's next-page links
 up to `--sentry-limit` (default `200`); when active issues remain beyond it, the
-gate fails, because it cannot judge issues it never read.
+gate fails, because it cannot judge issues it never read. A regressed issue is
+judged by its events since its latest resolution: when the issue's activity
+records a resolution followed by a regression, the event that triggered the
+regression is itself test traffic, and Sentry lists no non-test event from the
+earlier of the resolution and that event up to past the issue's last event
+(with room for clock skew), the regression is test traffic and the gate skips
+it, reported under `ignored_test_only_regression_short_ids` (whoever resolved
+the issue already judged its earlier events). Lookups run one at a time within
+the request budget, and a throttled one is retried after its `Retry-After`. A
+missing resolution or trigger, a non-test trigger or event, a failed, throttled
+or malformed lookup, and a listing read through the `sentry` CLI without an API
+token keep the issue blocking
+([pm-kxmu54](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kxmu54.toon)).
 
 Sentry API requests use a 120-second deadline by default. Operators can set
 `--sentry-request-timeout-ms` between `1` and `300000` when reproducing

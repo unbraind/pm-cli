@@ -2,19 +2,48 @@ id: pm-x17o8l
 title: "A wrong-typed member in schema/statuses.json or schema/types.json (a numeric description, a numeric alias) throws in its normalizer and resets every setting to its default"
 description: "Found 2026-11-27 while fixing pm-x9r2h3. loadRuntimeSchemaFromOptionalFiles now skips status and field entries that are not objects and type entries without a string name, but the status and type normalizers still call trim on members they assume are strings: a status with description 5, or a type with description 5 or aliases [5], throws inside the settings read, which then fails its merge (settings_read_merge_failed) and every setting falls back to its default. The field normalizer was hardened in pm-x9r2h3 (non-string description is ignored and reported); statuses and types need the same treatment, plus a validate report of what was ignored. Reproduced on the built CLI by calling normalizeRuntimeSchemaSettings with statuses [{ id: 'x', description: 5 }] and normalizeItemTypeDefinitions with [{ name: 'X', description: 5 }]. Duplicate check: searched statuses types normalizer description crash settings_read_merge_failed; no open item covers it."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:schema",robustness,settings,validation
 created_at: "2026-11-27T05:24:27.089Z"
-updated_at: "2026-11-27T05:24:27.089Z"
+updated_at: "2026-11-28T14:45:20.590Z"
+closed_at: "2026-11-28T13:55:25.905Z"
+completed_at: "2026-11-28T13:55:25.905Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A status or type schema file entry with any wrong-typed member no longer fails the settings read; the member is ignored and the rest of the entry and of the settings load; pm validate or pm health names each ignored member with its file and position; A spec seeds wrong-typed members for every string and list member of a status and a type definition, with a negative control on the current release"
 parent: pm-8jdc
 risk: medium
 confidence: high
-expected_result: One malformed member in a schema file cannot reset every setting
-actual_result: settings_read_merge_failed and defaults for the whole tracker
+resolution: "Status entries are read by inspectRuntimeStatusDefinition, so a non-string description is ignored and bad aliases, roles and order are reported. Type entries from schema/types.json pass through inspectItemTypeDefinition, the coercion the registry already used for extension registrations, now shared, before normalization. A wrong-typed member is ignored and the rest of the entry and of the settings load. An unknown execution_role in a file fails closed as human, and an extension registration still refuses it. pm validate --check-metadata names each dropped or partly read entry with its file and position (validate_schema_{status,type}_definition_{dropped,partial})."
+expected_result: "A status or type schema-file entry with any wrong-typed member no longer fails the settings read, and validate names each ignored member with its file and position"
+actual_result: "Built CLI: statuses.json [{id:triage, description:5, aliases:[3,'tri'], order:'x'}, null] and types.json [{name:Spike, description:5, aliases:[5,'spk'], folder:3, execution_role:'humna', bad options and policies}, {name:''}] keep id_prefix zz- with only runtime_schema_*_entry_invalid:1 warnings, while 2026.11.27 resets to pm- with settings_read_merge_failed. validate lists every ignored member under schema_status_definition_losses and schema_type_definition_losses, and 37 focused tests pass with 100% coverage of the added lines"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-x9r2h3,discovered_from,"2026-11-27T05:24:27.089Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-28T13:55:23.452Z","harness:claude-code","Implementation note (2026-11-28). Statuses: inspectRuntimeStatusDefinition(definition, fallbackOrder) returns {resolved, loss}, and both the registry (normalizeRuntimeStatusDefinition) and the validate scan read it. A non-string description is ignored. Non-string or unknown aliases and roles, and a non-finite order, are reported. A non-object entry or an empty id drops the entry. Types: the registry's extension coercion (coerceTypeDefinitionFromUnknown plus its option and policy helpers) moved to core/item/item-type-inspection.ts as inspectItemTypeDefinition(raw, policy), and schema/types.json entries now pass through it before the settings normalizer, which used to call trim on raw file values. Policy: an unknown execution_role in a schema file fails closed (reads as human, never offered for agent dispatch, reported). An extension registration with one is still refused (policy throw), as before. Validate: scanSchemaFileEntryLosses reads the configured statuses and types files and emits validate_schema_{status,type}_definition_{dropped,partial}:N with rows {source, index, id|name, dropped?, ignored?}. It shares collectDefinitionLosses and readConfiguredSchema with the field scan. Negative control: published 2026.11.27 (npm-installed in a scratch prefix) gives settings_read_merge_failed and id_prefix back to pm- for a statuses.json with description 5. This branch keeps id_prefix zz- and warns runtime_schema_{statuses,types}_entry_invalid:1 only for the unusable entries."
+  "2026-11-28T14:45:20.589Z","harness:claude-code","Codex review round 1 (2026-11-28), two P2s and a P3, valid and fixed. (1) In a schema file, required: 'false' on a type option turned into a requirement through Boolean(). inspectItemTypeDefinition now takes its source (extension | schema_file): for a schema file a non-boolean switch is ignored and reported, while an extension registration keeps its earlier Boolean reading. (2) required_create_fields: [5] became an explicit empty override and cleared the built-in create requirements of an overridden type. A non-empty list with no usable entry now reads as absent, while [] stays an explicit override. (3) A blank option key or policy option target passed inspection and was then dropped silently by the normalizer. Both are now dropped and reported in the inspection."
+learnings[1]{created_at,author,text}:
+  "2026-11-28T13:55:24.187Z","harness:claude-code","When a value guards dispatch or authority, an unreadable stored value must not fall back to the permissive default. Ignoring an invalid execution_role leaves the type agent-dispatchable, so does dropping the whole entry (unknown types read as agent), and so does today's settings reset. Fail closed with an explicit value (human) and report it, instead of choosing between ignore and drop."
+files[7]{path,scope,note}:
+  src/core/item/item-type-inspection.ts,project,pm-x17o8l status/type schema-file member admission
+  src/core/item/type-registry.ts,project,pm-x17o8l status/type schema-file member admission
+  src/core/schema/runtime-schema.ts,project,pm-x17o8l status/type schema-file member admission
+  src/sdk/governance/validate.ts,project,pm-x17o8l status/type schema-file member admission
+  src/sdk/schema/field-definition-losses.ts,project,pm-x17o8l status/type schema-file member admission
+  src/sdk/schema/schema-file-entry-losses.ts,project,pm-x17o8l status/type schema-file member admission
+  tests/unit/sdk/schema/schema-file-entry-losses.spec.ts,project,pm-x17o8l status/type schema-file member admission
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema/schema-file-entry-losses.spec.ts tests/unit/sdk/schema/field-definition-losses.spec.ts,project,"harness:claude-code","2026-11-28T13:55:07.476Z",local_mutation,fix/schema-member-admission-add-lists
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,status/type wrong-typed members and validate rows
+close_reason: Wrong-typed status and type schema-file members are ignored and reported instead of resetting every setting
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-x17o8l
+  gate_id: schema-file-entry-member-admission
+  negative_control: Published 2026.11.27 resets every setting (settings_read_merge_failed) for a statuses.json entry with description 5; tests/unit/sdk/schema/schema-file-entry-losses.spec.ts seeds every string and list member of a status and a type wrong-typed
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/schema/schema-file-entry-losses.spec.ts tests/unit/sdk/schema/field-definition-losses.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
