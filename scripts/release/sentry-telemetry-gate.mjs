@@ -822,11 +822,11 @@ async function readLatestRegression(issueUrl, token, deadline) {
   const resolution = latestActivity(transitions, SENTRY_RESOLUTION_ACTIVITY_TYPES);
   const regression = latestActivity(transitions, SENTRY_REGRESSION_ACTIVITY_TYPES);
   const triggerId = regression?.entry?.data?.event_id;
-  // A merge or unmerge after the resolution brings in events the resolution never judged.
+  // Sentry records a merge when it queues the move and completes it later, so no timestamp proves which events a
+  // resolution judged once an issue was regrouped: such an issue is never waived.
   const regrouped = latestActivity(transitions, SENTRY_IDENTITY_ACTIVITY_TYPES);
   // A regression stamped at the resolution's own instant is not ordered after it.
-  return resolution !== undefined && regression !== undefined && regression.time > resolution.time && typeof triggerId === "string"
-    && (regrouped === undefined || regrouped.time < resolution.time)
+  return resolution !== undefined && regression !== undefined && regression.time > resolution.time && typeof triggerId === "string" && regrouped === undefined
     ? { resolvedAt: resolution.time, triggerId }
     : undefined;
 }
